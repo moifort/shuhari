@@ -1,0 +1,1141 @@
+<title>Carnet — Maquette iPhone</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+/* ============ Tokens ============ */
+:root{
+  --desk:#E9E7E2;
+  --bg:#F4F3EF;
+  --card:#FFFFFF;
+  --ink:#211D18;
+  --ink2:#6E675D;
+  --ink3:#9B948A;
+  --line:#E4E1DA;
+  --btn:#211D18;
+  --btn-ink:#FFFFFF;
+  --test:#9A6407;
+  --test-bg:#F8ECD5;
+  --gold:#3E7C4F;
+  --gold-bg:#E4EFE5;
+  --add-bg:#E4EFE5;
+  --add-ink:#2E6A3F;
+  --del-ink:#A03A32;
+  --cafe:#8A5A2E;
+  --cocktail:#A93E36;
+  --plat:#5C7A3B;
+  --tmx:#2F7A85;
+  --cafe-bg:#F1E7DB;
+  --cocktail-bg:#F5E4E2;
+  --plat-bg:#E9EEDF;
+  --tmx-bg:#DFEDEF;
+  --shadow:0 18px 50px rgba(33,29,24,.16);
+  --ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;
+  --display:ui-serif,"New York",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --desk:#0C0B09;
+    --bg:#171511;
+    --card:#211E19;
+    --ink:#EDE9E1;
+    --ink2:#A8A093;
+    --ink3:#776F62;
+    --line:#332F28;
+    --btn:#EDE9E1;
+    --btn-ink:#211D18;
+    --test:#E2A94F;
+    --test-bg:#3A2D14;
+    --gold:#84BF92;
+    --gold-bg:#22331F;
+    --add-bg:#22331F;
+    --add-ink:#8CC79A;
+    --del-ink:#E08076;
+    --cafe:#C89058;
+    --cocktail:#E07B72;
+    --plat:#9CBA6C;
+    --tmx:#6FB7C2;
+    --cafe-bg:#33271A;
+    --cocktail-bg:#392020;
+    --plat-bg:#262E1A;
+    --tmx-bg:#163034;
+    --shadow:0 18px 50px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="light"]{
+  --desk:#E9E7E2; --bg:#F4F3EF; --card:#FFFFFF; --ink:#211D18; --ink2:#6E675D; --ink3:#9B948A;
+  --line:#E4E1DA; --btn:#211D18; --btn-ink:#FFFFFF;
+  --test:#9A6407; --test-bg:#F8ECD5; --gold:#3E7C4F; --gold-bg:#E4EFE5;
+  --add-bg:#E4EFE5; --add-ink:#2E6A3F; --del-ink:#A03A32;
+  --cafe:#8A5A2E; --cocktail:#A93E36; --plat:#5C7A3B; --tmx:#2F7A85;
+  --cafe-bg:#F1E7DB; --cocktail-bg:#F5E4E2; --plat-bg:#E9EEDF; --tmx-bg:#DFEDEF;
+  --shadow:0 18px 50px rgba(33,29,24,.16);
+}
+:root[data-theme="dark"]{
+  --desk:#0C0B09; --bg:#171511; --card:#211E19; --ink:#EDE9E1; --ink2:#A8A093; --ink3:#776F62;
+  --line:#332F28; --btn:#EDE9E1; --btn-ink:#211D18;
+  --test:#E2A94F; --test-bg:#3A2D14; --gold:#84BF92; --gold-bg:#22331F;
+  --add-bg:#22331F; --add-ink:#8CC79A; --del-ink:#E08076;
+  --cafe:#C89058; --cocktail:#E07B72; --plat:#9CBA6C; --tmx:#6FB7C2;
+  --cafe-bg:#33271A; --cocktail-bg:#392020; --plat-bg:#262E1A; --tmx-bg:#163034;
+  --shadow:0 18px 50px rgba(0,0,0,.5);
+}
+
+/* ============ Page (hors device) ============ */
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--desk);
+  font-family:var(--ui);
+  color:var(--ink);
+  min-height:100dvh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;padding:28px 0;
+}
+.page-caption{color:var(--ink3);font-size:12.5px;letter-spacing:.04em;text-transform:uppercase}
+.page-hint{color:var(--ink3);font-size:12.5px;max-width:340px;text-align:center;line-height:1.5}
+
+/* ============ Device ============ */
+.device{
+  width:393px;height:832px;flex:none;
+  border-radius:54px;border:9px solid #17140F;
+  overflow:hidden;position:relative;
+  background:var(--bg);
+  box-shadow:var(--shadow);
+}
+@media (max-width:520px), (max-height:900px) and (max-width:820px){
+  body{padding:0;gap:0}
+  .page-caption,.page-hint{display:none}
+  .device{width:100vw;height:100dvh;border:none;border-radius:0;box-shadow:none}
+}
+.app{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg)}
+
+/* status bar */
+.statusbar{
+  flex:none;height:48px;display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0 26px 6px;font-size:14px;font-weight:600;
+}
+.statusbar svg{display:block}
+
+/* screens */
+.viewport{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;-webkit-overflow-scrolling:touch}
+.screen{min-height:100%;display:flex;flex-direction:column;padding:6px 18px 28px;animation:slidein .26s ease}
+@keyframes slidein{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  .screen{animation:none}
+  *{transition:none !important}
+}
+
+/* tab bar */
+.tabbar{
+  flex:none;display:flex;border-top:1px solid var(--line);
+  background:var(--card);padding:8px 10px 20px;
+}
+.tab{
+  flex:1;background:none;border:none;color:var(--ink3);font-family:var(--ui);
+  display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;
+  padding:4px 0;cursor:pointer;border-radius:10px;
+}
+.tab.on{color:var(--ink)}
+.tab:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+/* ============ Composants ============ */
+button{font-family:var(--ui)}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+.navrow{display:flex;align-items:center;gap:8px;min-height:40px;margin:2px -6px 4px}
+.backbtn{
+  display:flex;align-items:center;gap:2px;background:none;border:none;color:var(--ink);
+  font-size:15px;padding:6px 8px;cursor:pointer;border-radius:10px;font-weight:500;
+}
+.navrow .spacer{flex:1}
+
+.h-large{font-family:var(--display);font-size:32px;font-weight:700;letter-spacing:-.01em;margin:8px 0 2px;text-wrap:balance;line-height:1.12}
+.h-date{color:var(--ink3);font-size:12.5px;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.h-sub{color:var(--ink2);font-size:13.5px;margin-top:4px;line-height:1.45}
+
+.sect{margin-top:22px}
+.sect-head{display:flex;align-items:baseline;gap:8px;margin-bottom:9px}
+.sect-title{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2)}
+.sect-head .count{color:var(--ink3);font-size:12px}
+.sect-head .lnk{margin-left:auto}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 15px}
+.card + .card{margin-top:10px}
+
+.chip{
+  display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
+  letter-spacing:.05em;text-transform:uppercase;border-radius:99px;padding:3.5px 9px;
+}
+.chip svg{flex:none}
+.chip.test{background:var(--test-bg);color:var(--test)}
+.chip.gold{background:var(--gold-bg);color:var(--gold)}
+.chip.ghost{background:transparent;border:1px solid var(--line);color:var(--ink2)}
+
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  background:var(--btn);color:var(--btn-ink);border:none;border-radius:14px;
+  font-size:15.5px;font-weight:600;padding:14px;cursor:pointer;
+}
+.btn.secondary{background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
+.btn.quiet{background:transparent;color:var(--ink2);border:none;font-weight:500}
+.btn.small{width:auto;padding:8px 14px;font-size:13.5px;border-radius:11px}
+.btnrow{display:flex;gap:10px;margin-top:12px}
+.btnrow .btn{margin:0}
+
+.lnk{background:none;border:none;color:var(--ink);font-size:13.5px;font-weight:600;cursor:pointer;padding:2px 4px;border-radius:8px;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--ink3)}
+
+/* rows / lists */
+.rows{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.row{
+  display:flex;align-items:center;gap:12px;padding:12.5px 14px;background:none;border:none;
+  border-bottom:1px solid var(--line);cursor:pointer;text-align:left;font-family:var(--ui);color:var(--ink);
+  width:100%;
+}
+.row:last-child{border-bottom:none}
+.row .grow{flex:1;min-width:0}
+.row .t{font-size:15px;font-weight:600;line-height:1.25}
+.row .s{font-size:12.5px;color:var(--ink2);margin-top:2px}
+.row .chev{color:var(--ink3);flex:none}
+
+.dotico{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none}
+.dotico svg{display:block}
+
+/* params */
+.params{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-top:6px}
+.param .k{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);font-weight:700}
+.param .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:17px;font-weight:600;margin-top:2px}
+.param .v.big{font-size:26px}
+.param .v .chg{color:var(--test)}
+
+.steps{margin:10px 0 0;padding:0;list-style:none;counter-reset:st}
+.steps li{
+  counter-increment:st;display:flex;gap:10px;padding:7px 0;font-size:14.5px;line-height:1.45;
+  border-top:1px dashed var(--line);
+}
+.steps li::before{
+  content:counter(st);font-family:var(--mono);font-size:12px;color:var(--ink3);
+  flex:none;width:18px;padding-top:2px;
+}
+
+/* banner à tester */
+.banner-test{
+  background:var(--test-bg);border:1px solid transparent;border-radius:16px;padding:13px 15px;
+  display:flex;flex-direction:column;gap:9px;
+}
+.banner-test .bt-head{display:flex;align-items:center;gap:8px;color:var(--test);font-weight:700;font-size:12px;letter-spacing:.07em;text-transform:uppercase}
+.banner-test .bt-change{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:14.5px;font-weight:600;color:var(--ink)}
+.banner-test .bt-why{font-size:12.5px;color:var(--ink2);line-height:1.5}
+.banner-test .btn{background:var(--test);color:#fff}
+
+/* essais */
+.essai-note{
+  font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:700;font-size:15px;
+  width:44px;flex:none;text-align:center;border-radius:9px;padding:7px 0;
+}
+.n-hi{background:var(--gold-bg);color:var(--gold)}
+.n-mid{background:var(--test-bg);color:var(--test)}
+.n-low{background:var(--cocktail-bg);color:var(--del-ink)}
+
+.vchip{font-family:var(--mono);font-size:11px;font-weight:700;border:1px solid var(--line);border-radius:6px;padding:1.5px 5px;color:var(--ink2)}
+
+/* photo placeholder */
+.ph{
+  border-radius:12px;background:linear-gradient(135deg,var(--line),var(--bg));
+  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+  color:var(--ink3);gap:6px;font-size:11.5px;font-weight:600;letter-spacing:.04em;
+}
+
+/* exécution */
+.exec{padding:6px 22px 0}
+.exec-title{font-family:var(--display);font-size:23px;font-weight:700;line-height:1.15;text-wrap:balance;margin:4px 0 2px}
+.exec .params{grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.exec .param .v{font-size:30px;letter-spacing:-.01em}
+.exec .steps li{font-size:16.5px;padding:10px 0}
+.exec-foot{position:sticky;bottom:0;margin:auto -22px 0;padding:14px 22px 16px;background:linear-gradient(to top,var(--bg) 70%,transparent)}
+.replay-note{background:var(--gold-bg);color:var(--gold);border-radius:12px;padding:9px 12px;font-size:12.5px;font-weight:600;margin-top:10px}
+
+/* formulaires */
+.f-label{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);margin:16px 0 7px;display:block}
+.f-input,.f-area{
+  width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;
+  color:var(--ink);font-family:var(--ui);font-size:15px;padding:11px 12px;
+}
+.f-area{min-height:88px;resize:none;line-height:1.5}
+.f-input.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:600}
+.real-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.real-cell .k{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);font-weight:700;margin-bottom:4px}
+
+.notepick{display:flex;gap:5px}
+.notepick button{
+  flex:1;aspect-ratio:1;border-radius:10px;border:1px solid var(--line);background:var(--card);
+  font-family:var(--mono);font-weight:700;font-size:14px;color:var(--ink2);cursor:pointer;padding:0;
+}
+.notepick button.on{background:var(--btn);border-color:var(--btn);color:var(--btn-ink)}
+
+.photobtn{
+  display:flex;align-items:center;gap:9px;width:100%;background:var(--card);
+  border:1.5px dashed var(--line);border-radius:12px;color:var(--ink2);
+  font-size:14px;font-weight:500;padding:13px 14px;cursor:pointer;
+}
+.photobtn.added{border-style:solid;color:var(--gold);border-color:var(--gold);background:var(--gold-bg)}
+
+/* segmented */
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button{
+  flex:1;border:none;background:none;border-radius:9px;padding:8px 4px;font-size:13.5px;
+  font-weight:600;color:var(--ink2);cursor:pointer;
+}
+.seg button.on{background:var(--btn);color:var(--btn-ink)}
+
+/* proposition IA */
+.diff{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.diff-row{display:flex;flex-direction:column;gap:3px;padding:10px 12px;border-radius:12px;background:var(--add-bg)}
+.diff-row .k{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--add-ink)}
+.diff-row .vals{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:16px;font-weight:600}
+.diff-row .from{color:var(--del-ink);text-decoration:line-through;text-decoration-thickness:1.5px}
+.diff-row .to{color:var(--add-ink)}
+.rule-chip{
+  display:flex;gap:8px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--ink2);line-height:1.5;margin-top:12px;
+}
+.rule-chip svg{flex:none;margin-top:1px;color:var(--ink3)}
+.queued{margin:8px 0 0;padding-left:18px;font-size:12.5px;color:var(--ink2);line-height:1.6}
+
+/* timeline historique */
+.tl{position:relative;margin-top:6px;padding-left:26px}
+.tl::before{content:"";position:absolute;left:8px;top:10px;bottom:10px;width:1.5px;background:var(--line)}
+.tl-item{position:relative;padding:9px 0}
+.tl-item::before{
+  content:"";position:absolute;left:-23.5px;top:16px;width:10px;height:10px;border-radius:99px;
+  background:var(--bg);border:2.5px solid var(--ink3);
+}
+.tl-item.cur::before{border-color:var(--gold);background:var(--gold)}
+.tl-item.test::before{border-color:var(--test);background:var(--test)}
+
+/* comparaison cible/réel */
+.cmp{width:100%;border-collapse:collapse;margin-top:6px;font-size:13.5px}
+.cmp th{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);text-align:left;font-weight:700;padding:6px 4px;border-bottom:1px solid var(--line)}
+.cmp td{padding:8px 4px;border-bottom:1px dashed var(--line);font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:600}
+.cmp td:first-child{font-family:var(--ui);font-weight:500;color:var(--ink2)}
+.cmp tr:last-child td{border-bottom:none}
+.cmp td.dif{color:var(--test)}
+
+/* overlays */
+.overlay{
+  position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 72%,transparent);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;z-index:40;
+}
+.think{display:flex;flex-direction:column;align-items:center;gap:14px;padding:0 40px;text-align:center}
+.think .lab{font-size:14.5px;font-weight:600;color:var(--ink)}
+.think .dots{display:flex;gap:6px}
+.think .dots i{width:8px;height:8px;border-radius:99px;background:var(--ink2);animation:pulse 1s infinite ease-in-out}
+.think .dots i:nth-child(2){animation-delay:.15s}
+.think .dots i:nth-child(3){animation-delay:.3s}
+@keyframes pulse{0%,100%{opacity:.25;transform:scale(.85)}50%{opacity:1;transform:scale(1.1)}}
+@media (prefers-reduced-motion:reduce){.think .dots i{animation:none}}
+
+.sheetwrap{position:absolute;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;z-index:50}
+.sheet{
+  background:var(--card);border-radius:22px 22px 0 0;padding:22px 20px 30px;width:100%;
+  display:flex;flex-direction:column;gap:8px;animation:up .25s ease;
+}
+@keyframes up{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+.sheet h3{margin:0;font-family:var(--display);font-size:20px;line-height:1.25;text-wrap:balance}
+.sheet p{margin:0 0 8px;font-size:13.5px;color:var(--ink2);line-height:1.5}
+
+.toast{
+  position:absolute;left:16px;right:16px;bottom:96px;z-index:60;
+  background:var(--btn);color:var(--btn-ink);border-radius:13px;padding:12px 15px;
+  font-size:13.5px;font-weight:600;text-align:center;
+  animation:up .25s ease;box-shadow:0 8px 26px rgba(0,0,0,.25);
+}
+
+/* import */
+.droparea{
+  border:1.5px dashed var(--line);border-radius:16px;background:var(--card);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  padding:30px 16px;color:var(--ink2);font-size:13.5px;cursor:pointer;width:100%;font-weight:500;
+}
+.filechips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.filechip{display:inline-flex;align-items:center;gap:6px;background:var(--gold-bg);color:var(--gold);border-radius:9px;padding:6px 10px;font-size:12px;font-weight:600}
+
+.derived{
+  display:inline-flex;align-items:center;gap:6px;margin-top:8px;background:var(--card);
+  border:1px solid var(--line);border-radius:99px;padding:5px 11px;font-size:12px;font-weight:600;
+  color:var(--ink2);cursor:pointer;
+}
+.avgline{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink2);margin-top:6px}
+.avgline b{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+</style>
+
+<div class="page-caption">Carnet · maquette du flow — v0.1</div>
+<div class="device">
+  <div class="app">
+    <div class="statusbar">
+      <span>9:41</span>
+      <svg width="64" height="12" viewBox="0 0 64 12" fill="none" aria-hidden="true">
+        <rect x="0" y="6" width="3" height="5" rx="1" fill="currentColor"/>
+        <rect x="5" y="4" width="3" height="7" rx="1" fill="currentColor"/>
+        <rect x="10" y="2" width="3" height="9" rx="1" fill="currentColor"/>
+        <rect x="15" y="0" width="3" height="11" rx="1" fill="currentColor" opacity=".35"/>
+        <path d="M25 5c2.5-2.6 6.5-2.6 9 0M27 7.4c1.4-1.5 3.6-1.5 5 0M29.5 9.8l.5.5.5-.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        <rect x="41" y="1.5" width="20" height="9" rx="2.6" stroke="currentColor" opacity=".5"/>
+        <rect x="43" y="3.5" width="13" height="5" rx="1.2" fill="currentColor"/>
+        <path d="M62.5 4.5v3" stroke="currentColor" stroke-linecap="round" opacity=".5"/>
+      </svg>
+    </div>
+    <div class="viewport" id="viewport"></div>
+    <div class="tabbar" id="tabbar"></div>
+  </div>
+</div>
+<div class="page-hint">Maquette tapable — déroule la boucle complète : importer → exécuter → noter → proposition IA → promotion. Ouvre-la sur ton iPhone pour la sentir sous le pouce.</div>
+
+<script>
+/* ================= Icônes ================= */
+const I = {
+  cup:(s=18)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h12v5.5A4.5 4.5 0 0 1 11.5 19h-3A4.5 4.5 0 0 1 4 14.5Z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1-.9 1.2-.9 2.2M12 3.5c0 1-.9 1.2-.9 2.2"/></svg>`,
+  glass:(s=18)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16l-8 8.5L4 4Z"/><path d="M12 12.5V20M8 20h8"/><circle cx="14.5" cy="6.8" r="1.3"/></svg>`,
+  pot:(s=18)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17h16"/><path d="M5 17a7 7 0 0 1 14 0"/><path d="M12 8V6.5"/><circle cx="12" cy="5.4" r="1.1"/></svg>`,
+  robot:(s=18)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.5" y="3.5" width="13" height="17" rx="2.5"/><circle cx="12" cy="10" r="3.2"/><path d="M8.5 16.8h3"/><circle cx="15.8" cy="16.8" r=".4" fill="currentColor"/></svg>`,
+  book:(s=22)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v17.5H7.5A2.5 2.5 0 0 0 5 22Z"/><path d="M5 19.5V4.5M9 6.5h6"/></svg>`,
+  plus:(s=22)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>`,
+  chev:(s=16)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`,
+  back:(s=20)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>`,
+  flask:(s=16)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 3h5M10.5 3v5.2L5.8 17a2.3 2.3 0 0 0 2 3.4h8.4a2.3 2.3 0 0 0 2-3.4L13.5 8.2V3"/><path d="M8 14.5h8"/></svg>`,
+  cam:(s=18)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6.5" width="18" height="13" rx="2.5"/><path d="M8.5 6.5 10 4h4l1.5 2.5"/><circle cx="12" cy="12.8" r="3.4"/></svg>`,
+  replay:(s=16)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 3v4h-4"/></svg>`,
+  check:(s=16)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5l5 5L19.5 7"/></svg>`,
+  link:(s=13)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1-1"/></svg>`,
+};
+
+/* ================= Domaines ================= */
+const DOM = {
+  cafe:{label:'Café', v:'var(--cafe)', bg:'var(--cafe-bg)', ico:I.cup},
+  cocktail:{label:'Cocktails', v:'var(--cocktail)', bg:'var(--cocktail-bg)', ico:I.glass},
+  plat:{label:'Plats', v:'var(--plat)', bg:'var(--plat-bg)', ico:I.pot},
+  tmx:{label:'Thermomix', v:'var(--tmx)', bg:'var(--tmx-bg)', ico:I.robot},
+};
+
+/* ================= Données ================= */
+const R = {
+  espresso:{
+    id:'espresso', type:'cafe',
+    title:'Espresso — Brésil Santa Lúcia',
+    subtitle:'Rocket Appartamento · Eureka Mignon · torréfaction du 12 juin',
+    currentVersion:3, toTest:4, derivedFrom:null, variations:[],
+    versions:[
+      {n:1, date:'21 juin', origin:'Importée — photos du sachet et fiche du torréfacteur',
+       change:null,
+       params:[['Dose','18 g'],['Mouture','2,0'],['Sortie','36 g'],['Temps','25–30 s'],['Température','93 °C']],
+       steps:['Purger le groupe, sécher le panier.','Doser 18 g, distribuer (WDT), tasser à plat.','Extraire 36 g en visant 25–30 s.','Servir immédiatement, tasse chaude.']},
+      {n:2, date:'23 juin', origin:null,
+       change:'Mouture 2,0 → 1,7 (plus fine)', changedKeys:['Mouture'],
+       params:[['Dose','18 g'],['Mouture','1,7'],['Sortie','36 g'],['Temps','25–30 s'],['Température','93 °C']],
+       steps:['Purger le groupe, sécher le panier.','Doser 18 g, distribuer (WDT), tasser à plat.','Extraire 36 g en visant 25–30 s.','Servir immédiatement, tasse chaude.']},
+      {n:3, date:'28 juin', origin:null,
+       change:'Dose 18 g → 18,5 g', changedKeys:['Dose'],
+       params:[['Dose','18,5 g'],['Mouture','1,7'],['Sortie','36 g'],['Temps','27–30 s'],['Température','93 °C']],
+       steps:['Purger le groupe, sécher le panier.','Doser 18,5 g, distribuer (WDT), tasser à plat.','Extraire 36 g en visant 27–30 s.','Servir immédiatement, tasse chaude.']},
+      {n:4, date:'4 juil.', origin:'Proposée par l’IA d’après tes remarques des 29 juin et 2 juil.',
+       change:'Température 93 → 92 °C', changedKeys:['Température'],
+       why:'Le léger creux en milieu de bouche sur un naturel brésilien pointe vers une extraction un peu trop chaude. Une seule variable bouge : la température.',
+       params:[['Dose','18,5 g'],['Mouture','1,7'],['Sortie','36 g'],['Temps','27–30 s'],['Température','92 °C']],
+       steps:['Purger le groupe, sécher le panier.','Doser 18,5 g, distribuer (WDT), tasser à plat.','Extraire 36 g en visant 27–30 s.','Servir immédiatement, tasse chaude.']},
+    ],
+    essais:[
+      {ts:622, v:1, date:'22 juin', note:5, remarks:'Coule trop vite (22 s), amertume sèche et astringente en finale.', real:{'Temps':'22 s','Sortie':'37 g'}, photo:true},
+      {ts:624, v:2, date:'24 juin', note:7, remarks:'Le corps est revenu. Pointe d’acidité verte en attaque, léger creux en milieu de bouche.', real:{'Temps':'27 s'}, photo:true},
+      {ts:629, v:3, date:'29 juin', note:8, remarks:'Équilibré, chocolat noir en finale. Reste ce petit creux en milieu de bouche.', real:{'Temps':'28 s'}, photo:true},
+      {ts:702, v:3, date:'2 juil.', note:8, remarks:'Reproduit à l’identique — même profil, stable. Le creux persiste légèrement.', real:{'Temps':'28 s'}, photo:false},
+    ],
+    proposals:{
+      4:{vars:[{k:'Pré-infusion', from:'—', to:'2 s'}],
+         rationale:'Si le creux persiste malgré 92 °C, une courte pré-infusion homogénéise le lit de café sans toucher aux autres variables.',
+         queued:['Ratio 1:2 → 1:2,2 (allonger légèrement la sortie)'],
+         rec:'iteration'},
+    },
+    example:{note:8, remarks:'Plus rond, l’acidité s’est fondue et le creux a presque disparu. Très proche du but.'},
+  },
+  negroni:{
+    id:'negroni', type:'cocktail',
+    title:'Negroni',
+    subtitle:'Verre old fashioned · gros cube',
+    currentVersion:1, toTest:null, derivedFrom:null, variations:['negroniblanc'],
+    versions:[
+      {n:1, date:'26 juin', origin:'Importée — recette classique (URL Imbibe)',
+       change:null,
+       params:[['Gin','30 ml'],['Campari','30 ml'],['Vermouth rouge','30 ml'],['Dilution','20–25 s de mélange'],['Glace','1 gros cube']],
+       steps:['Verser les trois alcools dans un verre à mélange rempli de glace.','Remuer 20–25 s, jusqu’à condensation.','Filtrer sur un gros cube dans le verre old fashioned.','Exprimer un zeste d’orange, le déposer.']},
+    ],
+    essais:[
+      {ts:630, v:1, date:'30 juin', note:7, remarks:'Excellent au premier tiers ; le Campari écrase la fin de verre quand la glace fond.', real:{'Dilution':'25 s'}, photo:true},
+    ],
+    proposals:{
+      1:{vars:[{k:'Campari', from:'30 ml', to:'25 ml'}],
+         rationale:'Réduire seulement le Campari rééquilibre la fin de verre sans dénaturer le classique. Une variable à la fois.',
+         queued:['Vermouth : essayer un Punt e Mes (itération suivante si besoin)'],
+         rec:'iteration',
+         variation:{title:'Negroni « low-bitter »', desc:'Si tu préfères garder ton Negroni classique intact, décline plutôt une nouvelle recette liée.'}},
+    },
+    example:{note:6, remarks:'Toujours ce déséquilibre en fin de verre, le Campari domine dès que la glace fond.'},
+  },
+  negroniblanc:{
+    id:'negroniblanc', type:'cocktail',
+    title:'Negroni blanc',
+    subtitle:'Variation claire — gentiane et Lillet',
+    currentVersion:1, toTest:null, derivedFrom:'negroni', variations:[],
+    versions:[
+      {n:1, date:'1 juil.', origin:'Variation du Negroni — proposée par l’IA, validée le 1 juil.',
+       change:'Campari → Suze 20 ml · Vermouth rouge → Lillet blanc 30 ml', changedKeys:['Suze','Lillet blanc'],
+       params:[['Gin','30 ml'],['Suze','20 ml'],['Lillet blanc','30 ml'],['Dilution','20–25 s de mélange'],['Glace','1 gros cube']],
+       steps:['Verser les trois alcools dans un verre à mélange rempli de glace.','Remuer 20–25 s, jusqu’à condensation.','Filtrer sur un gros cube.','Zeste de citron exprimé, déposé.']},
+    ],
+    essais:[
+      {ts:703, v:1, date:'3 juil.', note:6, remarks:'Belle fraîcheur, mais la gentiane domine — finale trop amère.', real:{}, photo:true},
+    ],
+    proposals:{
+      1:{vars:[{k:'Suze', from:'20 ml', to:'15 ml'}],
+         rationale:'La gentiane écrase l’ensemble : on ne touche qu’à la Suze pour mesurer son vrai poids dans l’équilibre.',
+         queued:[], rec:'iteration'},
+    },
+    example:{note:7, remarks:'Mieux équilibré, la gentiane reste présente mais ne domine plus.'},
+  },
+  risotto:{
+    id:'risotto', type:'plat',
+    title:'Risotto aux champignons',
+    subtitle:'2 personnes · ~35 min',
+    currentVersion:1, toTest:null, derivedFrom:null, variations:[],
+    versions:[
+      {n:1, date:'27 juin', origin:'Importée — photo du livre « La cuillère d’argent »',
+       change:null,
+       params:[['Riz carnaroli','160 g'],['Champignons','250 g'],['Bouillon','800 ml (cube)'],['Vin blanc','80 ml'],['Parmesan','40 g'],['Beurre','20 g'],['Cuisson','17 min']],
+       steps:['Poêler les champignons à feu vif, réserver.','Nacrer le riz 2 min dans un fond d’huile.','Déglacer au vin blanc, laisser évaporer.','Mouiller louche à louche pendant 17 min.','Incorporer champignons, puis hors du feu beurre et parmesan (mantecatura).','Couvrir 2 min avant de servir.']},
+    ],
+    essais:[
+      {ts:628, v:1, date:'28 juin', note:6, remarks:'Riz encore ferme au centre, ensemble trop salé (le cube), et il manque de liant.', real:{'Cuisson':'17 min'}, photo:true},
+    ],
+    proposals:{
+      1:{vars:[
+          {k:'Bouillon', from:'800 ml (cube)', to:'800 ml maison, non salé'},
+          {k:'Beurre', from:'20 g', to:'30 g'},
+          {k:'Cuisson', from:'17 min', to:'18–19 min'}],
+         rationale:'Tes trois remarques sont indépendantes : sel (bouillon), liant (beurre), cuisson. Pour un plat, on peut les corriger ensemble.',
+         queued:[], rec:'iteration'},
+    },
+    example:{note:6, remarks:'Riz encore un peu ferme au centre, trop salé à cause du cube, manque de liant.'},
+  },
+  pain:{
+    id:'pain', type:'tmx',
+    title:'Pain de mie',
+    subtitle:'Thermomix TM6 · moule 25 cm',
+    currentVersion:2, toTest:null, derivedFrom:null, variations:[],
+    versions:[
+      {n:1, date:'24 juin', origin:'Importée — recette Cookidoo (URL)',
+       change:null,
+       params:[['Farine T55','500 g'],['Eau','300 g (60 %)'],['Levure fraîche','20 g'],['Sel','9 g'],['Pétrissage','4 min / mode Épi'],['Cuisson','35 min à 180 °C']],
+       steps:['Eau + levure : 2 min / 37 °C / vit. 2.','Ajouter farine et sel, pétrir 4 min / mode Épi.','Pousse 1 h dans le bol, couvert.','Dégazer, façonner, seconde pousse 45 min en moule.','Cuire 35 min à 180 °C.']},
+      {n:2, date:'1 juil.', origin:'Proposée par l’IA d’après ton essai du 25 juin — validée',
+       change:'Hydratation 60 → 65 % · Pétrissage 4 → 6 min', changedKeys:['Eau','Pétrissage'],
+       params:[['Farine T55','500 g'],['Eau','325 g (65 %)'],['Levure fraîche','20 g'],['Sel','9 g'],['Pétrissage','6 min / mode Épi'],['Cuisson','35 min à 180 °C']],
+       steps:['Eau + levure : 2 min / 37 °C / vit. 2.','Ajouter farine et sel, pétrir 6 min / mode Épi.','Pousse 1 h dans le bol, couvert.','Dégazer, façonner, seconde pousse 45 min en moule.','Cuire 35 min à 180 °C.']},
+    ],
+    essais:[
+      {ts:625, v:1, date:'25 juin', note:6, remarks:'Mie dense, croûte pâle — pâte trop sèche au pétrissage.', real:{}, photo:true},
+      {ts:702.5, v:2, date:'2 juil.', note:8, remarks:'Mie souple, belle levée, croûte dorée. On tient la bonne base.', real:{}, photo:true},
+    ],
+    proposals:{},
+    example:{note:8, remarks:'Mie souple et régulière, belle croûte. Identique à la dernière fois.'},
+  },
+};
+const ORDER = ['espresso','negroni','negroniblanc','risotto','pain'];
+
+/* Recette pré-remplie du flow d'import */
+const IMPORT_PREVIEW = {
+  id:'cacio', type:'plat',
+  title:'Cacio e pepe',
+  subtitle:'2 personnes · ~20 min',
+  source:'gustoitaliano.it/ricette/cacio-e-pepe',
+  params:[['Spaghetti','200 g'],['Pecorino romano','100 g'],['Poivre noir','2 c. à café'],['Eau de cuisson','~120 ml']],
+  steps:['Torréfier le poivre concassé à sec, 1 min.','Cuire les spaghetti al dente dans une eau peu salée.','Mixer pecorino + un peu d’eau de cuisson en crème lisse.','Hors du feu, lier pâtes, crème et eau jusqu’à l’onctuosité.'],
+};
+
+/* ================= État & navigation ================= */
+const S = { stack:[{name:'home'}], tmp:{} };
+const vp = document.getElementById('viewport');
+const tb = document.getElementById('tabbar');
+const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+
+function top(){ return S.stack[S.stack.length-1]; }
+function go(s){ S.stack.push(s); render(); }
+function back(){ if(S.stack.length>1){ S.stack.pop(); render(); } }
+function root(name){ S.stack=[{name}]; render(); }
+
+function noteClass(n){ return n>=8?'n-hi':(n>=6?'n-mid':'n-low'); }
+function avg(rec, vn){
+  const es = rec.essais.filter(e=>vn?e.v===vn:true);
+  if(!es.length) return null;
+  return (es.reduce((a,e)=>a+e.note,0)/es.length).toFixed(1).replace('.',',');
+}
+function ver(rec,n){ return rec.versions.find(v=>v.n===n); }
+
+/* ================= Fragments ================= */
+function domChip(type){
+  const d=DOM[type];
+  return `<span class="chip" style="background:${d.bg};color:${d.v}">${d.ico(12)} ${d.label==='Cocktails'?'Cocktail':d.label==='Plats'?'Plat':d.label}</span>`;
+}
+function domIcon(type,s=18){
+  const d=DOM[type];
+  return `<span class="dotico" style="background:${d.bg};color:${d.v}">${d.ico(s)}</span>`;
+}
+function navrow(extra=''){
+  return `<div class="navrow"><button class="backbtn" onclick="A.back()">${I.back()} Retour</button><span class="spacer"></span>${extra}</div>`;
+}
+function paramsGrid(params, changedKeys=[], big=false){
+  return `<div class="params">${params.map(([k,v])=>`
+    <div class="param"><div class="k">${esc(k)}</div>
+    <div class="v${big?' big':''}">${changedKeys.includes(k)?`<span class="chg">${esc(v)}</span>`:esc(v)}</div></div>`).join('')}</div>`;
+}
+function stepsList(steps){
+  return `<ol class="steps">${steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>`;
+}
+function photoBox(type,h=64){
+  const d=DOM[type];
+  return `<div class="ph" style="height:${h}px;color:${d.v};background:linear-gradient(135deg,${d.bg},var(--bg))">${I.cam(15)} Photo</div>`;
+}
+
+/* ================= Écran : Accueil ================= */
+function homeHTML(){
+  const toTest = ORDER.map(id=>R[id]).filter(r=>r.toTest);
+  const lastEssais = ORDER.flatMap(id=>R[id].essais.map(e=>({rec:R[id],e})))
+    .sort((a,b)=>b.e.ts-a.e.ts).slice(0,3);
+  return `<div class="screen">
+    <div style="margin-top:10px"><div class="h-date">Lundi 6 juillet</div>
+    <h1 class="h-large">Carnet</h1>
+    <div class="h-sub">Ton labo culinaire — ${ORDER.length} recettes en cours d’amélioration.</div></div>
+
+    ${toTest.length?`<div class="sect">
+      <div class="sect-head"><span class="sect-title" style="color:var(--test)">À tester</span><span class="count">${toTest.length}</span></div>
+      ${toTest.map(r=>{const v=ver(r,r.toTest);return `
+      <div class="banner-test">
+        <div class="bt-head">${I.flask(13)} ${esc(r.title)} — v${v.n}</div>
+        <div class="bt-change">${esc(v.change)}</div>
+        <div class="bt-why">${esc(v.why||v.origin||'')}</div>
+        <button class="btn" onclick="A.execute('${r.id}',${v.n})">Exécuter la v${v.n}</button>
+      </div>`;}).join('')}
+    </div>`:''}
+
+    <div class="sect">
+      <div class="sect-head"><span class="sect-title">Bibliothèque</span></div>
+      ${Object.keys(DOM).map(t=>{
+        const recs=ORDER.map(id=>R[id]).filter(r=>r.type===t);
+        if(!recs.length) return '';
+        return `<div style="margin-bottom:14px">
+          <div class="sect-head" style="margin-bottom:7px"><span class="sect-title" style="color:${DOM[t].v}">${DOM[t].label}</span><span class="count">${recs.length}</span></div>
+          <div class="rows">${recs.map(r=>`
+            <button class="row" onclick="A.recipe('${r.id}')">
+              ${domIcon(r.type)}
+              <span class="grow"><span class="t">${esc(r.title)}${r.derivedFrom?` <span class="vchip">${I.link(10)} dérivée</span>`:''}</span>
+              <span class="s">v${r.currentVersion} courante${avg(r)?` · ${avg(r)}/10 moy.`:''}${r.toTest?` · <b style="color:var(--test)">v${r.toTest} à tester</b>`:''}</span></span>
+              <span class="chev">${I.chev()}</span>
+            </button>`).join('')}</div>
+        </div>`;}).join('')}
+    </div>
+
+    <div class="sect">
+      <div class="sect-head"><span class="sect-title">Activité récente</span></div>
+      <div class="rows">${lastEssais.map(({rec,e})=>`
+        <button class="row" onclick="A.essai('${rec.id}',${e.ts})">
+          <span class="essai-note ${noteClass(e.note)}">${e.note}<span style="font-size:10px;opacity:.7">/10</span></span>
+          <span class="grow"><span class="t">${esc(rec.title)} <span class="vchip">v${e.v}</span></span>
+          <span class="s">${e.date} · ${esc(e.remarks.slice(0,52))}…</span></span>
+          <span class="chev">${I.chev()}</span>
+        </button>`).join('')}</div>
+    </div>
+  </div>`;
+}
+
+/* ================= Écran : Fiche recette ================= */
+function recipeHTML(id){
+  const r=R[id]; const cur=ver(r,r.currentVersion); const tt=r.toTest?ver(r,r.toTest):null;
+  const essais=[...r.essais].sort((a,b)=>b.ts-a.ts);
+  return `<div class="screen">
+    ${navrow(`<button class="lnk" onclick="A.history('${id}')">Historique</button>`)}
+    <div>${domChip(r.type)}
+      <h1 class="h-large">${esc(r.title)}</h1>
+      <div class="h-sub">${esc(r.subtitle)}</div>
+      ${r.derivedFrom?`<button class="derived" onclick="A.recipe('${r.derivedFrom}')">${I.link()} Dérivée de ${esc(R[r.derivedFrom].title)} ${I.chev(12)}</button>`:''}
+      ${avg(r)?`<div class="avgline">Note moyenne <b>${avg(r)}/10</b> · ${r.essais.length} essai${r.essais.length>1?'s':''}</div>`:''}
+    </div>
+
+    ${tt?`<div class="sect"><div class="banner-test">
+      <div class="bt-head">${I.flask(13)} v${tt.n} à tester</div>
+      <div class="bt-change">${esc(tt.change)}</div>
+      <div class="bt-why">${esc(tt.why||tt.origin||'')}</div>
+      <button class="btn" onclick="A.execute('${id}',${tt.n})">Exécuter la v${tt.n}</button>
+    </div></div>`:''}
+
+    <div class="sect">
+      <div class="sect-head"><span class="sect-title">Version courante</span>
+        <span class="chip gold">${I.check(11)} v${cur.n}</span>
+        ${avg(r,cur.n)?`<span class="count">${avg(r,cur.n)}/10 sur cette version</span>`:''}
+      </div>
+      <div class="card">
+        ${paramsGrid(cur.params, cur.changedKeys||[])}
+        ${stepsList(cur.steps)}
+        <div class="btnrow">
+          <button class="btn secondary" onclick="A.execute('${id}',${cur.n})">Exécuter la v${cur.n}</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sect">
+      <div class="sect-head"><span class="sect-title">Journal d’essais</span><span class="count">${essais.length}</span></div>
+      ${essais.length?`<div class="rows">${essais.map(e=>`
+        <button class="row" onclick="A.essai('${id}',${e.ts})">
+          <span class="essai-note ${noteClass(e.note)}">${e.note}<span style="font-size:10px;opacity:.7">/10</span></span>
+          <span class="grow"><span class="t">${e.date} <span class="vchip">v${e.v}</span></span>
+          <span class="s">${esc(e.remarks.slice(0,58))}${e.remarks.length>58?'…':''}</span></span>
+          <span class="chev">${I.chev()}</span>
+        </button>`).join('')}</div>`
+      :`<div class="card" style="color:var(--ink3);font-size:13.5px">Aucun essai — exécute la recette pour démarrer la boucle.</div>`}
+    </div>
+
+    ${r.variations.length?`<div class="sect">
+      <div class="sect-head"><span class="sect-title">Variations liées</span></div>
+      <div class="rows">${r.variations.map(vid=>`
+        <button class="row" onclick="A.recipe('${vid}')">
+          ${domIcon(R[vid].type)}
+          <span class="grow"><span class="t">${esc(R[vid].title)}</span>
+          <span class="s">v${R[vid].currentVersion} courante${avg(R[vid])?` · ${avg(R[vid])}/10`:''}</span></span>
+          <span class="chev">${I.chev()}</span>
+        </button>`).join('')}</div>
+    </div>`:''}
+  </div>`;
+}
+
+/* ================= Écran : Historique ================= */
+function historyHTML(id){
+  const r=R[id];
+  const items=[...r.versions].sort((a,b)=>b.n-a.n);
+  return `<div class="screen">
+    ${navrow()}
+    <div><h1 class="h-large" style="font-size:26px">Historique</h1>
+    <div class="h-sub">${esc(r.title)} — chaque cran ne change que ce qui est écrit.</div></div>
+    <div class="sect"><div class="tl">
+      ${items.map(v=>{
+        const st = v.n===r.currentVersion?'cur':(v.n===r.toTest?'test':'');
+        const a=avg(r,v.n);
+        return `<div class="tl-item ${st}"><div class="card">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span class="vchip" style="font-size:13px;padding:3px 8px">v${v.n}</span>
+            ${v.n===r.currentVersion?`<span class="chip gold">${I.check(11)} courante</span>`:''}
+            ${v.n===r.toTest?`<span class="chip test">${I.flask(11)} à tester</span>`:''}
+            <span class="count" style="margin-left:auto;font-size:12px;color:var(--ink3)">${v.date}</span>
+          </div>
+          <div style="font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:14px;font-weight:600;margin-top:8px">
+            ${v.change?esc(v.change):'Version d’origine'}
+          </div>
+          ${v.origin?`<div style="font-size:12.5px;color:var(--ink2);margin-top:4px;line-height:1.45">${esc(v.origin)}</div>`:''}
+          <div class="avgline">${a?`Notée <b>${a}/10</b> · ${r.essais.filter(e=>e.v===v.n).length} essai(s)`:'Pas encore testée'}</div>
+        </div></div>`;}).join('')}
+    </div></div>
+    ${r.variations.length?`<div class="sect">
+      <div class="sect-head"><span class="sect-title">Variations issues de cette recette</span></div>
+      <div class="rows">${r.variations.map(vid=>`
+        <button class="row" onclick="A.recipe('${vid}')">${domIcon(R[vid].type)}
+          <span class="grow"><span class="t">${esc(R[vid].title)}</span><span class="s">Recette liée — sa propre lignée de versions</span></span>
+          <span class="chev">${I.chev()}</span></button>`).join('')}</div>
+    </div>`:''}
+  </div>`;
+}
+
+/* ================= Écran : Exécution ================= */
+function executeHTML(id, vn, replay){
+  const r=R[id]; const v=ver(r,vn);
+  let params=v.params;
+  if(replay){
+    params=v.params.map(([k,val])=>[k, replay.real[k]||val]);
+  }
+  return `<div class="screen exec">
+    ${navrow(`<span class="vchip" style="font-size:13px;padding:3px 8px">v${vn}</span>`)}
+    <div>${domChip(r.type)}<div class="exec-title">${esc(r.title)}</div>
+    ${replay?`<div class="replay-note">${I.replay(13)} Rejoue exactement l’essai du ${replay.date} — paramètres réels appliqués.</div>`:''}</div>
+    ${paramsGrid(params, v.changedKeys||[], true)}
+    ${stepsList(v.steps)}
+    <div class="exec-foot">
+      <button class="btn" onclick="A.capture('${id}',${vn})">Terminé — noter cet essai</button>
+    </div>
+  </div>`;
+}
+
+/* ================= Écran : Capture d'essai ================= */
+function captureHTML(id, vn){
+  const r=R[id]; const v=ver(r,vn);
+  return `<div class="screen">
+    ${navrow(`<span class="vchip" style="font-size:13px;padding:3px 8px">v${vn}</span>`)}
+    <div><h1 class="h-large" style="font-size:26px">Noter l’essai</h1>
+    <div class="h-sub">${esc(r.title)} — ce que tu as <b>réellement</b> fait et goûté.</div></div>
+
+    <label class="f-label">Paramètres réels <span style="opacity:.6;font-weight:500;text-transform:none;letter-spacing:0">(pré-remplis avec les cibles)</span></label>
+    <div class="real-grid">
+      ${v.params.map(([k,val],i)=>`<div class="real-cell"><div class="k">${esc(k)}</div>
+        <input class="f-input mono" id="real-${i}" data-k="${esc(k)}" value="${esc(val)}"></div>`).join('')}
+    </div>
+
+    <label class="f-label">Note</label>
+    <div class="notepick" id="notepick">
+      ${Array.from({length:10},(_,i)=>`<button onclick="A.pickNote(${i+1})" id="np-${i+1}">${i+1}</button>`).join('')}
+    </div>
+
+    <label class="f-label">Remarques — qu’est-ce qui doit changer ?</label>
+    <textarea class="f-area" id="remarks" placeholder="Ex. : trop amer, coule trop vite, manque de liant…"></textarea>
+    <div style="margin-top:8px"><button class="lnk" onclick="A.fillExample('${id}')" style="font-size:12.5px;color:var(--ink2)">Maquette : remplir un exemple</button></div>
+
+    <label class="f-label">Photo du résultat</label>
+    <button class="photobtn" id="photobtn" onclick="A.togglePhoto()">${I.cam()} Ajouter une photo</button>
+
+    <div style="flex:1"></div>
+    <div class="btnrow"><button class="btn" onclick="A.saveEssai('${id}',${vn})">Enregistrer l’essai</button></div>
+  </div>`;
+}
+
+/* ================= Écran : détail d'un essai ================= */
+function essaiHTML(id, ts){
+  const r=R[id]; const e=r.essais.find(x=>x.ts===ts); const v=ver(r,e.v);
+  return `<div class="screen">
+    ${navrow()}
+    <div><h1 class="h-large" style="font-size:26px">Essai du ${e.date}</h1>
+    <div class="h-sub">${esc(r.title)} · version v${e.v}</div></div>
+    <div class="sect"><div class="card" style="display:flex;align-items:center;gap:14px">
+      <span class="essai-note ${noteClass(e.note)}" style="width:58px;font-size:19px;padding:11px 0">${e.note}<span style="font-size:11px;opacity:.7">/10</span></span>
+      <div style="font-size:14px;line-height:1.5">${esc(e.remarks)}</div>
+    </div></div>
+    ${e.photo?`<div class="sect">${photoBox(r.type,110)}</div>`:''}
+    <div class="sect">
+      <div class="sect-head"><span class="sect-title">Cible vs réel</span></div>
+      <div class="card"><table class="cmp">
+        <tr><th>Paramètre</th><th>Cible</th><th>Réel</th></tr>
+        ${v.params.map(([k,val])=>{
+          const real=e.real[k];
+          return `<tr><td>${esc(k)}</td><td>${esc(val)}</td><td class="${real&&real!==val?'dif':''}">${esc(real||val)}</td></tr>`;
+        }).join('')}
+      </table></div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="btnrow">
+      <button class="btn secondary" onclick="A.replay('${id}',${ts})">${I.replay()} Refaire exactement cet essai</button>
+    </div>
+  </div>`;
+}
+
+/* ================= Écran : Proposition IA ================= */
+function proposalHTML(id, vn){
+  const r=R[id]; const p=r.proposals[vn]; const isShort=(r.type==='cafe'||r.type==='cocktail');
+  const choice=S.tmp.propChoice||p.rec;
+  return `<div class="screen">
+    ${navrow()}
+    <div><span class="chip test">${I.flask(11)} Proposition de l’IA</span>
+    <h1 class="h-large" style="font-size:26px">Itérer sur ${esc(r.title)}</h1>
+    <div class="h-sub">D’après ton essai sur la v${vn} — rien n’est créé sans ta validation.</div></div>
+
+    <div class="sect"><div class="card">
+      <div class="sect-title" style="margin-bottom:2px">Ce qui change</div>
+      <div class="diff">
+        ${p.vars.map(x=>`<div class="diff-row"><div class="k">${esc(x.k)}</div>
+          <div class="vals"><span class="from">${esc(x.from)}</span> &nbsp;→&nbsp; <span class="to">${esc(x.to)}</span></div></div>`).join('')}
+      </div>
+      <div style="font-size:13px;color:var(--ink2);line-height:1.55;margin-top:12px">${esc(p.rationale)}</div>
+    </div>
+
+    <div class="rule-chip">${I.flask(14)}<span>
+      ${isShort
+        ? `<b>Règle ${r.type==='cafe'?'café':'cocktail'} : une seule variable par itération.</b> ${p.queued&&p.queued.length?'Les autres pistes sont gardées pour la suite :':''}`
+        : `<b>Plat : plusieurs variables possibles</b> — ${p.vars.length} changements combinés dans cette itération.`}
+      ${p.queued&&p.queued.length?`<ul class="queued">${p.queued.map(q=>`<li>${esc(q)}</li>`).join('')}</ul>`:''}
+    </span></div></div>
+
+    <div class="sect">
+      <div class="sect-head"><span class="sect-title">En faire…</span></div>
+      <div class="seg">
+        <button class="${choice==='iteration'?'on':''}" onclick="A.propChoice('iteration')">Itération (v${r.versions.length+1})</button>
+        <button class="${choice==='variation'?'on':''}" onclick="A.propChoice('variation')">Variation (nouvelle recette)</button>
+      </div>
+      <div style="font-size:12.5px;color:var(--ink2);line-height:1.5;margin-top:9px">
+        ${choice==='iteration'
+          ? `La v${r.versions.length+1} rejoint la lignée de <b>${esc(r.title)}</b> et devient « à tester ».`
+          : (p.variation?`Crée <b>${esc(p.variation.title)}</b>, une recette liée « dérivée de ${esc(r.title)} », avec sa propre lignée. ${esc(p.variation.desc)}`
+                        :`Crée une nouvelle recette liée « dérivée de ${esc(r.title)} », avec sa propre lignée de versions.`)}
+      </div>
+    </div>
+
+    <div style="flex:1"></div>
+    <div class="btnrow">
+      <button class="btn quiet" onclick="A.refuseProposal()">Refuser</button>
+      <button class="btn secondary" onclick="A.toast('Édition de la proposition — simulée dans la maquette')">Modifier</button>
+    </div>
+    <div class="btnrow"><button class="btn" onclick="A.acceptProposal('${id}',${vn})">Valider — ${choice==='iteration'?`créer la v${r.versions.length+1} à tester`:'créer la variation'}</button></div>
+  </div>`;
+}
+
+/* ================= Écrans : Import ================= */
+function importHTML(){
+  const m=S.tmp.importMode||'photo';
+  return `<div class="screen">
+    <div style="margin-top:10px"><div class="h-date">Nouvelle recette</div>
+    <h1 class="h-large">Importer</h1>
+    <div class="h-sub">Photos, lien ou texte — l’IA structure la recette, tu relis, tu enregistres.</div></div>
+
+    <div class="sect"><div class="seg">
+      <button class="${m==='photo'?'on':''}" onclick="A.importMode('photo')">Photos</button>
+      <button class="${m==='url'?'on':''}" onclick="A.importMode('url')">URL</button>
+      <button class="${m==='texte'?'on':''}" onclick="A.importMode('texte')">Texte</button>
+    </div></div>
+
+    <div class="sect">
+      ${m==='photo'?`
+        <button class="droparea" onclick="A.addPhotos()">${I.cam(26)} Ajouter des photos<br><span style="font-size:12px;color:var(--ink3)">page de livre, sachet, capture d’écran…</span></button>
+        <div class="filechips" id="filechips">${S.tmp.photos?`<span class="filechip">${I.check(12)} IMG_2841.HEIC</span><span class="filechip">${I.check(12)} IMG_2842.HEIC</span>`:''}</div>`:''}
+      ${m==='url'?`<label class="f-label" style="margin-top:0">Adresse de la recette</label>
+        <input class="f-input" value="gustoitaliano.it/ricette/cacio-e-pepe">`:''}
+      ${m==='texte'?`<label class="f-label" style="margin-top:0">Colle ou dicte ta recette</label>
+        <textarea class="f-area" style="min-height:140px" placeholder="200 g de spaghetti, 100 g de pecorino…"></textarea>`:''}
+    </div>
+
+    <div style="flex:1"></div>
+    <div class="btnrow"><button class="btn" onclick="A.analyze()">${I.flask()} Analyser avec l’IA</button></div>
+  </div>`;
+}
+
+function importPreviewHTML(){
+  const p=IMPORT_PREVIEW;
+  return `<div class="screen">
+    ${navrow()}
+    <div><span class="chip gold">${I.check(11)} Recette structurée</span>
+    <h1 class="h-large" style="font-size:26px">Relis et ajuste</h1>
+    <div class="h-sub">L’IA a mis la recette au format Carnet. Tout est modifiable avant d’enregistrer.</div></div>
+
+    <label class="f-label">Titre</label>
+    <input class="f-input" id="imp-title" value="${esc(p.title)}">
+
+    <label class="f-label">Type détecté</label>
+    <div class="seg">
+      ${Object.keys(DOM).map(t=>`<button class="${t===p.type?'on':''}" onclick="A.toast('Type modifiable — simulé dans la maquette')">${DOM[t].label}</button>`).join('')}
+    </div>
+
+    <label class="f-label">Paramètres</label>
+    <div class="real-grid">
+      ${p.params.map(([k,v],i)=>`<div class="real-cell"><div class="k">${esc(k)}</div>
+        <input class="f-input mono" value="${esc(v)}"></div>`).join('')}
+    </div>
+
+    <label class="f-label">Étapes</label>
+    <div class="card">${stepsList(p.steps)}</div>
+    <div style="font-size:12px;color:var(--ink3);margin-top:8px">Source : ${esc(p.source)}</div>
+
+    <div style="flex:1"></div>
+    <div class="btnrow"><button class="btn" onclick="A.saveImport()">Enregistrer la recette (v1)</button></div>
+  </div>`;
+}
+
+/* ================= Tab bar & rendu ================= */
+function tabbarHTML(){
+  const t=top();
+  const isHome=t.name==='home', isImport=t.name==='import';
+  if(!isHome && !isImport){ return ''; }
+  return `
+    <button class="tab ${isHome?'on':''}" onclick="A.root('home')">${I.book()}<span>Carnet</span></button>
+    <button class="tab ${isImport?'on':''}" onclick="A.root('import')">${I.plus()}<span>Importer</span></button>`;
+}
+
+function render(){
+  const t=top();
+  let html='';
+  if(t.name==='home') html=homeHTML();
+  else if(t.name==='recipe') html=recipeHTML(t.id);
+  else if(t.name==='history') html=historyHTML(t.id);
+  else if(t.name==='execute') html=executeHTML(t.id,t.v,t.replay);
+  else if(t.name==='capture') html=captureHTML(t.id,t.v);
+  else if(t.name==='essai') html=essaiHTML(t.id,t.ts);
+  else if(t.name==='proposal') html=proposalHTML(t.id,t.v);
+  else if(t.name==='import') html=importHTML();
+  else if(t.name==='importPreview') html=importPreviewHTML();
+  vp.innerHTML=html;
+  vp.scrollTop=0;
+  tb.innerHTML=tabbarHTML();
+  tb.style.display=tb.innerHTML.trim()?'flex':'none';
+}
+
+/* ================= Overlays ================= */
+function think(label, ms, then){
+  const o=document.createElement('div');
+  o.className='overlay';
+  o.innerHTML=`<div class="think"><div class="dots"><i></i><i></i><i></i></div><div class="lab">${esc(label)}</div></div>`;
+  document.querySelector('.app').appendChild(o);
+  setTimeout(()=>{ o.remove(); then(); }, ms);
+}
+function toast(msg){
+  const t=document.createElement('div');
+  t.className='toast'; t.textContent=msg;
+  document.querySelector('.app').appendChild(t);
+  setTimeout(()=>t.remove(), 2300);
+}
+function sheet(html){
+  const w=document.createElement('div');
+  w.className='sheetwrap';
+  w.innerHTML=`<div class="sheet">${html}</div>`;
+  w.addEventListener('click',e=>{ if(e.target===w) w.remove(); });
+  document.querySelector('.app').appendChild(w);
+  return w;
+}
+
+/* ================= Actions ================= */
+const A = {
+  back, root, toast,
+  recipe:id=>go({name:'recipe',id}),
+  history:id=>go({name:'history',id}),
+  essai:(id,ts)=>go({name:'essai',id,ts}),
+  execute:(id,v)=>go({name:'execute',id,v}),
+  capture:(id,v)=>{ S.tmp.note=null; S.tmp.photo=false; go({name:'capture',id,v}); },
+  replay:(id,ts)=>{
+    const e=R[id].essais.find(x=>x.ts===ts);
+    go({name:'execute',id,v:e.v,replay:e});
+  },
+
+  pickNote(n){
+    S.tmp.note=n;
+    document.querySelectorAll('.notepick button').forEach(b=>b.classList.remove('on'));
+    document.getElementById('np-'+n).classList.add('on');
+  },
+  fillExample(id){
+    const ex=R[id].example;
+    document.getElementById('remarks').value=ex.remarks;
+    A.pickNote(ex.note);
+  },
+  togglePhoto(){
+    S.tmp.photo=!S.tmp.photo;
+    const b=document.getElementById('photobtn');
+    b.classList.toggle('added',S.tmp.photo);
+    b.innerHTML=S.tmp.photo?`${I.check()} IMG_2907.HEIC ajoutée`:`${I.cam()} Ajouter une photo`;
+  },
+
+  saveEssai(id,vn){
+    const r=R[id];
+    if(!S.tmp.note){ toast('Choisis une note avant d’enregistrer'); return; }
+    const real={};
+    document.querySelectorAll('[id^="real-"]').forEach(inp=>{
+      const k=inp.dataset.k;
+      const cible=ver(r,vn).params.find(p=>p[0]===k)[1];
+      if(inp.value!==cible) real[k]=inp.value;
+    });
+    const remarks=document.getElementById('remarks').value.trim()||'—';
+    r.essais.push({ts:706+r.essais.length/10, v:vn, date:'6 juil.', note:S.tmp.note, remarks, real, photo:S.tmp.photo});
+    const note=S.tmp.note;
+    think('L’IA analyse tes remarques…',1200,()=>{
+      S.stack=S.stack.filter(s=>s.name!=='execute'&&s.name!=='capture');
+      if(note>=8 && vn===r.toTest){
+        render();
+        const w=sheet(`
+          <h3>La v${vn} a fait ses preuves — ${note}/10</h3>
+          <p>La promouvoir en version courante ? Elle deviendra ta référence reproductible pour ${esc(r.title)}.</p>
+          <button class="btn" id="sh-promote">Promouvoir la v${vn}</button>
+          <button class="btn quiet" id="sh-later">Plus tard — encore un essai</button>`);
+        w.querySelector('#sh-promote').onclick=()=>{ w.remove(); A.promote(id,vn); };
+        w.querySelector('#sh-later').onclick=()=>{ w.remove(); toast('Essai enregistré — la v'+vn+' reste à tester'); };
+      } else if(note>=8){
+        render();
+        toast('Essai enregistré — ta référence tient toujours ✓');
+      } else if(r.toTest && vn!==r.toTest){
+        render();
+        toast('Essai enregistré — la v'+r.toTest+' à tester attend déjà ton verdict');
+      } else if(r.proposals[vn]){
+        S.tmp.propChoice=null;
+        go({name:'proposal',id,v:vn});
+      } else {
+        render();
+        toast('Essai enregistré dans le journal');
+      }
+    });
+  },
+
+  promote(id,vn){
+    const r=R[id];
+    r.currentVersion=vn; r.toTest=null;
+    render();
+    toast('v'+vn+' promue — c’est ta nouvelle recette de référence');
+  },
+
+  propChoice(c){ S.tmp.propChoice=c; render(); },
+  refuseProposal(){ back(); toast('Proposition écartée — tes remarques restent au journal'); },
+
+  acceptProposal(id,vn){
+    const r=R[id]; const p=r.proposals[vn];
+    const choice=S.tmp.propChoice||p.rec;
+    if(choice==='iteration'){
+      const base=ver(r,vn);
+      const params=base.params.map(([k,v])=>{
+        const chg=p.vars.find(x=>x.k===k);
+        return [k, chg?chg.to:v];
+      });
+      p.vars.filter(x=>!base.params.some(pp=>pp[0]===x.k)).forEach(x=>params.push([x.k,x.to]));
+      const n=r.versions.length+1;
+      r.versions.push({n, date:'6 juil.', origin:'Proposée par l’IA d’après ton essai du 6 juil. — validée',
+        change:p.vars.map(x=>`${x.k} ${x.from} → ${x.to}`).join(' · '),
+        changedKeys:p.vars.map(x=>x.k), why:p.rationale,
+        params, steps:base.steps});
+      r.toTest=n;
+      delete r.proposals[vn];
+      S.stack=[{name:'home'},{name:'recipe',id}];
+      render();
+      toast('v'+n+' créée — elle t’attend dans « À tester »');
+    } else {
+      const base=ver(r,vn);
+      const params=base.params.map(([k,v])=>{
+        const chg=p.vars.find(x=>x.k===k);
+        return [k, chg?chg.to:v];
+      });
+      const nid=id+'-var'+(r.variations.length+1);
+      R[nid]={id:nid, type:r.type,
+        title:(p.variation&&p.variation.title)||('Variation de '+r.title),
+        subtitle:'Dérivée de '+r.title,
+        currentVersion:1, toTest:null, derivedFrom:id, variations:[],
+        versions:[{n:1, date:'6 juil.', origin:'Variation proposée par l’IA — validée le 6 juil.',
+          change:p.vars.map(x=>`${x.k} ${x.from} → ${x.to}`).join(' · '),
+          changedKeys:p.vars.map(x=>x.k), params, steps:base.steps}],
+        essais:[], proposals:{}, example:r.example};
+      r.variations.push(nid);
+      ORDER.push(nid);
+      delete r.proposals[vn];
+      S.stack=[{name:'home'},{name:'recipe',id:nid}];
+      render();
+      toast('Nouvelle recette créée — dérivée de '+r.title);
+    }
+  },
+
+  /* import */
+  importMode(m){ S.tmp.importMode=m; render(); },
+  addPhotos(){ S.tmp.photos=true; render(); toast('2 photos ajoutées'); },
+  analyze(){
+    think('L’IA lit et structure la recette…',1400,()=>go({name:'importPreview'}));
+  },
+  saveImport(){
+    if(R.cacio){ S.stack=[{name:'home'},{name:'recipe',id:'cacio'}]; render(); toast('Cette recette existe déjà — la voici'); return; }
+    const p=IMPORT_PREVIEW;
+    const title=(document.getElementById('imp-title')||{}).value||p.title;
+    R.cacio={id:'cacio', type:p.type, title, subtitle:p.subtitle+' · '+p.source,
+      currentVersion:1, toTest:null, derivedFrom:null, variations:[],
+      versions:[{n:1, date:'6 juil.', origin:'Importée — '+p.source, change:null, params:p.params, steps:p.steps}],
+      essais:[], proposals:{
+        1:{vars:[{k:'Poivre noir', from:'2 c. à café', to:'1,5 c. à café'}],
+           rationale:'Ajuste d’abord le poivre : c’est la variable qui masque le pecorino si elle est trop haute.',
+           queued:[], rec:'iteration'}},
+      example:{note:7, remarks:'Bonne crème, mais le poivre masque un peu le pecorino.'}};
+    ORDER.splice(4,0,'cacio');
+    S.stack=[{name:'home'},{name:'recipe',id:'cacio'}];
+    render();
+    toast('Recette créée — v1 prête à exécuter');
+  },
+};
+window.A=A;
+render();
+</script>
