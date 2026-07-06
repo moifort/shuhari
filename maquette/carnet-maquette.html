@@ -566,7 +566,7 @@ const vp = document.getElementById('viewport');
 const tb = document.getElementById('tabbar');
 const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 
-function top(){ return S.stack[S.stack.length-1]; }
+function topScreen(){ return S.stack[S.stack.length-1]; }
 function go(s){ S.stack.push(s); render(); }
 function back(){ if(S.stack.length>1){ S.stack.pop(); render(); } }
 function root(name){ S.stack=[{name}]; render(); }
@@ -940,7 +940,7 @@ function importPreviewHTML(){
 
 /* ================= Tab bar & rendu ================= */
 function tabbarHTML(){
-  const t=top();
+  const t=topScreen();
   const isHome=t.name==='home', isImport=t.name==='import';
   if(!isHome && !isImport){ return ''; }
   return `
@@ -949,7 +949,7 @@ function tabbarHTML(){
 }
 
 function render(){
-  const t=top();
+  const t=topScreen();
   let html='';
   if(t.name==='home') html=homeHTML();
   else if(t.name==='recipe') html=recipeHTML(t.id);
