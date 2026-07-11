@@ -41,7 +41,13 @@ resource "google_project_service" "apis" {
 # be publicly invokable because auth is enforced inside the function (Firebase
 # ID token verification). We override the constraint at the project scope so
 # the binding succeeds without touching org-wide policies.
+# Only meaningful when the project lives under an organization: the
+# iam.allowedPolicyMemberDomains constraint is inherited from the org and must be
+# overridden for allUsers to be granted. A standalone (no-org) project has no
+# such constraint, and setting an org policy would require org-level permissions
+# the personal account lacks — so it is skipped there.
 resource "google_org_policy_policy" "allow_public_iam" {
+  count  = var.org_id != null && var.org_id != "" ? 1 : 0
   parent = "projects/${google_project.this.project_id}"
   name   = "projects/${google_project.this.project_id}/policies/iam.allowedPolicyMemberDomains"
 

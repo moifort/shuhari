@@ -91,3 +91,9 @@ variable "github_repo" {
   type        = string
   default     = "moifort/shuhari"
 }
+
+variable "enable_user_project_override" {
+  description = "Route quota/billing through var.project_id. Disable for the first apply (project not created yet), enable afterwards."
+  type        = bool
+  default     = true
+}

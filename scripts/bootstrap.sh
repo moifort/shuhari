@@ -35,11 +35,18 @@ ok "terraform available at $TF"
 [[ -f "$TFVARS" ]] || fail "$TFVARS missing — copy from terraform.tfvars.example"
 ok "terraform.tfvars present"
 
-# Read the Apple .p8 path from tfvars and resolve it relative to infra/
-APPLE_P8_REL=$(grep -E '^[[:space:]]*apple_private_key_path[[:space:]]*=' "$TFVARS" | sed -E 's/.*=[[:space:]]*"(.*)"/\1/')
-APPLE_P8_ABS="$INFRA_DIR/$(echo "$APPLE_P8_REL" | sed 's|^\./||')"
-[[ -f "$APPLE_P8_ABS" ]] || fail "Apple private key not found at $APPLE_P8_ABS"
-ok "Apple .p8 found"
+# Apple Sign-In is optional at bootstrap time: only require the .p8 when
+# apple_key_id is set (matches the conditional provider in auth.tf). Add the key
+# later and re-run `terraform apply` to enable Sign in with Apple.
+APPLE_KEY_ID=$(grep -E '^[[:space:]]*apple_key_id[[:space:]]*=' "$TFVARS" | sed -E 's/.*=[[:space:]]*"(.*)"/\1/')
+if [[ -n "$APPLE_KEY_ID" ]]; then
+  APPLE_P8_REL=$(grep -E '^[[:space:]]*apple_private_key_path[[:space:]]*=' "$TFVARS" | sed -E 's/.*=[[:space:]]*"(.*)"/\1/')
+  APPLE_P8_ABS="$INFRA_DIR/$(echo "$APPLE_P8_REL" | sed 's|^\./||')"
+  [[ -f "$APPLE_P8_ABS" ]] || fail "Apple private key not found at $APPLE_P8_ABS"
+  ok "Apple .p8 found"
+else
+  ok "Apple Sign-In not configured yet — skipping (add apple_key_id + .p8 later)"
+fi
 
 gcloud auth application-default print-access-token >/dev/null 2>&1 \
   || fail "gcloud ADC not configured. Run: gcloud auth application-default login"

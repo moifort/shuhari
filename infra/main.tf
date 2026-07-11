@@ -1,15 +1,19 @@
 provider "google" {
-  project               = var.project_id
-  region                = var.region
-  billing_project       = var.project_id
-  user_project_override = true
+  project = var.project_id
+  region  = var.region
+  # billing_project + user_project_override are enabled only AFTER the project
+  # exists (they route the quota/billing check through var.project_id, which
+  # can't be used while the project is still being created). Re-enable both once
+  # the project is provisioned.
+  billing_project       = var.enable_user_project_override ? var.project_id : null
+  user_project_override = var.enable_user_project_override
 }
 
 provider "google-beta" {
   project               = var.project_id
   region                = var.region
-  billing_project       = var.project_id
-  user_project_override = true
+  billing_project       = var.enable_user_project_override ? var.project_id : null
+  user_project_override = var.enable_user_project_override
 }
 
 locals {

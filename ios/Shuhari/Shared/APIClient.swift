@@ -11,7 +11,7 @@ struct APIClient: Sendable {
     static let shared = APIClient()
 
     private static let serverURLKey = "serverURL"
-    private static let defaultServerURL = "https://shuhari-server.a.run.app"
+    private static let defaultServerURL = "https://shuhari-server-bkr37damua-ey.a.run.app"
 
     var baseURL: URL {
         if let dev = UserDefaults.standard.string(forKey: "serverURLDev"), !dev.isEmpty {

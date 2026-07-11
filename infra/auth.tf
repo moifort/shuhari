@@ -27,7 +27,12 @@ resource "google_identity_platform_config" "this" {
 #
 # Identity Platform accepts the Apple key material as a JSON-encoded
 # client_secret; it generates the OAuth JWT internally on each sign-in.
+# Provisioned only once the Apple key material is available (apple_key_id set and
+# the .p8 present). Until then bootstrap provisions everything else; re-run
+# `terraform apply` after dropping infra/apple.p8 and setting apple_key_id to
+# enable Sign in with Apple.
 resource "google_identity_platform_default_supported_idp_config" "apple" {
+  count     = var.apple_key_id != "" && fileexists(var.apple_private_key_path) ? 1 : 0
   provider  = google-beta
   project   = google_project.this.project_id
   enabled   = true
