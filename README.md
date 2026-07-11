@@ -1,0 +1,124 @@
+# Shuhari
+
+守破離 — *Shu* (suivre la règle), *Ha* (la casser), *Ri* (la transcender).
+
+Un carnet d'expérimentation culinaire qui applique une boucle scientifique à la
+cuisine : on importe une recette, on l'exécute, on note l'essai, puis l'IA
+propose l'itération suivante. Chaque recette progresse version après version
+jusqu'à trouver la meilleure.
+
+## Le concept
+
+Quatre types d'expérimentations : **café**, **cocktail**, **plat** et **tmx**
+(Thermomix). La boucle est toujours la même :
+
+1. **Importer** une recette — l'IA (Gemini) structure les paramètres et les étapes.
+2. **Exécuter** la version courante et **noter** l'essai (1 à 10), en consignant
+   les paramètres réellement utilisés (pour la reproductibilité).
+3. **Itérer** — l'IA propose la modification suivante. Pour un café ou un
+   cocktail, elle ne change **qu'une seule variable à la fois** (méthode
+   scientifique à variable unique) ; pour un plat ou une recette Thermomix, elle
+   peut en changer plusieurs.
+4. **Valider** la proposition en **itération** (nouvelle version de la même
+   recette) ou en **variation** (nouvelle recette dérivée, avec sa propre
+   lignée).
+5. **Promouvoir** — dès qu'un essai atteint la note 8 ou plus, la version testée
+   devient la nouvelle référence reproductible.
+
+La reproductibilité est au cœur du produit : chaque essai trace les paramètres
+réels utilisés, ce qui permet de **rejouer exactement un essai** (mode replay).
+
+Application mono-utilisateur, mais avec une vraie authentification Firebase +
+Sign in with Apple.
+
+## Architecture
+
+| Couche   | Stack                                                                            |
+| -------- | -------------------------------------------------------------------------------- |
+| iOS      | SwiftUI, Swift 6, iOS 26, MVVM `@Observable`, Apollo iOS, style Liquid Glass     |
+| Backend  | Bun + Nitro 2.13 (Firebase Cloud Functions Gen 2, nodejs22, europe-west3)        |
+| API      | Apollo Server 5 + Pothos 4 — endpoint GraphQL unique `POST /graphql`             |
+| Stockage | Firestore natif (firebase-admin), isolé par `userId`                             |
+| IA       | Gemini 2.5 Flash (import de recettes + propositions d'itérations)                |
+| Infra    | Terraform sur GCP (projet `shuhari-polyforms`), déploiement CI via WIF           |
+
+Le backend suit une architecture **DDD/CQRS** stricte. Domaines dans
+`server/domain/` : `recipe` (la recette et sa lignée de versions), `trial`
+(les essais notés), `proposal` (les propositions d'itération de l'IA), `home`
+(l'agrégation d'accueil), `portability` (export/import des données),
+`changelog`. Les concerns transverses sont dans `server/system/`
+(`ai`, `firebase`, `config`, `migration`, `request-cache`).
+
+## Développement local
+
+```bash
+cp .env.example .env   # renseigner les clés
+bun install
+bun run prepare        # generate:assets + nitro prepare
+bun run dev            # http://localhost:3000 — GraphQL sur POST /graphql
+```
+
+Avec la suite d'émulateurs Firebase (Auth + Firestore) :
+
+```bash
+firebase emulators:start --only auth,firestore,functions
+```
+
+Variables d'environnement (`.env`) :
+
+```
+NITRO_GOOGLE_API_KEY=...   # clé Gemini (obligatoire pour l'IA)
+NITRO_ADMIN_TOKEN=...      # protège POST /admin/migrate
+NITRO_FIXME_DSN=           # optionnel
+```
+
+### Commandes utiles
+
+```bash
+bun tsc --noEmit           # typecheck backend
+bun test                   # tests unitaires (*.unit.test.ts, bun:test)
+bun run test:coverage      # couverture
+bun run lint               # Biome (lint + format) ; --fix : bun run lint:fix
+bun run generate:graphql   # régénère shared/schema.graphql
+```
+
+## Infrastructure
+
+Toute la stack GCP — projet, Firebase, Firestore (règles + index), Identity
+Platform avec Sign in with Apple, Cloud Function Gen 2, secrets, enregistrement
+de l'app iOS — est provisionnée par Terraform.
+
+```bash
+bun run bootstrap   # provisionne l'infra de bout en bout
+bun run infra:plan  # diff Terraform sans appliquer
+bun run infra:apply # applique le plan
+bun run destroy     # supprime les ressources
+```
+
+Le bootstrap construit le bundle Nitro (`nitro build`, preset firebase), lance
+`terraform apply`, puis déclenche `POST /admin/migrate` pour appliquer les
+migrations Firestore. Les déploiements suivants se font en poussant sur `main`
+(GitHub Actions, authentification par Workload Identity Federation).
+
+> `terraform` est téléchargé automatiquement (version épinglée) dans
+> `infra/.bin/` via `scripts/tf` au premier `infra:*` / `bootstrap`.
+
+## Prérequis
+
+- **Bun** (jamais `npm`/`npx`)
+- **Xcode 26** (SDK iOS 26) pour l'app
+- `gcloud` authentifié en **Application Default Credentials** :
+  `gcloud auth application-default login`
+- Un compte Apple Developer (Service ID + Sign in with Apple + clé `.p8`) et un
+  compte de facturation GCP pour le provisioning de l'infra
+
+## App iOS
+
+1. Ouvrir `ios/Shuhari.xcodeproj` dans Xcode.
+2. Après `bun run bootstrap`, glisser le `GoogleService-Info.plist` généré dans
+   la target `Shuhari`.
+3. Régénérer les opérations GraphQL typées : depuis `ios/`, lancer
+   `apollo-ios-cli generate` (à partir de `shared/schema.graphql`).
+4. Build & run sur le simulateur iPhone 17 (iOS 26.2).
+
+Bundle : `com.polyforms.shuhari.app` · Team : `46C337T7YN`.

@@ -1,0 +1,30 @@
+{
+  "schemaNamespace": "ShuhariGraphQL",
+  "input": {
+    "schemaSearchPaths": ["../shared/schema.graphql"],
+    "operationSearchPaths": [
+      "Shuhari/Features/Home/GraphQL/*.graphql",
+      "Shuhari/Features/Recipe/GraphQL/*.graphql",
+      "Shuhari/Features/Execution/GraphQL/*.graphql",
+      "Shuhari/Features/Proposal/GraphQL/*.graphql",
+      "Shuhari/Features/Import/GraphQL/*.graphql",
+      "Shuhari/Features/Settings/GraphQL/*.graphql"
+    ]
+  },
+  "output": {
+    "schemaTypes": {
+      "path": "Shuhari/Generated/GraphQL",
+      "moduleType": {
+        "embeddedInTarget": {
+          "name": "Shuhari"
+        }
+      }
+    },
+    "operations": {
+      "inSchemaModule": {}
+    },
+    "testMocks": {
+      "none": {}
+    }
+  }
+}

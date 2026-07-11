@@ -1,0 +1,15 @@
+import * as repository from '~/domain/proposal/infrastructure/repository'
+import type { Proposal } from '~/domain/proposal/types'
+import type { RecipeId, VersionNumber } from '~/domain/recipe/types'
+import type { UserId } from '~/domain/shared/types'
+
+export namespace ProposalCommand {
+  export const propose = async (proposal: Proposal): Promise<Proposal> => repository.save(proposal)
+
+  // Accepting or refusing a proposal removes it (presence == pending).
+  export const discard = async (recipeId: RecipeId, versionNumber: VersionNumber): Promise<void> =>
+    repository.remove(recipeId, versionNumber)
+
+  export const removeByRecipe = async (userId: UserId, recipeId: RecipeId): Promise<void> =>
+    repository.removeByRecipe(userId, recipeId)
+}

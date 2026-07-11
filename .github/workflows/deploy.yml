@@ -1,0 +1,100 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write   # required for Workload Identity Federation
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.10.0
+
+      - name: Authenticate to Google Cloud (workload identity)
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOY_SA }}
+
+      - name: Stamp CHANGELOG.md with deploy date
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import datetime, pathlib
+          p = pathlib.Path("CHANGELOG.md")
+          text = p.read_text()
+          date = datetime.datetime.utcnow().strftime("%Y.%m.%d")
+          if f"## {date}" in text:
+              raise SystemExit(0)
+          if "## Unreleased" in text:
+              text = text.replace("## Unreleased", f"## {date}", 1)
+          else:
+              lines = text.splitlines()
+              out = []
+              inserted = False
+              for line in lines:
+                  out.append(line)
+                  if not inserted and line.startswith("# "):
+                      out.append("")
+                      out.append(f"## {date}")
+                      out.append("- Mise à jour automatique.")
+                      inserted = True
+              text = "\n".join(out) + "\n"
+          p.write_text(text)
+          PY
+
+      - name: Build the Nitro bundle (firebase preset)
+        run: |
+          bun install --frozen-lockfile
+          bun run generate:assets
+          bunx nitro prepare
+          bun run generate:graphql
+          bun run build
+
+      - name: Materialize terraform.tfvars from GitHub secrets
+        run: |
+          set -euo pipefail
+          mkdir -p infra
+          # Apple .p8 — multiline, must be quoted properly
+          printf '%s' "${{ secrets.APPLE_PRIVATE_KEY_P8 }}" > infra/apple.p8
+          chmod 600 infra/apple.p8
+
+          cat > infra/terraform.tfvars <<EOF
+          project_id             = "${{ vars.GCP_PROJECT_ID }}"
+          billing_account_id     = "${{ secrets.GCP_BILLING_ACCOUNT }}"
+          org_id                 = "${{ vars.GCP_ORG_ID }}"
+          region                 = "europe-west3"
+          firestore_location     = "eur3"
+          ios_bundle_id          = "${{ vars.IOS_BUNDLE_ID }}"
+          apple_team_id          = "${{ secrets.APPLE_TEAM_ID }}"
+          apple_services_id      = "${{ secrets.APPLE_SERVICES_ID }}"
+          apple_key_id           = "${{ secrets.APPLE_KEY_ID }}"
+          apple_private_key_path = "./apple.p8"
+          google_api_key         = "${{ secrets.GEMINI_API_KEY }}"
+          fixme_dsn              = "${{ secrets.FIXME_DSN }}"
+          admin_token            = "${{ secrets.ADMIN_TOKEN }}"
+          EOF
+
+      - name: Terraform init + apply
+        working-directory: infra
+        run: |
+          terraform init -input=false
+          terraform apply -auto-approve -input=false
+
+      - name: Run Firestore migrations
+        working-directory: infra
+        run: |
+          URL=$(terraform output -raw function_url)
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${{ secrets.ADMIN_TOKEN }}" \
+            "${URL}/admin/migrate"

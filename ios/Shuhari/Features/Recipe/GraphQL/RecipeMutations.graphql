@@ -1,0 +1,17 @@
+mutation PromoteVersion($recipeId: RecipeId!, $versionNumber: VersionNumber!) {
+  promoteVersion(recipeId: $recipeId, versionNumber: $versionNumber) {
+    id
+  }
+}
+
+mutation DeleteRecipe($id: RecipeId!) {
+  deleteRecipe(id: $id)
+}
+
+mutation UpdateRecipe($id: RecipeId!, $input: UpdateRecipeInput!) {
+  updateRecipe(id: $id, input: $input) {
+    id
+    title
+    subtitle
+  }
+}

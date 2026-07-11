@@ -1,0 +1,97 @@
+fragment VersionFields on Version {
+  number
+  change
+  why
+  originKind
+  originDetail
+  changedKeys
+  params {
+    key
+    value
+  }
+  steps
+  averageNote
+  trialCount
+  createdAt
+}
+
+fragment TrialFields on Trial {
+  id
+  recipeId
+  versionNumber
+  note
+  remarks
+  realParams {
+    key
+    value
+  }
+  photoUrl
+  executedAt
+}
+
+fragment ProposalFields on Proposal {
+  recipeId
+  versionNumber
+  recommendation
+  rationale
+  queued
+  vars {
+    key
+    from
+    to
+  }
+  variation {
+    title
+    description
+  }
+  createdAt
+}
+
+fragment RecipeRefFields on Recipe {
+  id
+  title
+  subtitle
+  type
+  currentVersion {
+    number
+    averageNote
+  }
+}
+
+query Recipe($id: RecipeId!) {
+  recipe(id: $id) {
+    id
+    title
+    subtitle
+    type
+    createdAt
+    updatedAt
+    currentVersion {
+      ...VersionFields
+    }
+    toTest {
+      ...VersionFields
+    }
+    versions {
+      ...VersionFields
+    }
+    trials {
+      ...TrialFields
+    }
+    variations {
+      ...RecipeRefFields
+    }
+    derivedFrom {
+      ...RecipeRefFields
+    }
+    pendingProposal {
+      ...ProposalFields
+    }
+  }
+}
+
+query TrialDetail($id: TrialId!) {
+  trial(id: $id) {
+    ...TrialFields
+  }
+}

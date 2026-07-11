@@ -1,0 +1,14 @@
+mutation RecordTrial($input: RecordTrialInput!) {
+  recordTrial(input: $input) {
+    promotionSuggested
+    trial {
+      ...TrialFields
+    }
+  }
+}
+
+mutation RequestProposal($recipeId: RecipeId!) {
+  requestProposal(recipeId: $recipeId) {
+    ...ProposalFields
+  }
+}

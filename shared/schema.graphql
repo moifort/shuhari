@@ -1,0 +1,461 @@
+"""
+Result of accepting a proposal (an iteration or a variation)
+"""
+type AcceptProposalResult {
+  createdRecipeId: RecipeId
+  createdVersion: VersionNumber
+  recipe: Recipe!
+}
+
+"""
+A single version section of the application changelog
+"""
+type ChangelogEntry {
+  date: DateTime
+  notes: [String!]!
+  version: String!
+}
+
+"""
+Create a recipe (v1) from a confirmed import preview
+"""
+input CreateRecipeInput {
+  params: [ParamInput!]!
+
+  """
+  Where the recipe came from
+  """
+  sourceLabel: String
+  steps: [StepText!]!
+  subtitle: RecipeSubtitle
+  title: RecipeTitle!
+  type: RecipeType!
+}
+
+"""
+ISO 8601 date-time string
+"""
+scalar DateTime
+
+"""
+The read model behind the home screen
+"""
+type Home {
+  """
+  Every recipe (the app groups them by type)
+  """
+  library: [Recipe!]!
+
+  """
+  Latest trials across all recipes
+  """
+  recentTrials: [Trial!]!
+
+  """
+  Recipes with a pending version awaiting a trial
+  """
+  toTest: [Recipe!]!
+}
+
+"""
+Structured recipe extracted from an import source (editable preview)
+"""
+type ImportAnalysis {
+  params: [ImportParam!]!
+  sourceLabel: String
+  steps: [String!]!
+  subtitle: String
+  title: String!
+  type: RecipeType!
+}
+
+"""
+A recipe parameter extracted by the AI (unvalidated preview)
+"""
+type ImportParam {
+  key: String!
+  value: String!
+}
+
+"""
+Number of records imported per collection
+"""
+type ImportResult {
+  recipes: Int!
+  trials: Int!
+  versions: Int!
+}
+
+type Mutation {
+  """
+  Accept a proposal as an iteration or a variation (optionally editing the changes)
+  """
+  acceptProposal(
+    choice: ProposalRecommendation!
+    editedVars: [ProposalVarInput!]
+    recipeId: RecipeId!
+    versionNumber: VersionNumber!
+  ): AcceptProposalResult!
+
+  """
+  Analyze an import source (photos, a URL or raw text) into a structured recipe preview. Exactly one source must be provided. Results are cached server-side by SHA-256.
+  """
+  analyzeImport(
+    """
+    Base64 JPEGs (no data-URL prefix)
+    """
+    photos: [String!]
+
+    """
+    Raw recipe text
+    """
+    text: String
+
+    """
+    A recipe web page to read
+    """
+    url: String
+  ): ImportAnalysis!
+
+  """
+  Create a recipe and its v1 from a confirmed import preview
+  """
+  createRecipe(input: CreateRecipeInput!): Recipe!
+
+  """
+  Delete a recipe and all its versions, trials and proposals
+  """
+  deleteRecipe(id: RecipeId!): Boolean!
+
+  """
+  Replace all the current user records with the contents of a JSON envelope
+  """
+  importData(payload: String!): ImportResult!
+
+  """
+  Promote a pending version to the current reference (after a high-scoring trial)
+  """
+  promoteVersion(recipeId: RecipeId!, versionNumber: VersionNumber!): Recipe!
+
+  """
+  Record a trial (fast, no AI). Ask for a proposal separately if the note is low.
+  """
+  recordTrial(input: RecordTrialInput!): RecordTrialResult!
+
+  """
+  Refuse a proposal (removes it)
+  """
+  refuseProposal(recipeId: RecipeId!, versionNumber: VersionNumber!): Boolean!
+
+  """
+  Ask the AI to analyze the latest trials and propose the next step (iterate or vary)
+  """
+  requestProposal(recipeId: RecipeId!): Proposal!
+
+  """
+  Rename a recipe (title and/or subtitle)
+  """
+  updateRecipe(id: RecipeId!, input: UpdateRecipeInput!): Recipe!
+}
+
+"""
+Trial rating (integer 1..10)
+"""
+scalar Note
+
+"""
+A single recipe parameter (ordered list preserves display order)
+"""
+type Param {
+  key: ParamKey!
+  value: ParamValue!
+}
+
+"""
+A recipe parameter (ordered)
+"""
+input ParamInput {
+  key: ParamKey!
+  value: ParamValue!
+}
+
+"""
+Recipe parameter key (1-60 chars)
+"""
+scalar ParamKey
+
+"""
+Recipe parameter value with unit (1-120 chars)
+"""
+scalar ParamValue
+
+"""
+An AI proposal for the next step of a recipe (presence == pending)
+"""
+type Proposal {
+  createdAt: DateTime!
+  queued: [String!]!
+  rationale: String!
+  recipeId: RecipeId!
+  recommendation: ProposalRecommendation!
+  variation: VariationSuggestion
+  vars: [ProposalVar!]!
+  versionNumber: VersionNumber!
+}
+
+"""
+Whether the AI recommends iterating the recipe or spinning off a variation
+"""
+enum ProposalRecommendation {
+  ITERATION
+  VARIATION
+}
+
+"""
+A single proposed parameter change
+"""
+type ProposalVar {
+  from: ParamValue
+  key: ParamKey!
+  to: ParamValue!
+}
+
+"""
+An edited proposed change (overrides the AI proposal before validating)
+"""
+input ProposalVarInput {
+  from: ParamValue
+  key: ParamKey!
+  to: ParamValue!
+}
+
+type Query {
+  """
+  Application changelog, most recent versions first
+  """
+  changelog: [ChangelogEntry!]!
+
+  """
+  JSON-encoded export of every record belonging to the current user
+  """
+  exportData: String!
+
+  """
+  The home screen read model for the current user
+  """
+  home: Home!
+
+  """
+  A single recipe by id
+  """
+  recipe(id: RecipeId!): Recipe
+
+  """
+  The current user’s recipes, optionally filtered by type
+  """
+  recipes(type: RecipeType): [Recipe!]!
+
+  """
+  A single trial by id
+  """
+  trial(id: TrialId!): Trial
+}
+
+"""
+A recipe under experimentation, with its version lineage
+"""
+type Recipe {
+  createdAt: DateTime!
+
+  """
+  The current reproducible reference version
+  """
+  currentVersion: Version
+
+  """
+  The parent recipe when this is a variation
+  """
+  derivedFrom: Recipe
+  id: RecipeId!
+
+  """
+  The AI proposal awaiting a decision, if any
+  """
+  pendingProposal: Proposal
+  subtitle: String
+  title: RecipeTitle!
+
+  """
+  The pending version awaiting a trial, if any
+  """
+  toTest: Version
+
+  """
+  The recipe’s trial journal, most recent first
+  """
+  trials: [Trial!]!
+  type: RecipeType!
+  updatedAt: DateTime!
+
+  """
+  Recipes derived from this one
+  """
+  variations: [Recipe!]!
+
+  """
+  The full lineage, oldest first
+  """
+  versions: [Version!]!
+}
+
+"""
+Recipe unique identifier (UUID v4)
+"""
+scalar RecipeId
+
+"""
+Recipe subtitle (1-200 chars)
+"""
+scalar RecipeSubtitle
+
+"""
+Recipe title (1-200 chars)
+"""
+scalar RecipeTitle
+
+"""
+The kind of culinary experiment — drives the one-variable rule
+"""
+enum RecipeType {
+  CAFE
+  COCKTAIL
+  PLAT
+  TMX
+}
+
+"""
+Record one execution of a recipe version
+"""
+input RecordTrialInput {
+  note: Note!
+
+  """
+  Base64 JPEG of the result (optional)
+  """
+  photo: String
+
+  """
+  The parameters actually used (server keeps only the deviations)
+  """
+  realParams: [ParamInput!]!
+  recipeId: RecipeId!
+  remarks: Remarks!
+  versionNumber: VersionNumber!
+}
+
+"""
+Outcome of recording a trial
+"""
+type RecordTrialResult {
+  """
+  True when this trial qualifies its version for promotion
+  """
+  promotionSuggested: Boolean!
+  trial: Trial!
+}
+
+"""
+Free-form trial remarks (up to 2000 chars)
+"""
+scalar Remarks
+
+"""
+A short recipe step (1-300 chars)
+"""
+scalar StepText
+
+"""
+One execution of a recipe version
+"""
+type Trial {
+  executedAt: DateTime!
+  id: TrialId!
+  note: Note!
+
+  """
+  Signed URL of the trial photo (null until photo storage is provisioned)
+  """
+  photoUrl: String
+
+  """
+  Only the parameters that deviated from the version’s targets
+  """
+  realParams: [Param!]!
+  recipeId: RecipeId!
+  remarks: Remarks!
+  versionNumber: VersionNumber!
+}
+
+"""
+Trial unique identifier (UUID v4)
+"""
+scalar TrialId
+
+"""
+Update a recipe’s title and subtitle. Absent fields are unchanged.
+"""
+input UpdateRecipeInput {
+  subtitle: RecipeSubtitle
+  title: RecipeTitle
+}
+
+"""
+Firebase Auth user identifier
+"""
+scalar UserId
+
+"""
+A suggested name and description when the AI recommends a variation
+"""
+type VariationSuggestion {
+  description: String!
+  title: RecipeTitle!
+}
+
+"""
+An immutable entry in a recipe’s linear lineage (v1 → v2 → …)
+"""
+type Version {
+  """
+  Mean trial note for this version, or null if never tried
+  """
+  averageNote: Float
+  change: String
+  changedKeys: [ParamKey!]!
+  createdAt: DateTime!
+  number: VersionNumber!
+  originDetail: String
+  originKind: VersionOriginKind!
+  params: [Param!]!
+  steps: [StepText!]!
+
+  """
+  How many trials ran against this version
+  """
+  trialCount: Int!
+  why: String
+}
+
+"""
+Version number in a recipe lineage (>= 1)
+"""
+scalar VersionNumber
+
+"""
+How a version came to exist
+"""
+enum VersionOriginKind {
+  AI_PROPOSAL
+  IMPORT
+  MANUAL
+}

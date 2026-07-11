@@ -1,0 +1,40 @@
+query Home {
+  home {
+    toTest {
+      id
+      title
+      subtitle
+      type
+      toTest {
+        number
+        change
+        why
+        originDetail
+      }
+    }
+    library {
+      id
+      title
+      subtitle
+      type
+      currentVersion {
+        number
+        averageNote
+      }
+      toTest {
+        number
+      }
+      derivedFrom {
+        id
+      }
+    }
+    recentTrials {
+      id
+      recipeId
+      versionNumber
+      note
+      remarks
+      executedAt
+    }
+  }
+}

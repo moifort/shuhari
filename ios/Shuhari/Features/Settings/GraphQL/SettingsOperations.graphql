@@ -1,0 +1,19 @@
+query Changelog {
+  changelog {
+    version
+    date
+    notes
+  }
+}
+
+query ExportData {
+  exportData
+}
+
+mutation ImportData($payload: String!) {
+  importData(payload: $payload) {
+    recipes
+    versions
+    trials
+  }
+}

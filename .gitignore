@@ -1,0 +1,75 @@
+node_modules
+dist
+.data
+.data-test
+.nitro
+.cache
+.output
+.env
+.env.local
+.derivedData
+data
+output
+
+# Terraform backup files (can appear at any nesting level)
+*.tfstate.backup
+
+# iOS / Xcode
+.DS_Store
+*.xcworkspace
+xcuserdata/
+build/
+*.xcarchive
+*.ipa
+
+# iOS secrets (contains API tokens)
+ios/Shuhari/Shared/Secrets.swift
+ios/ShuhariUITests/Support/TestSecrets.swift
+
+doc/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.emulators/
+
+# iOS Firebase + Apollo
+ios/Shuhari/GoogleService-Info.plist
+# Ignore generated Apollo output, but KEEP the custom-scalar overrides
+# (Note/VersionNumber → Int). Apollo never overwrites an existing custom-scalar
+# file, so these hand-typed aliases must be committed or a clean regen would
+# default them back to String. Contents are excluded with /* (not the dir) so the
+# negations below can re-include the CustomScalars subtree.
+ios/Shuhari/Generated/GraphQL/*
+!ios/Shuhari/Generated/GraphQL/Schema/
+ios/Shuhari/Generated/GraphQL/Schema/*
+!ios/Shuhari/Generated/GraphQL/Schema/CustomScalars/
+ios/shared/
+
+# Note: shared/schema.graphql IS committed — it's the source of truth for
+# the iOS Apollo codegen. Run `bun run generate:graphql` after any change
+# to the Pothos schema and commit the diff.
+
+# Claude Code
+.claude/
+
+# Terraform auto-installed binary (pinned version, managed by scripts/install-terraform.sh)
+infra/.bin/
+
+# Terraform
+infra/.terraform/
+infra/.terraform.lock.hcl
+infra/terraform.tfstate
+infra/terraform.tfstate.backup
+infra/crash.log
+infra/crash.*.log
+infra/terraform.tfvars
+infra/*.auto.tfvars
+infra/*.auto.tfvars.json
+infra/AuthKey_*.p8
+infra/apple.p8
+
+# Build artifact uploaded to GCS by Terraform
+.output/server-source.zip
+
+# Generated server assets
+server/system/changelog-content.ts

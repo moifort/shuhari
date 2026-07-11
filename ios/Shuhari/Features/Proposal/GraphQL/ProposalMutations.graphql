@@ -1,0 +1,23 @@
+mutation AcceptProposal(
+  $recipeId: RecipeId!
+  $versionNumber: VersionNumber!
+  $choice: ProposalRecommendation!
+  $editedVars: [ProposalVarInput!]
+) {
+  acceptProposal(
+    recipeId: $recipeId
+    versionNumber: $versionNumber
+    choice: $choice
+    editedVars: $editedVars
+  ) {
+    recipe {
+      id
+    }
+    createdRecipeId
+    createdVersion
+  }
+}
+
+mutation RefuseProposal($recipeId: RecipeId!, $versionNumber: VersionNumber!) {
+  refuseProposal(recipeId: $recipeId, versionNumber: $versionNumber)
+}
