@@ -1,15 +1,16 @@
 import PhotosUI
 import SwiftUI
 
-/// Root of the "Importer" tab. Segmented source (Photos / URL / Texte), an AI
+/// Root of the "Importer" tab. Segmented source (Photos / Caméra / URL / Texte), an AI
 /// analysis overlay, then the editable preview → createRecipe → recipe fiche.
 struct ImportView: View {
     enum Mode: String, CaseIterable, Identifiable {
-        case photo, url, text
+        case photo, camera, url, text
         var id: String { rawValue }
         var label: String {
             switch self {
             case .photo: "Photos"
+            case .camera: "Caméra"
             case .url: "URL"
             case .text: "Texte"
             }
@@ -19,6 +20,8 @@ struct ImportView: View {
     @State private var path = NavigationPath()
     @State private var mode: Mode = .photo
     @State private var photoItems: [PhotosPickerItem] = []
+    @State private var capturedImage: UIImage?
+    @State private var showCamera = false
     @State private var urlText = ""
     @State private var rawText = ""
     @State private var isAnalyzing = false
@@ -41,6 +44,10 @@ struct ImportView: View {
         }
         .overlay { if isAnalyzing { AnalyzingOverlay(message: "L’IA lit et structure la recette…") } }
         .errorAlert(errorPresenter)
+        .fullScreenCover(isPresented: $showCamera) {
+            CameraPicker { image in capturedImage = image }
+                .ignoresSafeArea()
+        }
     }
 
     private var form: some View {
@@ -52,7 +59,7 @@ struct ImportView: View {
                 .pickerStyle(.segmented)
                 .accessibilityIdentifier("import-mode-picker")
             } footer: {
-                Text("Photos, lien ou texte — l’IA structure la recette, tu relis, tu enregistres.")
+                Text("Photos, caméra, lien ou texte — l’IA structure la recette, tu relis, tu enregistres.")
             }
 
             sourceSection
@@ -91,6 +98,38 @@ struct ImportView: View {
             } footer: {
                 Text("Page de livre, sachet, capture d’écran…")
             }
+        case .camera:
+            Section {
+                if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                    if let capturedImage {
+                        Image(uiImage: capturedImage)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxHeight: 220)
+                            .frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .accessibilityIdentifier("import-captured-preview")
+                        Button {
+                            showCamera = true
+                        } label: {
+                            Label("Reprendre la photo", systemImage: "arrow.triangle.2.circlepath.camera")
+                        }
+                        .accessibilityIdentifier("import-camera-retake")
+                    } else {
+                        Button {
+                            showCamera = true
+                        } label: {
+                            Label("Prendre une photo", systemImage: "camera.fill")
+                        }
+                        .accessibilityIdentifier("import-camera-button")
+                    }
+                } else {
+                    Label("Caméra indisponible sur cet appareil", systemImage: "camera.badge.ellipsis")
+                        .foregroundStyle(.secondary)
+                }
+            } footer: {
+                Text("Photographie une page de recette, l’IA la structure.")
+            }
         case .url:
             Section("Adresse de la recette") {
                 TextField("https://…", text: $urlText)
@@ -113,6 +152,7 @@ struct ImportView: View {
     private var canAnalyze: Bool {
         switch mode {
         case .photo: return !photoItems.isEmpty
+        case .camera: return capturedImage != nil
         case .url: return !urlText.trimmingCharacters(in: .whitespaces).isEmpty
         case .text: return !rawText.trimmingCharacters(in: .whitespaces).isEmpty
         }
@@ -120,6 +160,7 @@ struct ImportView: View {
 
     private func reset() {
         photoItems = []
+        capturedImage = nil
         urlText = ""
         rawText = ""
         mode = .photo
@@ -140,6 +181,15 @@ struct ImportView: View {
                     return
                 }
                 source = .photos(encoded)
+            case .camera:
+                let base64 = await Task.detached(priority: .userInitiated) { [capturedImage] in
+                    capturedImage?.jpegBase64()
+                }.value
+                guard let base64 else {
+                    errorPresenter.message = "Impossible de lire la photo prise."
+                    return
+                }
+                source = .photos([base64])
             case .url:
                 source = .url(urlText.trimmingCharacters(in: .whitespaces))
             case .text:
@@ -168,10 +218,10 @@ struct ImportView: View {
         var result: [String] = []
         for item in photoItems {
             guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
-            let jpeg = await Task.detached(priority: .userInitiated) {
-                UIImage(data: data).flatMap { $0.resized(maxDimension: 1600).jpegData(compressionQuality: 0.7) }
+            let base64 = await Task.detached(priority: .userInitiated) {
+                UIImage(data: data)?.jpegBase64()
             }.value
-            if let jpeg { result.append(jpeg.base64EncodedString()) }
+            if let base64 { result.append(base64) }
         }
         return result
     }
