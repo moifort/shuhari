@@ -210,6 +210,16 @@ enum Fixtures {
         sourceLabel: "Photo du livre « Biscuits »"
     )
 
+    static let importAnalysisTmx = ImportAnalysis(
+        title: "Risotto au parmesan",
+        subtitle: "Thermomix TM6",
+        type: .tmx,
+        params: risottoV2.params,
+        steps: risottoV2.steps,
+        tmxSteps: risottoV2.tmxSteps,
+        sourceLabel: "Photo du livre Thermomix"
+    )
+
     static let homeData = HomeData(
         toTest: [
             HomeTestItem(

@@ -45,7 +45,10 @@ struct ImportScanView: View {
             selectedPhoto = nil
             importFromLibrary(item)
         }
-        .sheet(isPresented: $showTextEntry) { textEntrySheet }
+        .sheet(isPresented: $showTextEntry) {
+            textEntrySheet
+                .presentationDetents([.medium, .large])
+        }
         .errorAlert(errorPresenter)
     }
 
@@ -86,35 +89,37 @@ struct ImportScanView: View {
 
             VStack {
                 Spacer()
-                HStack {
-                    PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                        CircleIcon(systemImage: "photo", size: 56)
-                    }
-                    .accessibilityIdentifier("import-library-picker")
-                    .accessibilityLabel("Choisir dans la bibliothèque")
-
-                    Spacer()
-
-                    if cameraAvailable {
-                        Button { shouldCapture = true } label: {
-                            Circle()
-                                .stroke(.white, lineWidth: 4)
-                                .frame(width: 72, height: 72)
-                                .overlay(Circle().fill(.white).frame(width: 60, height: 60))
+                GlassEffectContainer {
+                    HStack {
+                        PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                            CircleIcon(systemImage: "photo", size: 56)
                         }
-                        .accessibilityIdentifier("import-camera-shutter")
-                        .accessibilityLabel("Prendre une photo")
-                    } else {
-                        Color.clear.frame(width: 72, height: 72)
-                    }
+                        .accessibilityIdentifier("import-library-picker")
+                        .accessibilityLabel("Choisir dans la bibliothèque")
 
-                    Spacer()
+                        Spacer()
 
-                    Button { showTextEntry = true } label: {
-                        CircleIcon(systemImage: "text.cursor", size: 56)
+                        if cameraAvailable {
+                            Button { shouldCapture = true } label: {
+                                Circle()
+                                    .stroke(.white, lineWidth: 4)
+                                    .frame(width: 72, height: 72)
+                                    .overlay(Circle().fill(.white).frame(width: 60, height: 60))
+                            }
+                            .accessibilityIdentifier("import-camera-shutter")
+                            .accessibilityLabel("Prendre une photo")
+                        } else {
+                            Color.clear.frame(width: 72, height: 72)
+                        }
+
+                        Spacer()
+
+                        Button { showTextEntry = true } label: {
+                            CircleIcon(systemImage: "text.cursor", size: 56)
+                        }
+                        .accessibilityIdentifier("import-text-button")
+                        .accessibilityLabel("Saisir la recette")
                     }
-                    .accessibilityIdentifier("import-text-button")
-                    .accessibilityLabel("Saisir la recette")
                 }
                 .padding(.horizontal, 32)
                 .padding(.bottom, 32)
@@ -233,7 +238,8 @@ struct ImportScanView: View {
     }
 }
 
-/// A white SF Symbol on a translucent circle — the camera-overlay control style.
+/// A white SF Symbol on a clear interactive glass circle — the iOS 26 idiom for
+/// controls floating over a live media feed.
 private struct CircleIcon: View {
     let systemImage: String
     let size: CGFloat
@@ -243,7 +249,7 @@ private struct CircleIcon: View {
             .font(.title2)
             .foregroundStyle(.white)
             .frame(width: size, height: size)
-            .background(.ultraThinMaterial, in: .circle)
+            .glassEffect(.clear.interactive(), in: .circle)
     }
 }
 

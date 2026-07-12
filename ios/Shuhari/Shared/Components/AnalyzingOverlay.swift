@@ -2,8 +2,9 @@ import SwiftUI
 
 /// A floating Liquid Glass HUD shown while the AI works (import analysis,
 /// proposal generation). The dimming scrim blocks all interaction with the
-/// content underneath. The card is the only raw `glassEffect` surface in the
-/// app — everything else gets glass from standard components.
+/// content underneath. Raw `glassEffect` is reserved for this card and the
+/// camera-overlay controls (which need the `.clear` variant over live video) —
+/// everything else gets glass from the standard button styles.
 struct AnalyzingOverlay: View {
     let message: String
 

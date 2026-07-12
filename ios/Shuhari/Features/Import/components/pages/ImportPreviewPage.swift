@@ -27,7 +27,7 @@ struct ImportPreviewPage: View {
                     .accessibilityIdentifier("import-title-field")
             } header: {
                 Label("Recette structurée — relis et ajuste", systemImage: "checkmark.seal.fill")
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Theme.Status.current)
                     .textCase(nil)
             } footer: {
                 Text("L’IA a mis la recette au format Carnet. Tout est modifiable avant d’enregistrer.")
@@ -48,12 +48,17 @@ struct ImportPreviewPage: View {
                     LabeledContent(param.key) {
                         TextField(param.value, text: binding(for: param.key))
                             .multilineTextAlignment(.trailing)
+                            .keyboardType(.numbersAndPunctuation)
                     }
                 }
             }
 
             Section {
-                StepsList(steps: analysis.steps)
+                if let tmxItems = TmxStepsList.Item.zipped(steps: analysis.steps, tmxSteps: analysis.tmxSteps) {
+                    TmxStepsList(items: tmxItems)
+                } else {
+                    StepsList(steps: analysis.steps)
+                }
             } header: {
                 Text("Étapes")
             } footer: {
@@ -96,5 +101,17 @@ struct ImportPreviewPage: View {
 
     private func binding(for key: String) -> Binding<String> {
         Binding(get: { values[key] ?? "" }, set: { values[key] = $0 })
+    }
+}
+
+#Preview("Plat") {
+    NavigationStack {
+        ImportPreviewPage(analysis: Fixtures.importAnalysis, isSaving: false, onSave: { _ in })
+    }
+}
+
+#Preview("Thermomix") {
+    NavigationStack {
+        ImportPreviewPage(analysis: Fixtures.importAnalysisTmx, isSaving: false, onSave: { _ in })
     }
 }

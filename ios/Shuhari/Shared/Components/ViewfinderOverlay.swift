@@ -19,14 +19,14 @@ struct ViewfinderOverlay: View {
                 )
                 context.blendMode = .clear
                 context.fill(
-                    Path(roundedRect: cutoutRect, cornerRadius: 20),
+                    Path(roundedRect: cutoutRect, cornerRadius: Theme.Radius.card),
                     with: .color(.white)
                 )
             }
             .allowsHitTesting(false)
             .ignoresSafeArea()
 
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: Theme.Radius.card)
                 .stroke(.white.opacity(0.8), lineWidth: 3)
                 .frame(width: width, height: height)
                 .position(x: geo.size.width / 2, y: geo.size.height / 2)
