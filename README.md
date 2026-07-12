@@ -13,6 +13,8 @@ Quatre types d'expérimentations : **café**, **cocktail**, **plat** et **tmx**
 (Thermomix). La boucle est toujours la même :
 
 1. **Importer** une recette — l'IA (Gemini) structure les paramètres et les étapes.
+   Pour une recette Thermomix, elle extrait aussi les réglages de chaque étape
+   (temps, température, vitesse, sens inverse), affichés en badges dédiés.
 2. **Exécuter** la version courante et **noter** l'essai (1 à 10), en consignant
    les paramètres réellement utilisés (pour la reproductibilité).
 3. **Itérer** — l'IA propose la modification suivante. Pour un café ou un
