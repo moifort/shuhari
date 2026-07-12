@@ -55,26 +55,29 @@ struct ProposalPage: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 10) {
-                Button {
-                    onValidate(choice, editedVarsIfChanged)
-                } label: {
-                    Group {
-                        if isWorking { ProgressView() } else {
-                            Text(choice == .iteration ? "Valider — créer la v\(nextVersionNumber)" : "Valider — créer la variation")
+            GlassEffectContainer {
+                VStack(spacing: 10) {
+                    Button {
+                        onValidate(choice, editedVarsIfChanged)
+                    } label: {
+                        Group {
+                            if isWorking { ProgressView() } else {
+                                Text(choice == .iteration ? "Valider — créer la v\(nextVersionNumber)" : "Valider — créer la variation")
+                            }
                         }
+                        .frame(maxWidth: .infinity)
                     }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.glassProminent)
-                .controlSize(.large)
-                .disabled(isWorking)
-                .accessibilityIdentifier("validate-proposal-button")
-
-                Button("Refuser la proposition", role: .destructive, action: onRefuse)
-                    .buttonStyle(.glass)
+                    .buttonStyle(.glassProminent)
+                    .controlSize(.large)
                     .disabled(isWorking)
-                    .accessibilityIdentifier("refuse-proposal-button")
+                    .accessibilityIdentifier("validate-proposal-button")
+
+                    Button("Refuser la proposition", role: .destructive, action: onRefuse)
+                        .buttonStyle(.glass)
+                        .tint(.red)
+                        .disabled(isWorking)
+                        .accessibilityIdentifier("refuse-proposal-button")
+                }
             }
             .padding(.horizontal)
             .padding(.bottom, 8)
@@ -84,15 +87,19 @@ struct ProposalPage: View {
     private var changesSection: some View {
         Section {
             ForEach(proposal.vars) { variable in
-                if isEditing {
-                    LabeledContent(variable.key) {
-                        TextField(variable.to, text: binding(for: variable.key))
-                            .multilineTextAlignment(.trailing)
-                            .accessibilityIdentifier("edit-var-\(variable.key)")
+                Group {
+                    if isEditing {
+                        LabeledContent(variable.key) {
+                            TextField(variable.to, text: binding(for: variable.key))
+                                .multilineTextAlignment(.trailing)
+                                .keyboardType(.numbersAndPunctuation)
+                                .accessibilityIdentifier("edit-var-\(variable.key)")
+                        }
+                    } else {
+                        DiffRow(key: variable.key, from: variable.from, to: editedTo[variable.key] ?? variable.to)
                     }
-                } else {
-                    DiffRow(key: variable.key, from: variable.from, to: editedTo[variable.key] ?? variable.to)
                 }
+                .listRowBackground(Theme.Status.toTest.opacity(0.08))
             }
         } header: {
             Label("Ce qui change — proposition de l’IA", systemImage: "flask.fill")
@@ -159,5 +166,20 @@ struct ProposalPage: View {
         let changed = proposal.vars.contains { (editedTo[$0.key] ?? $0.to) != $0.to }
         guard changed else { return nil }
         return proposal.vars.map { ProposalVar(key: $0.key, from: $0.from, to: editedTo[$0.key] ?? $0.to) }
+    }
+}
+
+#Preview {
+    NavigationStack {
+        ProposalPage(
+            recipeTitle: Fixtures.espresso.title,
+            type: .cafe,
+            proposal: Fixtures.proposal,
+            nextVersionNumber: 4,
+            variationTitle: Fixtures.proposal.variation?.title,
+            isWorking: false,
+            onRefuse: {},
+            onValidate: { _, _ in }
+        )
     }
 }
