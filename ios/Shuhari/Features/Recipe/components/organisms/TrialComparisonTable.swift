@@ -31,3 +31,12 @@ struct TrialComparisonTable: View {
         }
     }
 }
+
+#Preview {
+    List {
+        TrialComparisonTable(
+            targets: Fixtures.espressoV3.params,
+            real: [Param(key: "Température", value: "94 °C")]
+        )
+    }
+}

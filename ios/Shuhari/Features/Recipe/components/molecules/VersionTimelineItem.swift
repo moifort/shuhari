@@ -1,7 +1,9 @@
 import SwiftUI
 
-/// One row of the history list: a status icon plus the version's change (or
-/// origin), badges and mean note. Designed as a List row.
+/// One notch of the version timeline: a status icon on a vertical rail that
+/// connects to the next notch, then the version's change (or origin), tags and
+/// mean note. Designed as a List row with hidden separators — the rail is the
+/// visual thread.
 struct VersionTimelineItem: View {
     let number: Int
     let change: String?
@@ -11,17 +13,26 @@ struct VersionTimelineItem: View {
     let date: Date
     let isCurrent: Bool
     let isToTest: Bool
+    var isLast: Bool = false
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: statusIcon)
-                .font(.body)
-                .foregroundStyle(statusColor)
-                .frame(width: 24)
-                .padding(.top, 2)
+        HStack(alignment: .top, spacing: Theme.Spacing.m) {
+            VStack(spacing: Theme.Spacing.xs) {
+                Image(systemName: statusIcon)
+                    .font(.body)
+                    .foregroundStyle(statusColor)
+                    .frame(width: 24, height: 24)
+                if !isLast {
+                    Rectangle()
+                        .fill(Color(.separator))
+                        .frame(width: 2)
+                        .frame(maxHeight: .infinity)
+                }
+            }
+            .frame(width: 24)
 
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                HStack(spacing: Theme.Spacing.s) {
                     Text("v\(number)")
                         .font(.subheadline.weight(.bold))
                         .monospacedDigit()
@@ -47,9 +58,11 @@ struct VersionTimelineItem: View {
                 Text(averageNote.map { "Notée \(NoteFormat.average($0)) · \(trialCount) essai\(trialCount > 1 ? "s" : "")" } ?? "Pas encore testée")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .padding(.bottom, Theme.Spacing.s)
             }
         }
-        .padding(.vertical, 2)
+        .listRowSeparator(.hidden)
+        .accessibilityElement(children: .combine)
     }
 
     private var statusIcon: String {
@@ -69,6 +82,6 @@ struct VersionTimelineItem: View {
     List {
         VersionTimelineItem(number: 4, change: "Température 93 → 92 °C", originDetail: "Extraction trop chaude.", averageNote: nil, trialCount: 0, date: Date(), isCurrent: false, isToTest: true)
         VersionTimelineItem(number: 3, change: "Mouture plus fine", originDetail: nil, averageNote: 7.5, trialCount: 2, date: Date(), isCurrent: true, isToTest: false)
-        VersionTimelineItem(number: 1, change: nil, originDetail: nil, averageNote: 6.0, trialCount: 1, date: Date(), isCurrent: false, isToTest: false)
+        VersionTimelineItem(number: 1, change: nil, originDetail: nil, averageNote: 6.0, trialCount: 1, date: Date(), isCurrent: false, isToTest: false, isLast: true)
     }
 }

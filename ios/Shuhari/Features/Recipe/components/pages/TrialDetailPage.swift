@@ -10,6 +10,21 @@ struct TrialDetailPage: View {
 
     var body: some View {
         List {
+            if let photoUrl = trial.photoUrl, let url = URL(string: photoUrl) {
+                Section {
+                    AsyncImage(url: url) { image in
+                        image.resizable().scaledToFill()
+                    } placeholder: {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 160, maxHeight: 260)
+                    .clipped()
+                    .listRowInsets(EdgeInsets())
+                    .accessibilityLabel("Photo du résultat")
+                }
+            }
+
             Section {
                 HStack(alignment: .top, spacing: 14) {
                     NoteBadge(note: trial.note)
@@ -20,22 +35,9 @@ struct TrialDetailPage: View {
                 .padding(.vertical, 2)
             }
 
-            if let photoUrl = trial.photoUrl, let url = URL(string: photoUrl) {
-                Section {
-                    AsyncImage(url: url) { image in
-                        image.resizable().scaledToFill()
-                    } placeholder: {
-                        ProgressView()
-                            .frame(maxWidth: .infinity)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 120, maxHeight: 220)
-                    .clipped()
-                    .listRowInsets(EdgeInsets())
-                }
-            }
-
             TrialComparisonTable(targets: versionTargets, real: trial.realParams)
         }
+        .scrollEdgeEffectStyle(.soft, for: .top)
         .navigationTitle("Essai du \(trial.executedAt.formatted(.dateTime.day().month(.wide)))")
         .navigationSubtitle("\(recipeTitle) · v\(trial.versionNumber)")
         .safeAreaInset(edge: .bottom) {
@@ -49,5 +51,16 @@ struct TrialDetailPage: View {
             .padding(.horizontal)
             .padding(.bottom, 8)
         }
+    }
+}
+
+#Preview {
+    NavigationStack {
+        TrialDetailPage(
+            recipeTitle: Fixtures.espresso.title,
+            trial: Fixtures.espressoTrials[1],
+            versionTargets: Fixtures.espressoV3.params,
+            onReplay: {}
+        )
     }
 }

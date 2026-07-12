@@ -21,7 +21,8 @@ struct HistoryPage: View {
                         trialCount: version.trialCount,
                         date: version.createdAt,
                         isCurrent: version.number == recipe.currentVersion?.number,
-                        isToTest: version.number == recipe.toTest?.number
+                        isToTest: version.number == recipe.toTest?.number,
+                        isLast: version.number == orderedVersions.last?.number
                     )
                 }
             } footer: {
@@ -32,5 +33,11 @@ struct HistoryPage: View {
         }
         .navigationTitle("Historique")
         .navigationSubtitle(recipe.title)
+    }
+}
+
+#Preview {
+    NavigationStack {
+        HistoryPage(recipe: Fixtures.espresso)
     }
 }
