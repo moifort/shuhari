@@ -1,11 +1,31 @@
 import { GraphQLError } from 'graphql'
 import { RecipeCommand } from '~/domain/recipe/command'
+import type { TmxSettings } from '~/domain/recipe/types'
 import { RecipeUseCase } from '~/domain/recipe/use-case'
 import { builder } from '~/domain/shared/graphql/builder'
 import { CreateRecipeInput, UpdateRecipeInput } from './inputs'
 import { RecipeType } from './types'
 
 const notFound = () => new GraphQLError('Recipe not found', { extensions: { code: 'NOT_FOUND' } })
+
+// Pothos hands optional input fields back as `null | undefined`; the domain
+// wants each entry as an explicit TmxSettings | null with absent keys dropped.
+type TmxSettingsInputShape = {
+  [K in keyof TmxSettings]?: TmxSettings[K] | null
+}
+const toTmxSettings = (
+  entries: (TmxSettingsInputShape | null | undefined)[],
+): (TmxSettings | null)[] =>
+  entries.map((e) =>
+    e
+      ? {
+          ...(e.time ? { time: e.time } : {}),
+          ...(e.temperature ? { temperature: e.temperature } : {}),
+          ...(e.speed ? { speed: e.speed } : {}),
+          ...(e.reverse != null ? { reverse: e.reverse } : {}),
+        }
+      : null,
+  )
 
 builder.mutationField('createRecipe', (t) =>
   t.field({
@@ -21,6 +41,7 @@ builder.mutationField('createRecipe', (t) =>
           ...(input.subtitle ? { subtitle: input.subtitle } : {}),
           params: input.params,
           steps: input.steps,
+          ...(input.tmxSteps ? { tmxSteps: toTmxSettings(input.tmxSteps) } : {}),
         },
         input.sourceLabel ?? undefined,
       ),

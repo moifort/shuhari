@@ -9,6 +9,15 @@ export type ImportSource =
   | { kind: 'url'; url: string }
   | { kind: 'text'; text: string }
 
+// Thermomix settings for one step as extracted by Gemini. Plain strings — the
+// domain layer validates them into branded types when the user confirms.
+export type ImportTmxSettings = {
+  time: string | null
+  temperature: string | null
+  speed: string | null
+  reverse: boolean | null
+}
+
 // Raw structured recipe extracted by Gemini. Plain strings — the domain layer
 // validates them into branded types when the user confirms the import.
 export type ImportAnalysis = {
@@ -18,6 +27,8 @@ export type ImportAnalysis = {
   sourceLabel: string | null
   params: { key: string; value: string }[]
   steps: string[]
+  // Aligned with `steps` by index; null when no step carries a setting.
+  tmxSteps: (ImportTmxSettings | null)[] | null
 }
 
 export type CachedImport = {

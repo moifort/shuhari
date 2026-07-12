@@ -1,6 +1,6 @@
 import { RecipeQuery } from '~/domain/recipe/query'
 import { builder } from '~/domain/shared/graphql/builder'
-import type { Param, Recipe, RecipeVersion } from '../../types'
+import type { Param, Recipe, RecipeVersion, TmxSettings } from '../../types'
 import { RecipeTypeEnum, VersionOriginKindEnum } from './enums'
 
 export const ParamType = builder.objectRef<Param>('Param').implement({
@@ -8,6 +8,20 @@ export const ParamType = builder.objectRef<Param>('Param').implement({
   fields: (t) => ({
     key: t.expose('key', { type: 'ParamKey' }),
     value: t.expose('value', { type: 'ParamValue' }),
+  }),
+})
+
+export const TmxSettingsType = builder.objectRef<TmxSettings>('TmxSettings').implement({
+  description: 'Thermomix settings for one step (display-oriented, all optional)',
+  fields: (t) => ({
+    time: t.field({ type: 'TmxTime', nullable: true, resolve: (s) => s.time ?? null }),
+    temperature: t.field({
+      type: 'TmxTemperature',
+      nullable: true,
+      resolve: (s) => s.temperature ?? null,
+    }),
+    speed: t.field({ type: 'TmxSpeed', nullable: true, resolve: (s) => s.speed ?? null }),
+    reverse: t.boolean({ nullable: true, resolve: (s) => s.reverse ?? null }),
   }),
 })
 
@@ -24,6 +38,12 @@ export const VersionType = builder.objectRef<RecipeVersion>('Version').implement
     why: t.string({ nullable: true, resolve: (v) => v.why ?? null }),
     params: t.field({ type: [ParamType], resolve: (v) => v.params }),
     steps: t.expose('steps', { type: ['StepText'] }),
+    tmxSteps: t.field({
+      type: [TmxSettingsType],
+      nullable: { list: true, items: true },
+      description: 'Per-step Thermomix settings, aligned with steps (null = plain step)',
+      resolve: (v) => v.tmxSteps ?? null,
+    }),
   }),
 })
 

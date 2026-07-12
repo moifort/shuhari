@@ -53,7 +53,16 @@ struct ImportPreviewPage: View {
             }
 
             Section {
-                StepsList(steps: analysis.steps)
+                // Branch on the live type picker so the preview always matches
+                // what "Enregistrer" will save (`edited` drops settings likewise).
+                if let tmxItems = TmxStepsList.Item.zipped(
+                    steps: analysis.steps,
+                    tmxSteps: type == .tmx ? analysis.tmxSteps : nil
+                ) {
+                    TmxStepsList(items: tmxItems)
+                } else {
+                    StepsList(steps: analysis.steps)
+                }
             } header: {
                 Text("Étapes")
             } footer: {
@@ -89,6 +98,9 @@ struct ImportPreviewPage: View {
             type: type,
             params: analysis.params.map { Param(key: $0.key, value: values[$0.key] ?? $0.value) },
             steps: analysis.steps,
+            // Settings only make sense for a Thermomix recipe — drop them when
+            // the user overrides the detected type.
+            tmxSteps: type == .tmx ? analysis.tmxSteps : nil,
             sourceLabel: analysis.sourceLabel
         )
     }

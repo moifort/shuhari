@@ -1,4 +1,4 @@
-import { nextVersionNumber } from '~/domain/recipe/business-rules'
+import { alignedTmxSteps, nextVersionNumber } from '~/domain/recipe/business-rules'
 import * as repository from '~/domain/recipe/infrastructure/repository'
 import { randomRecipeId, VersionNumber } from '~/domain/recipe/primitives'
 import type {
@@ -10,6 +10,7 @@ import type {
   RecipeType,
   RecipeVersion,
   StepText,
+  TmxSettings,
   VersionNumber as VersionNumberT,
   VersionOrigin,
 } from '~/domain/recipe/types'
@@ -24,6 +25,7 @@ export type NewRecipeInput = {
   subtitle?: RecipeSubtitle
   params: Param[]
   steps: StepText[]
+  tmxSteps?: (TmxSettings | null)[]
 }
 
 export type NewVersionInput = {
@@ -32,6 +34,7 @@ export type NewVersionInput = {
   why?: string
   params: Param[]
   steps: StepText[]
+  tmxSteps?: (TmxSettings | null)[]
 }
 
 export namespace RecipeCommand {
@@ -77,6 +80,8 @@ export namespace RecipeCommand {
     const recipe = await repository.findBy(userId, recipeId)
     if (!recipe) return 'not-found' as const
     const number = nextVersionNumber(recipe.versionCount)
+    const tmxSteps =
+      recipe.type === 'tmx' ? alignedTmxSteps(input.steps, input.tmxSteps) : undefined
     const version: RecipeVersion = {
       userId,
       recipeId,
@@ -88,6 +93,7 @@ export namespace RecipeCommand {
       ...(input.why ? { why: input.why } : {}),
       params: input.params,
       steps: input.steps,
+      ...(tmxSteps ? { tmxSteps } : {}),
     }
     const updated: Recipe = {
       ...recipe,
@@ -193,15 +199,21 @@ export namespace RecipeCommand {
     recipe: Recipe,
     origin: VersionOrigin,
     input: NewRecipeInput,
-  ): RecipeVersion => ({
-    userId: recipe.userId,
-    recipeId: recipe.id,
-    number: FIRST_VERSION,
-    createdAt: recipe.createdAt,
-    origin,
-    change: null,
-    changedKeys: [],
-    params: input.params,
-    steps: input.steps,
-  })
+  ): RecipeVersion => {
+    // Thermomix settings only exist on tmx recipes — dropped for any other type.
+    const tmxSteps =
+      recipe.type === 'tmx' ? alignedTmxSteps(input.steps, input.tmxSteps) : undefined
+    return {
+      userId: recipe.userId,
+      recipeId: recipe.id,
+      number: FIRST_VERSION,
+      createdAt: recipe.createdAt,
+      origin,
+      change: null,
+      changedKeys: [],
+      params: input.params,
+      steps: input.steps,
+      ...(tmxSteps ? { tmxSteps } : {}),
+    }
+  }
 }

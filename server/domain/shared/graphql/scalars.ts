@@ -7,6 +7,9 @@ import {
   RecipeSubtitle,
   RecipeTitle,
   StepText,
+  TmxSpeed,
+  TmxTemperature,
+  TmxTime,
   VersionNumber,
 } from '~/domain/recipe/primitives'
 import { UserId } from '~/domain/shared/primitives'
@@ -87,6 +90,24 @@ builder.scalarType('StepText', {
   description: 'A short recipe step (1-300 chars)',
   serialize: (value) => value as string,
   parseValue: validatedParse('StepText', StepText),
+})
+
+builder.scalarType('TmxTime', {
+  description: 'Thermomix step duration, display-oriented (e.g. "3 min", "30 s")',
+  serialize: (value) => value as string,
+  parseValue: validatedParse('TmxTime', TmxTime),
+})
+
+builder.scalarType('TmxTemperature', {
+  description: 'Thermomix step temperature, display-oriented (e.g. "100°C", "Varoma")',
+  serialize: (value) => value as string,
+  parseValue: validatedParse('TmxTemperature', TmxTemperature),
+})
+
+builder.scalarType('TmxSpeed', {
+  description: 'Thermomix step speed, display-oriented (e.g. "5", "pétrin", "turbo")',
+  serialize: (value) => value as string,
+  parseValue: validatedParse('TmxSpeed', TmxSpeed),
 })
 
 builder.scalarType('Remarks', {

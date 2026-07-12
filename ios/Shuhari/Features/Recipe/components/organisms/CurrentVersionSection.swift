@@ -11,7 +11,11 @@ struct CurrentVersionSection: View {
             ParamsGrid(items: version.params.map {
                 ParamsGrid.Item(key: $0.key, value: $0.value, highlighted: version.changedKeys.contains($0.key))
             })
-            StepsList(steps: version.steps)
+            if let tmxItems = TmxStepsList.Item.zipped(steps: version.steps, tmxSteps: version.tmxSteps) {
+                TmxStepsList(items: tmxItems)
+            } else {
+                StepsList(steps: version.steps)
+            }
             Button(action: onExecute) {
                 Label("Exécuter la v\(version.number)", systemImage: "play.fill")
                     .frame(maxWidth: .infinity)
@@ -50,6 +54,7 @@ struct CurrentVersionSection: View {
                     Param(key: "Mouture", value: "fine"),
                 ],
                 steps: ["Chauffer l'eau à 92 °C.", "Extraire 27 s."],
+                tmxSteps: nil,
                 averageNote: 7.5,
                 trialCount: 2,
                 createdAt: Date()

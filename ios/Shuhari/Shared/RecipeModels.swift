@@ -14,6 +14,19 @@ struct Param: Identifiable, Sendable, Hashable {
     var id: String { key }
 }
 
+// MARK: - Thermomix
+
+/// Thermomix settings for one step (display-oriented strings — "Varoma" and
+/// "pétrin" are valid values, no computation is ever done on them).
+struct TmxSettings: Sendable, Hashable {
+    let time: String?
+    let temperature: String?
+    let speed: String?
+    let reverse: Bool
+
+    var isEmpty: Bool { time == nil && temperature == nil && speed == nil && !reverse }
+}
+
 // MARK: - Version
 
 /// How a version came to exist.
@@ -33,6 +46,9 @@ struct RecipeVersion: Identifiable, Sendable {
     let changedKeys: [String]
     let params: [Param]
     let steps: [String]
+    /// Per-step Thermomix settings, aligned with `steps` (nil entry = plain step).
+    /// nil for non-Thermomix recipes and versions imported before extraction existed.
+    let tmxSteps: [TmxSettings?]?
     let averageNote: Double?
     let trialCount: Int
     let createdAt: Date
@@ -148,5 +164,7 @@ struct ImportAnalysis: Sendable, Hashable {
     var type: RecipeType
     var params: [Param]
     var steps: [String]
+    /// Per-step Thermomix settings, aligned with `steps` (nil entry = plain step).
+    var tmxSteps: [TmxSettings?]? = nil
     var sourceLabel: String?
 }

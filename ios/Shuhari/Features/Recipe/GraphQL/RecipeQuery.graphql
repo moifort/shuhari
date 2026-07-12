@@ -10,6 +10,12 @@ fragment VersionFields on Version {
     value
   }
   steps
+  tmxSteps {
+    time
+    temperature
+    speed
+    reverse
+  }
   averageNote
   trialCount
   createdAt

@@ -80,6 +80,9 @@ func mapVersion(_ v: ShuhariGraphQL.VersionFields) -> RecipeVersion {
         changedKeys: v.changedKeys,
         params: v.params.map { Param(key: $0.key, value: $0.value) },
         steps: v.steps,
+        tmxSteps: v.tmxSteps.map { list in
+            list.map { $0.map { TmxSettings(time: $0.time, temperature: $0.temperature, speed: $0.speed, reverse: $0.reverse ?? false) } }
+        },
         averageNote: v.averageNote,
         trialCount: v.trialCount,
         createdAt: GraphQLHelpers.parseISO8601(v.createdAt) ?? Date()

@@ -7,6 +7,9 @@ import type {
   RecipeId,
   RecipeTitle,
   StepText,
+  TmxSettings,
+  TmxSpeed,
+  TmxTime,
   VersionNumber,
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
@@ -46,17 +49,47 @@ describe('RecipeCommand.importRecipe', () => {
     expect(fake.directWrites).toEqual([])
     expect(fake.batches.length).toBe(1)
   })
+
+  test('persists per-step Thermomix settings when aligned with the steps', async () => {
+    const tmx: TmxSettings = { time: '5 min' as TmxTime, speed: '4' as TmxSpeed, reverse: true }
+    const recipe = await RecipeCommand.importRecipe(userId, {
+      ...newInput(),
+      type: 'tmx' as const,
+      tmxSteps: [tmx, null],
+    })
+
+    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.tmxSteps).toEqual([tmx, null])
+  })
+
+  test('omits the tmxSteps field entirely when absent or misaligned', async () => {
+    const absent = await RecipeCommand.importRecipe(userId, newInput())
+    expect(fake.snapshot('recipe-versions').get(`${absent.id}_1`)).not.toContainKey('tmxSteps')
+
+    const misaligned = await RecipeCommand.importRecipe(userId, {
+      ...newInput(),
+      type: 'tmx' as const,
+      tmxSteps: [{ time: '5 min' as TmxTime }],
+    })
+    expect(fake.snapshot('recipe-versions').get(`${misaligned.id}_1`)).not.toContainKey('tmxSteps')
+
+    const notTmx = await RecipeCommand.importRecipe(userId, {
+      ...newInput(),
+      tmxSteps: [{ time: '5 min' as TmxTime }, null],
+    })
+    expect(fake.snapshot('recipe-versions').get(`${notTmx.id}_1`)).not.toContainKey('tmxSteps')
+  })
 })
 
 describe('RecipeCommand.addVersion + promote', () => {
   test('appends v2 as toTest, then promotes it to the current reference', async () => {
-    const recipe = await RecipeCommand.importRecipe(userId, newInput())
+    const recipe = await RecipeCommand.importRecipe(userId, { ...newInput(), type: 'tmx' as const })
 
     const withV2 = (await RecipeCommand.addVersion(userId, recipe.id, {
       change: 'Température 93 → 92 °C',
       changedKeys: ['Température' as ParamKey],
       params: [param('Dose', '18 g'), param('Température', '92 °C')],
       steps: ['Moudre', 'Extraire'] as StepText[],
+      tmxSteps: [null, { speed: 'turbo' as TmxSpeed }],
     })) as Recipe
 
     expect(withV2.toTest).toBe(2 as VersionNumber)
@@ -65,6 +98,10 @@ describe('RecipeCommand.addVersion + promote', () => {
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_2`)?.change).toBe(
       'Température 93 → 92 °C',
     )
+    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_2`)?.tmxSteps).toEqual([
+      null,
+      { speed: 'turbo' },
+    ])
 
     const promoted = (await RecipeCommand.promote(userId, recipe.id, 2 as VersionNumber)) as Recipe
     expect(promoted.currentVersion).toBe(2 as VersionNumber)

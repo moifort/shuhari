@@ -9,6 +9,16 @@ export const ParamInput = builder.inputType('ParamInput', {
   }),
 })
 
+export const TmxSettingsInput = builder.inputType('TmxSettingsInput', {
+  description: 'Thermomix settings for one step (all optional)',
+  fields: (t) => ({
+    time: t.field({ type: 'TmxTime' }),
+    temperature: t.field({ type: 'TmxTemperature' }),
+    speed: t.field({ type: 'TmxSpeed' }),
+    reverse: t.boolean({ required: false }),
+  }),
+})
+
 export const CreateRecipeInput = builder.inputType('CreateRecipeInput', {
   description: 'Create a recipe (v1) from a confirmed import preview',
   fields: (t) => ({
@@ -18,6 +28,11 @@ export const CreateRecipeInput = builder.inputType('CreateRecipeInput', {
     sourceLabel: t.string({ description: 'Where the recipe came from' }),
     params: t.field({ type: [ParamInput], required: true }),
     steps: t.field({ type: ['StepText'], required: true }),
+    tmxSteps: t.field({
+      type: [TmxSettingsInput],
+      required: { list: false, items: false },
+      description: 'Per-step Thermomix settings, aligned with steps (null = plain step)',
+    }),
   }),
 })
 

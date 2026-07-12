@@ -49,8 +49,36 @@ const importResponseSchema = {
     },
     steps: {
       type: 'array',
-      items: { type: 'string' },
       description: 'Étapes courtes et actionnables, dans l’ordre',
+      items: {
+        type: 'object',
+        properties: {
+          text: { type: 'string', description: "Texte de l'étape, à l'impératif" },
+          tmxTime: {
+            type: 'string',
+            nullable: true,
+            description: 'Durée Thermomix (ex : « 3 min », « 30 s ») ; null sinon',
+          },
+          tmxTemperature: {
+            type: 'string',
+            nullable: true,
+            description: 'Température Thermomix (ex : « 100°C », « Varoma ») ; null sinon',
+          },
+          tmxSpeed: {
+            type: 'string',
+            nullable: true,
+            description:
+              'Vitesse Thermomix (ex : « 5 », « 3,5 », « pétrin », « mijotage », « turbo ») ; null sinon',
+          },
+          tmxReverse: {
+            type: 'boolean',
+            nullable: true,
+            description: 'Sens inverse activé ; null sinon',
+          },
+        },
+        required: ['text'],
+        propertyOrdering: ['text', 'tmxTime', 'tmxTemperature', 'tmxSpeed', 'tmxReverse'],
+      },
     },
   },
   required: ['type', 'title'],
@@ -108,6 +136,7 @@ Règles :
 - Détermine le type : cafe (espresso, filtre…), cocktail, plat (recette cuisinée), tmx (recette Thermomix).
 - params : liste ORDONNÉE de paramètres mesurables, chacun avec une valeur ET son unité (ex : Dose → 18,5 g, Température → 92 °C, Mouture → fine). N'invente pas de valeurs absentes ; ne garde que ce qui est réellement mesurable et reproductible.
 - steps : étapes courtes, à l'impératif, dans l'ordre.
+- Pour une recette Thermomix (type tmx) : pour chaque étape exécutée au Thermomix, renseigne tmxTime, tmxTemperature, tmxSpeed et tmxReverse tels qu'indiqués dans la recette (durée « 3 min » / « 30 s » / « 1 h 10 min » ; température « 100°C » ou « Varoma » ; vitesse « 0,5 » à « 10 », « pétrin », « mijotage » ou « turbo »). Mets null pour chaque réglage absent, et pour TOUS ces champs quand l'étape ne se fait pas au Thermomix ou que la recette n'est pas de type tmx.
 - Toutes les valeurs textuelles en français. Mets null pour toute information absente.`
 
 export namespace Ai {
@@ -208,12 +237,14 @@ Propose soit une itération (amélioration de cette recette), soit une variation
   }
 
   const hashSource = (source: ImportSource): ImportHashType => {
+    // 'v2' salts the cache: analyses made before the Thermomix per-step
+    // extraction must not be served for new imports of the same source.
     const material =
       source.kind === 'photos'
-        ? source.photos.join('|')
+        ? `v2|${source.photos.join('|')}`
         : source.kind === 'url'
-          ? `url:${source.url}`
-          : `text:${source.text}`
+          ? `v2|url:${source.url}`
+          : `v2|text:${source.text}`
     return ImportHash(createHash('sha256').update(material).digest('hex'))
   }
 }

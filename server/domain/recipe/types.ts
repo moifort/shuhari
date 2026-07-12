@@ -13,11 +13,23 @@ export type VersionNumber = Brand<number, 'VersionNumber'>
 export type ParamKey = Brand<string, 'ParamKey'>
 export type ParamValue = Brand<string, 'ParamValue'>
 export type StepText = Brand<string, 'StepText'>
+export type TmxTime = Brand<string, 'TmxTime'>
+export type TmxTemperature = Brand<string, 'TmxTemperature'>
+export type TmxSpeed = Brand<string, 'TmxSpeed'>
 
 // A single recipe parameter. An ORDERED list of these (never a map) is the
 // canonical shape everywhere — it preserves display order and sidesteps
 // Firestore field-path limits on keys with spaces/accents ("Vermouth rouge").
 export type Param = { key: ParamKey; value: ParamValue }
+
+// Thermomix settings for one step, display-oriented strings (no computation is
+// ever done on them — "Varoma" and "pétrin" are valid values, not numbers).
+export type TmxSettings = {
+  time?: TmxTime // "3 min", "30 s", "1 h 10 min"
+  temperature?: TmxTemperature // "100°C", "Varoma"
+  speed?: TmxSpeed // "5", "3,5", "pétrin", "mijotage", "turbo"
+  reverse?: boolean // sens inverse
+}
 
 export type VersionOriginKind = 'import' | 'ai-proposal' | 'manual'
 export type VersionOrigin = { kind: VersionOriginKind; detail?: string }
@@ -50,4 +62,7 @@ export type RecipeVersion = {
   why?: string // AI rationale, for proposed versions
   params: Param[] // the TARGET parameters
   steps: StepText[]
+  // Thermomix settings aligned with `steps` by index (null = plain step).
+  // Absent for non-tmx recipes and versions imported before this field existed.
+  tmxSteps?: (TmxSettings | null)[]
 }

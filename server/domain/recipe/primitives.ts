@@ -9,6 +9,9 @@ import {
   type RecipeTitle as RecipeTitleType,
   type RecipeType as RecipeTypeType,
   type StepText as StepTextType,
+  type TmxSpeed as TmxSpeedType,
+  type TmxTemperature as TmxTemperatureType,
+  type TmxTime as TmxTimeType,
   type VersionNumber as VersionNumberType,
   type VersionOriginKind as VersionOriginKindType,
 } from '~/domain/recipe/types'
@@ -53,6 +56,21 @@ export const ParamValue = (value: unknown) => {
 export const StepText = (value: unknown) => {
   const v = z.string().trim().min(1).max(300).parse(value)
   return make<StepTextType>()(v)
+}
+
+export const TmxTime = (value: unknown) => {
+  const v = z.string().trim().min(1).max(20).parse(value)
+  return make<TmxTimeType>()(v)
+}
+
+export const TmxTemperature = (value: unknown) => {
+  const v = z.string().trim().min(1).max(20).parse(value)
+  return make<TmxTemperatureType>()(v)
+}
+
+export const TmxSpeed = (value: unknown) => {
+  const v = z.string().trim().min(1).max(20).parse(value)
+  return make<TmxSpeedType>()(v)
 }
 
 export const VersionOriginKind = (value: unknown) =>

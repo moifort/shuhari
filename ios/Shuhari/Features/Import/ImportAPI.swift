@@ -31,18 +31,35 @@ enum ImportAPI {
             type: RecipeType(graphql: analysis.type),
             params: analysis.params.map { Param(key: $0.key, value: $0.value) },
             steps: analysis.steps,
+            tmxSteps: analysis.tmxSteps.map { list in
+                list.map { $0.map { TmxSettings(time: $0.time, temperature: $0.temperature, speed: $0.speed, reverse: $0.reverse ?? false) } }
+            },
             sourceLabel: analysis.sourceLabel
         )
     }
 
     /// Create a recipe and its v1 from a confirmed preview. Returns the recipe id.
     static func create(_ analysis: ImportAnalysis) async throws -> String {
+        let tmxSteps: GraphQLNullable<[ShuhariGraphQL.TmxSettingsInput?]> = analysis.tmxSteps
+            .map { list in
+                .some(list.map { settings in
+                    settings.map {
+                        ShuhariGraphQL.TmxSettingsInput(
+                            reverse: $0.reverse ? .some(true) : .none,
+                            speed: GraphQLHelpers.graphQLNullable($0.speed),
+                            temperature: GraphQLHelpers.graphQLNullable($0.temperature),
+                            time: GraphQLHelpers.graphQLNullable($0.time)
+                        )
+                    }
+                })
+            } ?? .none
         let input = ShuhariGraphQL.CreateRecipeInput(
             params: analysis.params.map { ShuhariGraphQL.ParamInput(key: $0.key, value: $0.value) },
             sourceLabel: GraphQLHelpers.graphQLNullable(analysis.sourceLabel),
             steps: analysis.steps,
             subtitle: GraphQLHelpers.graphQLNullable(analysis.subtitle),
             title: analysis.title,
+            tmxSteps: tmxSteps,
             type: analysis.type.graphQLValue
         )
         let data = try await GraphQLHelpers.perform(

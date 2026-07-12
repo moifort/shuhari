@@ -21,6 +21,9 @@ input CreateRecipeInput {
   steps: [StepText!]!
   subtitle: RecipeSubtitle
   title: RecipeTitle!
+
+  """Per-step Thermomix settings, aligned with steps (null = plain step)"""
+  tmxSteps: [TmxSettingsInput]
   type: RecipeType!
 }
 
@@ -46,6 +49,9 @@ type ImportAnalysis {
   steps: [String!]!
   subtitle: String
   title: String!
+
+  """Per-step Thermomix settings, aligned with steps (null = plain step)"""
+  tmxSteps: [ImportTmxSettings]
   type: RecipeType!
 }
 
@@ -60,6 +66,16 @@ type ImportResult {
   recipes: Int!
   trials: Int!
   versions: Int!
+}
+
+"""
+Thermomix settings for one step extracted by the AI (unvalidated preview)
+"""
+type ImportTmxSettings {
+  reverse: Boolean
+  speed: String
+  temperature: String
+  time: String
 }
 
 type Mutation {
@@ -267,6 +283,31 @@ scalar Remarks
 """A short recipe step (1-300 chars)"""
 scalar StepText
 
+"""Thermomix settings for one step (display-oriented, all optional)"""
+type TmxSettings {
+  reverse: Boolean
+  speed: TmxSpeed
+  temperature: TmxTemperature
+  time: TmxTime
+}
+
+"""Thermomix settings for one step (all optional)"""
+input TmxSettingsInput {
+  reverse: Boolean
+  speed: TmxSpeed
+  temperature: TmxTemperature
+  time: TmxTime
+}
+
+"""Thermomix step speed, display-oriented (e.g. "5", "pétrin", "turbo")"""
+scalar TmxSpeed
+
+"""Thermomix step temperature, display-oriented (e.g. "100°C", "Varoma")"""
+scalar TmxTemperature
+
+"""Thermomix step duration, display-oriented (e.g. "3 min", "30 s")"""
+scalar TmxTime
+
 """One execution of a recipe version"""
 type Trial {
   executedAt: DateTime!
@@ -315,6 +356,9 @@ type Version {
   originKind: VersionOriginKind!
   params: [Param!]!
   steps: [StepText!]!
+
+  """Per-step Thermomix settings, aligned with steps (null = plain step)"""
+  tmxSteps: [TmxSettings]
 
   """How many trials ran against this version"""
   trialCount: Int!

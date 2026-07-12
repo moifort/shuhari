@@ -15,6 +15,33 @@ const nullToNull = <T>(schema: z.ZodType<T>) => schema.nullish().transform((v) =
 
 const paramSchema = z.object({ key: z.string().min(1), value: z.string().min(1) })
 
+// A step comes back as an object carrying the text plus optional Thermomix
+// settings; a bare string (schema-less fallback) is tolerated as a plain step.
+const stepSchema = z.union([
+  z
+    .string()
+    .min(1)
+    .transform((text) => ({ text, tmx: null })),
+  z
+    .object({
+      text: z.string().min(1),
+      tmxTime: nullToNull(z.string().min(1)),
+      tmxTemperature: nullToNull(z.string().min(1)),
+      tmxSpeed: nullToNull(z.string().min(1)),
+      tmxReverse: nullToNull(z.boolean()),
+    })
+    .transform(({ text, tmxTime, tmxTemperature, tmxSpeed, tmxReverse }) => ({
+      text,
+      // tmxReverse: false carries no information — Gemini sometimes emits it
+      // instead of null on plain steps, and it must not turn them into
+      // "Thermomix" steps.
+      tmx:
+        tmxTime === null && tmxTemperature === null && tmxSpeed === null && !tmxReverse
+          ? null
+          : { time: tmxTime, temperature: tmxTemperature, speed: tmxSpeed, reverse: tmxReverse },
+    })),
+])
+
 // Gemini marks absent fields as explicit null (the prompt instructs it to), so
 // every optional field accepts null.
 export const ImportAnalysisSchema = z
@@ -24,18 +51,20 @@ export const ImportAnalysisSchema = z
     subtitle: nullToNull(z.string()),
     sourceLabel: nullToNull(z.string()),
     params: z.array(paramSchema).default([]),
-    steps: z.array(z.string().min(1)).default([]),
+    steps: z.array(stepSchema).default([]),
   })
-  .transform(
-    (raw): ImportAnalysis => ({
+  .transform((raw): ImportAnalysis => {
+    const tmxSteps = raw.steps.map((s) => s.tmx)
+    return {
       type: raw.type,
       title: raw.title,
       subtitle: raw.subtitle,
       sourceLabel: raw.sourceLabel,
       params: raw.params,
-      steps: raw.steps,
-    }),
-  )
+      steps: raw.steps.map((s) => s.text),
+      tmxSteps: tmxSteps.some((s) => s !== null) ? tmxSteps : null,
+    }
+  })
 
 export const ProposalDraftSchema = z
   .object({

@@ -8,6 +8,9 @@ import type {
   RecipeSubtitle,
   RecipeTitle,
   StepText,
+  TmxSpeed,
+  TmxTemperature,
+  TmxTime,
   VersionNumber,
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
@@ -42,6 +45,9 @@ export const builder = new SchemaBuilder<{
     ParamKey: { Input: ParamKey; Output: ParamKey }
     ParamValue: { Input: ParamValue; Output: ParamValue }
     StepText: { Input: StepText; Output: StepText }
+    TmxTime: { Input: TmxTime; Output: TmxTime }
+    TmxTemperature: { Input: TmxTemperature; Output: TmxTemperature }
+    TmxSpeed: { Input: TmxSpeed; Output: TmxSpeed }
     Remarks: { Input: Remarks; Output: Remarks }
   }
 }>({

@@ -1,11 +1,21 @@
 import { describe, expect, test } from 'bun:test'
 import {
+  alignedTmxSteps,
   applyProposalToParams,
   nextVersionNumber,
   PROMOTION_NOTE,
   readyToPromote,
 } from '~/domain/recipe/business-rules'
-import type { Param, ParamKey, ParamValue, VersionNumber } from '~/domain/recipe/types'
+import type {
+  Param,
+  ParamKey,
+  ParamValue,
+  StepText,
+  TmxSettings,
+  TmxSpeed,
+  TmxTime,
+  VersionNumber,
+} from '~/domain/recipe/types'
 import type { Note } from '~/domain/trial/types'
 
 const v = (n: number) => n as VersionNumber
@@ -34,6 +44,31 @@ describe('readyToPromote', () => {
 describe('nextVersionNumber', () => {
   test('increments the highest allocated number', () => {
     expect(nextVersionNumber(v(3))).toBe(v(4))
+  })
+})
+
+describe('alignedTmxSteps', () => {
+  const steps = ['Mixer', 'Cuire'].map((s) => s as StepText)
+  const settings: TmxSettings = { time: '5 min' as TmxTime, speed: '4' as TmxSpeed }
+
+  test('keeps settings aligned with the steps', () => {
+    expect(alignedTmxSteps(steps, [settings, null])).toEqual([settings, null])
+  })
+  test('drops settings whose length differs from the steps', () => {
+    expect(alignedTmxSteps(steps, [settings])).toBeUndefined()
+  })
+  test('drops settings when every entry is null', () => {
+    expect(alignedTmxSteps(steps, [null, null])).toBeUndefined()
+  })
+  test('normalizes entries carrying no actual setting to null', () => {
+    expect(alignedTmxSteps(steps, [settings, { reverse: false }])).toEqual([settings, null])
+    expect(alignedTmxSteps(steps, [{}, { reverse: false }])).toBeUndefined()
+  })
+  test('keeps reverse alone as a setting when true', () => {
+    expect(alignedTmxSteps(steps, [{ reverse: true }, null])).toEqual([{ reverse: true }, null])
+  })
+  test('passes through absent settings', () => {
+    expect(alignedTmxSteps(steps, undefined)).toBeUndefined()
   })
 })
 
