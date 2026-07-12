@@ -30,10 +30,25 @@ struct ChangelogEntryRow: View {
 }
 
 private struct ChangelogBulletStyle: LabelStyle {
+    @ScaledMetric(relativeTo: .footnote) private var bulletSize: CGFloat = 5
+
     func makeBody(configuration: Configuration) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            configuration.icon.font(.system(size: 5)).foregroundStyle(.tertiary)
+            configuration.icon.font(.system(size: bulletSize)).foregroundStyle(.tertiary)
             configuration.title
         }
+    }
+}
+
+#Preview {
+    List {
+        ChangelogEntryRow(
+            version: "1.3",
+            date: Date(),
+            notes: [
+                "Import d’une recette par photo.",
+                "Réglages Thermomix affichés étape par étape.",
+            ]
+        )
     }
 }

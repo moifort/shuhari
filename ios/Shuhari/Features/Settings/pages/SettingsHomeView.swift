@@ -54,7 +54,7 @@ struct SettingsHomeView: View {
             .navigationTitle("Réglages")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Fermer") { dismiss() }
                 }
             }

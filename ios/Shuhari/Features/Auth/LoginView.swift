@@ -6,14 +6,16 @@ struct LoginView: View {
     @State private var nonce: String = ""
     @State private var error: String?
     @State private var isSigningIn = false
+    @ScaledMetric(relativeTo: .largeTitle) private var logoSize: CGFloat = 64
 
     var body: some View {
         VStack(spacing: 32) {
             Spacer()
             VStack(spacing: 12) {
                 Image(systemName: "book.closed.fill")
-                    .font(.system(size: 64))
+                    .font(.system(size: logoSize))
                     .foregroundStyle(Color.accentColor)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility2)
                 Text("Shuhari")
                     .font(.largeTitle.bold())
                 Text("Ton carnet d'expérimentation. Connecte-toi pour commencer.")
