@@ -4,17 +4,11 @@ import XCTest
 struct ImportPage {
     let app: XCUIApplication
 
+    /// From the camera-first scan screen, open the text-entry sheet (the only
+    /// import path exercisable on the simulator — no camera, out-of-process picker).
     @discardableResult
-    func verify() throws -> Self {
-        try app.navigationBars["Importer"].waitOrFail()
-        return self
-    }
-
-    @discardableResult
-    func selectTextMode() throws -> Self {
-        let picker = app.segmentedControls["import-mode-picker"]
-        try picker.waitOrFail()
-        picker.buttons["Texte"].tap()
+    func openTextEntry() throws -> Self {
+        try app.buttons["import-text-button"].tapOrFail()
         return self
     }
 

@@ -53,16 +53,7 @@ struct ImportPreviewPage: View {
             }
 
             Section {
-                // Branch on the live type picker so the preview always matches
-                // what "Enregistrer" will save (`edited` drops settings likewise).
-                if let tmxItems = TmxStepsList.Item.zipped(
-                    steps: analysis.steps,
-                    tmxSteps: type == .tmx ? analysis.tmxSteps : nil
-                ) {
-                    TmxStepsList(items: tmxItems)
-                } else {
-                    StepsList(steps: analysis.steps)
-                }
+                StepsList(steps: analysis.steps)
             } header: {
                 Text("Étapes")
             } footer: {
@@ -73,17 +64,21 @@ struct ImportPreviewPage: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Aperçu")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button {
-                    onSave(edited)
-                } label: {
-                    if isSaving { ProgressView() } else { Text("Enregistrer") }
+        .safeAreaInset(edge: .bottom) {
+            Button {
+                onSave(edited)
+            } label: {
+                Group {
+                    if isSaving { ProgressView() } else { Text("Enregistrer la recette (v1)") }
                 }
-                .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
-                .accessibilityIdentifier("save-recipe-button")
+                .frame(maxWidth: .infinity)
             }
+            .buttonStyle(.glassProminent)
+            .controlSize(.large)
+            .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
+            .accessibilityIdentifier("save-recipe-button")
+            .padding(.horizontal)
+            .padding(.bottom, 8)
         }
     }
 
@@ -94,9 +89,7 @@ struct ImportPreviewPage: View {
             type: type,
             params: analysis.params.map { Param(key: $0.key, value: values[$0.key] ?? $0.value) },
             steps: analysis.steps,
-            // Settings only make sense for a Thermomix recipe — drop them when
-            // the user overrides the detected type.
-            tmxSteps: type == .tmx ? analysis.tmxSteps : nil,
+            tmxSteps: analysis.tmxSteps,
             sourceLabel: analysis.sourceLabel
         )
     }
