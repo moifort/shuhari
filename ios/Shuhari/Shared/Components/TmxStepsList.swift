@@ -2,7 +2,8 @@ import SwiftUI
 
 /// Numbered Thermomix steps: the instruction plus capsule badges for the
 /// machine settings (time / temperature / speed / reverse blade).
-/// Renders one row per step (List/Form-friendly), like `StepsList`.
+/// Renders one row per step (List/Form-friendly), like `StepsList`; `big`
+/// enlarges everything for the hands-busy execution mode.
 struct TmxStepsList: View {
     struct Item {
         let text: String
@@ -15,22 +16,32 @@ struct TmxStepsList: View {
     }
 
     let items: [Item]
+    var big: Bool = false
 
     var body: some View {
-        ForEach(Array(items.enumerated()), id: \.offset) { index, item in
-            row(index: index, item: item)
+        if big {
+            VStack(alignment: .leading, spacing: 16) {
+                ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                    row(index: index, item: item)
+                }
+            }
+        } else {
+            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                row(index: index, item: item)
+            }
         }
     }
 
     private func row(index: Int, item: Item) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Text("\(index + 1)")
-                .font(.subheadline.weight(.semibold))
+                .font((big ? Font.title2 : .subheadline).weight(.semibold))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
-                .frame(minWidth: 20, alignment: .trailing)
-            VStack(alignment: .leading, spacing: 6) {
+                .frame(minWidth: big ? 28 : 20, alignment: .trailing)
+            VStack(alignment: .leading, spacing: big ? 10 : 6) {
                 Text(item.text)
+                    .font(big ? .title3 : .body)
                 if item.hasSettings {
                     badges(item)
                 }
@@ -62,11 +73,11 @@ struct TmxStepsList: View {
             Image(systemName: icon)
             Text(text)
         }
-        .font(.caption.weight(.semibold))
+        .font((big ? Font.subheadline : .caption).weight(.semibold))
         .monospacedDigit()
         .foregroundStyle(Theme.Status.tmx)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 3)
+        .padding(.horizontal, big ? 10 : 8)
+        .padding(.vertical, big ? 5 : 3)
         .background(Theme.Status.tmx.opacity(0.12), in: Capsule())
         .accessibilityElement(children: .combine)
     }

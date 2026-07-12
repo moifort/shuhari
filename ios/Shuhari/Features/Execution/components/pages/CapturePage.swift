@@ -15,6 +15,7 @@ struct CapturePage: View {
     @State private var photoItem: PhotosPickerItem?
     @State private var photoBase64: String?
     @State private var photoAttached = false
+    @FocusState private var focusedParam: String?
 
     init(
         recipeTitle: String,
@@ -36,6 +37,10 @@ struct CapturePage: View {
                     LabeledContent(target.key) {
                         TextField(target.value, text: binding(for: target.key))
                             .multilineTextAlignment(.trailing)
+                            .keyboardType(.numbersAndPunctuation)
+                            .submitLabel(target.key == targets.last?.key ? .done : .next)
+                            .focused($focusedParam, equals: target.key)
+                            .onSubmit { focusNextParam(after: target.key) }
                             .accessibilityIdentifier("real-param-\(target.key)")
                     }
                 }
@@ -61,7 +66,7 @@ struct CapturePage: View {
                         Text(photoAttached ? "Photo ajoutée" : "Ajouter une photo")
                     } icon: {
                         Image(systemName: photoAttached ? "checkmark.circle.fill" : "photo.badge.plus")
-                            .foregroundStyle(photoAttached ? Color.green : Color.accentColor)
+                            .foregroundStyle(photoAttached ? Theme.Status.current : Color.accentColor)
                     }
                 }
                 .accessibilityIdentifier("photo-picker")
@@ -94,6 +99,7 @@ struct CapturePage: View {
         }
     }
 
+
     private var realParams: [Param] {
         targets.map { Param(key: $0.key, value: values[$0.key] ?? $0.value) }
     }
@@ -105,6 +111,14 @@ struct CapturePage: View {
         )
     }
 
+    private func focusNextParam(after key: String) {
+        guard let index = targets.firstIndex(where: { $0.key == key }), targets.index(after: index) < targets.endIndex else {
+            focusedParam = nil
+            return
+        }
+        focusedParam = targets[targets.index(after: index)].key
+    }
+
     private func attachPhoto(_ item: PhotosPickerItem) async {
         guard let data = try? await item.loadTransferable(type: Data.self) else { return }
         let jpeg = await Task.detached(priority: .userInitiated) {
@@ -114,5 +128,16 @@ struct CapturePage: View {
             photoBase64 = jpeg.base64EncodedString()
             photoAttached = true
         }
+    }
+}
+
+#Preview {
+    NavigationStack {
+        CapturePage(
+            recipeTitle: Fixtures.espresso.title,
+            targets: Fixtures.espressoV4.params,
+            isSaving: false,
+            onSave: { _, _, _, _ in }
+        )
     }
 }

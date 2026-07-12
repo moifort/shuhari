@@ -5,7 +5,6 @@ import SwiftUI
 /// past trial are reinjected.
 struct ExecutePage: View {
     let recipeTitle: String
-    let type: RecipeType
     let version: RecipeVersion
     /// When set, the params actually used in the replayed trial (keyed by name).
     let replayParams: [Param]?
@@ -33,14 +32,18 @@ struct ExecutePage: View {
                         systemImage: "arrow.trianglehead.counterclockwise"
                     )
                     .font(.footnote.weight(.medium))
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Theme.Status.current)
                 }
 
                 ParamsGrid(items: displayParams, big: true)
 
                 if !version.steps.isEmpty {
                     Divider()
-                    StepsList(steps: version.steps, big: true)
+                    if let tmxItems = TmxStepsList.Item.zipped(steps: version.steps, tmxSteps: version.tmxSteps) {
+                        TmxStepsList(items: tmxItems, big: true)
+                    } else {
+                        StepsList(steps: version.steps, big: true)
+                    }
                 }
             }
             .padding()
@@ -59,5 +62,29 @@ struct ExecutePage: View {
             .padding(.horizontal)
             .padding(.bottom, 8)
         }
+    }
+}
+
+#Preview("Café") {
+    NavigationStack {
+        ExecutePage(
+            recipeTitle: Fixtures.espresso.title,
+            version: Fixtures.espressoV4,
+            replayParams: nil,
+            replayDate: nil,
+            onDone: {}
+        )
+    }
+}
+
+#Preview("Thermomix") {
+    NavigationStack {
+        ExecutePage(
+            recipeTitle: Fixtures.risotto.title,
+            version: Fixtures.risottoV2,
+            replayParams: nil,
+            replayDate: nil,
+            onDone: {}
+        )
     }
 }

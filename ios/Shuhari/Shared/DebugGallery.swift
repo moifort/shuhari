@@ -39,7 +39,6 @@ struct DebugGallery: View {
             NavigationStack {
                 ExecutePage(
                     recipeTitle: Fixtures.espresso.title,
-                    type: .cafe,
                     version: Fixtures.espressoV4,
                     replayParams: nil,
                     replayDate: nil,
@@ -50,7 +49,6 @@ struct DebugGallery: View {
             NavigationStack {
                 ExecutePage(
                     recipeTitle: Fixtures.risotto.title,
-                    type: .tmx,
                     version: Fixtures.risottoV2,
                     replayParams: nil,
                     replayDate: nil,
