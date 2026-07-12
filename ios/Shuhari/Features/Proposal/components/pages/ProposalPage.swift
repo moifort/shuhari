@@ -96,7 +96,7 @@ struct ProposalPage: View {
             }
         } header: {
             Label("Ce qui change — proposition de l’IA", systemImage: "flask.fill")
-                .foregroundStyle(.orange)
+                .foregroundStyle(Theme.Status.toTest)
                 .textCase(nil)
         } footer: {
             VStack(alignment: .leading, spacing: 6) {

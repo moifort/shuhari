@@ -59,10 +59,10 @@ struct TmxStepsList: View {
         Label(text, systemImage: icon)
             .font(.caption.weight(.semibold))
             .monospacedDigit()
-            .foregroundStyle(.teal)
+            .foregroundStyle(Theme.Status.tmx)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
-            .background(.teal.opacity(0.12), in: Capsule())
+            .background(Theme.Status.tmx.opacity(0.12), in: Capsule())
     }
 }
 

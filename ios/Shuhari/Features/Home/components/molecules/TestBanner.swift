@@ -19,7 +19,7 @@ struct TestBanner: View {
             } icon: {
                 Image(systemName: "flask.fill")
             }
-            .foregroundStyle(.orange)
+            .foregroundStyle(Theme.Status.toTest)
 
             if let change, !change.isEmpty {
                 Text(change)
@@ -38,7 +38,7 @@ struct TestBanner: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.glassProminent)
-            .tint(.orange)
+            .tint(Theme.Status.toTest)
             .accessibilityIdentifier("execute-v\(versionNumber)-button")
         }
         .padding(.vertical, 4)

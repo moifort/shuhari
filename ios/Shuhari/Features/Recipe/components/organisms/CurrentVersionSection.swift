@@ -21,10 +21,10 @@ struct CurrentVersionSection: View {
             HStack(spacing: 8) {
                 Text("Version courante")
                 Label("v\(version.number)", systemImage: "checkmark.seal.fill")
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Theme.Status.current)
                     .textCase(nil)
                 if let average = version.averageNote {
-                    Text(String(format: "%.1f/10", average).replacingOccurrences(of: ".", with: ","))
+                    Text(NoteFormat.average(average))
                         .foregroundStyle(.tertiary)
                         .textCase(nil)
                 }

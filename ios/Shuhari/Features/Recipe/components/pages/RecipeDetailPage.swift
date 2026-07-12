@@ -57,7 +57,7 @@ struct RecipeDetailPage: View {
                 .textCase(nil)
         } footer: {
             if let average = recipe.overallAverageNote {
-                Text("Note moyenne \(String(format: "%.1f/10", average).replacingOccurrences(of: ".", with: ",")) · \(recipe.trials.count) essai\(recipe.trials.count > 1 ? "s" : "")")
+                Text("Note moyenne \(NoteFormat.average(average)) · \(recipe.trials.count) essai\(recipe.trials.count > 1 ? "s" : "")")
             }
         }
     }
@@ -70,7 +70,7 @@ struct RecipeDetailPage: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Label("Proposition de l’IA en attente", systemImage: "flask.fill")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Theme.Status.toTest)
                     Text(proposal.rationale)
                         .font(.footnote)
                         .foregroundStyle(.secondary)

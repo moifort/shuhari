@@ -26,7 +26,7 @@ struct ParamsGrid: View {
                         Text(item.value)
                             .font(.largeTitle.weight(.semibold))
                             .monospacedDigit()
-                            .foregroundStyle(item.highlighted ? Color.accentColor : .primary)
+                            .foregroundStyle(item.highlighted ? Theme.Status.changed : .primary)
                     }
                     .padding(.vertical, 12)
                     if item.id != items.last?.id {
@@ -39,7 +39,7 @@ struct ParamsGrid: View {
                 LabeledContent(item.key) {
                     Text(item.value)
                         .monospacedDigit()
-                        .foregroundStyle(item.highlighted ? Color.accentColor : .primary)
+                        .foregroundStyle(item.highlighted ? Theme.Status.changed : .primary)
                 }
             }
         }

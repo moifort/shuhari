@@ -44,7 +44,7 @@ struct LibraryRow: View {
     private var subtitle: String {
         var parts: [String] = []
         if let currentVersionNumber { parts.append("v\(currentVersionNumber) courante") }
-        if let averageNote { parts.append(String(format: "%.1f/10 moy.", averageNote).replacingOccurrences(of: ".", with: ",")) }
+        if let averageNote { parts.append(NoteFormat.averageWithSuffix(averageNote)) }
         if let toTestNumber { parts.append("v\(toTestNumber) à tester") }
         return parts.joined(separator: " · ")
     }

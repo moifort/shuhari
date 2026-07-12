@@ -19,22 +19,12 @@ struct TrialComparisonTable: View {
             ForEach(targets) { target in
                 let real = realValue(for: target.key)
                 LabeledContent(target.key) {
-                    HStack(spacing: 6) {
-                        if real.deviated {
-                            Text(target.value)
-                                .monospacedDigit()
-                                .strikethrough()
-                            Image(systemName: "arrow.right")
-                                .font(.caption)
-                            Text(real.value)
-                                .font(.body.weight(.semibold))
-                                .monospacedDigit()
-                                .foregroundStyle(.orange)
-                        } else {
-                            Text(target.value)
-                                .monospacedDigit()
-                                .foregroundStyle(.primary)
-                        }
+                    if real.deviated {
+                        DiffValue(from: target.value, to: real.value)
+                    } else {
+                        Text(target.value)
+                            .monospacedDigit()
+                            .foregroundStyle(.primary)
                     }
                 }
             }

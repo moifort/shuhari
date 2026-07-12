@@ -5,15 +5,8 @@ struct TypeChip: View {
     let type: RecipeType
 
     var body: some View {
-        HStack(spacing: 5) {
-            Image(systemName: type.icon)
-            Text(type.label)
-        }
-        .font(.caption.weight(.medium))
-        .foregroundStyle(.secondary)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(Color(.systemFill), in: Capsule())
+        Chip(icon: type.icon, text: type.label)
+            .accessibilityLabel("Type \(type.label)")
     }
 }
 

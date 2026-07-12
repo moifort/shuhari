@@ -5,19 +5,13 @@ import SwiftUI
 struct NoteBadge: View {
     let note: Int
 
-    private var color: Color {
-        if note >= 8 { .green }
-        else if note >= 6 { .orange }
-        else { .red }
-    }
-
     var body: some View {
         Text("\(note)")
             .font(.subheadline.weight(.semibold))
             .monospacedDigit()
             .foregroundStyle(.white)
             .frame(width: 30, height: 30)
-            .background(color, in: Circle())
+            .background(Theme.Status.note(note), in: Circle())
             .accessibilityLabel("Note \(note) sur 10")
     }
 }

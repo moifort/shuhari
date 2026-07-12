@@ -26,14 +26,10 @@ struct VersionTimelineItem: View {
                         .font(.subheadline.weight(.bold))
                         .monospacedDigit()
                     if isCurrent {
-                        Text("courante")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.green)
+                        StatusTag(kind: .current)
                     }
                     if isToTest {
-                        Text("à tester")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.orange)
+                        StatusTag(kind: .toTest)
                     }
                     Spacer()
                     Text(date.formatted(.dateTime.day().month(.abbreviated)))
@@ -48,7 +44,7 @@ struct VersionTimelineItem: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
-                Text(averageNote.map { String(format: "Notée %.1f/10 · %d essai(s)", $0, trialCount).replacingOccurrences(of: ".", with: ",") } ?? "Pas encore testée")
+                Text(averageNote.map { "Notée \(NoteFormat.average($0)) · \(trialCount) essai\(trialCount > 1 ? "s" : "")" } ?? "Pas encore testée")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -63,8 +59,8 @@ struct VersionTimelineItem: View {
     }
 
     private var statusColor: Color {
-        if isCurrent { return .green }
-        if isToTest { return .orange }
+        if isCurrent { return Theme.Status.current }
+        if isToTest { return Theme.Status.toTest }
         return Color(.tertiaryLabel)
     }
 }
