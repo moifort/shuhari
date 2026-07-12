@@ -2,9 +2,11 @@ import SwiftUI
 
 /// Root once authenticated. Three category tabs (Cuisine = plats & Thermomix,
 /// Café, Cocktail) plus an "Importer" entry pinned to the trailing side of the
-/// tab bar (`.search` role): tapping it never switches tab — it opens the
-/// camera-first import full-screen. On success the new recipe is routed to the
-/// tab matching its type, which navigates to its fiche.
+/// tab bar (`.search` role — the only system affordance that keeps a tab
+/// separated and visible while the bar minimises). Selecting it never becomes
+/// the current tab: the selection binding intercepts it and opens the
+/// camera-first import full-screen instead. On success the new recipe is
+/// routed to the tab matching its type, which navigates to its fiche.
 struct ContentView: View {
     enum RootTab: Hashable {
         case cuisine, cafe, cocktail, importer
@@ -14,8 +16,23 @@ struct ContentView: View {
     @State private var showImport = false
     @State private var importedRecipe: ImportedRecipe?
 
+    /// Routes the import "tab" to the full-screen cover without ever letting
+    /// `selectedTab` land on it — no flicker, no placeholder content.
+    private var tabSelection: Binding<RootTab> {
+        Binding(
+            get: { selectedTab },
+            set: { newValue in
+                if newValue == .importer {
+                    showImport = true
+                } else {
+                    selectedTab = newValue
+                }
+            }
+        )
+    }
+
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: tabSelection) {
             Tab("Cuisine", systemImage: "fork.knife", value: RootTab.cuisine) {
                 HomeView(title: "Cuisine", categoryTypes: [.plat, .tmx], importedRecipe: $importedRecipe)
             }
@@ -39,12 +56,7 @@ struct ContentView: View {
             }
             .accessibilityIdentifier("tab-import")
         }
-        .onChange(of: selectedTab) { oldValue, newValue in
-            if newValue == .importer {
-                selectedTab = oldValue
-                showImport = true
-            }
-        }
+        .tabBarMinimizeBehavior(.onScrollDown)
         .fullScreenCover(isPresented: $showImport) {
             ImportScanView { recipeId, type in
                 importedRecipe = ImportedRecipe(id: recipeId, type: type)
