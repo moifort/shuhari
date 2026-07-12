@@ -10,10 +10,21 @@ struct HomePage: View {
     let onSettings: () -> Void
 
     var body: some View {
-        List {
-            ToTestSection(items: data.toTest, onExecute: onExecute)
-            LibrarySection(data: data)
-            RecentTrialsSection(trials: data.recentTrials, titleProvider: data.title(forRecipe:))
+        Group {
+            if data.toTest.isEmpty && data.library.isEmpty {
+                ContentUnavailableView {
+                    Label("Aucune recette", systemImage: "camera.viewfinder")
+                } description: {
+                    Text("Importe ta première recette depuis l’onglet Importer — photo, texte ou lien.")
+                }
+            } else {
+                List {
+                    ToTestSection(items: data.toTest, onExecute: onExecute)
+                    LibrarySection(data: data)
+                    RecentTrialsSection(trials: data.recentTrials, titleProvider: data.title(forRecipe:))
+                }
+                .scrollEdgeEffectStyle(.soft, for: .top)
+            }
         }
         .navigationTitle(title)
         .toolbar {

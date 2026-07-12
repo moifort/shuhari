@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// The "À tester" section: one banner row per recipe carrying a pending version.
+/// The "à tester" hero cards: one per recipe carrying a pending version. The
+/// cards draw their own chrome, so the rows are cleared of list styling.
 /// Composes as a `Section` directly inside a `List`.
 struct ToTestSection: View {
     let items: [HomeTestItem]
@@ -8,7 +9,7 @@ struct ToTestSection: View {
 
     var body: some View {
         if !items.isEmpty {
-            Section("À tester") {
+            Section {
                 ForEach(items) { item in
                     TestBanner(
                         title: item.title,
@@ -18,6 +19,9 @@ struct ToTestSection: View {
                         type: item.type,
                         onExecute: { onExecute(item) }
                     )
+                    .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
                 }
             }
         }

@@ -29,7 +29,10 @@ struct HomeView: View {
                 } else if let error = store.error {
                     ContentUnavailableView("Erreur", systemImage: "exclamationmark.triangle", description: Text(error))
                 } else {
-                    ProgressView("Chargement…")
+                    HomePage(data: .placeholder, title: title, onExecute: { _ in }, onSettings: {})
+                        .redacted(reason: .placeholder)
+                        .disabled(true)
+                        .accessibilityHidden(true)
                 }
             }
             .recipeFlow(path: $path, execution: $execution) {

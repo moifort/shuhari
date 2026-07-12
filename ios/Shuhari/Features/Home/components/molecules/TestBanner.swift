@@ -1,7 +1,9 @@
 import SwiftUI
 
-/// The "À tester" list row: a pending version with its one-line change, the
-/// rationale, and a prominent execute button. Reused on Home and the recipe fiche.
+/// The "à tester" hero card: the pending version, its one-line change, the
+/// rationale and the execute CTA — the screen's #1 action. A tinted card on
+/// the content layer (no glass), reused on Home and the recipe fiche. Callers
+/// clear the list-row chrome (`listRowInsets`/`listRowBackground`).
 struct TestBanner: View {
     let title: String?
     let versionNumber: Int
@@ -12,48 +14,71 @@ struct TestBanner: View {
     let onExecute: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label {
-                Text(title.map { "\($0) — v\(versionNumber)" } ?? "v\(versionNumber) à tester")
-                    .font(.subheadline.weight(.semibold))
-            } icon: {
-                Image(systemName: "flask.fill")
-            }
-            .foregroundStyle(Theme.Status.toTest)
-
-            if let change, !change.isEmpty {
-                Text(change)
+        VStack(alignment: .leading, spacing: Theme.Spacing.m) {
+            HStack {
+                StatusTag(kind: .toTest)
+                Spacer()
+                Text("v\(versionNumber)")
                     .font(.subheadline.weight(.semibold))
                     .monospacedDigit()
-                    .foregroundStyle(.primary)
-            }
-            if let why, !why.isEmpty {
-                Text(why)
-                    .font(.footnote)
                     .foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                if let title {
+                    Text(title)
+                        .font(.headline)
+                }
+                if let change, !change.isEmpty {
+                    Text(change)
+                        .font(.title3.weight(.semibold))
+                        .monospacedDigit()
+                }
+                if let why, !why.isEmpty {
+                    Text(why)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Button(action: onExecute) {
                 Text(executeLabel ?? "Exécuter la v\(versionNumber)")
+                    .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.glassProminent)
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .controlSize(.large)
             .tint(Theme.Status.toTest)
             .accessibilityIdentifier("execute-v\(versionNumber)-button")
         }
-        .padding(.vertical, 4)
+        .padding(Theme.Spacing.xl)
+        .background(
+            LinearGradient(
+                colors: [Theme.Status.toTest.opacity(0.16), Theme.Status.toTest.opacity(0.05)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: .rect(cornerRadius: Theme.Radius.card)
+        )
+        .containerShape(.rect(cornerRadius: Theme.Radius.card))
     }
 }
 
 #Preview {
     List {
-        TestBanner(
-            title: "Espresso — Brésil Santa Lúcia",
-            versionNumber: 4,
-            change: "Température 93 → 92 °C",
-            why: "Le léger creux en milieu de bouche pointe vers une extraction trop chaude.",
-            type: .cafe,
-            onExecute: {}
-        )
+        Section {
+            TestBanner(
+                title: "Espresso — Brésil Santa Lúcia",
+                versionNumber: 4,
+                change: "Température 93 → 92 °C",
+                why: "Le léger creux en milieu de bouche pointe vers une extraction trop chaude.",
+                type: .cafe,
+                onExecute: {}
+            )
+            .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+        }
     }
 }

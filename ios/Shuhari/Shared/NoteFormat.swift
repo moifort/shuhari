@@ -6,6 +6,11 @@ import Foundation
 enum NoteFormat {
     private static let locale = Locale(identifier: "fr_FR")
 
+    /// "7,5" — the bare figure, for layouts that style the "/10" separately.
+    static func bare(_ value: Double) -> String {
+        value.formatted(.number.precision(.fractionLength(1)).locale(locale))
+    }
+
     /// "7,5/10"
     static func average(_ value: Double) -> String {
         "\(value.formatted(.number.precision(.fractionLength(1)).locale(locale)))/10"

@@ -25,6 +25,9 @@ struct RecipeDetailPage: View {
                         type: recipe.type,
                         onExecute: { onExecute(toTest.number) }
                     )
+                    .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
                 }
             }
 
