@@ -10,8 +10,7 @@ final class TrialLoopFlowTest: BaseUITest {
         try tabBar.verify()
 
         // 1. Seed a recipe through the import flow.
-        let importPage = try tabBar.goToImport().verify()
-        _ = try importPage.selectTextMode()
+        let importPage = try tabBar.goToImport().openTextEntry()
         _ = try importPage.typeRecipe("Espresso : 18 g de café, mouture 2.0, sortie 36 g, 93 °C, 25 s.")
         let recipe = try importPage.analyze().verify().save()
         try recipe.verify()

@@ -7,7 +7,7 @@ import SwiftUI
 /// search). Capture/pick/type → AI analysis → editable preview → createRecipe.
 /// On success it hands the new recipe id back via `onCreated` and dismisses.
 struct ImportScanView: View {
-    let onCreated: (String) -> Void
+    let onCreated: (String, RecipeType) -> Void
 
     private enum Step: Equatable {
         case camera
@@ -226,7 +226,7 @@ struct ImportScanView: View {
         defer { isSaving = false }
         do {
             let recipeId = try await ImportAPI.create(analysis)
-            onCreated(recipeId)
+            onCreated(recipeId, analysis.type)
         } catch {
             errorPresenter.message = reportError(error)
         }
@@ -248,5 +248,5 @@ private struct CircleIcon: View {
 }
 
 #Preview {
-    ImportScanView { _ in }
+    ImportScanView { _, _ in }
 }

@@ -5,6 +5,7 @@ import SwiftUI
 /// past trial are reinjected.
 struct ExecutePage: View {
     let recipeTitle: String
+    let type: RecipeType
     let version: RecipeVersion
     /// When set, the params actually used in the replayed trial (keyed by name).
     let replayParams: [Param]?

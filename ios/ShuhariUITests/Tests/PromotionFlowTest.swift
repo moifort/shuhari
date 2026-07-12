@@ -12,7 +12,8 @@ final class PromotionFlowTest: BaseUITest {
         try api.seedRecipeWithPendingVersion(title: title)
 
         let tabBar = TabBarPage(app: app)
-        let home = try tabBar.goToCarnet().verify()
+        // "Espresso Promotion" is a coffee recipe → the Café tab.
+        let home = try tabBar.goToCategory("Café").verify()
         try home.verifyRecipeVisible(title)
 
         let recipe = try home.openRecipe(title)

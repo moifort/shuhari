@@ -41,17 +41,3 @@ struct TrialComparisonTable: View {
         }
     }
 }
-
-#Preview {
-    List {
-        TrialComparisonTable(
-            targets: [
-                Param(key: "Dose", value: "18,5 g"),
-                Param(key: "Température", value: "92 °C"),
-            ],
-            real: [
-                Param(key: "Température", value: "93 °C"),
-            ]
-        )
-    }
-}

@@ -22,6 +22,7 @@ struct RecipeDetailPage: View {
                         versionNumber: toTest.number,
                         change: toTest.change,
                         why: toTest.why ?? toTest.originDetail,
+                        type: recipe.type,
                         onExecute: { onExecute(toTest.number) }
                     )
                 }
@@ -44,9 +45,6 @@ struct RecipeDetailPage: View {
 
     private var header: some View {
         Section {
-            LabeledContent("Type") {
-                Label(recipe.type.label, systemImage: recipe.type.icon)
-            }
             if let derived = recipe.derivedFrom {
                 NavigationLink(value: RecipeRoute.recipe(id: derived.id)) {
                     Label("Dérivée de \(derived.title)", systemImage: "link")
@@ -54,6 +52,9 @@ struct RecipeDetailPage: View {
                         .foregroundStyle(.secondary)
                 }
             }
+        } header: {
+            TypeChip(type: recipe.type)
+                .textCase(nil)
         } footer: {
             if let average = recipe.overallAverageNote {
                 Text("Note moyenne \(String(format: "%.1f/10", average).replacingOccurrences(of: ".", with: ",")) · \(recipe.trials.count) essai\(recipe.trials.count > 1 ? "s" : "")")
@@ -67,7 +68,7 @@ struct RecipeDetailPage: View {
         Section {
             NavigationLink(value: RecipeRoute.proposal(recipeId: recipe.id)) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Label("Proposition de l’IA en attente", systemImage: "sparkles")
+                    Label("Proposition de l’IA en attente", systemImage: "flask.fill")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.orange)
                     Text(proposal.rationale)

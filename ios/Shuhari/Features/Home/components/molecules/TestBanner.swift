@@ -7,6 +7,7 @@ struct TestBanner: View {
     let versionNumber: Int
     let change: String?
     let why: String?
+    let type: RecipeType
     var executeLabel: String? = nil
     let onExecute: () -> Void
 
@@ -51,6 +52,7 @@ struct TestBanner: View {
             versionNumber: 4,
             change: "Température 93 → 92 °C",
             why: "Le léger creux en milieu de bouche pointe vers une extraction trop chaude.",
+            type: .cafe,
             onExecute: {}
         )
     }

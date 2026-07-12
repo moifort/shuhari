@@ -32,6 +32,17 @@ struct HomeData: Sendable {
         library.filter { $0.type == type }
     }
 
+    /// Restrict every section to the given recipe types — backs the per-category tabs.
+    func filtered(to types: Set<RecipeType>) -> HomeData {
+        let lib = library.filter { types.contains($0.type) }
+        let ids = Set(lib.map(\.id))
+        return HomeData(
+            toTest: toTest.filter { types.contains($0.type) },
+            library: lib,
+            recentTrials: recentTrials.filter { ids.contains($0.recipeId) }
+        )
+    }
+
     func title(forRecipe id: String) -> String {
         library.first { $0.id == id }?.title ?? "Recette"
     }

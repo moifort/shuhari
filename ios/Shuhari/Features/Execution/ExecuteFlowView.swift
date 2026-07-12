@@ -29,6 +29,7 @@ struct ExecuteFlowView: View {
                 if let recipe, let version = recipe.version(request.versionNumber) {
                     ExecutePage(
                         recipeTitle: recipe.title,
+                        type: recipe.type,
                         version: version,
                         replayParams: replayTrial?.realParams,
                         replayDate: replayTrial?.executedAt,

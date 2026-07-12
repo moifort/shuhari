@@ -1,29 +1,41 @@
 import SwiftUI
 
-/// Root once authenticated. A "Carnet" tab plus an "Importer" entry pinned to
-/// the trailing side of the tab bar (`.search` role): tapping it never switches
-/// tab — it opens the camera-first import full-screen. On success the new
-/// recipe id is routed into the Carnet, which navigates to its fiche.
+/// Root once authenticated. Three category tabs (Cuisine = plats & Thermomix,
+/// Café, Cocktail) plus an "Importer" entry pinned to the trailing side of the
+/// tab bar (`.search` role): tapping it never switches tab — it opens the
+/// camera-first import full-screen. On success the new recipe is routed to the
+/// tab matching its type, which navigates to its fiche.
 struct ContentView: View {
     enum RootTab: Hashable {
-        case carnet, importer
+        case cuisine, cafe, cocktail, importer
     }
 
-    @State private var selectedTab: RootTab = .carnet
+    @State private var selectedTab: RootTab = .cuisine
     @State private var showImport = false
-    @State private var importedRecipeID: String?
+    @State private var importedRecipe: ImportedRecipe?
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            Tab("Carnet", systemImage: "book", value: RootTab.carnet) {
-                HomeView(importedRecipeID: $importedRecipeID)
+            Tab("Cuisine", systemImage: "fork.knife", value: RootTab.cuisine) {
+                HomeView(title: "Cuisine", categoryTypes: [.plat, .tmx], importedRecipe: $importedRecipe)
             }
-            .accessibilityIdentifier("tab-carnet")
+            .accessibilityIdentifier("tab-cuisine")
+
+            Tab("Café", systemImage: "cup.and.saucer", value: RootTab.cafe) {
+                HomeView(title: "Café", categoryTypes: [.cafe], importedRecipe: $importedRecipe)
+            }
+            .accessibilityIdentifier("tab-cafe")
+
+            Tab("Cocktail", systemImage: "wineglass", value: RootTab.cocktail) {
+                HomeView(title: "Cocktail", categoryTypes: [.cocktail], importedRecipe: $importedRecipe)
+            }
+            .accessibilityIdentifier("tab-cocktail")
 
             Tab(value: RootTab.importer, role: .search) {
                 Color.clear
             } label: {
                 Label("Importer", systemImage: "camera")
+                    .labelStyle(.iconOnly)
             }
             .accessibilityIdentifier("tab-import")
         }
@@ -34,11 +46,19 @@ struct ContentView: View {
             }
         }
         .fullScreenCover(isPresented: $showImport) {
-            ImportScanView { recipeId in
-                importedRecipeID = recipeId
+            ImportScanView { recipeId, type in
+                importedRecipe = ImportedRecipe(id: recipeId, type: type)
                 showImport = false
-                selectedTab = .carnet
+                selectedTab = Self.tab(for: type)
             }
+        }
+    }
+
+    private static func tab(for type: RecipeType) -> RootTab {
+        switch type {
+        case .cafe: .cafe
+        case .cocktail: .cocktail
+        case .plat, .tmx: .cuisine
         }
     }
 }

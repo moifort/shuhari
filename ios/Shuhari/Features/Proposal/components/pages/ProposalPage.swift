@@ -95,7 +95,7 @@ struct ProposalPage: View {
                 }
             }
         } header: {
-            Label("Ce qui change — proposition de l’IA", systemImage: "sparkles")
+            Label("Ce qui change — proposition de l’IA", systemImage: "flask.fill")
                 .foregroundStyle(.orange)
                 .textCase(nil)
         } footer: {

@@ -3,10 +3,11 @@ import XCTest
 @MainActor
 struct HomePage {
     let app: XCUIApplication
+    let title: String
 
     @discardableResult
     func verify() throws -> Self {
-        try app.navigationBars["Carnet"].waitOrFail()
+        try app.navigationBars[title].waitOrFail()
         return self
     }
 

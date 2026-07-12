@@ -11,16 +11,11 @@ struct CurrentVersionSection: View {
             ParamsGrid(items: version.params.map {
                 ParamsGrid.Item(key: $0.key, value: $0.value, highlighted: version.changedKeys.contains($0.key))
             })
-            if let tmxItems = TmxStepsList.Item.zipped(steps: version.steps, tmxSteps: version.tmxSteps) {
-                TmxStepsList(items: tmxItems)
-            } else {
-                StepsList(steps: version.steps)
-            }
+            StepsList(steps: version.steps)
             Button(action: onExecute) {
                 Label("Exécuter la v\(version.number)", systemImage: "play.fill")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderless)
             .accessibilityIdentifier("execute-current-button")
         } header: {
             HStack(spacing: 8) {
@@ -35,31 +30,5 @@ struct CurrentVersionSection: View {
                 }
             }
         }
-    }
-}
-
-#Preview {
-    List {
-        CurrentVersionSection(
-            version: RecipeVersion(
-                number: 3,
-                change: "Mouture plus fine",
-                why: nil,
-                originKind: .aiProposal,
-                originDetail: nil,
-                changedKeys: ["Mouture"],
-                params: [
-                    Param(key: "Dose", value: "18,5 g"),
-                    Param(key: "Température", value: "92 °C"),
-                    Param(key: "Mouture", value: "fine"),
-                ],
-                steps: ["Chauffer l'eau à 92 °C.", "Extraire 27 s."],
-                tmxSteps: nil,
-                averageNote: 7.5,
-                trialCount: 2,
-                createdAt: Date()
-            ),
-            onExecute: {}
-        )
     }
 }

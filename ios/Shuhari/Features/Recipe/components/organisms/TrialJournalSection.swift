@@ -31,15 +31,3 @@ struct TrialJournalSection: View {
         }
     }
 }
-
-#Preview {
-    List {
-        TrialJournalSection(
-            recipeTitle: "Espresso — Brésil",
-            trials: [
-                Trial(id: "t1", recipeId: "1", versionNumber: 3, note: 8, remarks: "Équilibré, chocolat noir.", realParams: [], photoUrl: nil, executedAt: Date()),
-            ]
-        )
-        TrialJournalSection(recipeTitle: "Negroni", trials: [])
-    }
-}

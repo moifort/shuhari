@@ -22,3 +22,10 @@ struct ExecutionRequest: Identifiable, Hashable {
 struct RecipeIdWrapper: Identifiable {
     let id: String
 }
+
+/// A freshly imported recipe handed from the import flow to its category tab,
+/// which then navigates to the new fiche. The `type` picks the destination tab.
+struct ImportedRecipe: Equatable {
+    let id: String
+    let type: RecipeType
+}

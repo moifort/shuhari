@@ -24,15 +24,3 @@ struct RecentTrialsSection: View {
         }
     }
 }
-
-#Preview {
-    List {
-        RecentTrialsSection(
-            trials: [
-                Trial(id: "t1", recipeId: "1", versionNumber: 3, note: 8, remarks: "Équilibré, chocolat noir.", realParams: [], photoUrl: nil, executedAt: Date()),
-                Trial(id: "t2", recipeId: "1", versionNumber: 2, note: 5, remarks: "Trop amer.", realParams: [], photoUrl: nil, executedAt: Date()),
-            ],
-            titleProvider: { _ in "Espresso — Brésil" }
-        )
-    }
-}

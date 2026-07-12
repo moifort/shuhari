@@ -31,16 +31,3 @@ struct LibrarySection: View {
         }
     }
 }
-
-#Preview {
-    List {
-        LibrarySection(data: HomeData(
-            toTest: [],
-            library: [
-                .init(id: "1", title: "Espresso — Brésil", type: .cafe, currentVersionNumber: 3, averageNote: 7.5, toTestNumber: 4, isDerived: false),
-                .init(id: "2", title: "Negroni blanc", type: .cocktail, currentVersionNumber: 1, averageNote: 6.0, toTestNumber: nil, isDerived: true),
-            ],
-            recentTrials: []
-        ))
-    }
-}

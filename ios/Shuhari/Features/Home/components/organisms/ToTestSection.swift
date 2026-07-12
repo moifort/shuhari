@@ -15,6 +15,7 @@ struct ToTestSection: View {
                         versionNumber: item.versionNumber,
                         change: item.change,
                         why: item.why,
+                        type: item.type,
                         onExecute: { onExecute(item) }
                     )
                 }

@@ -10,10 +10,11 @@ struct TabBarPage {
         return self
     }
 
+    /// Tap one of the category tabs (Cuisine / Café / Cocktail) by its label.
     @discardableResult
-    func goToCarnet() throws -> HomePage {
-        try app.tabBars.buttons["Carnet"].tapOrFail()
-        return HomePage(app: app)
+    func goToCategory(_ name: String) throws -> HomePage {
+        try app.tabBars.buttons[name].tapOrFail()
+        return HomePage(app: app, title: name)
     }
 
     @discardableResult

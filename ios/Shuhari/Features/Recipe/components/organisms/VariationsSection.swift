@@ -24,11 +24,3 @@ struct VariationsSection: View {
         }
     }
 }
-
-#Preview {
-    List {
-        VariationsSection(variations: [
-            RecipeRef(id: "2", title: "Espresso — déca", type: .cafe, subtitle: nil, currentVersionNumber: 1, averageNote: 6.5),
-        ])
-    }
-}

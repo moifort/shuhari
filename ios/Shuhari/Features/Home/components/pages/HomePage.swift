@@ -5,6 +5,7 @@ import SwiftUI
 /// `HomeView`.
 struct HomePage: View {
     let data: HomeData
+    let title: String
     let onExecute: (HomeTestItem) -> Void
     let onSettings: () -> Void
 
@@ -14,7 +15,7 @@ struct HomePage: View {
             LibrarySection(data: data)
             RecentTrialsSection(trials: data.recentTrials, titleProvider: data.title(forRecipe:))
         }
-        .navigationTitle("Carnet")
+        .navigationTitle(title)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: onSettings) {
@@ -42,6 +43,7 @@ struct HomePage: View {
                     .init(id: "t1", recipeId: "1", versionNumber: 3, note: 8, remarks: "Équilibré, chocolat noir.", realParams: [], photoUrl: nil, executedAt: Date()),
                 ]
             ),
+            title: "Cuisine",
             onExecute: { _ in },
             onSettings: {}
         )
