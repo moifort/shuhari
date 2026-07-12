@@ -42,7 +42,7 @@ struct ProposalView: View {
                 )
             } else if recipe != nil {
                 // Proposal already resolved elsewhere.
-                ContentUnavailableView("Aucune proposition en attente", systemImage: "flask")
+                ContentUnavailableView("Aucune proposition en attente", systemImage: "sparkles")
             } else if let loadError {
                 ContentUnavailableView("Erreur", systemImage: "exclamationmark.triangle", description: Text(loadError))
             } else {

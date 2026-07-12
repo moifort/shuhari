@@ -1,9 +1,13 @@
 import PhotosUI
 import SwiftUI
 
-/// Root of the "Importer" tab. Segmented source (Photos / Caméra / URL / Texte), an AI
-/// analysis overlay, then the editable preview → createRecipe → recipe fiche.
+/// Recipe import, presented as a settings-style modal sheet. Segmented source
+/// (Photos / Caméra / URL / Texte), an AI analysis overlay, then the editable
+/// preview → createRecipe. On success it hands the new recipe id back to the
+/// Carnet (via `onCreated`) and dismisses.
 struct ImportView: View {
+    let onCreated: (String) -> Void
+
     enum Mode: String, CaseIterable, Identifiable {
         case photo, camera, url, text
         var id: String { rawValue }
@@ -17,6 +21,7 @@ struct ImportView: View {
         }
     }
 
+    @Environment(\.dismiss) private var dismiss
     @State private var path = NavigationPath()
     @State private var mode: Mode = .photo
     @State private var photoItems: [PhotosPickerItem] = []
@@ -26,20 +31,17 @@ struct ImportView: View {
     @State private var rawText = ""
     @State private var isAnalyzing = false
     @State private var isSaving = false
-    @State private var execution: ExecutionRequest?
     @State private var errorPresenter = ErrorPresenter()
 
     var body: some View {
         NavigationStack(path: $path) {
             form
                 .navigationTitle("Importer")
+                .navigationBarTitleDisplayMode(.inline)
                 .navigationDestination(for: ImportAnalysis.self) { analysis in
                     ImportPreviewPage(analysis: analysis, isSaving: isSaving) { edited in
                         Task { await save(edited) }
                     }
-                }
-                .recipeFlow(path: $path, execution: $execution) {
-                    reset()
                 }
         }
         .overlay { if isAnalyzing { AnalyzingOverlay(message: "L’IA lit et structure la recette…") } }
@@ -65,19 +67,19 @@ struct ImportView: View {
             sourceSection
         }
         .scrollDismissesKeyboard(.interactively)
-        .safeAreaInset(edge: .bottom) {
-            Button {
-                Task { await analyze() }
-            } label: {
-                Label("Analyser avec l’IA", systemImage: "flask.fill")
-                    .frame(maxWidth: .infinity)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Annuler") { dismiss() }
             }
-            .buttonStyle(.glassProminent)
-            .controlSize(.large)
-            .disabled(!canAnalyze || isAnalyzing)
-            .accessibilityIdentifier("analyze-button")
-            .padding(.horizontal)
-            .padding(.bottom, 8)
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    Task { await analyze() }
+                } label: {
+                    Label("Analyser", systemImage: "sparkles")
+                }
+                .disabled(!canAnalyze || isAnalyzing)
+                .accessibilityIdentifier("analyze-button")
+            }
         }
     }
 
@@ -158,14 +160,6 @@ struct ImportView: View {
         }
     }
 
-    private func reset() {
-        photoItems = []
-        capturedImage = nil
-        urlText = ""
-        rawText = ""
-        mode = .photo
-    }
-
     // MARK: - Actions
 
     private func analyze() async {
@@ -207,8 +201,8 @@ struct ImportView: View {
         defer { isSaving = false }
         do {
             let recipeId = try await ImportAPI.create(analysis)
-            path = NavigationPath()
-            path.append(RecipeRoute.recipe(id: recipeId))
+            onCreated(recipeId)
+            dismiss()
         } catch {
             errorPresenter.message = reportError(error)
         }
@@ -228,5 +222,5 @@ struct ImportView: View {
 }
 
 #Preview {
-    ImportView()
+    ImportView { _ in }
 }

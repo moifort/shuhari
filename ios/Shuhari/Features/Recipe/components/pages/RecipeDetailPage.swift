@@ -67,7 +67,7 @@ struct RecipeDetailPage: View {
         Section {
             NavigationLink(value: RecipeRoute.proposal(recipeId: recipe.id)) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Label("Proposition de l’IA en attente", systemImage: "flask.fill")
+                    Label("Proposition de l’IA en attente", systemImage: "sparkles")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.orange)
                     Text(proposal.rationale)

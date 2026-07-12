@@ -73,21 +73,17 @@ struct ImportPreviewPage: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Aperçu")
-        .safeAreaInset(edge: .bottom) {
-            Button {
-                onSave(edited)
-            } label: {
-                Group {
-                    if isSaving { ProgressView() } else { Text("Enregistrer la recette (v1)") }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    onSave(edited)
+                } label: {
+                    if isSaving { ProgressView() } else { Text("Enregistrer") }
                 }
-                .frame(maxWidth: .infinity)
+                .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
+                .accessibilityIdentifier("save-recipe-button")
             }
-            .buttonStyle(.glassProminent)
-            .controlSize(.large)
-            .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
-            .accessibilityIdentifier("save-recipe-button")
-            .padding(.horizontal)
-            .padding(.bottom, 8)
         }
     }
 

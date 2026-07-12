@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Top-level gate: shows LoginView when no Firebase user is signed in,
-/// otherwise the main TabView (`ContentView`).
+/// otherwise the Carnet (`HomeView`).
 struct AuthRoot: View {
     @State private var session = AuthSession()
 
@@ -10,7 +10,7 @@ struct AuthRoot: View {
             if session.user == nil {
                 LoginView()
             } else {
-                ContentView()
+                HomeView()
             }
         }
         .environment(session)

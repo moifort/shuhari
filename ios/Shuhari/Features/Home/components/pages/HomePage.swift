@@ -6,6 +6,7 @@ import SwiftUI
 struct HomePage: View {
     let data: HomeData
     let onExecute: (HomeTestItem) -> Void
+    let onImport: () -> Void
     let onSettings: () -> Void
 
     var body: some View {
@@ -16,6 +17,13 @@ struct HomePage: View {
         }
         .navigationTitle("Carnet")
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: onImport) {
+                    Image(systemName: "plus")
+                }
+                .accessibilityIdentifier("import-button")
+                .accessibilityLabel("Importer une recette")
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: onSettings) {
                     Image(systemName: "gearshape")
@@ -43,6 +51,7 @@ struct HomePage: View {
                 ]
             ),
             onExecute: { _ in },
+            onImport: {},
             onSettings: {}
         )
     }
