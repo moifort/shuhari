@@ -3,6 +3,7 @@ import UniformTypeIdentifiers
 
 /// Export the whole carnet to a JSON file, or replace it with an imported one.
 struct ImportExportSettingsView: View {
+    @Environment(HomeStore.self) private var store
     @State private var isExporting = false
     @State private var isImporting = false
     @State private var pendingExport: ExportDocument?
@@ -125,16 +126,12 @@ struct ImportExportSettingsView: View {
             }
             let summary = try await SettingsAPI.importData(payload: payload)
             status = "Import terminé : \(summary.totalRecords) éléments restaurés."
-            NotificationCenter.default.post(name: .carnetDataDidReload, object: nil)
+            await store.load()
         } catch {
             self.error = reportError(error)
         }
         pendingImportURL = nil
     }
-}
-
-extension Notification.Name {
-    static let carnetDataDidReload = Notification.Name("CarnetDataDidReload")
 }
 
 private struct ExportDocument: FileDocument {
@@ -161,4 +158,5 @@ private struct ExportDocument: FileDocument {
     NavigationStack {
         ImportExportSettingsView()
     }
+    .environment(HomeStore())
 }

@@ -15,6 +15,7 @@ struct ContentView: View {
     @State private var selectedTab: RootTab = .cuisine
     @State private var showImport = false
     @State private var importedRecipe: ImportedRecipe?
+    @State private var store = HomeStore()
 
     /// Routes the import "tab" to the full-screen cover without ever letting
     /// `selectedTab` land on it — no flicker, no placeholder content.
@@ -57,6 +58,7 @@ struct ContentView: View {
             .accessibilityIdentifier("tab-import")
         }
         .tabBarMinimizeBehavior(.onScrollDown)
+        .environment(store)
         .fullScreenCover(isPresented: $showImport) {
             ImportScanView { recipeId, type in
                 importedRecipe = ImportedRecipe(id: recipeId, type: type)
