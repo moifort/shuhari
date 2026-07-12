@@ -39,7 +39,7 @@ struct TmxStepsList: View {
     }
 
     private func badges(_ item: Item) -> some View {
-        HStack(spacing: 6) {
+        FlowLayout(spacing: 6) {
             if let time = item.time {
                 badge(time, icon: "timer")
             }
@@ -55,14 +55,20 @@ struct TmxStepsList: View {
         }
     }
 
+    // Not a Label: Label's lazily-resolved style breaks inside a custom Layout
+    // (the title vanishes and the icon stretches its capsule).
     private func badge(_ text: String, icon: String) -> some View {
-        Label(text, systemImage: icon)
-            .font(.caption.weight(.semibold))
-            .monospacedDigit()
-            .foregroundStyle(Theme.Status.tmx)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(Theme.Status.tmx.opacity(0.12), in: Capsule())
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+            Text(text)
+        }
+        .font(.caption.weight(.semibold))
+        .monospacedDigit()
+        .foregroundStyle(Theme.Status.tmx)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(Theme.Status.tmx.opacity(0.12), in: Capsule())
+        .accessibilityElement(children: .combine)
     }
 }
 

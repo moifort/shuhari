@@ -76,6 +76,7 @@ struct RecipeDetailView: View {
             .accessibilityIdentifier("history-link")
             .accessibilityLabel("Historique")
         }
+        ToolbarSpacer(.fixed, placement: .topBarTrailing)
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
                 Button("Modifier", systemImage: "pencil") { showEdit = true }
