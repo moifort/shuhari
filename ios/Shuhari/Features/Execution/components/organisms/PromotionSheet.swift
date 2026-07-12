@@ -12,8 +12,9 @@ struct PromotionSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("La v\(versionNumber) a fait ses preuves — \(note)/10")
-                .font(.system(.title3, design: .serif).weight(.bold))
+            Label("La v\(versionNumber) a fait ses preuves — \(note)/10", systemImage: "checkmark.seal.fill")
+                .font(.title3.bold())
+                .foregroundStyle(.green)
                 .fixedSize(horizontal: false, vertical: true)
             Text("La promouvoir en version courante ? Elle deviendra ta référence reproductible pour \(recipeTitle).")
                 .font(.subheadline)
@@ -25,7 +26,7 @@ struct PromotionSheet: View {
                 }
                 .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glassProminent)
             .controlSize(.large)
             .disabled(isWorking)
             .accessibilityIdentifier("promote-button")
@@ -36,6 +37,21 @@ struct PromotionSheet: View {
                 .accessibilityIdentifier("promote-later-button")
         }
         .padding(20)
-        .presentationDetents([.height(280)])
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
     }
+}
+
+#Preview {
+    Text("Fond")
+        .sheet(isPresented: .constant(true)) {
+            PromotionSheet(
+                recipeTitle: "Espresso — Brésil",
+                versionNumber: 4,
+                note: 9,
+                isWorking: false,
+                onPromote: {},
+                onLater: {}
+            )
+        }
 }

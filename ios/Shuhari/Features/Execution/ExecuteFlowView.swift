@@ -29,7 +29,6 @@ struct ExecuteFlowView: View {
                 if let recipe, let version = recipe.version(request.versionNumber) {
                     ExecutePage(
                         recipeTitle: recipe.title,
-                        type: recipe.type,
                         version: version,
                         replayParams: replayTrial?.realParams,
                         replayDate: replayTrial?.executedAt,
@@ -51,7 +50,7 @@ struct ExecuteFlowView: View {
             }
         }
         .task { await load() }
-        .overlay { if analyzing { analyzingOverlay } }
+        .overlay { if analyzing { AnalyzingOverlay(message: "L’IA analyse tes remarques…") } }
         .sheet(isPresented: $showPromotion) {
             PromotionSheet(
                 recipeTitle: recipe?.title ?? "",
@@ -78,17 +77,6 @@ struct ExecuteFlowView: View {
             }
         case .proposal:
             ProposalView(recipeId: request.recipeId) { finish() }
-        }
-    }
-
-    private var analyzingOverlay: some View {
-        ZStack {
-            Color(.systemBackground).opacity(0.7).ignoresSafeArea()
-            VStack(spacing: 14) {
-                ProgressView()
-                Text("L’IA analyse tes remarques…")
-                    .font(.subheadline.weight(.medium))
-            }
         }
     }
 

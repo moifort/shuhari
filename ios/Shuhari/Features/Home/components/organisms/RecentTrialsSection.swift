@@ -1,33 +1,38 @@
 import SwiftUI
 
 /// The "Activité récente" section: the three most recent trials across all recipes.
+/// Composes as a `Section` directly inside a `List`.
 struct RecentTrialsSection: View {
     let trials: [Trial]
     let titleProvider: (String) -> String
 
     var body: some View {
         if !trials.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                SectionHeader(title: "Activité récente")
-                VStack(spacing: 0) {
-                    ForEach(Array(trials.enumerated()), id: \.element.id) { index, trial in
-                        NavigationLink(value: RecipeRoute.trial(id: trial.id)) {
-                            TrialRow(
-                                recipeTitle: titleProvider(trial.recipeId),
-                                versionNumber: trial.versionNumber,
-                                note: trial.note,
-                                remarks: trial.remarks,
-                                date: trial.executedAt
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        if index < trials.count - 1 {
-                            Divider().padding(.leading, 14)
-                        }
+            Section("Activité récente") {
+                ForEach(trials) { trial in
+                    NavigationLink(value: RecipeRoute.trial(id: trial.id)) {
+                        TrialRow(
+                            recipeTitle: titleProvider(trial.recipeId),
+                            versionNumber: trial.versionNumber,
+                            note: trial.note,
+                            remarks: trial.remarks,
+                            date: trial.executedAt
+                        )
                     }
                 }
-                .carnetCard()
             }
         }
+    }
+}
+
+#Preview {
+    List {
+        RecentTrialsSection(
+            trials: [
+                Trial(id: "t1", recipeId: "1", versionNumber: 3, note: 8, remarks: "Équilibré, chocolat noir.", realParams: [], photoUrl: nil, executedAt: Date()),
+                Trial(id: "t2", recipeId: "1", versionNumber: 2, note: 5, remarks: "Trop amer.", realParams: [], photoUrl: nil, executedAt: Date()),
+            ],
+            titleProvider: { _ in "Espresso — Brésil" }
+        )
     }
 }

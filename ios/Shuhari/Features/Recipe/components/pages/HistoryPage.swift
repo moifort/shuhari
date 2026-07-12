@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The version history: a vertical timeline, newest at the top, plus any linked
-/// variations issued from this recipe.
+/// The version history: newest at the top, plus any linked variations issued
+/// from this recipe.
 struct HistoryPage: View {
     let recipe: Recipe
 
@@ -10,38 +10,27 @@ struct HistoryPage: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Historique")
-                        .font(.system(.title, design: .serif).weight(.bold))
-                    Text("\(recipe.title) — chaque cran ne change que ce qui est écrit.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+        List {
+            Section {
+                ForEach(orderedVersions, id: \.number) { version in
+                    VersionTimelineItem(
+                        number: version.number,
+                        change: version.change,
+                        originDetail: version.originDetail,
+                        averageNote: version.averageNote,
+                        trialCount: version.trialCount,
+                        date: version.createdAt,
+                        isCurrent: version.number == recipe.currentVersion?.number,
+                        isToTest: version.number == recipe.toTest?.number
+                    )
                 }
-
-                VStack(spacing: 0) {
-                    ForEach(Array(orderedVersions.enumerated()), id: \.element.number) { index, version in
-                        VersionTimelineItem(
-                            number: version.number,
-                            change: version.change,
-                            originDetail: version.originDetail,
-                            averageNote: version.averageNote,
-                            trialCount: version.trialCount,
-                            date: version.createdAt,
-                            isCurrent: version.number == recipe.currentVersion?.number,
-                            isToTest: version.number == recipe.toTest?.number,
-                            isLast: index == orderedVersions.count - 1
-                        )
-                    }
-                }
-
-                VariationsSection(variations: recipe.variations)
+            } footer: {
+                Text("Chaque cran ne change que ce qui est écrit.")
             }
-            .padding()
+
+            VariationsSection(variations: recipe.variations)
         }
-        .background(Color(.systemGroupedBackground))
         .navigationTitle("Historique")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationSubtitle(recipe.title)
     }
 }

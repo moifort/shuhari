@@ -21,26 +21,19 @@ struct ImportPreviewPage: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Label("Recette structurée", systemImage: "checkmark.seal.fill")
-                        .font(.caption.weight(.bold))
-                        .textCase(.uppercase)
-                        .foregroundStyle(.green)
-                    Text("Relis et ajuste")
-                        .font(.system(.title2, design: .serif).weight(.bold))
-                    Text("L’IA a mis la recette au format Carnet. Tout est modifiable avant d’enregistrer.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
-                fieldLabel("Titre")
+        Form {
+            Section {
                 TextField("Titre", text: $title)
-                    .textFieldStyle(.roundedBorder)
                     .accessibilityIdentifier("import-title-field")
+            } header: {
+                Label("Recette structurée — relis et ajuste", systemImage: "checkmark.seal.fill")
+                    .foregroundStyle(.green)
+                    .textCase(nil)
+            } footer: {
+                Text("L’IA a mis la recette au format Carnet. Tout est modifiable avant d’enregistrer.")
+            }
 
-                fieldLabel("Type détecté")
+            Section("Type détecté") {
                 Picker("Type", selection: $type) {
                     ForEach(RecipeType.allCases) { candidate in
                         Text(candidate.label).tag(candidate)
@@ -48,54 +41,45 @@ struct ImportPreviewPage: View {
                 }
                 .pickerStyle(.segmented)
                 .accessibilityIdentifier("import-type-picker")
+            }
 
-                fieldLabel("Paramètres")
-                VStack(spacing: 10) {
-                    ForEach(analysis.params) { param in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(param.key)
-                                .font(.caption2.weight(.bold))
-                                .textCase(.uppercase)
-                                .foregroundStyle(.tertiary)
-                            TextField(param.value, text: binding(for: param.key))
-                                .font(.system(.body, design: .monospaced))
-                                .textFieldStyle(.roundedBorder)
-                        }
+            Section("Paramètres") {
+                ForEach(analysis.params) { param in
+                    LabeledContent(param.key) {
+                        TextField(param.value, text: binding(for: param.key))
+                            .multilineTextAlignment(.trailing)
                     }
                 }
+            }
 
-                fieldLabel("Étapes")
-                VStack(alignment: .leading) {
-                    StepsList(steps: analysis.steps)
-                }
-                .padding(15)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .carnetCard()
-
+            Section {
+                StepsList(steps: analysis.steps)
+            } header: {
+                Text("Étapes")
+            } footer: {
                 if let source = analysis.sourceLabel, !source.isEmpty {
                     Text("Source : \(source)")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
                 }
-
-                Button {
-                    onSave(edited)
-                } label: {
-                    Group {
-                        if isSaving { ProgressView() } else { Text("Enregistrer la recette (v1)") }
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
-                .accessibilityIdentifier("save-recipe-button")
             }
-            .padding()
         }
-        .background(Color(.systemGroupedBackground))
+        .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Aperçu")
-        .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) {
+            Button {
+                onSave(edited)
+            } label: {
+                Group {
+                    if isSaving { ProgressView() } else { Text("Enregistrer la recette (v1)") }
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.glassProminent)
+            .controlSize(.large)
+            .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
+            .accessibilityIdentifier("save-recipe-button")
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+        }
     }
 
     private var edited: ImportAnalysis {
@@ -111,13 +95,5 @@ struct ImportPreviewPage: View {
 
     private func binding(for key: String) -> Binding<String> {
         Binding(get: { values[key] ?? "" }, set: { values[key] = $0 })
-    }
-
-    private func fieldLabel(_ text: String) -> some View {
-        Text(text)
-            .font(.caption.weight(.bold))
-            .textCase(.uppercase)
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

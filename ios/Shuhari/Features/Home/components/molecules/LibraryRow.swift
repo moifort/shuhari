@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// A library row: type icon, title (+ "dérivée" badge), and a subtitle line that
-/// reads "vN courante · X,X/10 moy. · vM à tester".
+/// reads "vN courante · X,X/10 moy. · vM à tester". Designed as a List row —
+/// the List provides insets, separators and the navigation chevron.
 struct LibraryRow: View {
     let title: String
     let type: RecipeType
@@ -14,9 +15,9 @@ struct LibraryRow: View {
         HStack(spacing: 12) {
             Image(systemName: type.icon)
                 .font(.system(size: 16))
-                .foregroundStyle(type.color)
+                .foregroundStyle(.secondary)
                 .frame(width: 34, height: 34)
-                .background(type.color.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+                .background(Color(.systemFill), in: RoundedRectangle(cornerRadius: 8))
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
@@ -37,14 +38,7 @@ struct LibraryRow: View {
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.tertiary)
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 14)
-        .contentShape(Rectangle())
     }
 
     private var subtitle: String {
@@ -57,10 +51,8 @@ struct LibraryRow: View {
 }
 
 #Preview {
-    VStack(spacing: 0) {
+    List {
         LibraryRow(title: "Espresso — Brésil", type: .cafe, currentVersionNumber: 3, averageNote: 7.5, toTestNumber: 4, isDerived: false)
-        Divider()
         LibraryRow(title: "Negroni blanc", type: .cocktail, currentVersionNumber: 1, averageNote: 6.0, toTestNumber: nil, isDerived: true)
     }
-    .padding()
 }

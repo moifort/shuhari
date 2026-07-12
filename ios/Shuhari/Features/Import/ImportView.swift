@@ -39,111 +39,73 @@ struct ImportView: View {
                     reset()
                 }
         }
-        .overlay { if isAnalyzing { analyzingOverlay } }
+        .overlay { if isAnalyzing { AnalyzingOverlay(message: "L’IA lit et structure la recette…") } }
         .errorAlert(errorPresenter)
     }
 
     private var form: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Nouvelle recette")
-                        .font(.caption.weight(.semibold))
-                        .textCase(.uppercase)
-                        .foregroundStyle(.tertiary)
-                    Text("Importer")
-                        .font(.system(.largeTitle, design: .serif).weight(.bold))
-                    Text("Photos, lien ou texte — l’IA structure la recette, tu relis, tu enregistres.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
+        Form {
+            Section {
                 Picker("Source", selection: $mode) {
                     ForEach(Mode.allCases) { Text($0.label).tag($0) }
                 }
                 .pickerStyle(.segmented)
                 .accessibilityIdentifier("import-mode-picker")
-
-                sourceInput
-
-                Button {
-                    Task { await analyze() }
-                } label: {
-                    Label("Analyser avec l’IA", systemImage: "flask.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .disabled(!canAnalyze || isAnalyzing)
-                .accessibilityIdentifier("analyze-button")
+            } footer: {
+                Text("Photos, lien ou texte — l’IA structure la recette, tu relis, tu enregistres.")
             }
-            .padding()
+
+            sourceSection
         }
-        .background(Color(.systemGroupedBackground))
+        .scrollDismissesKeyboard(.interactively)
+        .safeAreaInset(edge: .bottom) {
+            Button {
+                Task { await analyze() }
+            } label: {
+                Label("Analyser avec l’IA", systemImage: "flask.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.glassProminent)
+            .controlSize(.large)
+            .disabled(!canAnalyze || isAnalyzing)
+            .accessibilityIdentifier("analyze-button")
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+        }
     }
 
     @ViewBuilder
-    private var sourceInput: some View {
+    private var sourceSection: some View {
         switch mode {
         case .photo:
-            VStack(alignment: .leading, spacing: 10) {
+            Section {
                 PhotosPicker(selection: $photoItems, maxSelectionCount: 6, matching: .images) {
-                    VStack(spacing: 8) {
-                        Image(systemName: "camera").font(.title)
+                    Label {
                         Text(photoItems.isEmpty ? "Ajouter des photos" : "\(photoItems.count) photo(s) sélectionnée(s)")
-                            .font(.callout.weight(.medium))
-                        Text("page de livre, sachet, capture d’écran…")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    } icon: {
+                        Image(systemName: photoItems.isEmpty ? "photo.badge.plus" : "checkmark.circle.fill")
+                            .foregroundStyle(photoItems.isEmpty ? Color.accentColor : .green)
                     }
-                    .foregroundStyle(photoItems.isEmpty ? .secondary : Color.green)
-                    .frame(maxWidth: .infinity)
-                    .padding(28)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [5]))
-                            .foregroundStyle(Color(.separator))
-                    )
                 }
                 .accessibilityIdentifier("import-photos-picker")
+            } footer: {
+                Text("Page de livre, sachet, capture d’écran…")
             }
         case .url:
-            VStack(alignment: .leading, spacing: 7) {
-                fieldLabel("Adresse de la recette")
+            Section("Adresse de la recette") {
                 TextField("https://…", text: $urlText)
-                    .textFieldStyle(.roundedBorder)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .keyboardType(.URL)
                     .accessibilityIdentifier("import-url-field")
             }
         case .text:
-            VStack(alignment: .leading, spacing: 7) {
-                fieldLabel("Colle ou dicte ta recette")
+            Section("Colle ou dicte ta recette") {
                 TextField("200 g de spaghetti, 100 g de pecorino…", text: $rawText, axis: .vertical)
                     .lineLimit(6...12)
-                    .textFieldStyle(.roundedBorder)
                     .accessibilityIdentifier("import-text-field")
             }
         }
-    }
-
-    private var analyzingOverlay: some View {
-        ZStack {
-            Color(.systemBackground).opacity(0.7).ignoresSafeArea()
-            VStack(spacing: 14) {
-                ProgressView()
-                Text("L’IA lit et structure la recette…")
-                    .font(.subheadline.weight(.medium))
-            }
-        }
-    }
-
-    private func fieldLabel(_ text: String) -> some View {
-        Text(text)
-            .font(.caption.weight(.bold))
-            .textCase(.uppercase)
-            .foregroundStyle(.secondary)
     }
 
     // MARK: - State

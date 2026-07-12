@@ -30,78 +30,64 @@ struct CapturePage: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Noter l’essai")
-                        .font(.system(.title2, design: .serif).weight(.bold))
-                    Text("\(recipeTitle) — ce que tu as réellement fait et goûté.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
-                fieldLabel("Paramètres réels (pré-remplis avec les cibles)")
-                VStack(spacing: 10) {
-                    ForEach(targets) { target in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(target.key)
-                                .font(.caption2.weight(.bold))
-                                .textCase(.uppercase)
-                                .foregroundStyle(.tertiary)
-                            TextField(target.value, text: binding(for: target.key))
-                                .font(.system(.body, design: .monospaced))
-                                .textFieldStyle(.roundedBorder)
-                                .accessibilityIdentifier("real-param-\(target.key)")
-                        }
+        Form {
+            Section {
+                ForEach(targets) { target in
+                    LabeledContent(target.key) {
+                        TextField(target.value, text: binding(for: target.key))
+                            .multilineTextAlignment(.trailing)
+                            .accessibilityIdentifier("real-param-\(target.key)")
                     }
                 }
+            } header: {
+                Text("Paramètres réels")
+            } footer: {
+                Text("Pré-remplis avec les cibles — corrige ce qui a réellement changé.")
+            }
 
-                fieldLabel("Note")
+            Section("Note") {
                 NotePicker(selection: $note)
+            }
 
-                fieldLabel("Remarques — qu’est-ce qui doit changer ?")
+            Section("Remarques") {
                 TextField("Ex. : trop amer, coule trop vite, manque de liant…", text: $remarks, axis: .vertical)
                     .lineLimit(3...6)
-                    .textFieldStyle(.roundedBorder)
                     .accessibilityIdentifier("remarks-field")
+            }
 
-                fieldLabel("Photo du résultat")
+            Section("Photo du résultat") {
                 PhotosPicker(selection: $photoItem, matching: .images) {
-                    Label(
-                        photoAttached ? "Photo ajoutée" : "Ajouter une photo",
-                        systemImage: photoAttached ? "checkmark.circle.fill" : "camera"
-                    )
-                    .font(.callout.weight(.medium))
-                    .foregroundStyle(photoAttached ? Color.green : .secondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(13)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: photoAttached ? [] : [5]))
-                            .foregroundStyle(photoAttached ? Color.green : Color(.separator))
-                    )
+                    Label {
+                        Text(photoAttached ? "Photo ajoutée" : "Ajouter une photo")
+                    } icon: {
+                        Image(systemName: photoAttached ? "checkmark.circle.fill" : "photo.badge.plus")
+                            .foregroundStyle(photoAttached ? Color.green : Color.accentColor)
+                    }
                 }
                 .accessibilityIdentifier("photo-picker")
-
-                Button {
-                    guard let note else { return }
-                    onSave(note, remarks.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "—" : remarks, realParams, photoBase64)
-                } label: {
-                    Group {
-                        if isSaving { ProgressView() } else { Text("Enregistrer l’essai") }
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .disabled(note == nil || isSaving)
-                .accessibilityIdentifier("save-trial-button")
             }
-            .padding()
         }
-        .background(Color(.systemGroupedBackground))
+        .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Noter l’essai")
+        .navigationSubtitle(recipeTitle)
         .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) {
+            Button {
+                guard let note else { return }
+                onSave(note, remarks.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "—" : remarks, realParams, photoBase64)
+            } label: {
+                Group {
+                    if isSaving { ProgressView() } else { Text("Enregistrer l’essai") }
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.glassProminent)
+            .controlSize(.large)
+            .disabled(note == nil || isSaving)
+            .accessibilityIdentifier("save-trial-button")
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+        }
         .onChange(of: photoItem) { _, newValue in
             guard let newValue else { return }
             Task { await attachPhoto(newValue) }
@@ -117,14 +103,6 @@ struct CapturePage: View {
             get: { values[key] ?? "" },
             set: { values[key] = $0 }
         )
-    }
-
-    private func fieldLabel(_ text: String) -> some View {
-        Text(text)
-            .font(.caption.weight(.bold))
-            .textCase(.uppercase)
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func attachPhoto(_ item: PhotosPickerItem) async {

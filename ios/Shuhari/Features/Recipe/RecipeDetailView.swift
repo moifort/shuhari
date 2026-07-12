@@ -71,9 +71,10 @@ struct RecipeDetailView: View {
     private func toolbar(recipe: Recipe) -> some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             NavigationLink(value: RecipeRoute.history(id: recipeId)) {
-                Text("Historique")
+                Image(systemName: "clock.arrow.circlepath")
             }
             .accessibilityIdentifier("history-link")
+            .accessibilityLabel("Historique")
         }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {

@@ -13,7 +13,7 @@ struct NoteBadge: View {
 
     var body: some View {
         Text("\(note)")
-            .font(.system(.subheadline, design: .monospaced).weight(.semibold))
+            .font(.subheadline.weight(.semibold))
             .monospacedDigit()
             .foregroundStyle(.white)
             .frame(width: 30, height: 30)

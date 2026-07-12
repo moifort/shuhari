@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// A 1–10 note selector rendered as a row of square buttons.
+/// A 1–10 note selector rendered as a row of circular buttons.
 struct NotePicker: View {
     @Binding var selection: Int?
 
@@ -13,14 +13,14 @@ struct NotePicker: View {
                     selection = value
                 } label: {
                     Text("\(value)")
-                        .font(.system(.body, design: .monospaced).weight(.bold))
+                        .font(.body.weight(.bold))
+                        .monospacedDigit()
                         .frame(maxWidth: .infinity, minHeight: 34)
                         .foregroundStyle(selection == value ? Color.white : .secondary)
                         .background(
-                            selection == value ? Color.accentColor : Color(.secondarySystemGroupedBackground),
-                            in: RoundedRectangle(cornerRadius: 10)
+                            selection == value ? Color.accentColor : Color(.systemFill),
+                            in: Circle()
                         )
-                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(.separator).opacity(0.4)))
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("note-\(value)")
@@ -31,5 +31,7 @@ struct NotePicker: View {
 
 #Preview {
     @Previewable @State var note: Int? = 8
-    NotePicker(selection: $note).padding()
+    List {
+        NotePicker(selection: $note)
+    }
 }

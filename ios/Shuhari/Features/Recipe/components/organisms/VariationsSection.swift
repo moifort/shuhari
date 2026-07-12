@@ -1,33 +1,34 @@
 import SwiftUI
 
 /// Recipes derived from this one (linked variations, each its own lineage).
+/// Composes as a `Section` directly inside a `List`.
 struct VariationsSection: View {
     let variations: [RecipeRef]
 
     var body: some View {
         if !variations.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                SectionHeader(title: "Variations liées")
-                VStack(spacing: 0) {
-                    ForEach(Array(variations.enumerated()), id: \.element.id) { index, ref in
-                        NavigationLink(value: RecipeRoute.recipe(id: ref.id)) {
-                            LibraryRow(
-                                title: ref.title,
-                                type: ref.type,
-                                currentVersionNumber: ref.currentVersionNumber,
-                                averageNote: ref.averageNote,
-                                toTestNumber: nil,
-                                isDerived: true
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        if index < variations.count - 1 {
-                            Divider().padding(.leading, 14)
-                        }
+            Section("Variations liées") {
+                ForEach(variations) { ref in
+                    NavigationLink(value: RecipeRoute.recipe(id: ref.id)) {
+                        LibraryRow(
+                            title: ref.title,
+                            type: ref.type,
+                            currentVersionNumber: ref.currentVersionNumber,
+                            averageNote: ref.averageNote,
+                            toTestNumber: nil,
+                            isDerived: true
+                        )
                     }
                 }
-                .carnetCard()
             }
         }
+    }
+}
+
+#Preview {
+    List {
+        VariationsSection(variations: [
+            RecipeRef(id: "2", title: "Espresso — déca", type: .cafe, subtitle: nil, currentVersionNumber: 1, averageNote: 6.5),
+        ])
     }
 }

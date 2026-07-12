@@ -15,7 +15,8 @@ struct DiffRow: View {
             Spacer()
             if let from {
                 Text(from)
-                    .font(.system(.subheadline, design: .monospaced))
+                    .font(.subheadline)
+                    .monospacedDigit()
                     .foregroundStyle(.secondary)
                     .strikethrough()
                 Image(systemName: "arrow.right")
@@ -23,7 +24,8 @@ struct DiffRow: View {
                     .foregroundStyle(.secondary)
             }
             Text(to)
-                .font(.system(.subheadline, design: .monospaced).weight(.semibold))
+                .font(.subheadline.weight(.semibold))
+                .monospacedDigit()
                 .foregroundStyle(Color.accentColor)
         }
     }

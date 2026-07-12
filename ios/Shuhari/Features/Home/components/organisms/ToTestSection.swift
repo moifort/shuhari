@@ -1,21 +1,20 @@
 import SwiftUI
 
-/// The "À tester" section: one amber banner per recipe carrying a pending version.
+/// The "À tester" section: one banner row per recipe carrying a pending version.
+/// Composes as a `Section` directly inside a `List`.
 struct ToTestSection: View {
     let items: [HomeTestItem]
     let onExecute: (HomeTestItem) -> Void
 
     var body: some View {
         if !items.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                SectionHeader(title: "À tester", count: items.count, tint: .orange)
+            Section("À tester") {
                 ForEach(items) { item in
                     TestBanner(
                         title: item.title,
                         versionNumber: item.versionNumber,
                         change: item.change,
                         why: item.why,
-                        type: item.type,
                         onExecute: { onExecute(item) }
                     )
                 }
@@ -25,11 +24,12 @@ struct ToTestSection: View {
 }
 
 #Preview {
-    ToTestSection(
-        items: [
-            .init(id: "1", title: "Espresso", type: .cafe, versionNumber: 4, change: "Température 93 → 92 °C", why: "Extraction trop chaude."),
-        ],
-        onExecute: { _ in }
-    )
-    .padding()
+    List {
+        ToTestSection(
+            items: [
+                .init(id: "1", title: "Espresso", type: .cafe, versionNumber: 4, change: "Température 93 → 92 °C", why: "Extraction trop chaude."),
+            ],
+            onExecute: { _ in }
+        )
+    }
 }

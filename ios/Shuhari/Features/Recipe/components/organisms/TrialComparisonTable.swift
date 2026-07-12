@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// "Cible vs réel" table: version targets against the parameters actually used,
-/// with the deviations highlighted.
+/// "Cible vs réel" rows: version targets against the parameters actually used,
+/// with the deviations highlighted. Composes as a `Section` inside a `List`.
 struct TrialComparisonTable: View {
     let targets: [Param]
     /// Only the deviations (keyed by param name).
@@ -15,39 +15,43 @@ struct TrialComparisonTable: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text("Paramètre").frame(maxWidth: .infinity, alignment: .leading)
-                Text("Cible").frame(width: 90, alignment: .leading)
-                Text("Réel").frame(width: 90, alignment: .leading)
-            }
-            .font(.caption2.weight(.bold))
-            .textCase(.uppercase)
-            .foregroundStyle(.tertiary)
-            .padding(.vertical, 6)
-            Divider()
+        Section("Cible vs réel") {
             ForEach(targets) { target in
                 let real = realValue(for: target.key)
-                HStack {
-                    Text(target.key)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Text(target.value)
-                        .font(.system(.subheadline, design: .monospaced))
-                        .frame(width: 90, alignment: .leading)
-                    Text(real.value)
-                        .font(.system(.subheadline, design: .monospaced).weight(.semibold))
-                        .foregroundStyle(real.deviated ? Color.orange : .primary)
-                        .frame(width: 90, alignment: .leading)
-                }
-                .padding(.vertical, 8)
-                if target.id != targets.last?.id {
-                    Divider()
+                LabeledContent(target.key) {
+                    HStack(spacing: 6) {
+                        if real.deviated {
+                            Text(target.value)
+                                .monospacedDigit()
+                                .strikethrough()
+                            Image(systemName: "arrow.right")
+                                .font(.caption)
+                            Text(real.value)
+                                .font(.body.weight(.semibold))
+                                .monospacedDigit()
+                                .foregroundStyle(.orange)
+                        } else {
+                            Text(target.value)
+                                .monospacedDigit()
+                                .foregroundStyle(.primary)
+                        }
+                    }
                 }
             }
         }
-        .padding(15)
-        .carnetCard()
+    }
+}
+
+#Preview {
+    List {
+        TrialComparisonTable(
+            targets: [
+                Param(key: "Dose", value: "18,5 g"),
+                Param(key: "Température", value: "92 °C"),
+            ],
+            real: [
+                Param(key: "Température", value: "93 °C"),
+            ]
+        )
     }
 }

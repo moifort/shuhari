@@ -1,26 +1,20 @@
 import SwiftUI
 
-/// The Carnet home screen: header, "À tester" banners, the library grouped by
-/// type, and recent activity. Pure presentation — navigation and API calls are
-/// owned by `HomeView`.
+/// The Carnet home screen: "À tester" banners, the library grouped by type, and
+/// recent activity. Pure presentation — navigation and API calls are owned by
+/// `HomeView`.
 struct HomePage: View {
     let data: HomeData
     let onExecute: (HomeTestItem) -> Void
     let onSettings: () -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                header
-                ToTestSection(items: data.toTest, onExecute: onExecute)
-                LibrarySection(data: data)
-                RecentTrialsSection(trials: data.recentTrials, titleProvider: data.title(forRecipe:))
-            }
-            .padding()
+        List {
+            ToTestSection(items: data.toTest, onExecute: onExecute)
+            LibrarySection(data: data)
+            RecentTrialsSection(trials: data.recentTrials, titleProvider: data.title(forRecipe:))
         }
-        .background(Color(.systemGroupedBackground))
         .navigationTitle("Carnet")
-        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: onSettings) {
@@ -30,22 +24,6 @@ struct HomePage: View {
                 .accessibilityLabel("Réglages")
             }
         }
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(Date().formatted(.dateTime.weekday(.wide).day().month(.wide)))
-                .font(.caption.weight(.semibold))
-                .textCase(.uppercase)
-                .kerning(0.8)
-                .foregroundStyle(.tertiary)
-            Text("Carnet")
-                .font(.system(.largeTitle, design: .serif).weight(.bold))
-            Text("Ton labo culinaire — \(data.library.count) recette\(data.library.count > 1 ? "s" : "") en cours d’amélioration.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

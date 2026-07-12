@@ -39,101 +39,99 @@ struct ProposalPage: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                header
-                changesCard
-                RuleChip(type: type)
-                queuedCard
-                choiceSection
-                Spacer(minLength: 4)
-                actions
-            }
-            .padding()
+        List {
+            changesSection
+            queuedSection
+            choiceSection
         }
-        .background(Color(.systemGroupedBackground))
+        .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Proposition")
-        .navigationBarTitleDisplayMode(.inline)
-    }
+        .navigationSubtitle(recipeTitle)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(isEditing ? "Terminer" : "Modifier") { isEditing.toggle() }
+                    .disabled(isWorking)
+                    .accessibilityIdentifier("edit-proposal-button")
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 10) {
+                Button {
+                    onValidate(choice, editedVarsIfChanged)
+                } label: {
+                    Group {
+                        if isWorking { ProgressView() } else {
+                            Text(choice == .iteration ? "Valider — créer la v\(nextVersionNumber)" : "Valider — créer la variation")
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
+                .disabled(isWorking)
+                .accessibilityIdentifier("validate-proposal-button")
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label("Proposition de l’IA", systemImage: "flask.fill")
-                .font(.caption.weight(.bold))
-                .textCase(.uppercase)
-                .foregroundStyle(.orange)
-            Text("Itérer sur \(recipeTitle)")
-                .font(.system(.title2, design: .serif).weight(.bold))
-            Text("D’après ton essai sur la v\(proposal.versionNumber) — rien n’est créé sans ta validation.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                Button("Refuser la proposition", role: .destructive, action: onRefuse)
+                    .buttonStyle(.glass)
+                    .disabled(isWorking)
+                    .accessibilityIdentifier("refuse-proposal-button")
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 8)
         }
     }
 
-    private var changesCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "Ce qui change")
-            VStack(spacing: 10) {
-                ForEach(proposal.vars) { variable in
-                    if isEditing {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(variable.key)
-                                .font(.caption2.weight(.bold))
-                                .textCase(.uppercase)
-                                .foregroundStyle(.tertiary)
-                            TextField(variable.to, text: binding(for: variable.key))
-                                .font(.system(.body, design: .monospaced))
-                                .textFieldStyle(.roundedBorder)
-                                .accessibilityIdentifier("edit-var-\(variable.key)")
-                        }
-                    } else {
-                        DiffRow(key: variable.key, from: variable.from, to: editedTo[variable.key] ?? variable.to)
+    private var changesSection: some View {
+        Section {
+            ForEach(proposal.vars) { variable in
+                if isEditing {
+                    LabeledContent(variable.key) {
+                        TextField(variable.to, text: binding(for: variable.key))
+                            .multilineTextAlignment(.trailing)
+                            .accessibilityIdentifier("edit-var-\(variable.key)")
                     }
+                } else {
+                    DiffRow(key: variable.key, from: variable.from, to: editedTo[variable.key] ?? variable.to)
                 }
             }
-            Text(proposal.rationale)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+        } header: {
+            Label("Ce qui change — proposition de l’IA", systemImage: "flask.fill")
+                .foregroundStyle(.orange)
+                .textCase(nil)
+        } footer: {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("D’après ton essai sur la v\(proposal.versionNumber) — rien n’est créé sans ta validation.")
+                Text(proposal.rationale)
+                RuleChip(type: type)
+            }
         }
-        .padding(15)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .carnetCard()
     }
 
     @ViewBuilder
-    private var queuedCard: some View {
+    private var queuedSection: some View {
         if !proposal.queued.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Pistes gardées pour la suite")
-                    .font(.caption.weight(.bold))
-                    .textCase(.uppercase)
-                    .foregroundStyle(.secondary)
+            Section("Pistes gardées pour la suite") {
                 ForEach(Array(proposal.queued.enumerated()), id: \.offset) { _, lead in
-                    Label(lead, systemImage: "circle.fill")
+                    Label(lead, systemImage: "lightbulb")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-                        .labelStyle(BulletLabelStyle())
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(15)
-            .carnetCard()
         }
     }
 
     private var choiceSection: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            SectionHeader(title: "En faire…")
+        Section {
             Picker("En faire…", selection: $choice) {
                 Text("Itération (v\(nextVersionNumber))").tag(ProposalRecommendation.iteration)
                 Text("Variation").tag(ProposalRecommendation.variation)
             }
             .pickerStyle(.segmented)
             .accessibilityIdentifier("proposal-choice-picker")
-
+        } header: {
+            Text("En faire…")
+        } footer: {
             Text(choiceExplanation)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
         }
     }
 
@@ -149,36 +147,6 @@ struct ProposalPage: View {
         }
     }
 
-    private var actions: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 10) {
-                Button("Refuser", role: .destructive, action: onRefuse)
-                    .frame(maxWidth: .infinity)
-                    .accessibilityIdentifier("refuse-proposal-button")
-                Button(isEditing ? "Terminer" : "Modifier") { isEditing.toggle() }
-                    .frame(maxWidth: .infinity)
-                    .accessibilityIdentifier("edit-proposal-button")
-            }
-            .buttonStyle(.bordered)
-            .disabled(isWorking)
-
-            Button {
-                onValidate(choice, editedVarsIfChanged)
-            } label: {
-                Group {
-                    if isWorking { ProgressView() } else {
-                        Text(choice == .iteration ? "Valider — créer la v\(nextVersionNumber)" : "Valider — créer la variation")
-                    }
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .disabled(isWorking)
-            .accessibilityIdentifier("validate-proposal-button")
-        }
-    }
-
     private func binding(for key: String) -> Binding<String> {
         Binding(
             get: { editedTo[key] ?? "" },
@@ -191,14 +159,5 @@ struct ProposalPage: View {
         let changed = proposal.vars.contains { (editedTo[$0.key] ?? $0.to) != $0.to }
         guard changed else { return nil }
         return proposal.vars.map { ProposalVar(key: $0.key, from: $0.from, to: editedTo[$0.key] ?? $0.to) }
-    }
-}
-
-private struct BulletLabelStyle: LabelStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            configuration.icon.font(.system(size: 5)).foregroundStyle(.tertiary)
-            configuration.title
-        }
     }
 }

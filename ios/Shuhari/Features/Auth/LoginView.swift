@@ -13,10 +13,9 @@ struct LoginView: View {
             VStack(spacing: 12) {
                 Image(systemName: "book.closed.fill")
                     .font(.system(size: 64))
-                    .foregroundStyle(Color(red: 0.18, green: 0.16, blue: 0.14))
+                    .foregroundStyle(Color.accentColor)
                 Text("Shuhari")
                     .font(.largeTitle.bold())
-                    .fontDesign(.serif)
                 Text("Ton carnet d'expérimentation. Connecte-toi pour commencer.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
