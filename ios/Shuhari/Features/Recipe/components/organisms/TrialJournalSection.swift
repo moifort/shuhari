@@ -31,3 +31,10 @@ struct TrialJournalSection: View {
         }
     }
 }
+
+#Preview {
+    List {
+        TrialJournalSection(recipeTitle: Fixtures.espresso.title, trials: Fixtures.espressoTrials)
+        TrialJournalSection(recipeTitle: "Negroni", trials: [])
+    }
+}

@@ -59,3 +59,13 @@ struct RecipeEditSheet: View {
         }
     }
 }
+
+#Preview {
+    Text("Fond")
+        .sheet(isPresented: .constant(true)) {
+            RecipeEditSheet(
+                initialTitle: "Espresso — Brésil Santa Lúcia",
+                initialSubtitle: "Torréfaction claire"
+            ) { _, _ in }
+        }
+}

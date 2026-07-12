@@ -31,3 +31,11 @@ struct LibrarySection: View {
         }
     }
 }
+
+#Preview {
+    NavigationStack {
+        List {
+            LibrarySection(data: Fixtures.homeData)
+        }
+    }
+}

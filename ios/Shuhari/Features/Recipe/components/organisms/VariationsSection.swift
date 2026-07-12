@@ -24,3 +24,11 @@ struct VariationsSection: View {
         }
     }
 }
+
+#Preview {
+    NavigationStack {
+        List {
+            VariationsSection(variations: Fixtures.espresso.variations)
+        }
+    }
+}

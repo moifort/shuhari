@@ -24,3 +24,11 @@ struct RecentTrialsSection: View {
         }
     }
 }
+
+#Preview {
+    NavigationStack {
+        List {
+            RecentTrialsSection(trials: Fixtures.espressoTrials, titleProvider: { _ in Fixtures.espresso.title })
+        }
+    }
+}
