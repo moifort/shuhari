@@ -10,6 +10,9 @@ struct DebugGallery: View {
 
     var body: some View {
         switch screen {
+        case "root":
+            ContentView()
+                .environment(HomeStore())
         case "home":
             NavigationStack {
                 HomePage(data: Fixtures.homeData, title: "Café", onExecute: { _ in }, onSettings: {})
