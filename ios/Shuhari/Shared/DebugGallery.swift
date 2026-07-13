@@ -82,13 +82,18 @@ struct DebugGallery: View {
             }
         case "import-preview":
             NavigationStack {
-                ImportPreviewPage(analysis: Fixtures.importAnalysis, isSaving: false, onSave: { _ in })
+                ImportPreviewPage(analysis: Fixtures.importAnalysis, isSaving: false, onCancel: {}, onSave: { _ in })
+            }
+        case "ai-thinking":
+            ZStack {
+                Color(.systemBackground).ignoresSafeArea()
+                AIThinkingCard(message: "Analyse IA…")
             }
         default:
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : home, recipe, recipe-tmx, history, trial, execute, execute-tmx, capture, proposal, import-preview")
+                description: Text("Écrans : home, recipe, recipe-tmx, history, trial, execute, execute-tmx, capture, proposal, import-preview, ai-thinking")
             )
         }
     }

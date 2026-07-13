@@ -1,19 +1,28 @@
 import SwiftUI
 
 /// The editable import preview: title, detected type, parameters, steps and
-/// source. Everything is adjustable before creating the recipe (v1).
+/// source. Everything is adjustable before creating the recipe (v1). Presented
+/// inside the import review sheet — its actions live in the sheet toolbar
+/// (Fermer / Valider), not a bottom button.
 struct ImportPreviewPage: View {
     let analysis: ImportAnalysis
     let isSaving: Bool
+    let onCancel: () -> Void
     let onSave: (ImportAnalysis) -> Void
 
     @State private var title: String
     @State private var type: RecipeType
     @State private var values: [String: String]
 
-    init(analysis: ImportAnalysis, isSaving: Bool, onSave: @escaping (ImportAnalysis) -> Void) {
+    init(
+        analysis: ImportAnalysis,
+        isSaving: Bool,
+        onCancel: @escaping () -> Void,
+        onSave: @escaping (ImportAnalysis) -> Void
+    ) {
         self.analysis = analysis
         self.isSaving = isSaving
+        self.onCancel = onCancel
         self.onSave = onSave
         self._title = State(initialValue: analysis.title)
         self._type = State(initialValue: analysis.type)
@@ -23,8 +32,22 @@ struct ImportPreviewPage: View {
     var body: some View {
         Form {
             Section {
-                TextField("Titre", text: $title)
-                    .accessibilityIdentifier("import-title-field")
+                LabeledContent {
+                    TextField("Titre", text: $title)
+                        .multilineTextAlignment(.trailing)
+                        .accessibilityIdentifier("import-title-field")
+                } label: {
+                    Label("Titre", systemImage: "textformat")
+                }
+
+                Picker(selection: $type) {
+                    ForEach(RecipeType.allCases) { candidate in
+                        Text(candidate.label).tag(candidate)
+                    }
+                } label: {
+                    Label("Type", systemImage: "square.grid.2x2")
+                }
+                .accessibilityIdentifier("import-type-picker")
             } header: {
                 Label("Recette structurée — relis et ajuste", systemImage: "checkmark.seal.fill")
                     .foregroundStyle(Theme.Status.current)
@@ -33,22 +56,14 @@ struct ImportPreviewPage: View {
                 Text("L’IA a mis la recette au format Carnet. Tout est modifiable avant d’enregistrer.")
             }
 
-            Section("Type détecté") {
-                Picker("Type", selection: $type) {
-                    ForEach(RecipeType.allCases) { candidate in
-                        Text(candidate.label).tag(candidate)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .accessibilityIdentifier("import-type-picker")
-            }
-
             Section("Paramètres") {
                 ForEach(analysis.params) { param in
-                    LabeledContent(param.key) {
+                    LabeledContent {
                         TextField(param.value, text: binding(for: param.key))
                             .multilineTextAlignment(.trailing)
                             .keyboardType(.numbersAndPunctuation)
+                    } label: {
+                        Text(param.key)
                     }
                 }
             }
@@ -69,21 +84,21 @@ struct ImportPreviewPage: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Aperçu")
-        .safeAreaInset(edge: .bottom) {
-            Button {
-                onSave(edited)
-            } label: {
-                Group {
-                    if isSaving { ProgressView() } else { Text("Enregistrer la recette (v1)") }
-                }
-                .frame(maxWidth: .infinity)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Fermer", systemImage: "xmark") { onCancel() }
+                    .disabled(isSaving)
             }
-            .buttonStyle(.glassProminent)
-            .controlSize(.large)
-            .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
-            .accessibilityIdentifier("save-recipe-button")
-            .padding(.horizontal)
-            .padding(.bottom, 8)
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    onSave(edited)
+                } label: {
+                    if isSaving { ProgressView() } else { Text("Valider") }
+                }
+                .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
+                .accessibilityIdentifier("save-recipe-button")
+            }
         }
     }
 
@@ -106,12 +121,12 @@ struct ImportPreviewPage: View {
 
 #Preview("Plat") {
     NavigationStack {
-        ImportPreviewPage(analysis: Fixtures.importAnalysis, isSaving: false, onSave: { _ in })
+        ImportPreviewPage(analysis: Fixtures.importAnalysis, isSaving: false, onCancel: {}, onSave: { _ in })
     }
 }
 
 #Preview("Thermomix") {
     NavigationStack {
-        ImportPreviewPage(analysis: Fixtures.importAnalysisTmx, isSaving: false, onSave: { _ in })
+        ImportPreviewPage(analysis: Fixtures.importAnalysisTmx, isSaving: false, onCancel: {}, onSave: { _ in })
     }
 }

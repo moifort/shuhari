@@ -4,52 +4,39 @@ import SwiftUI
 /// Camera-first recipe import, presented full-screen from the "Importer" tab.
 /// Opens straight on the live camera; a photo can also be picked from the
 /// library or the recipe typed in (a pasted link is routed to the AI web
-/// search). Capture/pick/type → AI analysis → editable preview → createRecipe.
-/// On success it hands the new recipe id back via `onCreated` and dismisses.
+/// search). Capture / pick / type each spawn an `ImportJob`, which presents the
+/// review sheet (AI analysis loader → editable preview → createRecipe) over the
+/// camera. On success it hands the new recipe id back via `onCreated`.
 struct ImportScanView: View {
     let onCreated: (String, RecipeType) -> Void
 
-    private enum Step: Equatable {
-        case camera
-        case analyzing
-        case preview(ImportAnalysis)
-    }
-
     @Environment(\.dismiss) private var dismiss
-    @State private var step: Step = .camera
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var shouldCapture = false
     @State private var showTextEntry = false
     @State private var rawText = ""
-    @State private var isSaving = false
-    @State private var errorPresenter = ErrorPresenter()
+    @State private var job: ImportJob?
+    @State private var pendingSource: ImportAPI.Source?
 
     var body: some View {
-        Group {
-            switch step {
-            case .camera:
-                cameraScreen
-            case .analyzing:
-                AnalyzingOverlay(message: "L’IA lit et structure la recette…")
-            case .preview(let analysis):
-                NavigationStack {
-                    ImportPreviewPage(analysis: analysis, isSaving: isSaving) { edited in
-                        Task { await save(edited) }
-                    }
-                }
+        cameraScreen
+            .onChange(of: selectedPhoto) { _, item in
+                guard let item else { return }
+                selectedPhoto = nil
+                job = ImportJob(input: .library(item))
             }
-        }
-        .animation(.easeInOut(duration: 0.25), value: step)
-        .onChange(of: selectedPhoto) { _, item in
-            guard let item else { return }
-            selectedPhoto = nil
-            importFromLibrary(item)
-        }
-        .sheet(isPresented: $showTextEntry) {
-            textEntrySheet
-                .presentationDetents([.medium, .large])
-        }
-        .errorAlert(errorPresenter)
+            .sheet(isPresented: $showTextEntry, onDismiss: startPendingJob) {
+                textEntrySheet
+                    .presentationDetents([.medium, .large])
+            }
+            .sheet(item: $job) { job in
+                ImportReviewSheet(
+                    input: job.input,
+                    onCreated: onCreated,
+                    onCancel: { self.job = nil; dismiss() }
+                )
+                .presentationDetents([.large])
+            }
     }
 
     // MARK: - Camera screen
@@ -145,7 +132,10 @@ struct ImportScanView: View {
             .scrollDismissesKeyboard(.interactively)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Annuler") { showTextEntry = false }
+                    Button("Annuler") {
+                        pendingSource = nil
+                        showTextEntry = false
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
@@ -160,13 +150,20 @@ struct ImportScanView: View {
         }
     }
 
+    /// Presented from the text sheet's `onDismiss`: launching the review sheet
+    /// only once the text sheet has fully dismissed avoids a same-anchor
+    /// "already presenting" conflict.
+    private func startPendingJob() {
+        guard let source = pendingSource else { return }
+        pendingSource = nil
+        job = ImportJob(input: .source(source))
+    }
+
     private func submitText() {
         let trimmed = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+        pendingSource = isLink(trimmed) ? .url(trimmed) : .text(trimmed)
         showTextEntry = false
-        let source: ImportAPI.Source = isLink(trimmed) ? .url(trimmed) : .text(trimmed)
-        step = .analyzing
-        Task { await analyze(source) }
     }
 
     private func isLink(_ text: String) -> Bool {
@@ -179,62 +176,10 @@ struct ImportScanView: View {
         return true
     }
 
-    // MARK: - Actions
+    // MARK: - Capture
 
     private func capture(_ data: Data) {
-        step = .analyzing
-        Task {
-            let base64 = await Task.detached(priority: .userInitiated) {
-                UIImage(data: data)?.jpegBase64()
-            }.value
-            guard let base64 else {
-                errorPresenter.message = "Impossible de lire la photo prise."
-                step = .camera
-                return
-            }
-            await analyze(.photos([base64]))
-        }
-    }
-
-    private func importFromLibrary(_ item: PhotosPickerItem) {
-        step = .analyzing
-        Task {
-            guard let data = try? await item.loadTransferable(type: Data.self) else {
-                errorPresenter.message = "Impossible de lire l’image sélectionnée."
-                step = .camera
-                return
-            }
-            let base64 = await Task.detached(priority: .userInitiated) {
-                UIImage(data: data)?.jpegBase64()
-            }.value
-            guard let base64 else {
-                errorPresenter.message = "Impossible de lire l’image sélectionnée."
-                step = .camera
-                return
-            }
-            await analyze(.photos([base64]))
-        }
-    }
-
-    private func analyze(_ source: ImportAPI.Source) async {
-        do {
-            let analysis = try await ImportAPI.analyze(source)
-            step = .preview(analysis)
-        } catch {
-            errorPresenter.message = reportError(error)
-            step = .camera
-        }
-    }
-
-    private func save(_ analysis: ImportAnalysis) async {
-        isSaving = true
-        defer { isSaving = false }
-        do {
-            let recipeId = try await ImportAPI.create(analysis)
-            onCreated(recipeId, analysis.type)
-        } catch {
-            errorPresenter.message = reportError(error)
-        }
+        job = ImportJob(input: .capture(data))
     }
 }
 
