@@ -4,18 +4,17 @@ import SwiftUI
 /// Camera-first recipe import, presented full-screen from the "Importer" tab.
 /// Opens straight on the live camera; a photo can also be picked from the
 /// library or the recipe typed in (a pasted link is routed to the AI web
-/// search). Capture / pick / type each spawn an `ImportJob`, which presents the
-/// review sheet (AI analysis loader → editable preview → createRecipe) over the
-/// camera. On success it hands the new recipe id back via `onCreated`.
+/// search). Capture / pick / type hand the chosen `ImportInput` back via
+/// `onPick` and dismiss the camera — the parent then closes this cover and
+/// presents the review sheet, so the camera never lingers behind it.
 struct ImportScanView: View {
-    let onCreated: (String, RecipeType) -> Void
+    let onPick: (ImportInput) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var shouldCapture = false
     @State private var showTextEntry = false
     @State private var rawText = ""
-    @State private var job: ImportJob?
     @State private var pendingSource: ImportAPI.Source?
 
     var body: some View {
@@ -23,19 +22,11 @@ struct ImportScanView: View {
             .onChange(of: selectedPhoto) { _, item in
                 guard let item else { return }
                 selectedPhoto = nil
-                job = ImportJob(input: .library(item))
+                onPick(.library(item))
             }
-            .sheet(isPresented: $showTextEntry, onDismiss: startPendingJob) {
+            .sheet(isPresented: $showTextEntry, onDismiss: startPendingSource) {
                 textEntrySheet
                     .presentationDetents([.medium, .large])
-            }
-            .sheet(item: $job) { job in
-                ImportReviewSheet(
-                    input: job.input,
-                    onCreated: onCreated,
-                    onCancel: { self.job = nil; dismiss() }
-                )
-                .presentationDetents([.large])
             }
     }
 
@@ -150,13 +141,12 @@ struct ImportScanView: View {
         }
     }
 
-    /// Presented from the text sheet's `onDismiss`: launching the review sheet
-    /// only once the text sheet has fully dismissed avoids a same-anchor
-    /// "already presenting" conflict.
-    private func startPendingJob() {
+    /// Handed off from the text sheet's `onDismiss`: waiting for the text sheet
+    /// to fully dismiss before closing the camera avoids a presentation conflict.
+    private func startPendingSource() {
         guard let source = pendingSource else { return }
         pendingSource = nil
-        job = ImportJob(input: .source(source))
+        onPick(.source(source))
     }
 
     private func submitText() {
@@ -179,7 +169,7 @@ struct ImportScanView: View {
     // MARK: - Capture
 
     private func capture(_ data: Data) {
-        job = ImportJob(input: .capture(data))
+        onPick(.capture(data))
     }
 }
 
@@ -199,5 +189,5 @@ private struct CircleIcon: View {
 }
 
 #Preview {
-    ImportScanView { _, _ in }
+    ImportScanView { _ in }
 }

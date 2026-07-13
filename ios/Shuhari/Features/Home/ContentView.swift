@@ -17,6 +17,11 @@ struct ContentView: View {
     /// The last real content tab, restored when the import cover is dismissed.
     @State private var lastContentTab: RootTab = .cuisine
     @State private var showImport = false
+    /// Set when the camera hands off a picked photo / capture / text: it closes
+    /// the camera cover, then `onDismiss` presents the review sheet over the
+    /// content tab (so the camera is gone, not lingering behind the sheet).
+    @State private var pendingImport: ImportInput?
+    @State private var reviewJob: ImportJob?
     @State private var importedRecipe: ImportedRecipe?
     @State private var store = HomeStore()
 
@@ -68,12 +73,34 @@ struct ContentView: View {
                 lastContentTab = newValue
             }
         }
-        .fullScreenCover(isPresented: $showImport, onDismiss: restoreContentTab) {
-            ImportScanView { recipeId, type in
-                importedRecipe = ImportedRecipe(id: recipeId, type: type)
-                selectedTab = Self.tab(for: type)
+        .fullScreenCover(isPresented: $showImport, onDismiss: onImportCoverDismiss) {
+            ImportScanView { input in
+                pendingImport = input
                 showImport = false
             }
+        }
+        .sheet(item: $reviewJob) { job in
+            ImportReviewSheet(
+                input: job.input,
+                onCreated: { recipeId, type in
+                    importedRecipe = ImportedRecipe(id: recipeId, type: type)
+                    selectedTab = Self.tab(for: type)
+                    reviewJob = nil
+                },
+                onCancel: { reviewJob = nil }
+            )
+            .presentationDetents([.large])
+        }
+    }
+
+    /// When the camera cover closes: restore the content tab, then — if the user
+    /// picked a photo / captured / typed — present the review sheet over it, so
+    /// the camera is fully gone rather than lingering behind the sheet.
+    private func onImportCoverDismiss() {
+        restoreContentTab()
+        if let input = pendingImport {
+            pendingImport = nil
+            reviewJob = ImportJob(input: input)
         }
     }
 
