@@ -32,6 +32,21 @@ struct ContentView: View {
         )
     }
 
+    /// The trailing "Importer" entry must stay detached from the content tabs.
+    /// iOS 26 separates the `.search` role; iOS 27 folded `.search` back into the
+    /// main tab row and introduced `.prominent` for a trailing-separated tab.
+    /// Pick the role that detaches on the running OS, guarding `.prominent`
+    /// behind the SDK that defines it (Swift 6.4 / Xcode 27) so the app still
+    /// builds with Xcode 26.
+    private var importerTabRole: TabRole {
+        #if compiler(>=6.4)
+        if #available(iOS 27.0, *) {
+            return .prominent
+        }
+        #endif
+        return .search
+    }
+
     var body: some View {
         TabView(selection: tabSelection) {
             Tab("Cuisine", systemImage: "fork.knife", value: RootTab.cuisine) {
@@ -49,7 +64,7 @@ struct ContentView: View {
             }
             .accessibilityIdentifier("tab-cocktail")
 
-            Tab(value: RootTab.importer, role: .search) {
+            Tab(value: RootTab.importer, role: importerTabRole) {
                 Color.clear
             } label: {
                 Label("Importer", systemImage: "camera")
