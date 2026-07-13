@@ -53,7 +53,6 @@ struct ContentView: View {
                 Color.clear
             } label: {
                 Label("Importer", systemImage: "camera")
-                    .labelStyle(.iconOnly)
             }
             .accessibilityIdentifier("tab-import")
         }
