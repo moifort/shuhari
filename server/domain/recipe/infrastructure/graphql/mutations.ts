@@ -1,4 +1,5 @@
 import { GraphQLError } from 'graphql'
+import { match } from 'ts-pattern'
 import { RecipeCommand } from '~/domain/recipe/command'
 import type { TmxSettings } from '~/domain/recipe/types'
 import { RecipeUseCase } from '~/domain/recipe/use-case'
@@ -41,6 +42,7 @@ builder.mutationField('createRecipe', (t) =>
           ...(input.subtitle ? { subtitle: input.subtitle } : {}),
           params: input.params,
           steps: input.steps,
+          ...(input.ingredients ? { ingredients: input.ingredients } : {}),
           ...(input.tmxSteps ? { tmxSteps: toTmxSettings(input.tmxSteps) } : {}),
         },
         input.sourceLabel ?? undefined,
@@ -61,8 +63,11 @@ builder.mutationField('updateRecipe', (t) =>
         ...(input.title ? { title: input.title } : {}),
         ...(input.subtitle ? { subtitle: input.subtitle } : {}),
       })
-      if (result === 'not-found') throw notFound()
-      return result
+      return match(result)
+        .with('not-found', () => {
+          throw notFound()
+        })
+        .otherwise((recipe) => recipe)
     },
   }),
 )
@@ -77,12 +82,16 @@ builder.mutationField('promoteVersion', (t) =>
     },
     resolve: async (_root, { recipeId, versionNumber }, { userId }) => {
       const result = await RecipeCommand.promote(userId, recipeId, versionNumber)
-      if (result === 'not-found') throw notFound()
-      if (result === 'nothing-to-test')
-        throw new GraphQLError('No version awaiting a trial', {
-          extensions: { code: 'NOTHING_TO_TEST' },
+      return match(result)
+        .with('not-found', () => {
+          throw notFound()
         })
-      return result
+        .with('nothing-to-test', () => {
+          throw new GraphQLError('No version awaiting a trial', {
+            extensions: { code: 'NOTHING_TO_TEST' },
+          })
+        })
+        .otherwise((recipe) => recipe)
     },
   }),
 )
@@ -94,8 +103,11 @@ builder.mutationField('deleteRecipe', (t) =>
     args: { id: t.arg({ type: 'RecipeId', required: true }) },
     resolve: async (_root, { id }, { userId }) => {
       const result = await RecipeUseCase.removeCompletely(userId, id)
-      if (result === 'not-found') throw notFound()
-      return true
+      return match(result)
+        .with('not-found', () => {
+          throw notFound()
+        })
+        .otherwise(() => true)
     },
   }),
 )

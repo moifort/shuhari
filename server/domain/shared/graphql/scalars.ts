@@ -1,6 +1,8 @@
 import { GraphQLError } from 'graphql'
 import { ZodError } from 'zod'
 import {
+  IngredientName,
+  IngredientQuantity,
   ParamKey,
   ParamValue,
   RecipeId,
@@ -84,6 +86,18 @@ builder.scalarType('ParamValue', {
   description: 'Recipe parameter value with unit (1-120 chars)',
   serialize: (value) => value as string,
   parseValue: validatedParse('ParamValue', ParamValue),
+})
+
+builder.scalarType('IngredientName', {
+  description: 'Recipe ingredient name (1-60 chars)',
+  serialize: (value) => value as string,
+  parseValue: validatedParse('IngredientName', IngredientName),
+})
+
+builder.scalarType('IngredientQuantity', {
+  description: 'Recipe ingredient quantity with unit (1-60 chars)',
+  serialize: (value) => value as string,
+  parseValue: validatedParse('IngredientQuantity', IngredientQuantity),
 })
 
 builder.scalarType('StepText', {

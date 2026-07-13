@@ -103,6 +103,7 @@ export namespace ProposalUseCase {
       ...(proposal.rationale ? { why: proposal.rationale } : {}),
       params,
       steps: base.steps,
+      ...(base.ingredients ? { ingredients: base.ingredients } : {}),
       ...(base.tmxSteps ? { tmxSteps: base.tmxSteps } : {}),
     })
     if (result !== 'not-found') await ProposalCommand.discard(recipeId, versionNumber)
@@ -139,6 +140,7 @@ export namespace ProposalUseCase {
         ...(recipe.subtitle ? { subtitle: recipe.subtitle } : {}),
         params,
         steps: base.steps,
+        ...(base.ingredients ? { ingredients: base.ingredients } : {}),
         ...(base.tmxSteps ? { tmxSteps: base.tmxSteps } : {}),
       },
       describeChange(vars),

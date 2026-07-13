@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test'
 import type {
+  Ingredient,
+  IngredientName,
+  IngredientQuantity,
   Param,
   ParamKey,
   ParamValue,
@@ -21,6 +24,10 @@ const { RecipeCommand } = await import('~/domain/recipe/command')
 
 const userId = 'user-1' as UserId
 const param = (k: string, v: string): Param => ({ key: k as ParamKey, value: v as ParamValue })
+const ingredient = (n: string, q: string): Ingredient => ({
+  name: n as IngredientName,
+  quantity: q as IngredientQuantity,
+})
 const newInput = () => ({
   type: 'cafe' as const,
   title: 'Espresso' as RecipeTitle,
@@ -77,6 +84,17 @@ describe('RecipeCommand.importRecipe', () => {
       tmxSteps: [{ time: '5 min' as TmxTime }, null],
     })
     expect(fake.snapshot('recipe-versions').get(`${notTmx.id}_1`)).not.toContainKey('tmxSteps')
+  })
+
+  test('persists ingredients on v1 and omits the field when absent', async () => {
+    const ingredients = [ingredient('Gin', '50 ml'), ingredient('Vermouth rouge', '25 ml')]
+    const withIngredients = await RecipeCommand.importRecipe(userId, { ...newInput(), ingredients })
+    expect(fake.snapshot('recipe-versions').get(`${withIngredients.id}_1`)?.ingredients).toEqual(
+      ingredients,
+    )
+
+    const without = await RecipeCommand.importRecipe(userId, newInput())
+    expect(fake.snapshot('recipe-versions').get(`${without.id}_1`)).not.toContainKey('ingredients')
   })
 })
 

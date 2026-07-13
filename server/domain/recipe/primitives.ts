@@ -1,6 +1,8 @@
 import { make } from 'ts-brand'
 import { z } from 'zod'
 import {
+  type IngredientName as IngredientNameType,
+  type IngredientQuantity as IngredientQuantityType,
   type ParamKey as ParamKeyType,
   type ParamValue as ParamValueType,
   RECIPE_TYPE_VALUES,
@@ -51,6 +53,16 @@ export const ParamKey = (value: unknown) => {
 export const ParamValue = (value: unknown) => {
   const v = z.string().trim().min(1).max(120).parse(value)
   return make<ParamValueType>()(v)
+}
+
+export const IngredientName = (value: unknown) => {
+  const v = z.string().trim().min(1).max(60).parse(value)
+  return make<IngredientNameType>()(v)
+}
+
+export const IngredientQuantity = (value: unknown) => {
+  const v = z.string().trim().min(1).max(60).parse(value)
+  return make<IngredientQuantityType>()(v)
 }
 
 export const StepText = (value: unknown) => {

@@ -14,6 +14,18 @@ const ImportParamType = builder.objectRef<ImportParam>('ImportParam').implement(
   }),
 })
 
+// Raw ingredient from the import analysis — plain strings, shown in the editable
+// preview before the user confirms (values are validated into branded types on create).
+type ImportIngredient = { name: string; quantity: string }
+
+const ImportIngredientType = builder.objectRef<ImportIngredient>('ImportIngredient').implement({
+  description: 'A recipe ingredient extracted by the AI (unvalidated preview)',
+  fields: (t) => ({
+    name: t.exposeString('name'),
+    quantity: t.exposeString('quantity'),
+  }),
+})
+
 const ImportTmxSettingsType = builder.objectRef<ImportTmxSettings>('ImportTmxSettings').implement({
   description: 'Thermomix settings for one step extracted by the AI (unvalidated preview)',
   fields: (t) => ({
@@ -32,6 +44,7 @@ export const ImportAnalysisType = builder.objectRef<ImportAnalysis>('ImportAnaly
     subtitle: t.exposeString('subtitle', { nullable: true }),
     sourceLabel: t.exposeString('sourceLabel', { nullable: true }),
     params: t.field({ type: [ImportParamType], resolve: (a) => a.params }),
+    ingredients: t.field({ type: [ImportIngredientType], resolve: (a) => a.ingredients }),
     steps: t.exposeStringList('steps'),
     tmxSteps: t.field({
       type: [ImportTmxSettingsType],

@@ -14,6 +14,8 @@ type ChangelogEntry {
 
 """Create a recipe (v1) from a confirmed import preview"""
 input CreateRecipeInput {
+  """The recipe’s components with quantities"""
+  ingredients: [IngredientInput!]
   params: [ParamInput!]!
 
   """Where the recipe came from"""
@@ -44,6 +46,7 @@ type Home {
 
 """Structured recipe extracted from an import source (editable preview)"""
 type ImportAnalysis {
+  ingredients: [ImportIngredient!]!
   params: [ImportParam!]!
   sourceLabel: String
   steps: [String!]!
@@ -53,6 +56,12 @@ type ImportAnalysis {
   """Per-step Thermomix settings, aligned with steps (null = plain step)"""
   tmxSteps: [ImportTmxSettings]
   type: RecipeType!
+}
+
+"""A recipe ingredient extracted by the AI (unvalidated preview)"""
+type ImportIngredient {
+  name: String!
+  quantity: String!
 }
 
 """A recipe parameter extracted by the AI (unvalidated preview)"""
@@ -77,6 +86,24 @@ type ImportTmxSettings {
   temperature: String
   time: String
 }
+
+"""A recipe component with its measured quantity (ordered list)"""
+type Ingredient {
+  name: IngredientName!
+  quantity: IngredientQuantity!
+}
+
+"""A recipe ingredient with its quantity (ordered)"""
+input IngredientInput {
+  name: IngredientName!
+  quantity: IngredientQuantity!
+}
+
+"""Recipe ingredient name (1-60 chars)"""
+scalar IngredientName
+
+"""Recipe ingredient quantity with unit (1-60 chars)"""
+scalar IngredientQuantity
 
 type Mutation {
   """
@@ -351,6 +378,9 @@ type Version {
   change: String
   changedKeys: [ParamKey!]!
   createdAt: DateTime!
+
+  """The recipe’s components with quantities (absent when none)"""
+  ingredients: [Ingredient!]
   number: VersionNumber!
   originDetail: String
   originKind: VersionOriginKind!

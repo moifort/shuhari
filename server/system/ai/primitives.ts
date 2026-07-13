@@ -15,6 +15,8 @@ const nullToNull = <T>(schema: z.ZodType<T>) => schema.nullish().transform((v) =
 
 const paramSchema = z.object({ key: z.string().min(1), value: z.string().min(1) })
 
+const ingredientSchema = z.object({ name: z.string().min(1), quantity: z.string().min(1) })
+
 // A step comes back as an object carrying the text plus optional Thermomix
 // settings; a bare string (schema-less fallback) is tolerated as a plain step.
 const stepSchema = z.union([
@@ -51,6 +53,7 @@ export const ImportAnalysisSchema = z
     subtitle: nullToNull(z.string()),
     sourceLabel: nullToNull(z.string()),
     params: z.array(paramSchema).default([]),
+    ingredients: z.array(ingredientSchema).default([]),
     steps: z.array(stepSchema).default([]),
   })
   .transform((raw): ImportAnalysis => {
@@ -61,6 +64,7 @@ export const ImportAnalysisSchema = z
       subtitle: raw.subtitle,
       sourceLabel: raw.sourceLabel,
       params: raw.params,
+      ingredients: raw.ingredients,
       steps: raw.steps.map((s) => s.text),
       tmxSteps: tmxSteps.some((s) => s !== null) ? tmxSteps : null,
     }

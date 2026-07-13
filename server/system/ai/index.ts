@@ -47,6 +47,21 @@ const importResponseSchema = {
         required: ['key', 'value'],
       },
     },
+    ingredients: {
+      type: 'array',
+      description: 'Ingrédients de la recette avec leur quantité',
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: "Nom de l'ingrédient (ex : Gin, Beurre, Fraise)" },
+          quantity: {
+            type: 'string',
+            description: 'Quantité avec unité (ex : 50 ml, 170 g, 3 pièces)',
+          },
+        },
+        required: ['name', 'quantity'],
+      },
+    },
     steps: {
       type: 'array',
       description: 'Étapes courtes et actionnables, dans l’ordre',
@@ -82,7 +97,7 @@ const importResponseSchema = {
     },
   },
   required: ['type', 'title'],
-  propertyOrdering: ['type', 'title', 'subtitle', 'sourceLabel', 'params', 'steps'],
+  propertyOrdering: ['type', 'title', 'subtitle', 'sourceLabel', 'ingredients', 'params', 'steps'],
 }
 
 const proposalResponseSchema = {
@@ -134,7 +149,8 @@ const IMPORT_INSTRUCTIONS = `Tu es l'assistant d'un carnet d'expérimentation cu
 
 Règles :
 - Détermine le type : cafe (espresso, filtre…), cocktail, plat (recette cuisinée), tmx (recette Thermomix).
-- params : liste ORDONNÉE de paramètres mesurables, chacun avec une valeur ET son unité (ex : Dose → 18,5 g, Température → 92 °C, Mouture → fine). N'invente pas de valeurs absentes ; ne garde que ce qui est réellement mesurable et reproductible.
+- ingredients : liste ORDONNÉE des composants de la recette avec leur quantité (ex : Gin → 50 ml, Beurre → 170 g, Fraise → 3 pièces). Mets TOUS les ingrédients visibles sur la source, chacun avec sa quantité et son unité. C'est la « liste de courses » de la recette.
+- params : réglages reproductibles qui ne sont PAS des ingrédients (ex : Température → 92 °C, Mouture → fine, Ratio → 1:2, Temps d'extraction → 27 s, Four → 180 °C). N'y mets JAMAIS un ingrédient. N'invente pas de valeurs absentes ; ne garde que ce qui est réellement mesurable et reproductible (souvent vide pour un cocktail ou un plat).
 - steps : étapes courtes, à l'impératif, dans l'ordre.
 - Pour une recette Thermomix (type tmx) : pour chaque étape exécutée au Thermomix, renseigne tmxTime, tmxTemperature, tmxSpeed et tmxReverse tels qu'indiqués dans la recette (durée « 3 min » / « 30 s » / « 1 h 10 min » ; température « 100°C » ou « Varoma » ; vitesse « 0,5 » à « 10 », « pétrin », « mijotage » ou « turbo »). Mets null pour chaque réglage absent, et pour TOUS ces champs quand l'étape ne se fait pas au Thermomix ou que la recette n'est pas de type tmx.
 - Toutes les valeurs textuelles en français. Mets null pour toute information absente.`
@@ -237,14 +253,15 @@ Propose soit une itération (amélioration de cette recette), soit une variation
   }
 
   const hashSource = (source: ImportSource): ImportHashType => {
-    // 'v2' salts the cache: analyses made before the Thermomix per-step
-    // extraction must not be served for new imports of the same source.
+    // 'v3' salts the cache: analyses made before ingredient extraction must not
+    // be served for new imports of the same source (bumped from 'v2', which
+    // covered the Thermomix per-step extraction).
     const material =
       source.kind === 'photos'
-        ? `v2|${source.photos.join('|')}`
+        ? `v3|${source.photos.join('|')}`
         : source.kind === 'url'
-          ? `v2|url:${source.url}`
-          : `v2|text:${source.text}`
+          ? `v3|url:${source.url}`
+          : `v3|text:${source.text}`
     return ImportHash(createHash('sha256').update(material).digest('hex'))
   }
 }

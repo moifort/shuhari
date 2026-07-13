@@ -2,6 +2,7 @@ import { alignedTmxSteps, nextVersionNumber } from '~/domain/recipe/business-rul
 import * as repository from '~/domain/recipe/infrastructure/repository'
 import { randomRecipeId, VersionNumber } from '~/domain/recipe/primitives'
 import type {
+  Ingredient,
   Param,
   Recipe,
   RecipeId,
@@ -25,6 +26,7 @@ export type NewRecipeInput = {
   subtitle?: RecipeSubtitle
   params: Param[]
   steps: StepText[]
+  ingredients?: Ingredient[]
   tmxSteps?: (TmxSettings | null)[]
 }
 
@@ -34,6 +36,7 @@ export type NewVersionInput = {
   why?: string
   params: Param[]
   steps: StepText[]
+  ingredients?: Ingredient[]
   tmxSteps?: (TmxSettings | null)[]
 }
 
@@ -93,6 +96,7 @@ export namespace RecipeCommand {
       ...(input.why ? { why: input.why } : {}),
       params: input.params,
       steps: input.steps,
+      ...(input.ingredients ? { ingredients: input.ingredients } : {}),
       ...(tmxSteps ? { tmxSteps } : {}),
     }
     const updated: Recipe = {
@@ -213,6 +217,7 @@ export namespace RecipeCommand {
       changedKeys: [],
       params: input.params,
       steps: input.steps,
+      ...(input.ingredients ? { ingredients: input.ingredients } : {}),
       ...(tmxSteps ? { tmxSteps } : {}),
     }
   }

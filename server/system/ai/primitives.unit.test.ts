@@ -50,3 +50,31 @@ describe('parseImportResponse — Thermomix steps', () => {
     expect(result.tmxSteps).toBeNull()
   })
 })
+
+describe('parseImportResponse — ingredients', () => {
+  test('parses the ingredient list with names and quantities', () => {
+    const result = parseImportResponse(
+      JSON.stringify({
+        type: 'cocktail',
+        title: 'Negroni',
+        ingredients: [
+          { name: 'Gin', quantity: '30 ml' },
+          { name: 'Vermouth rouge', quantity: '30 ml' },
+          { name: 'Campari', quantity: '30 ml' },
+        ],
+      }),
+    )
+
+    expect(result.ingredients).toEqual([
+      { name: 'Gin', quantity: '30 ml' },
+      { name: 'Vermouth rouge', quantity: '30 ml' },
+      { name: 'Campari', quantity: '30 ml' },
+    ])
+  })
+
+  test('defaults to an empty ingredient list when the field is absent', () => {
+    const result = parseImportResponse(JSON.stringify({ type: 'plat', title: 'Soupe' }))
+
+    expect(result.ingredients).toEqual([])
+  })
+})

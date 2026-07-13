@@ -26,6 +26,7 @@ export type ImportAnalysis = {
   subtitle: string | null
   sourceLabel: string | null
   params: { key: string; value: string }[]
+  ingredients: { name: string; quantity: string }[]
   steps: string[]
   // Aligned with `steps` by index; null when no step carries a setting.
   tmxSteps: (ImportTmxSettings | null)[] | null

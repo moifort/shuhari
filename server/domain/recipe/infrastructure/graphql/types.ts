@@ -1,6 +1,7 @@
+import { match } from 'ts-pattern'
 import { RecipeQuery } from '~/domain/recipe/query'
 import { builder } from '~/domain/shared/graphql/builder'
-import type { Param, Recipe, RecipeVersion, TmxSettings } from '../../types'
+import type { Ingredient, Param, Recipe, RecipeVersion, TmxSettings } from '../../types'
 import { RecipeTypeEnum, VersionOriginKindEnum } from './enums'
 
 export const ParamType = builder.objectRef<Param>('Param').implement({
@@ -8,6 +9,14 @@ export const ParamType = builder.objectRef<Param>('Param').implement({
   fields: (t) => ({
     key: t.expose('key', { type: 'ParamKey' }),
     value: t.expose('value', { type: 'ParamValue' }),
+  }),
+})
+
+export const IngredientType = builder.objectRef<Ingredient>('Ingredient').implement({
+  description: 'A recipe component with its measured quantity (ordered list)',
+  fields: (t) => ({
+    name: t.expose('name', { type: 'IngredientName' }),
+    quantity: t.expose('quantity', { type: 'IngredientQuantity' }),
   }),
 })
 
@@ -37,6 +46,12 @@ export const VersionType = builder.objectRef<RecipeVersion>('Version').implement
     changedKeys: t.expose('changedKeys', { type: ['ParamKey'] }),
     why: t.string({ nullable: true, resolve: (v) => v.why ?? null }),
     params: t.field({ type: [ParamType], resolve: (v) => v.params }),
+    ingredients: t.field({
+      type: [IngredientType],
+      nullable: { list: true, items: false },
+      description: 'The recipe’s components with quantities (absent when none)',
+      resolve: (v) => v.ingredients ?? null,
+    }),
     steps: t.expose('steps', { type: ['StepText'] }),
     tmxSteps: t.field({
       type: [TmxSettingsType],
@@ -90,7 +105,9 @@ RecipeType.implement({
         r.derivedFrom === null
           ? null
           : RecipeQuery.byId(userId, r.derivedFrom).then((res) =>
-              res === 'not-found' ? null : res,
+              match(res)
+                .with('not-found', () => null)
+                .otherwise((found) => found),
             ),
     }),
     variations: t.field({

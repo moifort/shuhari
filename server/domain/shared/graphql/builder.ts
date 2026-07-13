@@ -2,6 +2,8 @@ import SchemaBuilder from '@pothos/core'
 import { GraphQLScalarType } from 'graphql'
 import type { H3Event } from 'h3'
 import type {
+  IngredientName,
+  IngredientQuantity,
   ParamKey,
   ParamValue,
   RecipeId,
@@ -44,6 +46,8 @@ export const builder = new SchemaBuilder<{
     Note: { Input: Note; Output: Note }
     ParamKey: { Input: ParamKey; Output: ParamKey }
     ParamValue: { Input: ParamValue; Output: ParamValue }
+    IngredientName: { Input: IngredientName; Output: IngredientName }
+    IngredientQuantity: { Input: IngredientQuantity; Output: IngredientQuantity }
     StepText: { Input: StepText; Output: StepText }
     TmxTime: { Input: TmxTime; Output: TmxTime }
     TmxTemperature: { Input: TmxTemperature; Output: TmxTemperature }

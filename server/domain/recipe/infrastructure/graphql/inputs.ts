@@ -9,6 +9,14 @@ export const ParamInput = builder.inputType('ParamInput', {
   }),
 })
 
+export const IngredientInput = builder.inputType('IngredientInput', {
+  description: 'A recipe ingredient with its quantity (ordered)',
+  fields: (t) => ({
+    name: t.field({ type: 'IngredientName', required: true }),
+    quantity: t.field({ type: 'IngredientQuantity', required: true }),
+  }),
+})
+
 export const TmxSettingsInput = builder.inputType('TmxSettingsInput', {
   description: 'Thermomix settings for one step (all optional)',
   fields: (t) => ({
@@ -27,6 +35,11 @@ export const CreateRecipeInput = builder.inputType('CreateRecipeInput', {
     subtitle: t.field({ type: 'RecipeSubtitle' }),
     sourceLabel: t.string({ description: 'Where the recipe came from' }),
     params: t.field({ type: [ParamInput], required: true }),
+    ingredients: t.field({
+      type: [IngredientInput],
+      required: { list: false, items: true },
+      description: 'The recipe’s components with quantities',
+    }),
     steps: t.field({ type: ['StepText'], required: true }),
     tmxSteps: t.field({
       type: [TmxSettingsInput],
