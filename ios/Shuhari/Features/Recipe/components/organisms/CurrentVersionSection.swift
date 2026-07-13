@@ -8,9 +8,16 @@ struct CurrentVersionSection: View {
 
     var body: some View {
         Section {
-            ParamsGrid(items: version.params.map {
-                ParamsGrid.Item(key: $0.key, value: $0.value, highlighted: version.changedKeys.contains($0.key))
-            })
+            if !version.ingredients.isEmpty {
+                ParamsGrid(items: version.ingredients.map {
+                    ParamsGrid.Item(key: $0.name, value: $0.quantity, highlighted: false)
+                })
+            }
+            if !version.params.isEmpty {
+                ParamsGrid(items: version.params.map {
+                    ParamsGrid.Item(key: $0.key, value: $0.value, highlighted: version.changedKeys.contains($0.key))
+                })
+            }
             if let tmxItems = TmxStepsList.Item.zipped(steps: version.steps, tmxSteps: version.tmxSteps) {
                 TmxStepsList(items: tmxItems)
             } else {

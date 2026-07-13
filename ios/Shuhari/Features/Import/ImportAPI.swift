@@ -26,10 +26,11 @@ enum ImportAPI {
         )
         let analysis = data.analyzeImport
         return ImportAnalysis(
-            title: analysis.title,
+            title: normalizedTitle(analysis.title),
             subtitle: analysis.subtitle,
             type: RecipeType(graphql: analysis.type),
             params: analysis.params.map { Param(key: $0.key, value: $0.value) },
+            ingredients: analysis.ingredients.map { Ingredient(name: $0.name, quantity: $0.quantity) },
             steps: analysis.steps,
             tmxSteps: analysis.tmxSteps.map { list in
                 list.map { $0.map { TmxSettings(time: $0.time, temperature: $0.temperature, speed: $0.speed, reverse: $0.reverse ?? false) } }
@@ -53,7 +54,11 @@ enum ImportAPI {
                     }
                 })
             } ?? .none
+        let ingredients: GraphQLNullable<[ShuhariGraphQL.IngredientInput]> = analysis.ingredients.isEmpty
+            ? .none
+            : .some(analysis.ingredients.map { ShuhariGraphQL.IngredientInput(name: $0.name, quantity: $0.quantity) })
         let input = ShuhariGraphQL.CreateRecipeInput(
+            ingredients: ingredients,
             params: analysis.params.map { ShuhariGraphQL.ParamInput(key: $0.key, value: $0.value) },
             sourceLabel: GraphQLHelpers.graphQLNullable(analysis.sourceLabel),
             steps: analysis.steps,
@@ -67,5 +72,14 @@ enum ImportAPI {
             mutation: ShuhariGraphQL.CreateRecipeMutation(input: input)
         )
         return data.createRecipe.id
+    }
+
+    /// AI sources sometimes hand back an all-caps title ("COOKIES AUX NOIX DE
+    /// PÉCAN"). Normalize a fully-uppercase title to sentence case; leave any
+    /// mixed-case title untouched (it's already how the source wrote it).
+    private static func normalizedTitle(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed == trimmed.uppercased(), trimmed != trimmed.lowercased() else { return trimmed }
+        return trimmed.prefix(1).uppercased() + trimmed.dropFirst().lowercased()
     }
 }

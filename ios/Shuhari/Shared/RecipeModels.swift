@@ -14,6 +14,17 @@ struct Param: Identifiable, Sendable, Hashable {
     var id: String { key }
 }
 
+// MARK: - Ingredient
+
+/// A recipe component with its measured quantity ("Gin" / "50 ml"). The
+/// shopping-list view of the recipe — distinct from `Param` (the reproducibility
+/// knobs the AI iterates on).
+struct Ingredient: Identifiable, Sendable, Hashable {
+    let name: String
+    let quantity: String
+    var id: String { name }
+}
+
 // MARK: - Thermomix
 
 /// Thermomix settings for one step (display-oriented strings — "Varoma" and
@@ -45,6 +56,8 @@ struct RecipeVersion: Identifiable, Sendable {
     let originDetail: String?
     let changedKeys: [String]
     let params: [Param]
+    /// The recipe's components with quantities (empty when none/absent).
+    let ingredients: [Ingredient]
     let steps: [String]
     /// Per-step Thermomix settings, aligned with `steps` (nil entry = plain step).
     /// nil for non-Thermomix recipes and versions imported before extraction existed.
@@ -163,6 +176,8 @@ struct ImportAnalysis: Sendable, Hashable {
     var subtitle: String?
     var type: RecipeType
     var params: [Param]
+    /// The recipe's components with quantities (empty when none).
+    var ingredients: [Ingredient] = []
     var steps: [String]
     /// Per-step Thermomix settings, aligned with `steps` (nil entry = plain step).
     var tmxSteps: [TmxSettings?]? = nil

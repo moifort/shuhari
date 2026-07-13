@@ -9,6 +9,10 @@ fragment VersionFields on Version {
     key
     value
   }
+  ingredients {
+    name
+    quantity
+  }
   steps
   tmxSteps {
     time

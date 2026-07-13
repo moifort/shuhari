@@ -50,17 +50,41 @@ struct TmxStepsList: View {
     }
 
     private func badges(_ item: Item) -> some View {
+        TmxSettingBadges(
+            time: item.time,
+            temperature: item.temperature,
+            speed: item.speed,
+            reverse: item.reverse,
+            big: big
+        )
+    }
+}
+
+/// Read-only capsule badges for one step's Thermomix settings (time / temperature
+/// / speed / reverse), tinted `Theme.Status.tmx`. Shared by the read-only
+/// `TmxStepsList` and the editable import preview (where step text is editable
+/// but the machine settings stay read-only).
+struct TmxSettingBadges: View {
+    let time: String?
+    let temperature: String?
+    let speed: String?
+    let reverse: Bool
+    var big: Bool = false
+
+    var hasSettings: Bool { time != nil || temperature != nil || speed != nil || reverse }
+
+    var body: some View {
         FlowLayout(spacing: 6) {
-            if let time = item.time {
+            if let time {
                 badge(time, icon: "hourglass")
             }
-            if let temperature = item.temperature {
+            if let temperature {
                 badge(temperature, icon: "thermometer.medium")
             }
-            if let speed = item.speed {
+            if let speed {
                 badge(speed, icon: "gauge.with.needle")
             }
-            if item.reverse {
+            if reverse {
                 badge("Inverse", icon: "arrow.trianglehead.counterclockwise")
             }
         }

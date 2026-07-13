@@ -8,6 +8,10 @@ mutation AnalyzeImport($photos: [String!], $url: String, $text: String) {
       key
       value
     }
+    ingredients {
+      name
+      quantity
+    }
     steps
     tmxSteps {
       time

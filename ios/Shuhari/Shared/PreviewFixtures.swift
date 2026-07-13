@@ -8,6 +8,21 @@ import Foundation
 enum Fixtures {
     static let date = Date(timeIntervalSince1970: 1_752_300_000)
 
+    static let coffeeIngredients = [
+        Ingredient(name: "Café en grains", quantity: "18,5 g"),
+        Ingredient(name: "Eau", quantity: "36 g"),
+    ]
+
+    static let risottoIngredients = [
+        Ingredient(name: "Oignon", quantity: "1"),
+        Ingredient(name: "Ail", quantity: "1 gousse"),
+        Ingredient(name: "Huile d’olive", quantity: "20 g"),
+        Ingredient(name: "Riz arborio", quantity: "320 g"),
+        Ingredient(name: "Vin blanc", quantity: "60 ml"),
+        Ingredient(name: "Bouillon", quantity: "650 ml"),
+        Ingredient(name: "Parmesan", quantity: "60 g"),
+    ]
+
     // MARK: - Espresso (cafe, pending v4, pending proposal on demand)
 
     static let espressoV3 = RecipeVersion(
@@ -24,6 +39,7 @@ enum Fixtures {
             Param(key: "Sortie", value: "36 g"),
             Param(key: "Durée", value: "27 s"),
         ],
+        ingredients: coffeeIngredients,
         steps: ["Purger le groupe.", "Distribuer, tasser à niveau.", "Extraire 36 g en 27 s."],
         tmxSteps: nil,
         averageNote: 7.5,
@@ -45,6 +61,7 @@ enum Fixtures {
             Param(key: "Sortie", value: "36 g"),
             Param(key: "Durée", value: "27 s"),
         ],
+        ingredients: coffeeIngredients,
         steps: ["Purger le groupe.", "Distribuer, tasser à niveau.", "Extraire 36 g en 27 s."],
         tmxSteps: nil,
         averageNote: nil,
@@ -96,6 +113,7 @@ enum Fixtures {
             Param(key: "Sortie", value: "36 g"),
             Param(key: "Durée", value: "25 s"),
         ],
+        ingredients: coffeeIngredients,
         steps: ["Purger le groupe.", "Distribuer, tasser à niveau.", "Extraire 36 g en 25 s."],
         tmxSteps: nil, averageNote: 6.0, trialCount: 1,
         createdAt: date.addingTimeInterval(-86_400 * 30)
@@ -112,6 +130,7 @@ enum Fixtures {
             Param(key: "Sortie", value: "36 g"),
             Param(key: "Durée", value: "25 s"),
         ],
+        ingredients: coffeeIngredients,
         steps: ["Purger le groupe.", "Distribuer, tasser à niveau.", "Extraire 36 g en 25 s."],
         tmxSteps: nil, averageNote: 6.5, trialCount: 1,
         createdAt: date.addingTimeInterval(-86_400 * 20)
@@ -125,13 +144,9 @@ enum Fixtures {
         why: "Trop liquide en fin de cuisson.",
         originKind: .aiProposal,
         originDetail: nil,
-        changedKeys: ["Bouillon"],
-        params: [
-            Param(key: "Riz arborio", value: "320 g"),
-            Param(key: "Bouillon", value: "650 ml"),
-            Param(key: "Parmesan", value: "60 g"),
-            Param(key: "Vin blanc", value: "60 ml"),
-        ],
+        changedKeys: [],
+        params: [],
+        ingredients: risottoIngredients,
         steps: [
             "Mettre l’oignon et l’ail dans le bol, mixer.",
             "Ajouter l’huile d’olive, faire revenir.",
@@ -195,10 +210,15 @@ enum Fixtures {
         subtitle: nil,
         type: .plat,
         params: [
-            Param(key: "Beurre", value: "170 g"),
-            Param(key: "Cassonade", value: "200 g"),
-            Param(key: "Farine", value: "280 g"),
-            Param(key: "Cuisson", value: "12 min à 180 °C"),
+            Param(key: "Four", value: "180 °C"),
+            Param(key: "Cuisson", value: "12 min"),
+        ],
+        ingredients: [
+            Ingredient(name: "Beurre", quantity: "170 g"),
+            Ingredient(name: "Cassonade", quantity: "200 g"),
+            Ingredient(name: "Farine", quantity: "280 g"),
+            Ingredient(name: "Œuf", quantity: "1"),
+            Ingredient(name: "Noix de pécan", quantity: "100 g"),
         ],
         steps: [
             "Crémer le beurre et la cassonade.",
@@ -214,7 +234,8 @@ enum Fixtures {
         title: "Risotto au parmesan",
         subtitle: "Thermomix TM6",
         type: .tmx,
-        params: risottoV2.params,
+        params: [],
+        ingredients: risottoIngredients,
         steps: risottoV2.steps,
         tmxSteps: risottoV2.tmxSteps,
         sourceLabel: "Photo du livre Thermomix"
