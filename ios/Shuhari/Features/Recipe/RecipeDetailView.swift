@@ -6,16 +6,23 @@ struct RecipeDetailView: View {
     let recipeId: String
     @Binding var path: NavigationPath
     @Binding var execution: ExecutionRequest?
+    let onReload: () -> Void
 
     @State private var viewModel: RecipeViewModel
     @State private var showEdit = false
     @State private var showDeleteConfirm = false
     @State private var actionError = ErrorPresenter()
 
-    init(recipeId: String, path: Binding<NavigationPath>, execution: Binding<ExecutionRequest?>) {
+    init(
+        recipeId: String,
+        path: Binding<NavigationPath>,
+        execution: Binding<ExecutionRequest?>,
+        onReload: @escaping () -> Void
+    ) {
         self.recipeId = recipeId
         self._path = path
         self._execution = execution
+        self.onReload = onReload
         self._viewModel = State(initialValue: RecipeViewModel(recipeId: recipeId))
     }
 
@@ -35,16 +42,14 @@ struct RecipeDetailView: View {
                         await viewModel.load()
                     }
                 }
-                .confirmationDialog(
-                    "Supprimer cette recette ?",
-                    isPresented: $showDeleteConfirm,
-                    titleVisibility: .visible
-                ) {
+                .alert("Supprimer cette recette ?", isPresented: $showDeleteConfirm) {
+                    Button("Annuler", role: .cancel) {}
                     Button("Supprimer", role: .destructive) {
                         Task {
                             await actionError.run {
                                 try await RecipeAPI.deleteRecipe(id: recipeId)
                             } onSuccess: {
+                                onReload()
                                 if !path.isEmpty { path.removeLast() }
                             }
                         }
