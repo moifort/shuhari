@@ -52,7 +52,7 @@ struct TmxStepsList: View {
     private func badges(_ item: Item) -> some View {
         FlowLayout(spacing: 6) {
             if let time = item.time {
-                badge(time, icon: "timer")
+                badge(time, icon: "hourglass")
             }
             if let temperature = item.temperature {
                 badge(temperature, icon: "thermometer.medium")
