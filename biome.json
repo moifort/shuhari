@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!maquette", "!shared/schema.graphql", "!.claude"]
+    "includes": ["**", "!shared/schema.graphql", "!.claude"]
   },
   "formatter": {
     "enabled": true,
