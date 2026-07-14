@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BF07983E300508CC00BC4787 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 5E0E01222F5072C10074B393 /* Sentry */; };
 		BF85BBEE2F990504004F8A34 /* Apollo in Frameworks */ = {isa = PBXBuildFile; productRef = AA0E01222F5072C10074B393 /* Apollo */; };
 		BF85BBEF2F990504004F8A34 /* ApolloAPI in Frameworks */ = {isa = PBXBuildFile; productRef = AA0E01242F5072C10074B393 /* ApolloAPI */; };
 		BF85BBF02F990504004F8A34 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = FB0E01222F5072C10074B393 /* FirebaseCore */; };
@@ -39,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BF07983E300508CC00BC4787 /* Sentry in Frameworks */,
 				BF85BBF12F990504004F8A34 /* FirebaseAuth in Frameworks */,
 				BF85BBF02F990504004F8A34 /* FirebaseCore in Frameworks */,
 				BF85BBEF2F990504004F8A34 /* ApolloAPI in Frameworks */,
@@ -99,6 +101,7 @@
 				AA0E01242F5072C10074B393 /* ApolloAPI */,
 				FB0E01222F5072C10074B393 /* FirebaseCore */,
 				FB0E01242F5072C10074B393 /* FirebaseAuth */,
+				5E0E01222F5072C10074B393 /* Sentry */,
 			);
 			productName = Shuhari;
 			productReference = E10000030000000000000001 /* Shuhari.app */;
@@ -157,6 +160,7 @@
 			packageReferences = (
 				AA0E01202F5072C10074B393 /* XCRemoteSwiftPackageReference "apollo-ios" */,
 				FB0E01202F5072C10074B393 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				5E0E01202F5072C10074B393 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 			);
 			productRefGroup = E10000050000000000000009 /* Products */;
 			projectDirPath = "";
@@ -479,6 +483,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		5E0E01202F5072C10074B393 /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/getsentry/sentry-cocoa.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.0.0;
+			};
+		};
 		AA0E01202F5072C10074B393 /* XCRemoteSwiftPackageReference "apollo-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apollographql/apollo-ios.git";
@@ -498,6 +510,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		5E0E01222F5072C10074B393 /* Sentry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5E0E01202F5072C10074B393 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
+			productName = Sentry;
+		};
 		AA0E01222F5072C10074B393 /* Apollo */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = AA0E01202F5072C10074B393 /* XCRemoteSwiftPackageReference "apollo-ios" */;

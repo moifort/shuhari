@@ -15,5 +15,5 @@ apple_private_key_path = "./AuthKey_KEY1234567.p8"
 
 # Backend secrets
 google_api_key = "..."
-fixme_dsn      = ""                            # optional
+sentry_dsn     = ""                            # optional
 # admin_token     = "..."                      # optional, auto-generated if omitted

@@ -10,18 +10,18 @@ locals {
   secret_values = {
     google-api-key = var.google_api_key
     admin-token    = local.admin_token_value
-    fixme-dsn      = var.fixme_dsn
+    sentry-dsn     = var.sentry_dsn
   }
 
   # Secret Manager rejects empty payloads, so we drive iteration off a
-  # non-sensitive set of secret IDs and skip optional ones (fixme-dsn) when
+  # non-sensitive set of secret IDs and skip optional ones (sentry-dsn) when
   # their value is empty. Iterating a map of sensitive values would propagate
   # sensitivity into for_each keys, which Terraform forbids — hence
   # nonsensitive().
   secret_ids = toset(compact([
     "google-api-key",
     "admin-token",
-    nonsensitive(var.fixme_dsn) != "" ? "fixme-dsn" : "",
+    nonsensitive(var.sentry_dsn) != "" ? "sentry-dsn" : "",
   ]))
 }
 
