@@ -1,5 +1,4 @@
 import { ChangelogVersion } from '~/domain/changelog/primitives'
-import type { ChangelogEntry } from '~/domain/changelog/types'
 
 const headingPattern = /^##\s+(.+?)\s*$/
 const bulletPattern = /^[-*]\s+(.+?)\s*$/
@@ -20,29 +19,19 @@ const parseHeading = (heading: string) => {
 
 const isHeading = (line: string) => line.trimStart().startsWith('## ')
 
-type ParseState = { entries: ChangelogEntry[]; current: ChangelogEntry | null }
-
+// Split the markdown into sections at each `## ` heading, then turn each section
+// (heading line + the bullet lines up to the next heading) into an entry.
 export const parseChangelog = (markdown: string) => {
-  const { entries, current } = markdown.split(/\r?\n/).reduce<ParseState>(
-    (state, raw) => {
-      const line = raw.trimEnd()
-      if (isHeading(line)) {
-        const entries = state.current ? [...state.entries, state.current] : state.entries
-        const heading = parseHeading(line)
-        return heading
-          ? {
-              entries,
-              current: { version: ChangelogVersion(heading), date: parseDate(line), notes: [] },
-            }
-          : { entries, current: null }
-      }
-      if (!state.current) return state
+  const lines = markdown.split(/\r?\n/).map((raw) => raw.trimEnd())
+  const headings = lines.flatMap((line, index) => (isHeading(line) ? [index] : []))
+  return headings.flatMap((start, i) => {
+    const heading = parseHeading(lines[start])
+    if (!heading) return []
+    const end = headings[i + 1] ?? lines.length
+    const notes = lines.slice(start + 1, end).flatMap((line) => {
       const bullet = bulletPattern.exec(line)
-      return bullet
-        ? { ...state, current: { ...state.current, notes: [...state.current.notes, bullet[1]] } }
-        : state
-    },
-    { entries: [], current: null },
-  )
-  return current ? [...entries, current] : entries
+      return bullet ? [bullet[1]] : []
+    })
+    return [{ version: ChangelogVersion(heading), date: parseDate(lines[start]), notes }]
+  })
 }
