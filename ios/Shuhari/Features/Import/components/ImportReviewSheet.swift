@@ -37,18 +37,25 @@ struct ImportReviewSheet: View {
 
     var body: some View {
         NavigationStack {
-            Group {
+            // A stable ZStack root keeps NavigationStack from hard-swapping its
+            // root view — the children crossfade instead of hard-cutting when the
+            // analysis resolves (loader → form, or → error state).
+            ZStack {
                 switch phase {
                 case .analyzing:
                     analyzingView
+                        .transition(.opacity)
                 case .form(let analysis):
                     ImportPreviewPage(analysis: analysis, isSaving: isSaving, onCancel: onCancel) { edited in
                         Task { await save(edited) }
                     }
+                    .transition(.opacity)
                 case .failed:
                     failedView
+                        .transition(.opacity)
                 }
             }
+            .animation(.easeInOut(duration: 0.35), value: phase)
         }
         .errorAlert(errorPresenter)
         // While a recipe is being created, block Fermer and swipe-to-dismiss so a
