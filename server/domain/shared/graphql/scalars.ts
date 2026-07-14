@@ -89,7 +89,7 @@ builder.scalarType('ParamValue', {
 })
 
 builder.scalarType('IngredientName', {
-  description: 'Recipe ingredient name (1-60 chars)',
+  description: 'Recipe ingredient name (1-120 chars)',
   serialize: (value) => value as string,
   parseValue: validatedParse('IngredientName', IngredientName),
 })

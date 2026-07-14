@@ -99,7 +99,7 @@ input IngredientInput {
   quantity: IngredientQuantity!
 }
 
-"""Recipe ingredient name (1-60 chars)"""
+"""Recipe ingredient name (1-120 chars)"""
 scalar IngredientName
 
 """Recipe ingredient quantity with unit (1-60 chars)"""

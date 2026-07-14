@@ -56,7 +56,9 @@ export const ParamValue = (value: unknown) => {
 }
 
 export const IngredientName = (value: unknown) => {
-  const v = z.string().trim().min(1).max(60).parse(value)
+  // 120, not 60: AI imports legitimately produce descriptive names
+  // ("Pommes de terre farineuses, épluchées et coupées en rondelles (0,5 cm)").
+  const v = z.string().trim().min(1).max(120).parse(value)
   return make<IngredientNameType>()(v)
 }
 
