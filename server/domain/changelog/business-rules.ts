@@ -20,33 +20,29 @@ const parseHeading = (heading: string): string | null => {
 
 const isHeading = (line: string) => line.trimStart().startsWith('## ')
 
+type ParseState = { entries: ChangelogEntry[]; current: ChangelogEntry | null }
+
 export const parseChangelog = (markdown: string): ChangelogEntry[] => {
-  const entries: ChangelogEntry[] = []
-  const lines = markdown.split(/\r?\n/)
-
-  let current: ChangelogEntry | null = null
-
-  for (const raw of lines) {
-    const line = raw.trimEnd()
-    if (isHeading(line)) {
-      if (current) entries.push(current)
-      const heading = parseHeading(line)
-      if (!heading) {
-        current = null
-        continue
+  const { entries, current } = markdown.split(/\r?\n/).reduce<ParseState>(
+    (state, raw) => {
+      const line = raw.trimEnd()
+      if (isHeading(line)) {
+        const entries = state.current ? [...state.entries, state.current] : state.entries
+        const heading = parseHeading(line)
+        return heading
+          ? {
+              entries,
+              current: { version: ChangelogVersion(heading), date: parseDate(line), notes: [] },
+            }
+          : { entries, current: null }
       }
-      current = {
-        version: ChangelogVersion(heading),
-        date: parseDate(line),
-        notes: [],
-      }
-      continue
-    }
-    if (!current) continue
-    const bullet = bulletPattern.exec(line)
-    if (bullet) current.notes.push(bullet[1])
-  }
-
-  if (current) entries.push(current)
-  return entries
+      if (!state.current) return state
+      const bullet = bulletPattern.exec(line)
+      return bullet
+        ? { ...state, current: { ...state.current, notes: [...state.current.notes, bullet[1]] } }
+        : state
+    },
+    { entries: [], current: null },
+  )
+  return current ? [...entries, current] : entries
 }

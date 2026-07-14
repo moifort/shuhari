@@ -23,6 +23,6 @@ export const replayParams = (targetParams: Param[], realParams: Param[]): Param[
   const realByKey = new Map(realParams.map((p) => [p.key, p.value]))
   const merged = targetParams.map((p) => ({ key: p.key, value: realByKey.get(p.key) ?? p.value }))
   const targetKeys = new Set(targetParams.map((p) => p.key))
-  for (const p of realParams) if (!targetKeys.has(p.key)) merged.push({ ...p })
-  return merged
+  const extras = realParams.filter((p) => !targetKeys.has(p.key)).map((p) => ({ ...p }))
+  return [...merged, ...extras]
 }

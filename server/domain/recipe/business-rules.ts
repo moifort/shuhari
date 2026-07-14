@@ -39,12 +39,13 @@ const emptySettings = (s: TmxSettings): boolean =>
 export const applyProposalToParams = (
   params: Param[],
   changes: { key: ParamKey; value: Param['value'] }[],
-): Param[] => {
-  const result = params.map((p) => ({ ...p }))
-  for (const change of changes) {
-    const existing = result.find((p) => p.key === change.key)
-    if (existing) existing.value = change.value
-    else result.push({ key: change.key, value: change.value })
-  }
-  return result
-}
+): Param[] =>
+  changes.reduce<Param[]>(
+    (current, change) =>
+      current.some((param) => param.key === change.key)
+        ? current.map((param) =>
+            param.key === change.key ? { key: param.key, value: change.value } : param,
+          )
+        : [...current, { key: change.key, value: change.value }],
+    params.map((param) => ({ ...param })),
+  )
