@@ -115,9 +115,10 @@ struct ImportPreviewPage: View {
                 Button {
                     onSave(edited)
                 } label: {
-                    if isSaving { ProgressView() } else { Text("Valider") }
+                    if isSaving { ProgressView() } else { Image(systemName: "checkmark") }
                 }
                 .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
+                .accessibilityLabel("Valider")
                 .accessibilityIdentifier("save-recipe-button")
             }
         }
