@@ -53,6 +53,10 @@ resolver's inferred type. **Never `.otherwise()` for terminal outcome mapping** 
 gives totality: adding a fourth sentinel to the command turns this into a compile error until the
 resolver handles it.
 
+> The `P.not(P.string)` success arm relies on the invariant that **every sentinel is a string** (see
+> "Sentinels are bare strings" above). A non-string sentinel would be silently captured as success
+> instead of forcing a new arm — one more reason sentinels stay bare strings.
+
 ### Where `if` guards stay
 
 `ts-pattern` is a project dependency and `match` is the standard for **terminal outcome mapping**
