@@ -53,6 +53,24 @@ Le backend suit une architecture **DDD/CQRS** stricte. Domaines dans
 `changelog`. Les concerns transverses sont dans `server/system/`
 (`ai`, `firebase`, `config`, `migration`, `request-cache`).
 
+## Documentation
+
+Les guides techniques détaillés vivent dans `docs/` (en anglais, comme le reste du code) :
+
+| Guide | Ce qu'il couvre |
+| ----- | --------------- |
+| [Architecture](docs/architecture.md) | Organisation du backend : DDD/CQRS, Firestore, couches, plomberie GraphQL |
+| [Domain Guide](docs/domain-guide.md) | Ajouter un domaine pas à pas (types, repository, command/query, GraphQL, tests) |
+| [GraphQL Patterns](docs/graphql-patterns.md) | Schéma Pothos par domaine, scalars branded, loaders anti-N+1, mapping des erreurs |
+| [Branded Types](docs/branded-types.md) | Types nominaux `ts-brand` + validation Zod dans `primitives.ts` |
+| [Code Style](docs/code-style.md) | Conventions TypeScript/Swift, règles imposées par le test d'architecture |
+| [Error Handling](docs/error-handling.md) | Sentinelles string, `match().exhaustive()`, `throw` pour les états impossibles |
+| [Migrations](docs/migrations.md) | Migrations Firestore forward-only via `POST /admin/migrate` |
+| [iOS Guide](docs/ios-guide.md) | App SwiftUI : GraphQL/Apollo, Firebase Auth, design atomique, previews |
+| [Git Workflow](docs/git-workflow.md) | Règles de commits et de push : une tâche = un commit, rollback, remodelage au push |
+
+Voir aussi [docs/APPLE_SIGN_IN.md](docs/APPLE_SIGN_IN.md) pour la configuration Sign in with Apple.
+
 ## Développement local
 
 ```bash
@@ -73,7 +91,7 @@ Variables d'environnement (`.env`) :
 ```
 NITRO_GOOGLE_API_KEY=...   # clé Gemini (obligatoire pour l'IA)
 NITRO_ADMIN_TOKEN=...      # protège POST /admin/migrate
-NITRO_FIXME_DSN=           # optionnel
+NITRO_SENTRY_DSN=          # optionnel — reporting d'erreurs Sentry
 ```
 
 ### Commandes utiles

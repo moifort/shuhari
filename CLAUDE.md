@@ -25,21 +25,30 @@ Everything versioned and technical is written in **English**: commit messages, c
 
 ## Development Workflow
 
+> **Git commit & push rules live in [docs/git-workflow.md](docs/git-workflow.md)** — read it at
+> the start of any coding session. This section is the quick reference.
+
 1. Always verify the build before committing (backend `bun tsc --noEmit` + `xcodebuild` depending on what was touched)
 2. Run `bun run prepare` before `bun tsc` if routes were added/modified
 3. After each completed task: run an expert code review (`superpowers:requesting-code-review`) before committing
-4. **Commit freely**: group and commit changes as you see fit without asking the user — don't ask about grouping, you decide.
-5. **Never push until the user explicitly says "push".** Commits accumulate locally; pushing is user-gated.
+4. **Commit freely, one task = one commit**: commit each finished task without asking — you decide the boundaries. Keep tasks in separate commits so a rollback is a clean `git revert`; never bundle several tasks into one commit. English messages, Conventional Commits, `Co-Authored-By:` trailer.
+5. **Rollback** = `git revert` the task's commit (see [docs/git-workflow.md](docs/git-workflow.md)).
+6. **Never push until the user explicitly says "push".** Commits accumulate locally; pushing is user-gated.
 
 ### Push protocol (only when the user says "push")
 
-Before pushing, update the user-facing surfaces, then push:
-
-1. **README** (`README.md`): update the features / tech-stack sections if the pushed work changed them.
-2. **Changelog** (`CHANGELOG.md`): add user-facing entries (in French) under `## Unreleased`, then run `bun run generate:assets` to regenerate `server/system/changelog-content.ts` (the iOS-facing asset served via GraphQL — never edit it by hand).
-3. Push.
+1. **Re-analyze & reshape the pending commits** (`git log origin/<branch>..HEAD`): squash/regroup related ones, rewrite messages, and **elide undone work** — a feature + its revert must collapse and leave no trace on the remote.
+2. **README** (`README.md`): update the features / tech-stack sections if the pushed work changed them.
+3. **Changelog** (`CHANGELOG.md`): add user-facing entries (in French) under `## Unreleased`, then run `bun run generate:assets` to regenerate `server/system/changelog-content.ts` (the iOS-facing asset served via GraphQL — never edit it by hand).
+4. Push.
 
 ## Backend Patterns (TypeScript / Nitro)
+
+> Extended guides live in `docs/`: [architecture](docs/architecture.md),
+> [domain-guide](docs/domain-guide.md), [graphql-patterns](docs/graphql-patterns.md),
+> [branded-types](docs/branded-types.md), [code-style](docs/code-style.md),
+> [error-handling](docs/error-handling.md), [migrations](docs/migrations.md). This section is the
+> quick reference; the docs go deeper with examples.
 
 - **Stack**: Bun + Nitro 2.13 (`preset firebase`, gen 2, nodejs22, `europe-west3`) + Apollo Server 5 + Pothos 4 + firebase-admin (native Firestore) + Zod + ts-brand. DDD/CQRS strict.
 - **Domains** live in `server/domain/{recipe,trial,proposal,home,portability,changelog,shared}`; system concerns in `server/system/{ai,firebase,config,migration,request-cache}`.
@@ -82,6 +91,8 @@ Before pushing, update the user-facing surfaces, then push:
 
 ## iOS Patterns (SwiftUI)
 
+> Full iOS guide: [docs/ios-guide.md](docs/ios-guide.md).
+
 - Target: iOS 26.0, Swift 6 (strict concurrency). Xcode project `ios/Shuhari.xcodeproj`, scheme `Shuhari`, bundle id `com.polyforms.shuhari.app`, team `46C337T7YN`.
 - Architecture: MVVM with `@Observable`. `@MainActor` on ViewModels, `Sendable` on model types. Apollo iOS codegen for typed GraphQL operations.
 - Style: **Liquid Glass** = native iOS 26 components (no custom re-skins).
@@ -114,7 +125,7 @@ Look up the current public macOS build at https://developer.apple.com/news/relea
   ```
   NITRO_GOOGLE_API_KEY=...
   NITRO_ADMIN_TOKEN=your-admin-token
-  NITRO_FIXME_DSN=          # optional
+  NITRO_SENTRY_DSN=         # optional
   ```
 - In production, secrets live in GCP Secret Manager (project `shuhari-polyforms`), provisioned by the infra. To rotate the Gemini key: update Secret Manager (or `.env` locally) — never commit it.
 
