@@ -67,10 +67,15 @@ by hand, then commit the removal; that pain is exactly why one-task-one-commit m
    - Rewrite messages for clarity.
    - **Elide undone work** — a feature commit plus its later revert should collapse and leave
      **no trace** on the remote, not ship as two commits.
-2. **README** (`README.md`): update the features / tech-stack sections if the pushed work
+2. **Biome autofix.** Run `bun run lint:fix` (`bunx biome check --write`) to correct every
+   auto-fixable formatting/syntax issue across the repo — including vendored/generated files like
+   asset-catalog `Contents.json`, which CI's `bunx biome check` lints too. Then run `bun run lint`
+   to confirm it's clean, and commit any changes. This is what keeps the Unit Tests job (which
+   runs `biome check`) green — a local `bun test` alone does **not** cover Biome.
+3. **README** (`README.md`): update the features / tech-stack sections if the pushed work
    changed them.
-3. **Changelog** (`CHANGELOG.md`): add user-facing entries (in **French**) under
+4. **Changelog** (`CHANGELOG.md`): add user-facing entries (in **French**) under
    `## Unreleased`, then run `bun run generate:assets` to regenerate
    `server/system/changelog-content.ts` (the iOS-facing asset served via GraphQL — never edit
    it by hand).
-4. **Push.**
+5. **Push.**

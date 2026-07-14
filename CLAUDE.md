@@ -38,9 +38,10 @@ Everything versioned and technical is written in **English**: commit messages, c
 ### Push protocol (only when the user says "push")
 
 1. **Re-analyze & reshape the pending commits** (`git log origin/<branch>..HEAD`): squash/regroup related ones, rewrite messages, and **elide undone work** — a feature + its revert must collapse and leave no trace on the remote.
-2. **README** (`README.md`): update the features / tech-stack sections if the pushed work changed them.
-3. **Changelog** (`CHANGELOG.md`): add user-facing entries (in French) under `## Unreleased`, then run `bun run generate:assets` to regenerate `server/system/changelog-content.ts` (the iOS-facing asset served via GraphQL — never edit it by hand).
-4. Push.
+2. **Biome autofix**: run `bun run lint:fix`, confirm `bun run lint` is clean, and commit any changes — CI's `biome check` lints everything (incl. asset-catalog JSON), and local `bun test` doesn't cover it.
+3. **README** (`README.md`): update the features / tech-stack sections if the pushed work changed them.
+4. **Changelog** (`CHANGELOG.md`): add user-facing entries (in French) under `## Unreleased`, then run `bun run generate:assets` to regenerate `server/system/changelog-content.ts` (the iOS-facing asset served via GraphQL — never edit it by hand).
+5. Push.
 
 ## Backend Patterns (TypeScript / Nitro)
 
