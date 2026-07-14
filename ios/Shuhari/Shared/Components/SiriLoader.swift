@@ -13,8 +13,6 @@ struct SiriLoader: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var animate = false
-    /// Intro: the orb starts tight and blooms open on appear.
-    @State private var bloom = false
 
     private var scale: CGFloat { size / 640 }
 
@@ -68,13 +66,12 @@ struct SiriLoader: View {
                 .hueRotation(.degrees(animate ? 0 : 230))
         }
         .blendMode(.hardLight)
-        .scaleEffect(scale * (bloom ? 1 : 0.5))
+        .scaleEffect(scale)
         .frame(width: size, height: size)
         .accessibilityHidden(true)
         .onAppear {
-            guard !reduceMotion else { bloom = true; return }
-            // Bloom open from a tight start, then spin the orb continuously.
-            withAnimation(.spring(response: 1.1, dampingFraction: 0.72)) { bloom = true }
+            guard !reduceMotion else { return }
+            // Spin the orb continuously at a constant size.
             withAnimation(.easeInOut(duration: 12).repeatForever(autoreverses: false)) {
                 animate = true
             }
