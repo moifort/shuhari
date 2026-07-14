@@ -301,12 +301,13 @@ export const readyToPromote = (
   toTest: VersionNumber | null,
 ): boolean => toTest !== null && testedVersion === toTest && note >= PROMOTION_NOTE
 
-export const nextVersionNumber = (versionCount: VersionNumber): VersionNumber =>
+export const nextVersionNumber = (versionCount: VersionNumber) =>
   toVersionNumber(versionCount + 1)
 ```
 
 Rules: no `useStorage`, no `async` (both fail the arch test); 100% coverage; name the concept
-(`readyToPromote`, never `computeReadiness`). Loops are fine — imperative `for…of` is allowed.
+(`readyToPromote`, never `computeReadiness`); functional style — `map`/`filter`/`reduce`, no
+imperative `for`/`while` loops (see [code-style.md](./code-style.md)).
 
 ## Optional: Use Case (`use-case.ts`)
 

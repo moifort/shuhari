@@ -131,7 +131,8 @@ For mutations, build inputs with the nullable helper; enum bridging (generated
 ### ViewModel — `@MainActor @Observable`, single-flight
 
 Use the Observation framework (`@Observable`), not `ObservableObject`. Guard against concurrent
-loads with an `@ObservationIgnored` in-flight task.
+loads with an `@ObservationIgnored` in-flight task. **Every network call shows a loading state** —
+flip `isLoading` around the fetch, never a silent fetch that leaves the UI frozen.
 
 ```swift
 @MainActor @Observable
@@ -268,6 +269,19 @@ Wired in `Features/Auth/` plus `FirebaseApp.configure()` in `ShuhariApp.init()` 
 - `AppleNonce.swift` — nonce `random()` + `sha256()` (CryptoKit).
 - `Shared/FirebaseTokenInterceptor.swift` — adds `Authorization: Bearer <ID token>` to every
   Apollo request.
+
+## Secrets Setup
+
+The standard GraphQL API authenticates via the Firebase ID token, so no static secret is needed to
+run the app. `Shared/Secrets.swift` (gitignored) only holds an optional admin-scoped token; copy the
+template on first checkout:
+
+```bash
+cp ios/Shuhari/Shared/Secrets.swift.example ios/Shuhari/Shared/Secrets.swift
+```
+
+The Sentry DSN is public by design and hardcoded (not a secret). UI tests keep their own
+`ShuhariUITests/Support/TestSecrets.swift` (copied from `.example` the same way).
 
 ## Model Types
 

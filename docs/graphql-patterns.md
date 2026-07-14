@@ -189,15 +189,15 @@ builder.queryField('recipes', (t) =>
 
 ## Mapping Sentinels to GraphQLError
 
-Commands return the entity or a **string sentinel**. Map the sentinel to a `GraphQLError` with
-a stable `extensions.code`. The **preferred idiom is `match().exhaustive()`** from `ts-pattern`,
-so that adding a new sentinel becomes a compile error rather than a silent fall-through:
+Commands return the entity or a **string sentinel**. Map the sentinel to a `GraphQLError` with a
+stable `extensions.code` using `match().exhaustive()` from `ts-pattern` and the `never`-returning
+helpers from `server/domain/shared/graphql/errors.ts` — never `.otherwise()`, so adding a new
+sentinel becomes a compile error rather than a silent fall-through. The success arm matches "not a
+string" (`P.not(P.string)`):
 
 ```ts
-import { match } from 'ts-pattern'
-import { GraphQLError } from 'graphql'
-
-const notFound = () => new GraphQLError('Recipe not found', { extensions: { code: 'NOT_FOUND' } })
+import { match, P } from 'ts-pattern'
+import { domainError, notFound } from '~/domain/shared/graphql/errors'
 
 builder.mutationField('promoteVersion', (t) =>
   t.field({
@@ -209,21 +209,27 @@ builder.mutationField('promoteVersion', (t) =>
     resolve: async (_root, { recipeId, versionNumber }, { userId }) => {
       const result = await RecipeCommand.promote(userId, recipeId, versionNumber)
       return match(result)
-        .with('not-found', () => { throw notFound() })
-        .with('nothing-to-test', () => {
-          throw new GraphQLError('No version awaiting a trial', {
-            extensions: { code: 'NOTHING_TO_TEST' } })
-        })
-        .otherwise((recipe) => recipe)
+        .with('not-found', () => notFound('Recipe not found'))
+        .with('nothing-to-test', () => domainError('NOTHING_TO_TEST', 'No version awaiting a trial'))
+        .with(P.not(P.string), (recipe) => recipe)
+        .exhaustive()
     },
   }),
 )
 ```
 
-> **Note.** `ts-pattern` is a project dependency and this is the standard for terminal outcome
-> mapping in resolvers. The narrowing guards *inside* use-cases (`if (recipe === 'not-found')
-> return 'not-found'`, then continue with the narrowed value) stay as `if` — they unwrap a query
-> result mid-flow rather than mapping a final outcome. See [error-handling.md](./error-handling.md).
+A delete returns a `Boolean` and matches `undefined` (the command's success value):
+
+```ts
+return match(result)
+  .with('not-found', () => notFound('Recipe not found'))
+  .with(undefined, () => true)
+  .exhaustive()
+```
+
+> **Note.** The narrowing guards *inside* use-cases (`if (recipe === 'not-found') return
+> 'not-found'`, then continue with the narrowed value) stay as `if` — they unwrap a query result
+> mid-flow rather than mapping a final outcome. See [error-handling.md](./error-handling.md).
 
 ## Inputs
 
@@ -238,6 +244,11 @@ export const UpdateRecipeInput = builder.inputType('UpdateRecipeInput', {
   }),
 })
 ```
+
+## Document everything
+
+Every type, field, enum and argument gets a Pothos `description` — the SDL is the contract shared
+with the iOS app and shows up in Apollo Sandbox. An undocumented field is an incomplete field.
 
 ## Regenerating the SDL and iOS types
 

@@ -7,7 +7,7 @@ reserved for truly unexpected failures (impossible states, infrastructure errors
 
 This implements Wlaschin's **Railway-Oriented Programming**: a command returns the entity on
 success or an explicit sentinel for each legitimate business miss. The GraphQL resolver maps
-every branch — ideally with `match().exhaustive()`, so no outcome is silently dropped.
+every branch with `match().exhaustive()`, so no outcome is silently dropped.
 
 ## Sentinels are bare strings, returned directly
 
@@ -15,11 +15,8 @@ Shuhari does **not** wrap outcomes in `{ outcome: … }` objects. The success pa
 domain entity itself; a miss is a bare string literal with `as const`:
 
 ```ts
-export const promote = async (
-  userId: UserId,
-  recipeId: RecipeId,
-  versionNumber: VersionNumber,
-): Promise<Recipe | 'not-found' | 'nothing-to-test'> => {
+// Return type inferred: Promise<Recipe | 'not-found' | 'nothing-to-test'>
+export const promote = async (userId: UserId, recipeId: RecipeId, versionNumber: VersionNumber) => {
   const recipe = await repository.findBy(userId, recipeId)
   if (!recipe) return 'not-found' as const
   if (recipe.toTest !== versionNumber) return 'nothing-to-test' as const
@@ -34,27 +31,27 @@ lookup). Void commands return `undefined | 'not-found'`.
 
 ## Mapping Sentinels in GraphQL
 
-The resolver translates each sentinel into a `GraphQLError` with a stable `extensions.code`.
-
-### Target style — `match().exhaustive()`
+The resolver translates each sentinel into a `GraphQLError` with a stable `extensions.code`, using
+`match().exhaustive()` from `ts-pattern` and the `never`-returning helpers from
+`server/domain/shared/graphql/errors.ts` (`notFound`, `badUserInput`, `domainError`). The success
+arm matches "not a string" (`P.not(P.string)`) and returns the domain value:
 
 ```ts
-import { match } from 'ts-pattern'
-import { GraphQLError } from 'graphql'
-
-const notFound = () => new GraphQLError('Recipe not found', { extensions: { code: 'NOT_FOUND' } })
+import { match, P } from 'ts-pattern'
+import { domainError, notFound } from '~/domain/shared/graphql/errors'
 
 const result = await RecipeCommand.promote(userId, recipeId, versionNumber)
 return match(result)
-  .with('not-found', () => { throw notFound() })
-  .with('nothing-to-test', () => {
-    throw new GraphQLError('No version awaiting a trial', { extensions: { code: 'NOTHING_TO_TEST' } })
-  })
-  .otherwise((recipe) => recipe)
+  .with('not-found', () => notFound('Recipe not found'))
+  .with('nothing-to-test', () => domainError('NOTHING_TO_TEST', 'No version awaiting a trial'))
+  .with(P.not(P.string), (recipe) => recipe)
+  .exhaustive()
 ```
 
-`match().exhaustive()` gives totality: adding a fourth sentinel to the command turns this into a
-compile error until the resolver handles it.
+The helpers' `never` return type lets them sit in a `match` arm while the success arm keeps the
+resolver's inferred type. **Never `.otherwise()` for terminal outcome mapping** — `.exhaustive()`
+gives totality: adding a fourth sentinel to the command turns this into a compile error until the
+resolver handles it.
 
 ### Where `if` guards stay
 

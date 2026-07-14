@@ -48,8 +48,9 @@ Everything versioned and technical is written in **English**: commit messages, c
 > Extended guides live in `docs/`: [architecture](docs/architecture.md),
 > [domain-guide](docs/domain-guide.md), [graphql-patterns](docs/graphql-patterns.md),
 > [branded-types](docs/branded-types.md), [code-style](docs/code-style.md),
-> [error-handling](docs/error-handling.md), [migrations](docs/migrations.md). This section is the
-> quick reference; the docs go deeper with examples.
+> [error-handling](docs/error-handling.md), [migrations](docs/migrations.md),
+> [readme-guide](docs/readme-guide.md). This section is the quick reference; the docs go deeper with
+> examples.
 
 - **Stack**: Bun + Nitro 2.13 (`preset firebase`, gen 2, nodejs22, `europe-west3`) + Apollo Server 5 + Pothos 4 + firebase-admin (native Firestore) + Zod + ts-brand. DDD/CQRS strict.
 - **Domains** live in `server/domain/{recipe,trial,proposal,home,portability,changelog,shared}`; system concerns in `server/system/{ai,firebase,config,migration,request-cache}`.

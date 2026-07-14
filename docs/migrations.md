@@ -104,6 +104,28 @@ export const migrations: Migration[] = [migration0001]
 5. It returns `{ outcome: 'up-to-date' }`, `{ outcome: 'migrated', from, to, applied }`, or the
    failure shape.
 
+## Testing a Migration
+
+Co-locate an integration test `NNNN-name.int.test.ts` next to the migration. Mock Firestore with the
+in-memory fake, seed the pre-migration documents, run `migrate`, then assert the transformed shape:
+
+```ts
+import { expect, test } from 'bun:test'
+import { resetFakeFirestore } from '~/test/fake-firestore'
+
+const { migration0001 } = await import('./0001-rename-foo-to-bar')
+
+test('renames foo to bar', async () => {
+  const fake = resetFakeFirestore()
+  fake.seed('recipes', 'r1', { id: 'r1', foo: 42 })
+
+  const result = await migration0001.migrate({ db: fake.db })
+
+  expect(result).toEqual({ ok: true, transformed: 1 })
+  expect(fake.snapshot('recipes').get('r1')).toEqual({ id: 'r1', bar: 42 })
+})
+```
+
 ## Trigger — `POST /admin/migrate`
 
 `server/routes/admin/migrate.post.ts` runs the migrations and sets **HTTP 500** on failure, so a
@@ -127,3 +149,7 @@ The `/admin/*` routes are gated by the admin bearer token (`middleware/auth.ts`,
   sentinel, versions start at `1`.
 - Migrations are **forward-only** — no rollback mechanism.
 - The runner owns error handling; migrations stay focused on the transform.
+- **Never run migrations locally against production data** — they run through `POST /admin/migrate`
+  during provisioning / deploy.
+- **Firestore rejects `undefined` values** — when restructuring a document, only copy fields that are
+  actually present (`if (value != null) …`).

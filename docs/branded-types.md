@@ -65,6 +65,12 @@ runs its constructor (see [graphql-patterns.md](./graphql-patterns.md)); a `ZodE
 `BAD_USER_INPUT` `GraphQLError`. Inside the domain, values are already branded — never
 re-validate.
 
+## Branded types are primitives at runtime
+
+The brand is **compile-time only**. `RecipeTitle` IS a `string`, `VersionNumber` IS a `number` at
+runtime — never wrap them with `String()` or `Number()`. A branded `VersionNumber` is directly
+usable in arithmetic (that is how `nextVersionNumber` does `versionCount + 1` on a plain number).
+
 ## Enum / Union Brands
 
 String-literal unions live as a `const` tuple in `types.ts` and are parsed (not `make`d) in
@@ -95,6 +101,25 @@ export const VersionNumber = (value: unknown) => {
   return make<VersionNumberType>()(v)
 }
 ```
+
+## Every Brand Gets a GraphQL Scalar
+
+Every branded type used in the schema has a matching custom scalar in
+`server/domain/shared/graphql/scalars.ts` and an entry in the `Scalars` map in `builder.ts`. The
+scalar validates and brands input at parse time, so resolvers receive **pre-validated branded args**
+and never call the constructor themselves. Invalid input becomes a `BAD_USER_INPUT` GraphQL error
+before the resolver runs:
+
+```ts
+builder.scalarType('RecipeId', {
+  description: 'Recipe unique identifier (UUID v4)',
+  serialize: (value) => value as string,
+  parseValue: validatedParse('RecipeId', RecipeId),
+})
+```
+
+When you add a new branded type, also update the Apollo iOS codegen scalar mapping under
+`ios/Shuhari/Generated/GraphQL/`. See [graphql-patterns.md](./graphql-patterns.md).
 
 ## Shared Types
 
