@@ -45,12 +45,12 @@ struct SiriLoader: View {
                 .rotation3DEffect(.degrees(15), axis: (x: 1, y: 1, z: 1), perspective: animate ? 5 : -5)
 
             Image("green-right")
-                .rotationEffect(.degrees(animate ? -300 : 360))
+                .rotationEffect(.degrees(animate ? -180 : 480))
                 .hueRotation(.degrees(animate ? 300 : -15))
                 .rotation3DEffect(.degrees(15), axis: (x: 1, y: animate ? -1 : 1, z: 0), perspective: animate ? -1 : 1)
 
             Image("green-left")
-                .rotationEffect(.degrees(animate ? 360 : -360))
+                .rotationEffect(.degrees(animate ? 240 : -480))
                 .hueRotation(.degrees(animate ? 180 : 50))
                 .rotation3DEffect(.degrees(75), axis: (x: 1, y: animate ? -5 : 15, z: 0))
 
