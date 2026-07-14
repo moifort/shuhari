@@ -69,7 +69,7 @@ Les guides techniques détaillés vivent dans `docs/` (en anglais, comme le rest
 | [iOS Guide](docs/ios-guide.md) | App SwiftUI : GraphQL/Apollo, Firebase Auth, design atomique, previews |
 | [Git Workflow](docs/git-workflow.md) | Règles de commits et de push : une tâche = un commit, rollback, remodelage au push |
 
-Voir aussi [docs/APPLE_SIGN_IN.md](docs/APPLE_SIGN_IN.md) pour la configuration Sign in with Apple.
+Voir aussi [docs/apple-sign-in.md](docs/apple-sign-in.md) pour la configuration Sign in with Apple.
 
 ## Développement local
 
