@@ -5,7 +5,7 @@ Toutes les évolutions notables de Shuhari, la plus récente en premier.
 ## Unreleased
 
 - Import : les **ingrédients** sont désormais extraits avec leurs quantités, séparément des paramètres — modifiables à l'import et affichés sur la fiche recette.
-- Import : l'analyse de la recette s'affiche dans une feuille dédiée avec une animation « Analyse IA… », et l'aperçu adopte un style natif (Fermer / Valider en haut, étapes modifiables, titre remis en casse normale, sections vides masquées).
+- Import : l'analyse de la recette s'affiche dans une feuille dédiée avec une animation « Analyse IA… » (halo lumineux animé façon Siri), et l'aperçu adopte un style natif (Fermer et validation par une coche en haut, étapes modifiables, titre remis en casse normale, sections vides masquées).
 - Import : choisir ou prendre une photo ferme l'appareil photo avant d'ouvrir l'aperçu.
 - Recette : supprimer une recette demande une confirmation et la liste se met à jour aussitôt.
 - Correctif : fermer l'import ramène à la catégorie d'origine (l'onglet ne reste plus bloqué sur une page vide).
