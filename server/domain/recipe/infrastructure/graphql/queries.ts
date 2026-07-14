@@ -1,4 +1,4 @@
-import { match } from 'ts-pattern'
+import { match, P } from 'ts-pattern'
 import { RecipeQuery } from '~/domain/recipe/query'
 import { builder } from '~/domain/shared/graphql/builder'
 import { RecipeTypeEnum } from './enums'
@@ -26,7 +26,8 @@ builder.queryField('recipe', (t) =>
       const recipe = await RecipeQuery.byId(userId, id)
       return match(recipe)
         .with('not-found', () => null)
-        .otherwise((found) => found)
+        .with(P.not(P.string), (found) => found)
+        .exhaustive()
     },
   }),
 )

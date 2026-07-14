@@ -1,6 +1,6 @@
-import { GraphQLError } from 'graphql'
-import { match } from 'ts-pattern'
+import { match, P } from 'ts-pattern'
 import { builder } from '~/domain/shared/graphql/builder'
+import { notFound } from '~/domain/shared/graphql/errors'
 import type { RecordTrialResult } from '~/domain/trial/use-case'
 import { TrialUseCase } from '~/domain/trial/use-case'
 import { RecordTrialInput } from './inputs'
@@ -32,12 +32,9 @@ builder.mutationField('recordTrial', (t) =>
         photoPath: null,
       })
       return match(result)
-        .with('not-found', () => {
-          throw new GraphQLError('Recipe or version not found', {
-            extensions: { code: 'NOT_FOUND' },
-          })
-        })
-        .otherwise((recorded) => recorded)
+        .with('not-found', () => notFound('Recipe or version not found'))
+        .with(P.not(P.string), (recorded) => recorded)
+        .exhaustive()
     },
   }),
 )

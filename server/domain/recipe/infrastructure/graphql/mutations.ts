@@ -1,13 +1,11 @@
-import { GraphQLError } from 'graphql'
-import { match } from 'ts-pattern'
+import { match, P } from 'ts-pattern'
 import { RecipeCommand } from '~/domain/recipe/command'
 import type { TmxSettings } from '~/domain/recipe/types'
 import { RecipeUseCase } from '~/domain/recipe/use-case'
 import { builder } from '~/domain/shared/graphql/builder'
+import { domainError, notFound } from '~/domain/shared/graphql/errors'
 import { CreateRecipeInput, UpdateRecipeInput } from './inputs'
 import { RecipeType } from './types'
-
-const notFound = () => new GraphQLError('Recipe not found', { extensions: { code: 'NOT_FOUND' } })
 
 // Pothos hands optional input fields back as `null | undefined`; the domain
 // wants each entry as an explicit TmxSettings | null with absent keys dropped.
@@ -64,10 +62,9 @@ builder.mutationField('updateRecipe', (t) =>
         ...(input.subtitle ? { subtitle: input.subtitle } : {}),
       })
       return match(result)
-        .with('not-found', () => {
-          throw notFound()
-        })
-        .otherwise((recipe) => recipe)
+        .with('not-found', () => notFound('Recipe not found'))
+        .with(P.not(P.string), (recipe) => recipe)
+        .exhaustive()
     },
   }),
 )
@@ -83,15 +80,12 @@ builder.mutationField('promoteVersion', (t) =>
     resolve: async (_root, { recipeId, versionNumber }, { userId }) => {
       const result = await RecipeCommand.promote(userId, recipeId, versionNumber)
       return match(result)
-        .with('not-found', () => {
-          throw notFound()
-        })
-        .with('nothing-to-test', () => {
-          throw new GraphQLError('No version awaiting a trial', {
-            extensions: { code: 'NOTHING_TO_TEST' },
-          })
-        })
-        .otherwise((recipe) => recipe)
+        .with('not-found', () => notFound('Recipe not found'))
+        .with('nothing-to-test', () =>
+          domainError('NOTHING_TO_TEST', 'No version awaiting a trial'),
+        )
+        .with(P.not(P.string), (recipe) => recipe)
+        .exhaustive()
     },
   }),
 )
@@ -104,10 +98,9 @@ builder.mutationField('deleteRecipe', (t) =>
     resolve: async (_root, { id }, { userId }) => {
       const result = await RecipeUseCase.removeCompletely(userId, id)
       return match(result)
-        .with('not-found', () => {
-          throw notFound()
-        })
-        .otherwise(() => true)
+        .with('not-found', () => notFound('Recipe not found'))
+        .with(P.not(P.string), () => true)
+        .exhaustive()
     },
   }),
 )

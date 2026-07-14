@@ -1,9 +1,9 @@
-import { GraphQLError } from 'graphql'
-import { match } from 'ts-pattern'
+import { match, P } from 'ts-pattern'
 import { ProposalUseCase } from '~/domain/proposal/use-case'
 import { RecipeType } from '~/domain/recipe/infrastructure/graphql/types'
 import type { Recipe, RecipeId, VersionNumber } from '~/domain/recipe/types'
 import { builder } from '~/domain/shared/graphql/builder'
+import { domainError, notFound } from '~/domain/shared/graphql/errors'
 import { ProposalRecommendationEnum } from './enums'
 import { ProposalVarInput } from './inputs'
 import { ProposalType } from './types'
@@ -23,8 +23,6 @@ const AcceptProposalResultType = builder.objectRef<AcceptResult>('AcceptProposal
   }),
 })
 
-const notFound = () => new GraphQLError('Recipe not found', { extensions: { code: 'NOT_FOUND' } })
-
 builder.mutationField('requestProposal', (t) =>
   t.field({
     type: ProposalType,
@@ -34,10 +32,9 @@ builder.mutationField('requestProposal', (t) =>
     resolve: async (_root, { recipeId }, { userId }) => {
       const result = await ProposalUseCase.proposeFromTrial(userId, recipeId)
       return match(result)
-        .with('not-found', () => {
-          throw notFound()
-        })
-        .otherwise((proposal) => proposal)
+        .with('not-found', () => notFound('Recipe not found'))
+        .with(P.not(P.string), (proposal) => proposal)
+        .exhaustive()
     },
   }),
 )
@@ -93,19 +90,12 @@ builder.mutationField('refuseProposal', (t) =>
 )
 
 // Turn the use-case's discriminated error strings into GraphQL errors.
-const ensureRecipe = (result: Recipe | 'not-found' | 'no-proposal' | 'budget-exceeded'): Recipe =>
+const ensureRecipe = (result: Recipe | 'not-found' | 'no-proposal' | 'budget-exceeded') =>
   match(result)
-    .with('not-found', () => {
-      throw notFound()
-    })
-    .with('no-proposal', () => {
-      throw new GraphQLError('No pending proposal for this version', {
-        extensions: { code: 'NO_PROPOSAL' },
-      })
-    })
-    .with('budget-exceeded', () => {
-      throw new GraphQLError('Too many variables for this recipe type', {
-        extensions: { code: 'BUDGET_EXCEEDED' },
-      })
-    })
-    .otherwise((recipe) => recipe)
+    .with('not-found', () => notFound('Recipe not found'))
+    .with('no-proposal', () => domainError('NO_PROPOSAL', 'No pending proposal for this version'))
+    .with('budget-exceeded', () =>
+      domainError('BUDGET_EXCEEDED', 'Too many variables for this recipe type'),
+    )
+    .with(P.not(P.string), (recipe) => recipe)
+    .exhaustive()

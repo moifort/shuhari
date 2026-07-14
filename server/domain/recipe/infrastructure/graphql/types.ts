@@ -1,4 +1,4 @@
-import { match } from 'ts-pattern'
+import { match, P } from 'ts-pattern'
 import { RecipeQuery } from '~/domain/recipe/query'
 import { builder } from '~/domain/shared/graphql/builder'
 import type { Ingredient, Param, Recipe, RecipeVersion, TmxSettings } from '../../types'
@@ -107,7 +107,8 @@ RecipeType.implement({
           : RecipeQuery.byId(userId, r.derivedFrom).then((res) =>
               match(res)
                 .with('not-found', () => null)
-                .otherwise((found) => found),
+                .with(P.not(P.string), (found) => found)
+                .exhaustive(),
             ),
     }),
     variations: t.field({
