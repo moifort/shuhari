@@ -91,14 +91,21 @@ struct ImportReviewSheet: View {
 
     private func run() async {
         phase = .analyzing
+        // Keep the loader on screen long enough to actually see the animation,
+        // even when the AI answers almost instantly. Failures skip the wait.
+        let minimumShown = Task { try? await Task.sleep(for: .seconds(2.5)) }
         guard let source = await resolveSource() else {
+            minimumShown.cancel()
             errorPresenter.message = "Impossible de lire l’image sélectionnée."
             phase = .failed
             return
         }
         do {
-            phase = .form(try await ImportAPI.analyze(source))
+            let analysis = try await ImportAPI.analyze(source)
+            _ = await minimumShown.value
+            phase = .form(analysis)
         } catch {
+            minimumShown.cancel()
             errorPresenter.message = reportError(error)
             phase = .failed
         }
