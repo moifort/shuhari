@@ -25,7 +25,7 @@ enum RecipeType: String, CaseIterable, Sendable, Identifiable {
         case .cafe: "cup.and.saucer.fill"
         case .cocktail: "wineglass.fill"
         case .plat: "frying.pan.fill"
-        case .tmx: "microwave.fill"
+        case .tmx: "fan.fill"
         }
     }
 
