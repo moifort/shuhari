@@ -28,8 +28,12 @@ const importResponseSchema = {
       description:
         "Type d'expérimentation : cafe, cocktail, plat (recette cuisinée) ou tmx (Thermomix)",
     },
-    title: { type: 'string', description: 'Nom de la recette' },
-    subtitle: { type: 'string', nullable: true, description: 'Sous-titre court (origine, style)' },
+    title: { type: 'string', description: 'Nom de la recette (concis, ≤200 caractères)' },
+    subtitle: {
+      type: 'string',
+      nullable: true,
+      description: 'Sous-titre court (origine, style), ≤200 caractères',
+    },
     sourceLabel: {
       type: 'string',
       nullable: true,
@@ -41,8 +45,14 @@ const importResponseSchema = {
       items: {
         type: 'object',
         properties: {
-          key: { type: 'string', description: 'Nom du paramètre (ex : Dose, Température)' },
-          value: { type: 'string', description: 'Valeur avec unité (ex : 18,5 g, 92 °C)' },
+          key: {
+            type: 'string',
+            description: 'Nom du paramètre (ex : Dose, Température), ≤60 caractères',
+          },
+          value: {
+            type: 'string',
+            description: 'Valeur avec unité (ex : 18,5 g, 92 °C), ≤120 caractères',
+          },
         },
         required: ['key', 'value'],
       },
@@ -53,10 +63,14 @@ const importResponseSchema = {
       items: {
         type: 'object',
         properties: {
-          name: { type: 'string', description: "Nom de l'ingrédient (ex : Gin, Beurre, Fraise)" },
+          name: {
+            type: 'string',
+            description:
+              "Nom court de l'ingrédient SEUL, sans préparation (ex : Gin, Beurre, Pommes de terre). La préparation (épluché, coupé en rondelles…) va dans les étapes, PAS dans le nom. ≤120 caractères.",
+          },
           quantity: {
             type: 'string',
-            description: 'Quantité avec unité (ex : 50 ml, 170 g, 3 pièces)',
+            description: 'Quantité avec unité (ex : 50 ml, 170 g, 3 pièces), ≤60 caractères',
           },
         },
         required: ['name', 'quantity'],
@@ -68,7 +82,10 @@ const importResponseSchema = {
       items: {
         type: 'object',
         properties: {
-          text: { type: 'string', description: "Texte de l'étape, à l'impératif" },
+          text: {
+            type: 'string',
+            description: "Texte court de l'étape, à l'impératif, ≤300 caractères",
+          },
           tmxTime: {
             type: 'string',
             nullable: true,
@@ -109,13 +126,13 @@ const proposalResponseSchema = {
       items: {
         type: 'object',
         properties: {
-          key: { type: 'string', description: 'Paramètre à changer' },
+          key: { type: 'string', description: 'Paramètre à changer, ≤60 caractères' },
           from: {
             type: 'string',
             nullable: true,
-            description: 'Valeur actuelle (null si nouveau)',
+            description: 'Valeur actuelle (null si nouveau), ≤120 caractères',
           },
-          to: { type: 'string', description: 'Nouvelle valeur avec unité' },
+          to: { type: 'string', description: 'Nouvelle valeur avec unité, ≤120 caractères' },
         },
         required: ['key', 'to'],
       },
@@ -135,7 +152,7 @@ const proposalResponseSchema = {
       type: 'object',
       nullable: true,
       properties: {
-        title: { type: 'string', description: 'Nom proposé pour la variation' },
+        title: { type: 'string', description: 'Nom proposé pour la variation, ≤200 caractères' },
         description: { type: 'string', description: 'En quoi elle diffère' },
       },
       required: ['title', 'description'],
@@ -149,10 +166,11 @@ const IMPORT_INSTRUCTIONS = `Tu es l'assistant d'un carnet d'expérimentation cu
 
 Règles :
 - Détermine le type : cafe (espresso, filtre…), cocktail, plat (recette cuisinée), tmx (recette Thermomix).
-- ingredients : liste ORDONNÉE des composants de la recette avec leur quantité (ex : Gin → 50 ml, Beurre → 170 g, Fraise → 3 pièces). Mets TOUS les ingrédients visibles sur la source, chacun avec sa quantité et son unité. C'est la « liste de courses » de la recette.
+- ingredients : liste ORDONNÉE des composants de la recette avec leur quantité (ex : Gin → 50 ml, Beurre → 170 g, Fraise → 3 pièces). Mets TOUS les ingrédients visibles sur la source, chacun avec sa quantité et son unité. C'est la « liste de courses » de la recette. Le NOM reste court : l'ingrédient seul, jamais sa préparation (« Pommes de terre », pas « Pommes de terre épluchées et coupées en rondelles » — la préparation va dans les étapes).
 - params : réglages reproductibles qui ne sont PAS des ingrédients (ex : Température → 92 °C, Mouture → fine, Ratio → 1:2, Temps d'extraction → 27 s, Four → 180 °C). N'y mets JAMAIS un ingrédient. N'invente pas de valeurs absentes ; ne garde que ce qui est réellement mesurable et reproductible (souvent vide pour un cocktail ou un plat).
 - steps : étapes courtes, à l'impératif, dans l'ordre.
 - Pour une recette Thermomix (type tmx) : pour chaque étape exécutée au Thermomix, renseigne tmxTime, tmxTemperature, tmxSpeed et tmxReverse tels qu'indiqués dans la recette (durée « 3 min » / « 30 s » / « 1 h 10 min » ; température « 100°C » ou « Varoma » ; vitesse « 0,5 » à « 10 », « pétrin », « mijotage » ou « turbo »). Mets null pour chaque réglage absent, et pour TOUS ces champs quand l'étape ne se fait pas au Thermomix ou que la recette n'est pas de type tmx.
+- Sois concis : chaque valeur reste courte (nom d'ingrédient ≤120, quantité ≤60, paramètre clé ≤60 / valeur ≤120, étape ≤300, titre ≤200, réglage Thermomix ≤20 caractères).
 - Toutes les valeurs textuelles en français. Mets null pour toute information absente.`
 
 export namespace Ai {
@@ -253,15 +271,15 @@ Propose soit une itération (amélioration de cette recette), soit une variation
   }
 
   const hashSource = (source: ImportSource): ImportHashType => {
-    // 'v3' salts the cache: analyses made before ingredient extraction must not
-    // be served for new imports of the same source (bumped from 'v2', which
-    // covered the Thermomix per-step extraction).
+    // 'v4' salts the cache: bumped from 'v3' (ingredient extraction) so the
+    // concise-formatting prompt and the clamp/drop guard rails re-run on the next
+    // import of a previously-analysed source instead of serving the old result.
     const material =
       source.kind === 'photos'
-        ? `v3|${source.photos.join('|')}`
+        ? `v4|${source.photos.join('|')}`
         : source.kind === 'url'
-          ? `v3|url:${source.url}`
-          : `v3|text:${source.text}`
+          ? `v4|url:${source.url}`
+          : `v4|text:${source.text}`
     return ImportHash(createHash('sha256').update(material).digest('hex'))
   }
 }

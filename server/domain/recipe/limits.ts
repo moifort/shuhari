@@ -1,0 +1,13 @@
+/** Max string lengths for the recipe domain's branded values. Single source of
+ *  truth: the primitive constructors enforce these, and the AI parse layer clamps
+ *  untrusted Gemini output to the same numbers so the two can never drift. */
+export const RECIPE_MAX = {
+  title: 200,
+  subtitle: 200,
+  paramKey: 60,
+  paramValue: 120,
+  ingredientName: 120,
+  ingredientQuantity: 60,
+  stepText: 300,
+  tmx: 20,
+} as const

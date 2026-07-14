@@ -1,5 +1,6 @@
 import { make } from 'ts-brand'
 import { z } from 'zod'
+import { RECIPE_MAX } from '~/domain/recipe/limits'
 import {
   type IngredientName as IngredientNameType,
   type IngredientQuantity as IngredientQuantityType,
@@ -29,12 +30,12 @@ export const RecipeType = (value: unknown) =>
   z.enum(RECIPE_TYPE_VALUES).parse(value) as RecipeTypeType
 
 export const RecipeTitle = (value: unknown) => {
-  const v = z.string().trim().min(1).max(200).parse(value)
+  const v = z.string().trim().min(1).max(RECIPE_MAX.title).parse(value)
   return make<RecipeTitleType>()(v)
 }
 
 export const RecipeSubtitle = (value: unknown) => {
-  const v = z.string().trim().min(1).max(200).parse(value)
+  const v = z.string().trim().min(1).max(RECIPE_MAX.subtitle).parse(value)
   return make<RecipeSubtitleType>()(v)
 }
 
@@ -46,44 +47,44 @@ export const VersionNumber = (value: unknown) => {
 }
 
 export const ParamKey = (value: unknown) => {
-  const v = z.string().trim().min(1).max(60).parse(value)
+  const v = z.string().trim().min(1).max(RECIPE_MAX.paramKey).parse(value)
   return make<ParamKeyType>()(v)
 }
 
 export const ParamValue = (value: unknown) => {
-  const v = z.string().trim().min(1).max(120).parse(value)
+  const v = z.string().trim().min(1).max(RECIPE_MAX.paramValue).parse(value)
   return make<ParamValueType>()(v)
 }
 
 export const IngredientName = (value: unknown) => {
   // 120, not 60: AI imports legitimately produce descriptive names
   // ("Pommes de terre farineuses, épluchées et coupées en rondelles (0,5 cm)").
-  const v = z.string().trim().min(1).max(120).parse(value)
+  const v = z.string().trim().min(1).max(RECIPE_MAX.ingredientName).parse(value)
   return make<IngredientNameType>()(v)
 }
 
 export const IngredientQuantity = (value: unknown) => {
-  const v = z.string().trim().min(1).max(60).parse(value)
+  const v = z.string().trim().min(1).max(RECIPE_MAX.ingredientQuantity).parse(value)
   return make<IngredientQuantityType>()(v)
 }
 
 export const StepText = (value: unknown) => {
-  const v = z.string().trim().min(1).max(300).parse(value)
+  const v = z.string().trim().min(1).max(RECIPE_MAX.stepText).parse(value)
   return make<StepTextType>()(v)
 }
 
 export const TmxTime = (value: unknown) => {
-  const v = z.string().trim().min(1).max(20).parse(value)
+  const v = z.string().trim().min(1).max(RECIPE_MAX.tmx).parse(value)
   return make<TmxTimeType>()(v)
 }
 
 export const TmxTemperature = (value: unknown) => {
-  const v = z.string().trim().min(1).max(20).parse(value)
+  const v = z.string().trim().min(1).max(RECIPE_MAX.tmx).parse(value)
   return make<TmxTemperatureType>()(v)
 }
 
 export const TmxSpeed = (value: unknown) => {
-  const v = z.string().trim().min(1).max(20).parse(value)
+  const v = z.string().trim().min(1).max(RECIPE_MAX.tmx).parse(value)
   return make<TmxSpeedType>()(v)
 }
 
