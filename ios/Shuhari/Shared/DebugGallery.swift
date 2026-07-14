@@ -85,10 +85,7 @@ struct DebugGallery: View {
                 ImportPreviewPage(analysis: Fixtures.importAnalysis, isSaving: false, onCancel: {}, onSave: { _ in })
             }
         case "ai-thinking":
-            ZStack {
-                Color(.systemBackground).ignoresSafeArea()
-                AIThinkingCard(message: "Analyse IA…")
-            }
+            AIThinkingCard(message: "Analyse IA…")
         default:
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",

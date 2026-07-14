@@ -60,17 +60,14 @@ struct ImportReviewSheet: View {
     // MARK: - Phases
 
     private var analyzingView: some View {
-        ZStack {
-            Color(.systemBackground).ignoresSafeArea()
-            AIThinkingCard(message: "Analyse IA…")
-        }
-        .navigationTitle("Analyse")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Fermer", systemImage: "xmark") { onCancel() }
+        AIThinkingCard(message: "Analyse IA…")
+            .navigationTitle("Analyse")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Fermer", systemImage: "xmark") { onCancel() }
+                }
             }
-        }
     }
 
     private var failedView: some View {
