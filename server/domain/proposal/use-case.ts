@@ -11,23 +11,20 @@ import type { UserId } from '~/domain/shared/types'
 import { TrialQuery } from '~/domain/trial/query'
 import { Ai } from '~/system/ai'
 
-const toProposalVar = (raw: { key: string; from: string | null; to: string }): ProposalVar => ({
+const toProposalVar = (raw: { key: string; from: string | null; to: string }) => ({
   key: ParamKey(raw.key),
   from: raw.from === null ? null : ParamValue(raw.from),
   to: ParamValue(raw.to),
 })
 
-const describeChange = (vars: ProposalVar[]): string =>
+const describeChange = (vars: ProposalVar[]) =>
   vars.map((v) => `${v.key} ${v.from ?? '∅'} → ${v.to}`).join(' · ')
 
 export namespace ProposalUseCase {
   // Ask the AI for the next step after a trial. Reads the tested version and its
   // trials, drafts a proposal, enforces the one-variable rule for cafe/cocktail,
   // and persists it as the single active proposal for that version.
-  export const proposeFromTrial = async (
-    userId: UserId,
-    recipeId: RecipeId,
-  ): Promise<Proposal | 'not-found'> => {
+  export const proposeFromTrial = async (userId: UserId, recipeId: RecipeId) => {
     const recipe = await RecipeQuery.byId(userId, recipeId)
     if (recipe === 'not-found') return 'not-found'
     const version = await RecipeQuery.versionBy(recipeId, recipe.currentVersion)
@@ -81,9 +78,7 @@ export namespace ProposalUseCase {
     recipeId: RecipeId,
     versionNumber: VersionNumber,
     editedVars?: ProposalVar[],
-  ): Promise<
-    Awaited<ReturnType<typeof RecipeCommand.addVersion>> | 'no-proposal' | 'budget-exceeded'
-  > => {
+  ) => {
     const recipe = await RecipeQuery.byId(userId, recipeId)
     if (recipe === 'not-found') return 'not-found'
     const proposal = await ProposalQuery.byRef(recipeId, versionNumber)
@@ -117,7 +112,7 @@ export namespace ProposalUseCase {
     recipeId: RecipeId,
     versionNumber: VersionNumber,
     editedVars?: ProposalVar[],
-  ): Promise<Awaited<ReturnType<typeof RecipeCommand.deriveVariation>> | 'no-proposal'> => {
+  ) => {
     const recipe = await RecipeQuery.byId(userId, recipeId)
     if (recipe === 'not-found') return 'not-found'
     const proposal = await ProposalQuery.byRef(recipeId, versionNumber)
@@ -149,6 +144,6 @@ export namespace ProposalUseCase {
     return result
   }
 
-  export const refuse = async (recipeId: RecipeId, versionNumber: VersionNumber): Promise<void> =>
+  export const refuse = async (recipeId: RecipeId, versionNumber: VersionNumber) =>
     ProposalCommand.discard(recipeId, versionNumber)
 }

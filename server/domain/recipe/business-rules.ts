@@ -12,10 +12,9 @@ export const readyToPromote = (
   note: Note,
   testedVersion: VersionNumber,
   toTest: VersionNumber | null,
-): boolean => toTest !== null && testedVersion === toTest && note >= PROMOTION_NOTE
+) => toTest !== null && testedVersion === toTest && note >= PROMOTION_NOTE
 
-export const nextVersionNumber = (versionCount: VersionNumber): VersionNumber =>
-  toVersionNumber(versionCount + 1)
+export const nextVersionNumber = (versionCount: VersionNumber) => toVersionNumber(versionCount + 1)
 
 // Thermomix settings are only usable when they mirror the steps one-to-one and
 // at least one step actually carries a setting; anything else is dropped so the
@@ -25,13 +24,13 @@ export const nextVersionNumber = (versionCount: VersionNumber): VersionNumber =>
 export const alignedTmxSteps = (
   steps: StepText[],
   tmxSteps: (TmxSettings | null)[] | undefined,
-): (TmxSettings | null)[] | undefined => {
+) => {
   if (!tmxSteps || tmxSteps.length !== steps.length) return undefined
   const normalized = tmxSteps.map((s) => (s && !emptySettings(s) ? s : null))
   return normalized.some((s) => s !== null) ? normalized : undefined
 }
 
-const emptySettings = (s: TmxSettings): boolean =>
+const emptySettings = (s: TmxSettings) =>
   s.time === undefined && s.temperature === undefined && s.speed === undefined && !s.reverse
 
 // Ordered merge of a proposal's changes onto a version's target params: an
@@ -39,7 +38,7 @@ const emptySettings = (s: TmxSettings): boolean =>
 export const applyProposalToParams = (
   params: Param[],
   changes: { key: ParamKey; value: Param['value'] }[],
-): Param[] =>
+) =>
   changes.reduce<Param[]>(
     (current, change) =>
       current.some((param) => param.key === change.key)

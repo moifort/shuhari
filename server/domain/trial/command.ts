@@ -19,7 +19,7 @@ export type RecordTrialInput = {
 export namespace TrialCommand {
   // Record one execution. Only the parameters that deviated from the version's
   // targets are stored (`realParams`) — the reproducibility delta.
-  export const record = async (userId: UserId, input: RecordTrialInput): Promise<Trial> => {
+  export const record = async (userId: UserId, input: RecordTrialInput) => {
     const trial: Trial = {
       id: randomTrialId(),
       userId,
@@ -34,10 +34,10 @@ export namespace TrialCommand {
     return repository.save(trial)
   }
 
-  export const removeByRecipe = async (userId: UserId, recipeId: RecipeId): Promise<void> =>
+  export const removeByRecipe = async (userId: UserId, recipeId: RecipeId) =>
     repository.removeByRecipe(userId, recipeId)
 
-  export const replaceAllForUser = async (userId: UserId, trials: Trial[]): Promise<void> => {
+  export const replaceAllForUser = async (userId: UserId, trials: Trial[]) => {
     await repository.removeAllByUser(userId)
     await bulkSave(trials, repository.save)
   }

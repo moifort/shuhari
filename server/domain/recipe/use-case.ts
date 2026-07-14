@@ -7,10 +7,7 @@ import { TrialCommand } from '~/domain/trial/command'
 export namespace RecipeUseCase {
   // Delete a recipe and everything attached to it: its versions (recipe command),
   // its trials, and any pending proposals.
-  export const removeCompletely = async (
-    userId: UserId,
-    recipeId: RecipeId,
-  ): Promise<undefined | 'not-found'> => {
+  export const removeCompletely = async (userId: UserId, recipeId: RecipeId) => {
     const result = await RecipeCommand.remove(userId, recipeId)
     if (result === 'not-found') return 'not-found'
     await Promise.all([

@@ -1,9 +1,5 @@
 import { z } from 'zod'
-import {
-  EXPORT_SCHEMA_VERSION,
-  type ExportEnvelope,
-  type ImportResult,
-} from '~/domain/portability/types'
+import { EXPORT_SCHEMA_VERSION, type ImportResult } from '~/domain/portability/types'
 import { RecipeCommand } from '~/domain/recipe/command'
 import { RecipeQuery } from '~/domain/recipe/query'
 import type { Recipe, RecipeVersion } from '~/domain/recipe/types'
@@ -15,7 +11,7 @@ import type { Trial } from '~/domain/trial/types'
 // Backup/restore orchestrator: reads and replaces each domain's data through its
 // public Query/Command surface (raw records) — never its repository.
 export namespace PortabilityUseCase {
-  export const exportAll = async (userId: UserId): Promise<ExportEnvelope> => {
+  export const exportAll = async (userId: UserId) => {
     const [recipes, versions, trials] = await Promise.all([
       RecipeQuery.all(userId),
       RecipeQuery.allVersions(userId),

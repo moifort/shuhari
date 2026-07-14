@@ -1,4 +1,3 @@
-import type { Home } from '~/domain/home/types'
 import { RecipeQuery } from '~/domain/recipe/query'
 import type { UserId } from '~/domain/shared/types'
 import { TrialQuery } from '~/domain/trial/query'
@@ -10,7 +9,7 @@ const RECENT_TRIAL_LIMIT = 8
 // memoized per request — three reads total once the loaders resolve the pending
 // versions of the "to test" recipes.
 export namespace HomeQuery {
-  export const load = async (userId: UserId): Promise<Home> => {
+  export const load = async (userId: UserId) => {
     const [recipes, recentTrials] = await Promise.all([
       RecipeQuery.all(userId),
       TrialQuery.recent(userId, RECENT_TRIAL_LIMIT),

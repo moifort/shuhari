@@ -47,7 +47,7 @@ export namespace RecipeCommand {
     userId: UserId,
     input: NewRecipeInput,
     sourceLabel?: string,
-  ): Promise<Recipe> => {
+  ) => {
     const now = new Date()
     const recipe: Recipe = {
       id: randomRecipeId(),
@@ -75,11 +75,7 @@ export namespace RecipeCommand {
 
   // Accepted AI iteration → append version n+1 and mark it "to test". The current
   // reference is untouched until a high-scoring trial promotes the new version.
-  export const addVersion = async (
-    userId: UserId,
-    recipeId: RecipeId,
-    input: NewVersionInput,
-  ): Promise<Recipe | 'not-found'> => {
+  export const addVersion = async (userId: UserId, recipeId: RecipeId, input: NewVersionInput) => {
     const recipe = await repository.findBy(userId, recipeId)
     if (!recipe) return 'not-found' as const
     const number = nextVersionNumber(recipe.versionCount)
@@ -117,7 +113,7 @@ export namespace RecipeCommand {
     userId: UserId,
     recipeId: RecipeId,
     versionNumber: VersionNumberT,
-  ): Promise<Recipe | 'not-found' | 'nothing-to-test'> => {
+  ) => {
     const recipe = await repository.findBy(userId, recipeId)
     if (!recipe) return 'not-found' as const
     if (recipe.toTest !== versionNumber) return 'nothing-to-test' as const
@@ -137,7 +133,7 @@ export namespace RecipeCommand {
     parentId: RecipeId,
     input: NewRecipeInput,
     change: string,
-  ): Promise<Recipe | 'not-found'> => {
+  ) => {
     const parent = await repository.findBy(userId, parentId)
     if (!parent) return 'not-found' as const
     const now = new Date()
@@ -166,7 +162,7 @@ export namespace RecipeCommand {
     userId: UserId,
     recipeId: RecipeId,
     fields: { title?: RecipeTitle; subtitle?: RecipeSubtitle },
-  ): Promise<Recipe | 'not-found'> => {
+  ) => {
     const recipe = await repository.findBy(userId, recipeId)
     if (!recipe) return 'not-found' as const
     const updated: Recipe = {
@@ -178,10 +174,7 @@ export namespace RecipeCommand {
     return repository.save(updated)
   }
 
-  export const remove = async (
-    userId: UserId,
-    recipeId: RecipeId,
-  ): Promise<undefined | 'not-found'> => {
+  export const remove = async (userId: UserId, recipeId: RecipeId) => {
     const recipe = await repository.findBy(userId, recipeId)
     if (!recipe) return 'not-found' as const
     await repository.remove(recipeId)
@@ -193,17 +186,13 @@ export namespace RecipeCommand {
     userId: UserId,
     recipes: Recipe[],
     versions: RecipeVersion[],
-  ): Promise<void> => {
+  ) => {
     await repository.removeAllByUser(userId)
     await bulkSave(recipes, (recipe) => repository.save(recipe))
     await bulkSave(versions, (version) => repository.saveVersion(version))
   }
 
-  const firstVersion = (
-    recipe: Recipe,
-    origin: VersionOrigin,
-    input: NewRecipeInput,
-  ): RecipeVersion => {
+  const firstVersion = (recipe: Recipe, origin: VersionOrigin, input: NewRecipeInput) => {
     // Thermomix settings only exist on tmx recipes — dropped for any other type.
     const tmxSteps =
       recipe.type === 'tmx' ? alignedTmxSteps(input.steps, input.tmxSteps) : undefined

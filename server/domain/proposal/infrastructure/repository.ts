@@ -8,18 +8,13 @@ const proposals = () => db().collection('proposals').withConverter(genericDataCo
 
 const docId = (recipeId: RecipeId, versionNumber: VersionNumber) => `${recipeId}_${versionNumber}`
 
-export const findBy = async (
-  recipeId: RecipeId,
-  versionNumber: VersionNumber,
-): Promise<Proposal | null> => {
+export const findBy = async (recipeId: RecipeId, versionNumber: VersionNumber) => {
   const doc = await proposals().doc(docId(recipeId, versionNumber)).get()
   return doc.data() ?? null
 }
 
 // Batch-load the active proposal for a set of (recipe, version) refs — one getAll.
-export const findByRefs = async (
-  refs: { recipeId: RecipeId; versionNumber: VersionNumber }[],
-): Promise<Proposal[]> => {
+export const findByRefs = async (refs: { recipeId: RecipeId; versionNumber: VersionNumber }[]) => {
   if (refs.length === 0) return []
   const docs = refs.map(({ recipeId, versionNumber }) =>
     proposals().doc(docId(recipeId, versionNumber)),
@@ -28,16 +23,16 @@ export const findByRefs = async (
   return snaps.map((snap) => snap.data()).filter((p): p is Proposal => p !== undefined)
 }
 
-export const save = async (proposal: Proposal): Promise<Proposal> => {
+export const save = async (proposal: Proposal) => {
   await proposals().doc(docId(proposal.recipeId, proposal.versionNumber)).set(proposal)
   return proposal
 }
 
-export const remove = async (recipeId: RecipeId, versionNumber: VersionNumber): Promise<void> => {
+export const remove = async (recipeId: RecipeId, versionNumber: VersionNumber) => {
   await proposals().doc(docId(recipeId, versionNumber)).delete()
 }
 
-export const removeByRecipe = async (userId: UserId, recipeId: RecipeId): Promise<void> => {
+export const removeByRecipe = async (userId: UserId, recipeId: RecipeId) => {
   const snap = await proposals()
     .where('userId', '==', userId)
     .where('recipeId', '==', recipeId)
@@ -45,7 +40,7 @@ export const removeByRecipe = async (userId: UserId, recipeId: RecipeId): Promis
   await deleteInBatches(snap.docs.map((doc) => doc.ref))
 }
 
-export const removeAllByUser = async (userId: UserId): Promise<void> => {
+export const removeAllByUser = async (userId: UserId) => {
   const snap = await proposals().where('userId', '==', userId).get()
   await deleteInBatches(snap.docs.map((doc) => doc.ref))
 }

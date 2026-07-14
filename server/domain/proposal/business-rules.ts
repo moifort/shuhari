@@ -6,10 +6,10 @@ import type { RecipeType } from '~/domain/recipe/types'
 // dishes and Thermomix recipes may change several at once.
 export type VariableBudget = 1 | 'many'
 
-export const variableBudget = (type: RecipeType): VariableBudget =>
+export const variableBudget = (type: RecipeType) =>
   type === 'cafe' || type === 'cocktail' ? 1 : 'many'
 
-export const respectsVariableBudget = (type: RecipeType, vars: ProposalVar[]): boolean => {
+export const respectsVariableBudget = (type: RecipeType, vars: ProposalVar[]) => {
   const budget = variableBudget(type)
   if (budget === 'many') return vars.length >= 1
   return vars.length === 1
@@ -23,7 +23,7 @@ export const overflowToQueue = (
   type: RecipeType,
   vars: ProposalVar[],
   existingQueue: string[] = [],
-): { vars: ProposalVar[]; queued: string[] } => {
+) => {
   if (variableBudget(type) === 'many' || vars.length <= 1) {
     return { vars, queued: existingQueue }
   }

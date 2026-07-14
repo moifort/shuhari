@@ -11,29 +11,29 @@ const allCacheKey = (userId: UserId) => `trials:all:${userId}`
 
 // One memoized full scan per request backs every trial read (journal, recent
 // activity, per-version averages, loaders) — the request pays a single query.
-export const findAllByUser = (userId: UserId): Promise<Trial[]> =>
+export const findAllByUser = (userId: UserId) =>
   memoizedPerRequest(allCacheKey(userId), async () => {
     const snap = await trials().where('userId', '==', userId).orderBy('executedAt', 'desc').get()
     return snap.docs.map((doc) => doc.data())
   })
 
-export const findById = async (userId: UserId, id: TrialId): Promise<Trial | null> => {
+export const findById = async (userId: UserId, id: TrialId) => {
   const doc = await trials().doc(id).get()
   const data = doc.data()
   return data && data.userId === userId ? data : null
 }
 
-export const save = async (trial: Trial): Promise<Trial> => {
+export const save = async (trial: Trial) => {
   await trials().doc(trial.id).set(trial)
   return trial
 }
 
-export const removeByRecipe = async (userId: UserId, recipeId: RecipeId): Promise<void> => {
+export const removeByRecipe = async (userId: UserId, recipeId: RecipeId) => {
   const snap = await trials().where('userId', '==', userId).where('recipeId', '==', recipeId).get()
   await deleteInBatches(snap.docs.map((doc) => doc.ref))
 }
 
-export const removeAllByUser = async (userId: UserId): Promise<void> => {
+export const removeAllByUser = async (userId: UserId) => {
   const snap = await trials().where('userId', '==', userId).get()
   await deleteInBatches(snap.docs.map((doc) => doc.ref))
 }

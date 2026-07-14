@@ -21,7 +21,7 @@ export namespace TrialUseCase {
       enteredParams: Param[]
       photoPath?: string | null
     },
-  ): Promise<RecordTrialResult | 'not-found'> => {
+  ) => {
     const recipe = await RecipeQuery.byId(userId, input.recipeId)
     if (recipe === 'not-found') return 'not-found'
     const version = await RecipeQuery.versionBy(input.recipeId, input.versionNumber)
