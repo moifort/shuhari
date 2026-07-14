@@ -68,7 +68,9 @@ struct ImportPreviewPage: View {
                     ForEach($ingredients) { $ingredient in
                         HStack {
                             TextField("Ingrédient", text: $ingredient.name)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             TextField("Quantité", text: $ingredient.quantity)
+                                .fixedSize()
                                 .multilineTextAlignment(.trailing)
                                 .foregroundStyle(.secondary)
                         }
