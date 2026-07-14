@@ -4,12 +4,15 @@ import SwiftUI
 /// Backs `TypeChip` and any future informational chip so they all share one
 /// geometry. For state-tinted tags use `StatusTag` instead.
 struct Chip: View {
-    let icon: String?
+    var icon: String? = nil
+    var image: Image? = nil
     let text: String
 
     var body: some View {
         HStack(spacing: 5) {
-            if let icon {
+            if let image {
+                image
+            } else if let icon {
                 Image(systemName: icon)
             }
             Text(text)

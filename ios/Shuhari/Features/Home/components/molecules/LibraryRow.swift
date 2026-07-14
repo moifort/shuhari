@@ -16,7 +16,7 @@ struct LibraryRow: View {
 
     var body: some View {
         HStack(spacing: Theme.Spacing.m) {
-            Image(systemName: type.icon)
+            type.iconImage
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .frame(width: tileSize, height: tileSize)

@@ -5,7 +5,7 @@ struct TypeChip: View {
     let type: RecipeType
 
     var body: some View {
-        Chip(icon: type.icon, text: type.label)
+        Chip(image: type.iconImage, text: type.label)
             .accessibilityLabel("Type \(type.label)")
     }
 }

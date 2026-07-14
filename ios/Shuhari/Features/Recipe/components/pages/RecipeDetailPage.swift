@@ -52,7 +52,7 @@ struct RecipeDetailPage: View {
     private var header: some View {
         Section {
             HStack(spacing: Theme.Spacing.l) {
-                Image(systemName: recipe.type.icon)
+                recipe.type.iconImage
                     .font(.title2)
                     .foregroundStyle(.secondary)
                     .frame(width: tileSize, height: tileSize)

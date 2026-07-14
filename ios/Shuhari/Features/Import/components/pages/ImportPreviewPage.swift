@@ -55,7 +55,7 @@ struct ImportPreviewPage: View {
 
                 Picker(selection: $type) {
                     ForEach(RecipeType.allCases) { candidate in
-                        Label(candidate.label, systemImage: candidate.icon).tag(candidate)
+                        Label { Text(candidate.label) } icon: { candidate.iconImage }.tag(candidate)
                     }
                 } label: {
                     Label("Type", systemImage: "square.grid.2x2")
