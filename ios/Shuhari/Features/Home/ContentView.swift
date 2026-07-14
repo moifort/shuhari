@@ -42,17 +42,17 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            Tab("Cuisine", systemImage: "fork.knife", value: RootTab.cuisine) {
+            Tab("Cuisine", image: "toque", value: RootTab.cuisine) {
                 HomeView(title: "Cuisine", categoryTypes: [.plat, .tmx], importedRecipe: $importedRecipe)
             }
             .accessibilityIdentifier("tab-cuisine")
 
-            Tab("Café", systemImage: "cup.and.saucer", value: RootTab.cafe) {
+            Tab("Café", systemImage: "mug", value: RootTab.cafe) {
                 HomeView(title: "Café", categoryTypes: [.cafe], importedRecipe: $importedRecipe)
             }
             .accessibilityIdentifier("tab-cafe")
 
-            Tab("Cocktail", systemImage: "wineglass", value: RootTab.cocktail) {
+            Tab("Cocktail", image: "cocktail", value: RootTab.cocktail) {
                 HomeView(title: "Cocktail", categoryTypes: [.cocktail], importedRecipe: $importedRecipe)
             }
             .accessibilityIdentifier("tab-cocktail")

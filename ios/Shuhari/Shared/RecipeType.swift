@@ -20,25 +20,17 @@ enum RecipeType: String, CaseIterable, Sendable, Identifiable {
         }
     }
 
-    /// SF Symbol name. Thermomix has no SF Symbol; `iconImage` maps it to the
-    /// custom symbol, and this keeps a valid fallback for any raw `systemName:` use.
-    var icon: String {
-        switch self {
-        case .cafe: "cup.and.saucer.fill"
-        case .cocktail: "wineglass.fill"
-        case .plat: "frying.pan.fill"
-        case .tmx: "fan.fill"
-        }
-    }
-
-    /// The type's icon as an `Image` — a custom symbol for Thermomix (referenced by
-    /// asset name, since `Image(systemName:)` only resolves Apple's SF Symbols),
-    /// an SF Symbol otherwise. Custom symbols scale with the font and tint just
-    /// like SF Symbols. Prefer this over `icon` for display.
+    /// The type's icon as an `Image`. Coffee is Apple's `mug.fill` SF Symbol; the
+    /// other three are custom symbols in the asset catalog (a martini glass for
+    /// cocktails, a chef's toque for dishes, the Thermomix mark) — referenced by
+    /// asset name, since `Image(systemName:)` only resolves Apple's SF Symbols.
+    /// Custom symbols scale with the font and tint just like SF Symbols.
     var iconImage: Image {
         switch self {
+        case .cafe: Image(systemName: "mug.fill")
+        case .cocktail: Image("cocktail")
+        case .plat: Image("toque")
         case .tmx: Image("thermomix")
-        default: Image(systemName: icon)
         }
     }
 

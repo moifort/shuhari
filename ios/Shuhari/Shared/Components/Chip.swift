@@ -28,7 +28,7 @@ struct Chip: View {
 
 #Preview {
     HStack(spacing: 8) {
-        Chip(icon: "cup.and.saucer.fill", text: "Café")
+        Chip(icon: "mug.fill", text: "Café")
         Chip(icon: nil, text: "Sans icône")
     }
     .padding()
