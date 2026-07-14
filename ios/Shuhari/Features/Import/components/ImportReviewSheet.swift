@@ -93,7 +93,7 @@ struct ImportReviewSheet: View {
         phase = .analyzing
         // Keep the loader on screen long enough to actually see the animation,
         // even when the AI answers almost instantly. Failures skip the wait.
-        let minimumShown = Task { try? await Task.sleep(for: .seconds(2.5)) }
+        let minimumShown = Task { try? await Task.sleep(for: .seconds(3.5)) }
         guard let source = await resolveSource() else {
             minimumShown.cancel()
             errorPresenter.message = "Impossible de lire l’image sélectionnée."
