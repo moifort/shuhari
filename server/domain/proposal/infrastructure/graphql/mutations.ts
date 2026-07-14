@@ -1,4 +1,5 @@
 import { GraphQLError } from 'graphql'
+import { match } from 'ts-pattern'
 import { ProposalUseCase } from '~/domain/proposal/use-case'
 import { RecipeType } from '~/domain/recipe/infrastructure/graphql/types'
 import type { Recipe, RecipeId, VersionNumber } from '~/domain/recipe/types'
@@ -32,8 +33,11 @@ builder.mutationField('requestProposal', (t) =>
     args: { recipeId: t.arg({ type: 'RecipeId', required: true }) },
     resolve: async (_root, { recipeId }, { userId }) => {
       const result = await ProposalUseCase.proposeFromTrial(userId, recipeId)
-      if (result === 'not-found') throw notFound()
-      return result
+      return match(result)
+        .with('not-found', () => {
+          throw notFound()
+        })
+        .otherwise((proposal) => proposal)
     },
   }),
 )
@@ -89,15 +93,19 @@ builder.mutationField('refuseProposal', (t) =>
 )
 
 // Turn the use-case's discriminated error strings into GraphQL errors.
-const ensureRecipe = (result: Recipe | string): Recipe => {
-  if (result === 'not-found') throw notFound()
-  if (result === 'no-proposal')
-    throw new GraphQLError('No pending proposal for this version', {
-      extensions: { code: 'NO_PROPOSAL' },
+const ensureRecipe = (result: Recipe | 'not-found' | 'no-proposal' | 'budget-exceeded'): Recipe =>
+  match(result)
+    .with('not-found', () => {
+      throw notFound()
     })
-  if (result === 'budget-exceeded')
-    throw new GraphQLError('Too many variables for this recipe type', {
-      extensions: { code: 'BUDGET_EXCEEDED' },
+    .with('no-proposal', () => {
+      throw new GraphQLError('No pending proposal for this version', {
+        extensions: { code: 'NO_PROPOSAL' },
+      })
     })
-  return result as Recipe
-}
+    .with('budget-exceeded', () => {
+      throw new GraphQLError('Too many variables for this recipe type', {
+        extensions: { code: 'BUDGET_EXCEEDED' },
+      })
+    })
+    .otherwise((recipe) => recipe)

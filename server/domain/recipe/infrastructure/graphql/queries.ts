@@ -1,3 +1,4 @@
+import { match } from 'ts-pattern'
 import { RecipeQuery } from '~/domain/recipe/query'
 import { builder } from '~/domain/shared/graphql/builder'
 import { RecipeTypeEnum } from './enums'
@@ -23,7 +24,9 @@ builder.queryField('recipe', (t) =>
     args: { id: t.arg({ type: 'RecipeId', required: true }) },
     resolve: async (_root, { id }, { userId }) => {
       const recipe = await RecipeQuery.byId(userId, id)
-      return recipe === 'not-found' ? null : recipe
+      return match(recipe)
+        .with('not-found', () => null)
+        .otherwise((found) => found)
     },
   }),
 )
