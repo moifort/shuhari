@@ -13,14 +13,32 @@ struct HomeView: View {
     @State private var path = NavigationPath()
     @State private var showSettings = false
     @State private var execution: ExecutionRequest?
+    @State private var selectedType: RecipeType = .plat
+
+    /// Multi-type tabs (Cuisine) offer a segmented type filter; single-type tabs don't.
+    private var isMultiType: Bool { categoryTypes.count > 1 }
+
+    /// The type segments in design order — e.g. `[.plat, .tmx]` for Cuisine.
+    private var filterOptions: [RecipeType] {
+        RecipeType.allCases.filter { categoryTypes.contains($0) }
+    }
+
+    /// On a multi-type tab, narrow the data to the selected segment; otherwise show
+    /// every type the tab owns.
+    private var effectiveTypes: Set<RecipeType> {
+        isMultiType ? [selectedType] : categoryTypes
+    }
 
     var body: some View {
         NavigationStack(path: $path) {
             Group {
                 if let data = store.data {
                     HomePage(
-                        data: data.filtered(to: categoryTypes),
+                        data: data.filtered(to: effectiveTypes),
                         title: title,
+                        typeFilter: isMultiType
+                            ? .init(options: filterOptions, selection: $selectedType)
+                            : nil,
                         onExecute: { item in
                             execution = ExecutionRequest(recipeId: item.id, versionNumber: item.versionNumber)
                         },
@@ -52,6 +70,7 @@ struct HomeView: View {
     /// that mounts on selection right after the import (`onAppear`).
     private func navigateToImportedIfNeeded() {
         guard let recipe = importedRecipe, categoryTypes.contains(recipe.type) else { return }
+        if isMultiType { selectedType = recipe.type }
         path.append(RecipeRoute.recipe(id: recipe.id))
         importedRecipe = nil
         Task { await store.load() }

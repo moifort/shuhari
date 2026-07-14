@@ -15,7 +15,7 @@ struct DebugGallery: View {
                 .environment(HomeStore())
         case "home":
             NavigationStack {
-                HomePage(data: Fixtures.homeData, title: "Café", onExecute: { _ in }, onSettings: {})
+                HomePage(data: Fixtures.homeData, title: "Café", typeFilter: nil, onExecute: { _ in }, onSettings: {})
             }
         case "recipe":
             NavigationStack {
