@@ -52,6 +52,9 @@ ios/shared/
 # Claude Code
 .claude/
 
+# Local-only: project specs & plans are never pushed to GitHub
+docs/specs/
+
 # Terraform auto-installed binary (pinned version, managed by scripts/install-terraform.sh)
 infra/.bin/
 
