@@ -51,7 +51,8 @@ builder.mutationField('acceptProposal', (t) =>
       editedVars: t.arg({ type: [ProposalVarInput] }),
     },
     resolve: async (_root, args, { userId }) => {
-      const edited = args.editedVars?.map((v) => ({ key: v.key, from: v.from ?? null, to: v.to }))
+      const edited =
+        args.editedVars?.map((v) => ({ key: v.key, from: v.from ?? null, to: v.to })) ?? []
       if (args.choice === 'iteration') {
         const result = await ProposalUseCase.acceptAsIteration(
           userId,

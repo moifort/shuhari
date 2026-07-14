@@ -70,10 +70,11 @@ export type RecipeVersion = {
   params: Param[] // the TARGET parameters
   steps: StepText[]
   // The recipe's components with quantities. Additive — carried forward across
-  // iterations, but not yet an AI-iteration target. Absent for versions imported
-  // before this field existed and for recipes with nothing measurable.
-  ingredients?: Ingredient[]
-  // Thermomix settings aligned with `steps` by index (null = plain step).
-  // Absent for non-tmx recipes and versions imported before this field existed.
-  tmxSteps?: (TmxSettings | null)[]
+  // iterations, but not yet an AI-iteration target. `[]` when the recipe has
+  // nothing measurable.
+  ingredients: Ingredient[]
+  // Thermomix settings aligned with `steps` by index (null = plain step). `[]`
+  // for non-tmx recipes — "is Thermomix" is derived from `type === 'tmx'`, never
+  // from the presence of this array.
+  tmxSteps: (TmxSettings | null)[]
 }

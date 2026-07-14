@@ -379,16 +379,18 @@ type Version {
   changedKeys: [ParamKey!]!
   createdAt: DateTime!
 
-  """The recipe’s components with quantities (absent when none)"""
-  ingredients: [Ingredient!]
+  """The recipe’s components with quantities ([] when none)"""
+  ingredients: [Ingredient!]!
   number: VersionNumber!
   originDetail: String
   originKind: VersionOriginKind!
   params: [Param!]!
   steps: [StepText!]!
 
-  """Per-step Thermomix settings, aligned with steps (null = plain step)"""
-  tmxSteps: [TmxSettings]
+  """
+  Per-step Thermomix settings aligned with steps (null = plain step; [] if not tmx)
+  """
+  tmxSteps: [TmxSettings]!
 
   """How many trials ran against this version"""
   trialCount: Int!

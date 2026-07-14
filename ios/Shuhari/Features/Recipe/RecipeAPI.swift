@@ -79,10 +79,10 @@ func mapVersion(_ v: ShuhariGraphQL.VersionFields) -> RecipeVersion {
         originDetail: v.originDetail,
         changedKeys: v.changedKeys,
         params: v.params.map { Param(key: $0.key, value: $0.value) },
-        ingredients: (v.ingredients ?? []).map { Ingredient(name: $0.name, quantity: $0.quantity) },
+        ingredients: v.ingredients.map { Ingredient(name: $0.name, quantity: $0.quantity) },
         steps: v.steps,
-        tmxSteps: v.tmxSteps.map { list in
-            list.map { $0.map { TmxSettings(time: $0.time, temperature: $0.temperature, speed: $0.speed, reverse: $0.reverse ?? false) } }
+        tmxSteps: v.tmxSteps.map { step in
+            step.map { TmxSettings(time: $0.time, temperature: $0.temperature, speed: $0.speed, reverse: $0.reverse ?? false) }
         },
         averageNote: v.averageNote,
         trialCount: v.trialCount,

@@ -18,6 +18,8 @@ const input = (title: string) => ({
   title: title as RecipeTitle,
   params: [param('Dose', '18 g')],
   steps: ['Extraire'] as StepText[],
+  ingredients: [],
+  tmxSteps: [],
 })
 
 let fake = resetFakeFirestore()
@@ -35,6 +37,8 @@ describe('HomeQuery.load', () => {
       changedKeys: ['Dose' as ParamKey],
       params: [param('Dose', '19 g')],
       steps: ['Extraire'] as StepText[],
+      ingredients: [],
+      tmxSteps: [],
     })
     await TrialCommand.record(userId, {
       recipeId: a.id,

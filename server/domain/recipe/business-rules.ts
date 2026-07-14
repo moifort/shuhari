@@ -21,13 +21,10 @@ export const nextVersionNumber = (versionCount: VersionNumber) => toVersionNumbe
 // stored version never holds a misaligned or empty parallel array. Entries
 // without any actual setting (reverse alone carries none when false) are
 // normalized to null.
-export const alignedTmxSteps = (
-  steps: StepText[],
-  tmxSteps: (TmxSettings | null)[] | undefined,
-) => {
-  if (!tmxSteps || tmxSteps.length !== steps.length) return undefined
+export const alignedTmxSteps = (steps: StepText[], tmxSteps: (TmxSettings | null)[]) => {
+  if (tmxSteps.length !== steps.length) return []
   const normalized = tmxSteps.map((s) => (s && !emptySettings(s) ? s : null))
-  return normalized.some((s) => s !== null) ? normalized : undefined
+  return normalized.some((s) => s !== null) ? normalized : []
 }
 
 const emptySettings = (s: TmxSettings) =>
@@ -38,13 +35,15 @@ const emptySettings = (s: TmxSettings) =>
 export const applyProposalToParams = (
   params: Param[],
   changes: { key: ParamKey; value: Param['value'] }[],
-) =>
-  changes.reduce<Param[]>(
-    (current, change) =>
-      current.some((param) => param.key === change.key)
-        ? current.map((param) =>
-            param.key === change.key ? { key: param.key, value: change.value } : param,
-          )
-        : [...current, { key: change.key, value: change.value }],
-    params.map((param) => ({ ...param })),
-  )
+) => {
+  const changeByKey = new Map(changes.map((change) => [change.key, change.value]))
+  const existingKeys = new Set(params.map((param) => param.key))
+  const updated = params.map((param) => {
+    const value = changeByKey.get(param.key)
+    return value === undefined ? param : { key: param.key, value }
+  })
+  const added = [...changeByKey.entries()]
+    .filter(([key]) => !existingKeys.has(key))
+    .map(([key, value]) => ({ key, value }))
+  return [...updated, ...added]
+}

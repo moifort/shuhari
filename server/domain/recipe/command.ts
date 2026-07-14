@@ -26,8 +26,8 @@ export type NewRecipeInput = {
   subtitle?: RecipeSubtitle
   params: Param[]
   steps: StepText[]
-  ingredients?: Ingredient[]
-  tmxSteps?: (TmxSettings | null)[]
+  ingredients: Ingredient[]
+  tmxSteps: (TmxSettings | null)[]
 }
 
 export type NewVersionInput = {
@@ -36,8 +36,8 @@ export type NewVersionInput = {
   why?: string
   params: Param[]
   steps: StepText[]
-  ingredients?: Ingredient[]
-  tmxSteps?: (TmxSettings | null)[]
+  ingredients: Ingredient[]
+  tmxSteps: (TmxSettings | null)[]
 }
 
 export namespace RecipeCommand {
@@ -79,8 +79,7 @@ export namespace RecipeCommand {
     const recipe = await repository.findBy(userId, recipeId)
     if (!recipe) return 'not-found' as const
     const number = nextVersionNumber(recipe.versionCount)
-    const tmxSteps =
-      recipe.type === 'tmx' ? alignedTmxSteps(input.steps, input.tmxSteps) : undefined
+    const tmxSteps = recipe.type === 'tmx' ? alignedTmxSteps(input.steps, input.tmxSteps) : []
     const version: RecipeVersion = {
       userId,
       recipeId,
@@ -92,8 +91,8 @@ export namespace RecipeCommand {
       ...(input.why ? { why: input.why } : {}),
       params: input.params,
       steps: input.steps,
-      ...(input.ingredients ? { ingredients: input.ingredients } : {}),
-      ...(tmxSteps ? { tmxSteps } : {}),
+      ingredients: input.ingredients,
+      tmxSteps,
     }
     const updated: Recipe = {
       ...recipe,
@@ -193,9 +192,8 @@ export namespace RecipeCommand {
   }
 
   const firstVersion = (recipe: Recipe, origin: VersionOrigin, input: NewRecipeInput) => {
-    // Thermomix settings only exist on tmx recipes — dropped for any other type.
-    const tmxSteps =
-      recipe.type === 'tmx' ? alignedTmxSteps(input.steps, input.tmxSteps) : undefined
+    // Thermomix settings only exist on tmx recipes — [] for any other type.
+    const tmxSteps = recipe.type === 'tmx' ? alignedTmxSteps(input.steps, input.tmxSteps) : []
     return {
       userId: recipe.userId,
       recipeId: recipe.id,
@@ -206,8 +204,8 @@ export namespace RecipeCommand {
       changedKeys: [],
       params: input.params,
       steps: input.steps,
-      ...(input.ingredients ? { ingredients: input.ingredients } : {}),
-      ...(tmxSteps ? { tmxSteps } : {}),
+      ingredients: input.ingredients,
+      tmxSteps,
     }
   }
 }

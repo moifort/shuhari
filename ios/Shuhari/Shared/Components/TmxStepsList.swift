@@ -111,8 +111,8 @@ extension TmxStepsList.Item {
     /// Builds the rows only when the settings usably mirror the steps: same
     /// count and at least one step actually carrying a setting. Returns nil
     /// otherwise — callers fall back to the plain `StepsList`.
-    static func zipped(steps: [String], tmxSteps: [TmxSettings?]?) -> [TmxStepsList.Item]? {
-        guard let tmxSteps, tmxSteps.count == steps.count,
+    static func zipped(steps: [String], tmxSteps: [TmxSettings?]) -> [TmxStepsList.Item]? {
+        guard tmxSteps.count == steps.count,
               tmxSteps.contains(where: { $0?.isEmpty == false }) else { return nil }
         return zip(steps, tmxSteps).map { text, settings in
             TmxStepsList.Item(

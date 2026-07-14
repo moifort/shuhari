@@ -41,7 +41,7 @@ enum Fixtures {
         ],
         ingredients: coffeeIngredients,
         steps: ["Purger le groupe.", "Distribuer, tasser à niveau.", "Extraire 36 g en 27 s."],
-        tmxSteps: nil,
+        tmxSteps: [],
         averageNote: 7.5,
         trialCount: 2,
         createdAt: date.addingTimeInterval(-86_400 * 6)
@@ -63,7 +63,7 @@ enum Fixtures {
         ],
         ingredients: coffeeIngredients,
         steps: ["Purger le groupe.", "Distribuer, tasser à niveau.", "Extraire 36 g en 27 s."],
-        tmxSteps: nil,
+        tmxSteps: [],
         averageNote: nil,
         trialCount: 0,
         createdAt: date.addingTimeInterval(-86_400)
@@ -115,7 +115,7 @@ enum Fixtures {
         ],
         ingredients: coffeeIngredients,
         steps: ["Purger le groupe.", "Distribuer, tasser à niveau.", "Extraire 36 g en 25 s."],
-        tmxSteps: nil, averageNote: 6.0, trialCount: 1,
+        tmxSteps: [], averageNote: 6.0, trialCount: 1,
         createdAt: date.addingTimeInterval(-86_400 * 30)
     )
 
@@ -132,7 +132,7 @@ enum Fixtures {
         ],
         ingredients: coffeeIngredients,
         steps: ["Purger le groupe.", "Distribuer, tasser à niveau.", "Extraire 36 g en 25 s."],
-        tmxSteps: nil, averageNote: 6.5, trialCount: 1,
+        tmxSteps: [], averageNote: 6.5, trialCount: 1,
         createdAt: date.addingTimeInterval(-86_400 * 20)
     )
 

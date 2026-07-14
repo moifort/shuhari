@@ -77,13 +77,13 @@ export namespace ProposalUseCase {
     userId: UserId,
     recipeId: RecipeId,
     versionNumber: VersionNumber,
-    editedVars?: ProposalVar[],
+    editedVars: ProposalVar[],
   ) => {
     const recipe = await RecipeQuery.byId(userId, recipeId)
     if (recipe === 'not-found') return 'not-found'
     const proposal = await ProposalQuery.byRef(recipeId, versionNumber)
     if (!proposal) return 'no-proposal'
-    const vars = editedVars ?? proposal.vars
+    const vars = editedVars.length ? editedVars : proposal.vars
     if (!respectsVariableBudget(recipe.type, vars)) return 'budget-exceeded'
     const base = await RecipeQuery.versionBy(recipeId, versionNumber)
     if (base === 'not-found') return 'not-found'
@@ -98,8 +98,8 @@ export namespace ProposalUseCase {
       ...(proposal.rationale ? { why: proposal.rationale } : {}),
       params,
       steps: base.steps,
-      ...(base.ingredients ? { ingredients: base.ingredients } : {}),
-      ...(base.tmxSteps ? { tmxSteps: base.tmxSteps } : {}),
+      ingredients: base.ingredients,
+      tmxSteps: base.tmxSteps,
     })
     if (result !== 'not-found') await ProposalCommand.discard(recipeId, versionNumber)
     return result
@@ -111,13 +111,13 @@ export namespace ProposalUseCase {
     userId: UserId,
     recipeId: RecipeId,
     versionNumber: VersionNumber,
-    editedVars?: ProposalVar[],
+    editedVars: ProposalVar[],
   ) => {
     const recipe = await RecipeQuery.byId(userId, recipeId)
     if (recipe === 'not-found') return 'not-found'
     const proposal = await ProposalQuery.byRef(recipeId, versionNumber)
     if (!proposal) return 'no-proposal'
-    const vars = editedVars ?? proposal.vars
+    const vars = editedVars.length ? editedVars : proposal.vars
     const base = await RecipeQuery.versionBy(recipeId, versionNumber)
     if (base === 'not-found') return 'not-found'
 
@@ -135,8 +135,8 @@ export namespace ProposalUseCase {
         ...(recipe.subtitle ? { subtitle: recipe.subtitle } : {}),
         params,
         steps: base.steps,
-        ...(base.ingredients ? { ingredients: base.ingredients } : {}),
-        ...(base.tmxSteps ? { tmxSteps: base.tmxSteps } : {}),
+        ingredients: base.ingredients,
+        tmxSteps: base.tmxSteps,
       },
       describeChange(vars),
     )

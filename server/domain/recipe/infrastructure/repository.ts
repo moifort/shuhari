@@ -11,6 +11,14 @@ const versions = () =>
 
 const versionDocId = (recipeId: RecipeId, number: VersionNumber) => `${recipeId}_${number}`
 
+// Legacy versions written before ingredients/tmxSteps became always-present
+// arrays may lack the fields; default them to [] so the invariant holds on read.
+const normalizeVersion = (version: RecipeVersion) => ({
+  ...version,
+  ingredients: version.ingredients ?? [],
+  tmxSteps: version.tmxSteps ?? [],
+})
+
 const allCacheKey = (userId: UserId) => `recipes:all:${userId}`
 
 export const findAllByUser = (userId: UserId) =>
@@ -53,17 +61,18 @@ export const save = async (recipe: Recipe, batch?: WriteBatch) => {
 
 export const findVersion = async (recipeId: RecipeId, number: VersionNumber) => {
   const doc = await versions().doc(versionDocId(recipeId, number)).get()
-  return doc.data() ?? null
+  const data = doc.data()
+  return data ? normalizeVersion(data) : null
 }
 
 export const findVersionsOf = async (recipeId: RecipeId) => {
   const snap = await versions().where('recipeId', '==', recipeId).orderBy('number', 'asc').get()
-  return snap.docs.map((doc) => doc.data())
+  return snap.docs.map((doc) => normalizeVersion(doc.data()))
 }
 
 export const findAllVersionsByUser = async (userId: UserId) => {
   const snap = await versions().where('userId', '==', userId).get()
-  return snap.docs.map((doc) => doc.data())
+  return snap.docs.map((doc) => normalizeVersion(doc.data()))
 }
 
 // Batch-load specific versions by their deterministic ids (loaders: current/toTest
@@ -72,7 +81,10 @@ export const findVersionsByRefs = async (refs: { recipeId: RecipeId; number: Ver
   if (refs.length === 0) return []
   const docs = refs.map(({ recipeId, number }) => versions().doc(versionDocId(recipeId, number)))
   const snaps = await db().getAll(...docs)
-  return snaps.map((snap) => snap.data()).filter((v): v is RecipeVersion => v !== undefined)
+  return snaps
+    .map((snap) => snap.data())
+    .filter((v): v is RecipeVersion => v !== undefined)
+    .map(normalizeVersion)
 }
 
 export const saveVersion = async (version: RecipeVersion, batch?: WriteBatch) => {

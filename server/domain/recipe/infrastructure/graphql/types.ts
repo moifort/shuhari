@@ -48,16 +48,16 @@ export const VersionType = builder.objectRef<RecipeVersion>('Version').implement
     params: t.field({ type: [ParamType], resolve: (v) => v.params }),
     ingredients: t.field({
       type: [IngredientType],
-      nullable: { list: true, items: false },
-      description: 'The recipe’s components with quantities (absent when none)',
-      resolve: (v) => v.ingredients ?? null,
+      description: 'The recipe’s components with quantities ([] when none)',
+      resolve: (v) => v.ingredients,
     }),
     steps: t.expose('steps', { type: ['StepText'] }),
     tmxSteps: t.field({
       type: [TmxSettingsType],
-      nullable: { list: true, items: true },
-      description: 'Per-step Thermomix settings, aligned with steps (null = plain step)',
-      resolve: (v) => v.tmxSteps ?? null,
+      nullable: { list: false, items: true },
+      description:
+        'Per-step Thermomix settings aligned with steps (null = plain step; [] if not tmx)',
+      resolve: (v) => v.tmxSteps,
     }),
   }),
 })

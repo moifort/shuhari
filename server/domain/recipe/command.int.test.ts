@@ -33,6 +33,8 @@ const newInput = () => ({
   title: 'Espresso' as RecipeTitle,
   params: [param('Dose', '18 g'), param('Température', '93 °C')],
   steps: ['Moudre', 'Extraire'] as StepText[],
+  ingredients: [] as Ingredient[],
+  tmxSteps: [] as (TmxSettings | null)[],
 })
 
 let fake = resetFakeFirestore()
@@ -68,25 +70,25 @@ describe('RecipeCommand.importRecipe', () => {
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.tmxSteps).toEqual([tmx, null])
   })
 
-  test('omits the tmxSteps field entirely when absent or misaligned', async () => {
+  test('stores [] tmxSteps when absent or misaligned', async () => {
     const absent = await RecipeCommand.importRecipe(userId, newInput())
-    expect(fake.snapshot('recipe-versions').get(`${absent.id}_1`)).not.toContainKey('tmxSteps')
+    expect(fake.snapshot('recipe-versions').get(`${absent.id}_1`)?.tmxSteps).toEqual([])
 
     const misaligned = await RecipeCommand.importRecipe(userId, {
       ...newInput(),
       type: 'tmx' as const,
       tmxSteps: [{ time: '5 min' as TmxTime }],
     })
-    expect(fake.snapshot('recipe-versions').get(`${misaligned.id}_1`)).not.toContainKey('tmxSteps')
+    expect(fake.snapshot('recipe-versions').get(`${misaligned.id}_1`)?.tmxSteps).toEqual([])
 
     const notTmx = await RecipeCommand.importRecipe(userId, {
       ...newInput(),
       tmxSteps: [{ time: '5 min' as TmxTime }, null],
     })
-    expect(fake.snapshot('recipe-versions').get(`${notTmx.id}_1`)).not.toContainKey('tmxSteps')
+    expect(fake.snapshot('recipe-versions').get(`${notTmx.id}_1`)?.tmxSteps).toEqual([])
   })
 
-  test('persists ingredients on v1 and omits the field when absent', async () => {
+  test('persists ingredients on v1 and stores [] when absent', async () => {
     const ingredients = [ingredient('Gin', '50 ml'), ingredient('Vermouth rouge', '25 ml')]
     const withIngredients = await RecipeCommand.importRecipe(userId, { ...newInput(), ingredients })
     expect(fake.snapshot('recipe-versions').get(`${withIngredients.id}_1`)?.ingredients).toEqual(
@@ -94,7 +96,7 @@ describe('RecipeCommand.importRecipe', () => {
     )
 
     const without = await RecipeCommand.importRecipe(userId, newInput())
-    expect(fake.snapshot('recipe-versions').get(`${without.id}_1`)).not.toContainKey('ingredients')
+    expect(fake.snapshot('recipe-versions').get(`${without.id}_1`)?.ingredients).toEqual([])
   })
 })
 
@@ -107,6 +109,7 @@ describe('RecipeCommand.addVersion + promote', () => {
       changedKeys: ['Température' as ParamKey],
       params: [param('Dose', '18 g'), param('Température', '92 °C')],
       steps: ['Moudre', 'Extraire'] as StepText[],
+      ingredients: [],
       tmxSteps: [null, { speed: 'turbo' as TmxSpeed }],
     })) as Recipe
 
@@ -138,6 +141,8 @@ describe('RecipeCommand.addVersion + promote', () => {
       changedKeys: [],
       params: [],
       steps: [],
+      ingredients: [],
+      tmxSteps: [],
     })
     expect(result).toBe('not-found')
   })

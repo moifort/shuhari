@@ -60,8 +60,8 @@ struct RecipeVersion: Identifiable, Sendable {
     let ingredients: [Ingredient]
     let steps: [String]
     /// Per-step Thermomix settings, aligned with `steps` (nil entry = plain step).
-    /// nil for non-Thermomix recipes and versions imported before extraction existed.
-    let tmxSteps: [TmxSettings?]?
+    /// Empty for non-Thermomix recipes — "is Thermomix" is derived from `type`.
+    let tmxSteps: [TmxSettings?]
     let averageNote: Double?
     let trialCount: Int
     let createdAt: Date

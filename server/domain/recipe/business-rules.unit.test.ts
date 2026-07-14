@@ -55,20 +55,20 @@ describe('alignedTmxSteps', () => {
     expect(alignedTmxSteps(steps, [settings, null])).toEqual([settings, null])
   })
   test('drops settings whose length differs from the steps', () => {
-    expect(alignedTmxSteps(steps, [settings])).toBeUndefined()
+    expect(alignedTmxSteps(steps, [settings])).toEqual([])
   })
   test('drops settings when every entry is null', () => {
-    expect(alignedTmxSteps(steps, [null, null])).toBeUndefined()
+    expect(alignedTmxSteps(steps, [null, null])).toEqual([])
   })
   test('normalizes entries carrying no actual setting to null', () => {
     expect(alignedTmxSteps(steps, [settings, { reverse: false }])).toEqual([settings, null])
-    expect(alignedTmxSteps(steps, [{}, { reverse: false }])).toBeUndefined()
+    expect(alignedTmxSteps(steps, [{}, { reverse: false }])).toEqual([])
   })
   test('keeps reverse alone as a setting when true', () => {
     expect(alignedTmxSteps(steps, [{ reverse: true }, null])).toEqual([{ reverse: true }, null])
   })
-  test('passes through absent settings', () => {
-    expect(alignedTmxSteps(steps, undefined)).toBeUndefined()
+  test('returns [] for an empty list', () => {
+    expect(alignedTmxSteps(steps, [])).toEqual([])
   })
 })
 
