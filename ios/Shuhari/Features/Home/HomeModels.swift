@@ -46,16 +46,4 @@ struct HomeData: Sendable {
     func title(forRecipe id: String) -> String {
         library.first { $0.id == id }?.title ?? "Recette"
     }
-
-    /// Shape-only stand-in rendered `.redacted(.placeholder)` while the first
-    /// load runs — a skeleton of the real screen instead of a spinner.
-    static let placeholder = HomeData(
-        toTest: [
-            HomeTestItem(id: "ph-test", title: "Recette en cours", type: .cafe, versionNumber: 2, change: "Paramètre ajusté", why: "Chargement du carnet…"),
-        ],
-        library: (0..<3).map {
-            LibraryRecipe(id: "ph-\($0)", title: "Titre de recette", type: .cafe, currentVersionNumber: 1, averageNote: 7.0, toTestNumber: nil, isDerived: false)
-        },
-        recentTrials: []
-    )
 }
