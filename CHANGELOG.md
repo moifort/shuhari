@@ -4,6 +4,9 @@ Toutes les évolutions notables de Shuhari, la plus récente en premier.
 
 ## Unreleased
 
+- Fiche recette : nouvel affichage plein écran façon visionneuse — le titre et la **date de création** en haut, une **barre d'actions flottante** en bas (historique, exécuter, ingrédients), et une **liste d'ingrédients coulissante** qui reste ouverte pendant qu'on fait défiler les étapes.
+- Cuisine : un **filtre Recette / Thermomix** permet de n'afficher qu'un type de recette dans l'onglet Cuisine.
+- Icônes : nouveaux symboles dédiés — tasse pour le café, verre à martini pour les cocktails, toque pour la cuisine.
 - Import : les **ingrédients** sont désormais extraits avec leurs quantités, séparément des paramètres — modifiables à l'import et affichés sur la fiche recette.
 - Import : l'analyse de la recette s'affiche dans une feuille dédiée avec l'animation « écoute » de Siri, et l'aperçu adopte un style natif (Fermer et validation par une coche en haut, type avec icône, étapes modifiables, titre remis en casse normale, sections vides masquées).
 - Import : l'animation d'analyse est plus fluide et se fond en douceur dans l'aperçu une fois la recette prête.
