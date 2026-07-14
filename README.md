@@ -68,6 +68,7 @@ Les guides techniques détaillés vivent dans `docs/` (en anglais, comme le rest
 | [Migrations](docs/migrations.md) | Migrations Firestore forward-only via `POST /admin/migrate` |
 | [iOS Guide](docs/ios-guide.md) | App SwiftUI : GraphQL/Apollo, Firebase Auth, design atomique, previews |
 | [Git Workflow](docs/git-workflow.md) | Règles de commits et de push : une tâche = un commit, rollback, remodelage au push |
+| [README Guide](docs/readme-guide.md) | Écrire et maintenir ce README : structure, clés, liens vers les guides |
 
 Voir aussi [docs/apple-sign-in.md](docs/apple-sign-in.md) pour la configuration Sign in with Apple.
 
