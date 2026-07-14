@@ -34,7 +34,7 @@ struct RecipeDetailPage: View {
             }
 
             if let current = recipe.currentVersion {
-                CurrentVersionSection(version: current, onExecute: { onExecute(current.number) })
+                CurrentVersionSection(version: current)
             }
 
             TrialJournalSection(recipeTitle: recipe.title, trials: recipe.trials)
@@ -44,7 +44,15 @@ struct RecipeDetailPage: View {
         .scrollEdgeEffectStyle(.soft, for: .top)
         .navigationTitle(recipe.title)
         .navigationBarTitleDisplayMode(.large)
-        .navigationSubtitle(recipe.subtitle ?? "")
+        .navigationSubtitle(subtitle)
+    }
+
+    /// The recipe subtitle followed by its creation date ("Brésil · 1 juil. 2026"),
+    /// or the date alone when no subtitle is set.
+    private var subtitle: String {
+        let date = recipe.createdAt.formatted(.dateTime.day().month(.abbreviated).year())
+        guard let sub = recipe.subtitle, !sub.isEmpty else { return date }
+        return "\(sub) · \(date)"
     }
 
     // MARK: - Header

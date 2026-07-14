@@ -10,6 +10,7 @@ struct RecipeDetailView: View {
 
     @State private var viewModel: RecipeViewModel
     @State private var showEdit = false
+    @State private var showIngredients = false
     @State private var showDeleteConfirm = false
     @State private var actionError = ErrorPresenter()
 
@@ -29,10 +30,14 @@ struct RecipeDetailView: View {
     var body: some View {
         Group {
             if let recipe = viewModel.recipe {
-                RecipeDetailPage(recipe: recipe) { versionNumber in
-                    execution = ExecutionRequest(recipeId: recipeId, versionNumber: versionNumber)
-                }
+                RecipeDetailPage(recipe: recipe, onExecute: startExecution)
                 .toolbar { toolbar(recipe: recipe) }
+                // The fiche is a focused, Photos-style detail: hide the tab bar so the
+                // floating action bar owns the bottom edge.
+                .toolbar(.hidden, for: .tabBar)
+                .sheet(isPresented: $showIngredients) {
+                    IngredientsSheet(ingredients: shoppingList(recipe))
+                }
                 .sheet(isPresented: $showEdit) {
                     RecipeEditSheet(
                         initialTitle: recipe.title,
@@ -75,14 +80,6 @@ struct RecipeDetailView: View {
     @ToolbarContentBuilder
     private func toolbar(recipe: Recipe) -> some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            NavigationLink(value: RecipeRoute.history(id: recipeId)) {
-                Image(systemName: "clock.arrow.circlepath")
-            }
-            .accessibilityIdentifier("history-link")
-            .accessibilityLabel("Historique")
-        }
-        ToolbarSpacer(.fixed, placement: .topBarTrailing)
-        ToolbarItem(placement: .topBarTrailing) {
             Menu {
                 Button("Modifier", systemImage: "pencil") { showEdit = true }
                 Button("Supprimer", systemImage: "trash", role: .destructive) { showDeleteConfirm = true }
@@ -92,5 +89,48 @@ struct RecipeDetailView: View {
             }
             .accessibilityIdentifier("recipe-menu")
         }
+
+        // Floating glass action bar: history · execute the current version · ingredients panel.
+        // Each optional action carries its own leading spacer so no dangling separator
+        // remains when it is absent.
+        ToolbarItem(placement: .bottomBar) {
+            NavigationLink(value: RecipeRoute.history(id: recipeId)) {
+                Image(systemName: "clock.arrow.circlepath")
+            }
+            .accessibilityIdentifier("history-link")
+            .accessibilityLabel("Historique")
+        }
+        if let current = recipe.currentVersion {
+            ToolbarSpacer(.flexible, placement: .bottomBar)
+            ToolbarItem(placement: .bottomBar) {
+                Button {
+                    startExecution(versionNumber: current.number)
+                } label: {
+                    Label("Exécuter la v\(current.number)", systemImage: "play.fill")
+                }
+                .accessibilityIdentifier("execute-current-button")
+            }
+        }
+        if !shoppingList(recipe).isEmpty {
+            ToolbarSpacer(.flexible, placement: .bottomBar)
+            ToolbarItem(placement: .bottomBar) {
+                Button {
+                    showIngredients.toggle()
+                } label: {
+                    Label("Ingrédients", systemImage: "list.bullet")
+                }
+                .accessibilityIdentifier("ingredients-toggle")
+            }
+        }
+    }
+
+    private func startExecution(versionNumber: Int) {
+        execution = ExecutionRequest(recipeId: recipeId, versionNumber: versionNumber)
+    }
+
+    /// Ingredients of the version the fiche shows as its reference — the current
+    /// version, or the pending "to test" one when no reference exists yet.
+    private func shoppingList(_ recipe: Recipe) -> [Ingredient] {
+        (recipe.currentVersion ?? recipe.toTest)?.ingredients ?? []
     }
 }

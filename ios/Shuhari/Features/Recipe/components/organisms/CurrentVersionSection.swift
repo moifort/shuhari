@@ -1,18 +1,13 @@
 import SwiftUI
 
-/// The current reference version: params rows + steps + an execute button.
-/// Composes as a `Section` directly inside a `List`.
+/// The current reference version: params rows + steps. Ingredients live in the
+/// slide-up `IngredientsSheet` and the execute action in the bottom bar, both
+/// owned by `RecipeDetailView`. Composes as a `Section` directly inside a `List`.
 struct CurrentVersionSection: View {
     let version: RecipeVersion
-    let onExecute: () -> Void
 
     var body: some View {
         Section {
-            if !version.ingredients.isEmpty {
-                ParamsGrid(items: version.ingredients.map {
-                    ParamsGrid.Item(key: $0.name, value: $0.quantity, highlighted: false)
-                })
-            }
             if !version.params.isEmpty {
                 ParamsGrid(items: version.params.map {
                     ParamsGrid.Item(key: $0.key, value: $0.value, highlighted: version.changedKeys.contains($0.key))
@@ -23,13 +18,6 @@ struct CurrentVersionSection: View {
             } else {
                 StepsList(steps: version.steps)
             }
-            Button(action: onExecute) {
-                Label("Exécuter la v\(version.number)", systemImage: "play.fill")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-            .buttonBorderShape(.capsule)
-            .accessibilityIdentifier("execute-current-button")
         } header: {
             HStack(spacing: 8) {
                 Text("Version courante")
@@ -48,7 +36,7 @@ struct CurrentVersionSection: View {
 
 #Preview {
     List {
-        CurrentVersionSection(version: Fixtures.espressoV3, onExecute: {})
-        CurrentVersionSection(version: Fixtures.risottoV2, onExecute: {})
+        CurrentVersionSection(version: Fixtures.espressoV3)
+        CurrentVersionSection(version: Fixtures.risottoV2)
     }
 }
