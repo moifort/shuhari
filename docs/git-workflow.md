@@ -79,3 +79,8 @@ by hand, then commit the removal; that pain is exactly why one-task-one-commit m
    `server/system/changelog-content.ts` (the iOS-facing asset served via GraphQL — never edit
    it by hand).
 5. **Push.**
+6. **Analyze the CI.** A push to `main` fires two workflows — **Unit Tests** (`bun tsc`) and
+   **Deploy**. Watch them through to completion rather than assuming green: `gh run watch`, or
+   `gh run list --branch main --limit 5` then `gh run view <id> --log-failed` on any failure.
+   The push isn't done until CI is green; if a job fails, report it and fix it (a follow-up
+   commit + push), don't leave a red `main`.
