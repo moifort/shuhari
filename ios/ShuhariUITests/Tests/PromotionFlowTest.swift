@@ -20,18 +20,17 @@ final class PromotionFlowTest: BaseUITest {
         try recipe.verify()
         try recipe.verifyPendingVersion(2)
 
-        // Execute the pending version and record a high-scoring trial.
-        let execute = try recipe.executePending(2).verify()
-        let capture = try execute.done().verify()
-        _ = try capture.pickNote(9)
+        // Open the pending version and record a high-scoring trial.
+        let capture = try recipe.openToTest(2).verify()
+        _ = try capture.pickStars(5) // 10/10 ≥ 8 → promotion
         _ = try capture.typeRemarks("Équilibré, chocolat noir en finale. Très proche du but.")
         try capture.save()
 
         // The promotion sheet appears — promote.
         try app.buttons["promote-button"].tapOrFail(timeout: 15)
 
-        // Back on the fiche the pending banner is gone (v2 is now current).
+        // Back on the fiche the pending CTA is gone (v2 is now current).
         try recipe.verify()
-        XCTAssertFalse(app.buttons["execute-v2-button"].waitForExistence(timeout: 3), "pending v2 banner should disappear after promotion")
+        XCTAssertFalse(app.buttons["to-test-button"].waitForExistence(timeout: 3), "pending v2 CTA should disappear after promotion")
     }
 }

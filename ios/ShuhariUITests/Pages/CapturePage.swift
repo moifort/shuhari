@@ -10,9 +10,10 @@ struct CapturePage {
         return self
     }
 
+    /// Tap the `count`-th star — the note becomes `count * 2` (2/4/6/8/10).
     @discardableResult
-    func pickNote(_ value: Int) throws -> Self {
-        try app.buttons["note-\(value)"].tapOrFail()
+    func pickStars(_ count: Int) throws -> Self {
+        try app.buttons["star-\(count)"].tapOrFail()
         return self
     }
 

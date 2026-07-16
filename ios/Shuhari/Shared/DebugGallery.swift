@@ -17,13 +17,15 @@ struct DebugGallery: View {
             NavigationStack {
                 HomePage(data: Fixtures.homeData, title: "Café", typeFilter: nil, onExecute: { _ in }, onSettings: {})
             }
+        case "cuisine":
+            CuisineGalleryScreen()
         case "recipe":
             NavigationStack {
-                RecipeDetailPage(recipe: Fixtures.espresso, onExecute: { _ in })
+                RecipeDetailPage(recipe: Fixtures.espresso)
             }
         case "recipe-tmx":
             NavigationStack {
-                RecipeDetailPage(recipe: Fixtures.risotto, onExecute: { _ in })
+                RecipeDetailPage(recipe: Fixtures.risotto)
             }
         case "history":
             NavigationStack {
@@ -61,7 +63,6 @@ struct DebugGallery: View {
         case "capture":
             NavigationStack {
                 CapturePage(
-                    recipeTitle: Fixtures.espresso.title,
                     targets: Fixtures.espressoV4.params,
                     isSaving: false,
                     onSave: { _, _, _, _ in }
@@ -90,7 +91,38 @@ struct DebugGallery: View {
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : home, recipe, recipe-tmx, history, trial, execute, execute-tmx, capture, proposal, import-preview, ai-thinking")
+                description: Text("Écrans : home, cuisine, recipe, recipe-tmx, history, trial, execute, execute-tmx, capture, proposal, import-preview, ai-thinking")
+            )
+        }
+    }
+}
+
+/// The multi-type Cuisine tab with its round type-filter CTAs and month-grouped
+/// library — needs local state for the selected filter, so it lives in its own
+/// view. Defaults to Thermomix to show the outlined custom symbol in the list.
+private struct CuisineGalleryScreen: View {
+    @State private var selected: RecipeType = .tmx
+
+    private let data = HomeData(
+        toTest: [
+            HomeTestItem(id: "boeuf", title: "Bœuf bourguignon", type: .plat, versionNumber: 5, change: "Cuisson 3 h → 3 h 30", why: "Viande encore ferme."),
+        ],
+        library: [
+            LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .plat, versionCount: 4, bestNote: 9, averageNote: 7.5, isDerived: false, updatedAt: Date()),
+            LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, versionCount: 3, bestNote: 8, averageNote: 7.0, isDerived: false, updatedAt: Date()),
+            LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, versionCount: 1, bestNote: nil, averageNote: nil, isDerived: true, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+        ],
+        recentTrials: []
+    )
+
+    var body: some View {
+        NavigationStack {
+            HomePage(
+                data: data.filtered(to: [selected]),
+                title: selected.label,
+                typeFilter: .init(options: [.plat, .tmx], selection: $selected),
+                onExecute: { _ in },
+                onSettings: {}
             )
         }
     }

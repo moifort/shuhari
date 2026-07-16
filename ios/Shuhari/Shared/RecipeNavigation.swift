@@ -10,12 +10,16 @@ enum RecipeRoute: Hashable {
 
 /// A request to run the execution flow (presented as a full-screen cover).
 /// `replayTrialId` reinjects a past trial's real parameters (replay mode).
+/// `startAtCapture` skips the step-by-step `ExecutePage` and opens the trial
+/// capture directly — the fiche already shows the recipe, so re-displaying it
+/// would be redundant.
 struct ExecutionRequest: Identifiable, Hashable {
     let recipeId: String
     let versionNumber: Int
     var replayTrialId: String?
+    var startAtCapture: Bool = false
 
-    var id: String { "\(recipeId)#\(versionNumber)#\(replayTrialId ?? "")" }
+    var id: String { "\(recipeId)#\(versionNumber)#\(replayTrialId ?? "")#\(startAtCapture)" }
 }
 
 /// Identifiable wrapper to drive a `.sheet(item:)` from a recipe id.

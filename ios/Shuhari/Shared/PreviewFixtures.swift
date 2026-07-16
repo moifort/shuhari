@@ -96,7 +96,7 @@ enum Fixtures {
         versions: [espressoV1, espressoV2, espressoV3, espressoV4],
         trials: espressoTrials,
         variations: [
-            RecipeRef(id: "deca", title: "Espresso — déca", type: .cafe, subtitle: nil, currentVersionNumber: 1, averageNote: 6.5),
+            RecipeRef(id: "deca", title: "Espresso — déca", type: .cafe, subtitle: nil, versionCount: 1, bestNote: 7, averageNote: 6.5),
         ],
         derivedFrom: nil,
         pendingProposal: nil
@@ -250,10 +250,10 @@ enum Fixtures {
             ),
         ],
         library: [
-            LibraryRecipe(id: "espresso", title: "Espresso — Brésil Santa Lúcia", type: .cafe, currentVersionNumber: 3, averageNote: 7.5, toTestNumber: 4, isDerived: false),
-            LibraryRecipe(id: "deca", title: "Espresso — déca", type: .cafe, currentVersionNumber: 1, averageNote: 6.5, toTestNumber: nil, isDerived: true),
-            LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, currentVersionNumber: 2, averageNote: 7.0, toTestNumber: nil, isDerived: false),
-            LibraryRecipe(id: "negroni", title: "Negroni blanc", type: .cocktail, currentVersionNumber: 1, averageNote: 6.0, toTestNumber: nil, isDerived: false),
+            LibraryRecipe(id: "espresso", title: "Espresso — Brésil Santa Lúcia", type: .cafe, versionCount: 4, bestNote: 9, averageNote: 7.5, isDerived: false, updatedAt: Date()),
+            LibraryRecipe(id: "deca", title: "Espresso — déca", type: .cafe, versionCount: 1, bestNote: 7, averageNote: 6.5, isDerived: true, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
+            LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, versionCount: 2, bestNote: 8, averageNote: 7.0, isDerived: false, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+            LibraryRecipe(id: "negroni", title: "Negroni blanc", type: .cocktail, versionCount: 1, bestNote: nil, averageNote: 6.0, isDerived: false, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
         ],
         recentTrials: espressoTrials
     )

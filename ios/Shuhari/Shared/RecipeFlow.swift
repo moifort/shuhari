@@ -11,7 +11,7 @@ struct RecipeRouteView: View {
     var body: some View {
         switch route {
         case .recipe(let id):
-            RecipeDetailView(recipeId: id, path: $path, execution: $execution, onReload: onReload)
+            RecipeDetailView(recipeId: id, path: $path, onReload: onReload)
         case .history(let id):
             HistoryView(recipeId: id)
         case .trial(let id):

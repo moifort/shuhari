@@ -1,29 +1,33 @@
 import PhotosUI
 import SwiftUI
 
-/// Capture what was actually done and tasted: editable real parameters (prefilled
-/// with the version targets), a 1–10 note, remarks and an optional photo.
+/// Capture the trial's feedback: a 5-star note, then (when the recipe has any)
+/// editable real parameters, remarks and photos of the result. Validation lives
+/// in the top-right toolbar; the flow provides the close button.
 struct CapturePage: View {
-    let recipeTitle: String
     let targets: [Param]
     let isSaving: Bool
     let onSave: (_ note: Int, _ remarks: String, _ realParams: [Param], _ photoBase64: String?) -> Void
 
+    /// A picked photo kept both decoded (for the thumbnail) and encoded (payload).
+    private struct LoadedPhoto: Identifiable {
+        let id = UUID()
+        let image: UIImage
+        let base64: String
+    }
+
     @State private var values: [String: String]
     @State private var note: Int?
     @State private var remarks: String = ""
-    @State private var photoItem: PhotosPickerItem?
-    @State private var photoBase64: String?
-    @State private var photoAttached = false
+    @State private var photoItems: [PhotosPickerItem] = []
+    @State private var photos: [LoadedPhoto] = []
     @FocusState private var focusedParam: String?
 
     init(
-        recipeTitle: String,
         targets: [Param],
         isSaving: Bool,
         onSave: @escaping (_ note: Int, _ remarks: String, _ realParams: [Param], _ photoBase64: String?) -> Void
     ) {
-        self.recipeTitle = recipeTitle
         self.targets = targets
         self.isSaving = isSaving
         self.onSave = onSave
@@ -33,72 +37,100 @@ struct CapturePage: View {
     var body: some View {
         Form {
             Section {
-                ForEach(targets) { target in
-                    LabeledContent(target.key) {
-                        TextField(target.value, text: binding(for: target.key))
-                            .multilineTextAlignment(.trailing)
-                            .keyboardType(.numbersAndPunctuation)
-                            .submitLabel(target.key == targets.last?.key ? .done : .next)
-                            .focused($focusedParam, equals: target.key)
-                            .onSubmit { focusNextParam(after: target.key) }
-                            .accessibilityIdentifier("real-param-\(target.key)")
+                StarRating(selection: $note)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+            }
+            .listRowBackground(Color.clear)
+
+            // Real parameters, remarks and photos share one block.
+            Section {
+                if !targets.isEmpty {
+                    ForEach(targets) { target in
+                        LabeledContent(target.key) {
+                            TextField(target.value, text: binding(for: target.key))
+                                .multilineTextAlignment(.trailing)
+                                .keyboardType(.numbersAndPunctuation)
+                                .submitLabel(target.key == targets.last?.key ? .done : .next)
+                                .focused($focusedParam, equals: target.key)
+                                .onSubmit { focusNextParam(after: target.key) }
+                                .accessibilityIdentifier("real-param-\(target.key)")
+                        }
                     }
                 }
-            } header: {
-                Text("Paramètres réels")
-            } footer: {
-                Text("Pré-remplis avec les cibles — corrige ce qui a réellement changé.")
-            }
 
-            Section("Note") {
-                NotePicker(selection: $note)
-            }
-
-            Section("Remarques") {
                 TextField("Ex. : trop amer, coule trop vite, manque de liant…", text: $remarks, axis: .vertical)
-                    .lineLimit(3...6)
+                    .lineLimit(8...20)
+                    .frame(minHeight: 140, alignment: .top)
                     .accessibilityIdentifier("remarks-field")
-            }
 
-            Section("Photo du résultat") {
-                PhotosPicker(selection: $photoItem, matching: .images) {
-                    Label {
-                        Text(photoAttached ? "Photo ajoutée" : "Ajouter une photo")
-                    } icon: {
-                        Image(systemName: photoAttached ? "checkmark.circle.fill" : "photo.badge.plus")
-                            .foregroundStyle(photoAttached ? Theme.Status.current : Color.accentColor)
-                    }
-                }
-                .accessibilityIdentifier("photo-picker")
+                photoRow
             }
         }
+        .listSectionSpacing(.compact)
+        .contentMargins(.top, Theme.Spacing.s, for: .scrollContent)
         .scrollDismissesKeyboard(.interactively)
-        .navigationTitle("Noter l’essai")
-        .navigationSubtitle(recipeTitle)
+        .navigationTitle("Remarque")
         .navigationBarTitleDisplayMode(.inline)
-        .safeAreaInset(edge: .bottom) {
-            Button {
-                guard let note else { return }
-                onSave(note, remarks.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "—" : remarks, realParams, photoBase64)
-            } label: {
-                Group {
-                    if isSaving { ProgressView() } else { Text("Enregistrer l’essai") }
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    guard let note else { return }
+                    onSave(note, remarks.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "—" : remarks, realParams, photos.first?.base64)
+                } label: {
+                    if isSaving { ProgressView() } else { Image(systemName: "checkmark") }
                 }
-                .frame(maxWidth: .infinity)
+                .disabled(note == nil || isSaving)
+                .accessibilityIdentifier("save-trial-button")
+                .accessibilityLabel("Enregistrer l’essai")
             }
-            .buttonStyle(.glassProminent)
-            .controlSize(.large)
-            .disabled(note == nil || isSaving)
-            .accessibilityIdentifier("save-trial-button")
-            .padding(.horizontal)
-            .padding(.bottom, 8)
         }
-        .onChange(of: photoItem) { _, newValue in
-            guard let newValue else { return }
-            Task { await attachPhoto(newValue) }
+        .onChange(of: photoItems) { _, newValue in
+            Task { await loadPhotos(newValue) }
         }
     }
 
+    // MARK: - Photos
+
+    private var photoRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Theme.Spacing.s) {
+                ForEach(photos) { photo in
+                    Image(uiImage: photo.image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 72, height: 72)
+                        .clipShape(.rect(cornerRadius: Theme.Radius.control))
+                }
+
+                PhotosPicker(selection: $photoItems, maxSelectionCount: 5, matching: .images) {
+                    Image(systemName: "photo.badge.plus")
+                        .font(.title3)
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 72, height: 72)
+                        .background(Color(.systemFill), in: .rect(cornerRadius: Theme.Radius.control))
+                }
+                .accessibilityIdentifier("photo-picker")
+                .accessibilityLabel("Ajouter des photos")
+            }
+            .padding(.vertical, 2)
+        }
+    }
+
+    private func loadPhotos(_ items: [PhotosPickerItem]) async {
+        var loaded: [LoadedPhoto] = []
+        for item in items {
+            guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
+            let jpeg = await Task.detached(priority: .userInitiated) {
+                UIImage(data: data).flatMap { $0.resized(maxDimension: 1200).jpegData(compressionQuality: 0.7) }
+            }.value
+            if let jpeg, let image = UIImage(data: jpeg) {
+                loaded.append(LoadedPhoto(image: image, base64: jpeg.base64EncodedString()))
+            }
+        }
+        photos = loaded
+    }
+
+    // MARK: - Real params
 
     private var realParams: [Param] {
         targets.map { Param(key: $0.key, value: values[$0.key] ?? $0.value) }
@@ -118,23 +150,11 @@ struct CapturePage: View {
         }
         focusedParam = targets[targets.index(after: index)].key
     }
-
-    private func attachPhoto(_ item: PhotosPickerItem) async {
-        guard let data = try? await item.loadTransferable(type: Data.self) else { return }
-        let jpeg = await Task.detached(priority: .userInitiated) {
-            UIImage(data: data).flatMap { $0.resized(maxDimension: 1200).jpegData(compressionQuality: 0.7) }
-        }.value
-        if let jpeg {
-            photoBase64 = jpeg.base64EncodedString()
-            photoAttached = true
-        }
-    }
 }
 
 #Preview {
     NavigationStack {
         CapturePage(
-            recipeTitle: Fixtures.espresso.title,
             targets: Fixtures.espressoV4.params,
             isSaving: false,
             onSave: { _, _, _, _ in }

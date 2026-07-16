@@ -15,12 +15,12 @@ final class TrialLoopFlowTest: BaseUITest {
         let recipe = try importPage.analyze().verify().save()
         try recipe.verify()
 
-        // 2. Execute the current version.
-        let execute = try recipe.executeCurrent().verify()
-        let capture = try execute.done().verify()
+        // 2. Record a trial for the fresh recipe via the round centre CTA
+        //    (no pending "à tester" version yet).
+        let capture = try recipe.recordTrial().verify()
 
         // 3. Record a low-scoring trial → triggers an AI proposal.
-        _ = try capture.pickNote(5)
+        _ = try capture.pickStars(3) // 6/10 < 8 → proposition
         _ = try capture.typeRemarks("Coule trop vite, amertume sèche en finale.")
         try capture.save()
 

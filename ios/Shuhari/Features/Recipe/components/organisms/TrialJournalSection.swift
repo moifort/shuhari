@@ -9,7 +9,7 @@ struct TrialJournalSection: View {
     var body: some View {
         Section {
             if trials.isEmpty {
-                Text("Aucun essai — exécute la recette pour démarrer la boucle.")
+                Text("Aucun essai — note un essai pour démarrer la boucle.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             } else {

@@ -29,6 +29,8 @@ struct HistoryPage: View {
                 Text("Chaque cran ne change que ce qui est écrit.")
             }
 
+            TrialJournalSection(recipeTitle: recipe.title, trials: recipe.trials)
+
             VariationsSection(variations: recipe.variations)
         }
         .navigationTitle("Historique")

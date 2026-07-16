@@ -122,7 +122,8 @@ func mapRef(_ r: ShuhariGraphQL.RecipeRefFields) -> RecipeRef {
         title: r.title,
         type: RecipeType(graphql: r.type),
         subtitle: r.subtitle,
-        currentVersionNumber: r.currentVersion?.number,
+        versionCount: r.versionCount,
+        bestNote: r.bestNote,
         averageNote: r.currentVersion?.averageNote
     )
 }

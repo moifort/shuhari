@@ -13,9 +13,9 @@ struct VariationsSection: View {
                         LibraryRow(
                             title: ref.title,
                             type: ref.type,
-                            currentVersionNumber: ref.currentVersionNumber,
+                            versionCount: ref.versionCount,
+                            bestNote: ref.bestNote,
                             averageNote: ref.averageNote,
-                            toTestNumber: nil,
                             isDerived: true
                         )
                     }

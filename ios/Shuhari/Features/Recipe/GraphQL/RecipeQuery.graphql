@@ -62,6 +62,8 @@ fragment RecipeRefFields on Recipe {
   title
   subtitle
   type
+  versionCount
+  bestNote
   currentVersion {
     number
     averageNote

@@ -126,7 +126,8 @@ struct RecipeRef: Identifiable, Sendable {
     let title: String
     let type: RecipeType
     let subtitle: String?
-    let currentVersionNumber: Int?
+    let versionCount: Int
+    let bestNote: Int?
     let averageNote: Double?
 }
 
@@ -155,6 +156,17 @@ struct Recipe: Identifiable, Sendable {
 
     /// The version number the next iteration would take.
     var nextVersionNumber: Int { (versions.map(\.number).max() ?? 0) + 1 }
+
+    /// The version the fiche presents as its reference — "la mieux notée": the
+    /// tried version with the highest average note, falling back to the current
+    /// reference when nothing has been rated yet.
+    var bestRatedVersion: RecipeVersion? {
+        versions
+            .filter { $0.averageNote != nil }
+            // On a tie, favour the more recent version (higher number).
+            .max { ($0.averageNote ?? 0, $0.number) < ($1.averageNote ?? 0, $1.number) }
+            ?? currentVersion
+    }
 
     /// Mean note over every trial of the recipe, all versions combined.
     var overallAverageNote: Double? {

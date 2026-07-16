@@ -1,10 +1,16 @@
 import SwiftUI
 
-/// The full-screen execution flow: execute → capture → record → (promotion sheet
-/// or AI proposal). Presented as a `fullScreenCover`; on completion it dismisses
+/// The execution flow: execute → capture → record → (promotion sheet or AI
+/// proposal). Presented as a `fullScreenCover` (`.cover`) from Home/replay, or as
+/// a half-screen `.sheet` from the fiche's record CTA; on completion it dismisses
 /// and asks the caller to refresh.
 struct ExecuteFlowView: View {
+    /// How the flow is hosted. `.sheet` sizes the capture at `.medium` and grows to
+    /// `.large` for the AI proposal; `.cover` is the full-screen presentation.
+    enum Presentation { case cover, sheet }
+
     let request: ExecutionRequest
+    var presentation: Presentation = .cover
     let onFinished: () -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -19,21 +25,40 @@ struct ExecuteFlowView: View {
     @State private var showPromotion = false
     @State private var isPromoting = false
     @State private var lastNote = 0
+    @State private var detent: PresentationDetent = .medium
     @State private var errorPresenter = ErrorPresenter()
 
     private enum Step: Hashable { case capture, proposal }
 
     var body: some View {
+        if presentation == .sheet {
+            flow
+                .presentationDetents([.medium, .large], selection: $detent)
+                .presentationDragIndicator(.visible)
+        } else {
+            flow
+        }
+    }
+
+    private var flow: some View {
         NavigationStack(path: $path) {
             Group {
                 if let recipe, let version = recipe.version(request.versionNumber) {
-                    ExecutePage(
-                        recipeTitle: recipe.title,
-                        version: version,
-                        replayParams: replayTrial?.realParams,
-                        replayDate: replayTrial?.executedAt,
-                        onDone: { path.append(.capture) }
-                    )
+                    Group {
+                        if request.startAtCapture {
+                            // The fiche already shows the recipe: go straight to the
+                            // trial capture instead of re-displaying the version.
+                            captureScreen(recipe: recipe, version: version)
+                        } else {
+                            ExecutePage(
+                                recipeTitle: recipe.title,
+                                version: version,
+                                replayParams: replayTrial?.realParams,
+                                replayDate: replayTrial?.executedAt,
+                                onDone: { path.append(.capture) }
+                            )
+                        }
+                    }
                     .navigationDestination(for: Step.self) { step in
                         destination(step, recipe: recipe, version: version)
                     }
@@ -45,7 +70,10 @@ struct ExecuteFlowView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Fermer") { finish() }
+                    Button { finish() } label: {
+                        Image(systemName: "xmark")
+                    }
+                    .accessibilityLabel("Fermer")
                 }
             }
         }
@@ -68,15 +96,18 @@ struct ExecuteFlowView: View {
     private func destination(_ step: Step, recipe: Recipe, version: RecipeVersion) -> some View {
         switch step {
         case .capture:
-            CapturePage(
-                recipeTitle: recipe.title,
-                targets: version.params,
-                isSaving: isSaving
-            ) { note, remarks, realParams, photo in
-                Task { await save(note: note, remarks: remarks, realParams: realParams, photo: photo) }
-            }
+            captureScreen(recipe: recipe, version: version)
         case .proposal:
             ProposalView(recipeId: request.recipeId) { finish() }
+        }
+    }
+
+    private func captureScreen(recipe: Recipe, version: RecipeVersion) -> some View {
+        CapturePage(
+            targets: version.params,
+            isSaving: isSaving
+        ) { note, remarks, realParams, photo in
+            Task { await save(note: note, remarks: remarks, realParams: realParams, photo: photo) }
         }
     }
 
@@ -108,11 +139,13 @@ struct ExecuteFlowView: View {
             )
             isSaving = false
             if result.promotionSuggested {
+                detent = .large
                 showPromotion = true
             } else if note < 8 {
                 analyzing = true
                 defer { analyzing = false }
                 _ = try await ExecutionAPI.requestProposal(recipeId: request.recipeId)
+                detent = .large
                 path.append(.proposal)
             } else {
                 finish()

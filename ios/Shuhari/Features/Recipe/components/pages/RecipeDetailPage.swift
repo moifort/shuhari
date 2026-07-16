@@ -1,13 +1,11 @@
 import SwiftUI
 
-/// The recipe fiche: header, optional pending-proposal and "à tester" banners,
-/// the current version, the trial journal and linked variations. Navigation and
+/// The recipe fiche, iOS Photos style: header badges (type + version), the
+/// optional pending-proposal banner, the ingredients and the best-rated version
+/// step by step. Trials and variations live in the history. Navigation and
 /// mutations are owned by `RecipeDetailView`.
 struct RecipeDetailPage: View {
     let recipe: Recipe
-    let onExecute: (Int) -> Void
-
-    @ScaledMetric(relativeTo: .title2) private var tileSize: CGFloat = 56
 
     var body: some View {
         List {
@@ -17,92 +15,71 @@ struct RecipeDetailPage: View {
                 pendingProposalSection(proposal)
             }
 
-            if let toTest = recipe.toTest {
-                Section {
-                    TestBanner(
-                        title: nil,
-                        versionNumber: toTest.number,
-                        change: toTest.change,
-                        why: toTest.why ?? toTest.originDetail,
-                        type: recipe.type,
-                        onExecute: { onExecute(toTest.number) }
-                    )
-                    .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                }
+            if let reference = recipe.bestRatedVersion {
+                IngredientsSection(ingredients: reference.ingredients)
+                ReferenceVersionSection(version: reference)
             }
-
-            if let current = recipe.currentVersion {
-                CurrentVersionSection(version: current)
-            }
-
-            TrialJournalSection(recipeTitle: recipe.title, trials: recipe.trials)
-
-            VariationsSection(variations: recipe.variations)
         }
+        .listSectionSpacing(5)
+        .contentMargins(.top, 0, for: .scrollContent)
         .scrollEdgeEffectStyle(.soft, for: .top)
-        .navigationTitle(recipe.title)
-        .navigationBarTitleDisplayMode(.large)
-        .navigationSubtitle(subtitle)
+        .navigationBarTitleDisplayMode(.inline)
+        // The Photos-style centre pill: recipe title (bold) over its date, same small
+        // size, in a glass capsule.
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                VStack(spacing: 1) {
+                    Text(recipe.title)
+                        .font(.footnote.bold())
+                        .lineLimit(1)
+                    Text(dateLabel)
+                        .font(.footnote)
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, Theme.Spacing.l)
+                .padding(.vertical, Theme.Spacing.s)
+                .glassEffect(.regular, in: .capsule)
+                .accessibilityElement(children: .combine)
+            }
+        }
     }
 
-    /// The recipe subtitle followed by its creation date ("Brésil · 1 juil. 2026"),
-    /// or the date alone when no subtitle is set.
-    private var subtitle: String {
-        let date = recipe.createdAt.formatted(.dateTime.day().month(.abbreviated).year())
-        guard let sub = recipe.subtitle, !sub.isEmpty else { return date }
-        return "\(sub) · \(date)"
+    /// The recipe's creation date, e.g. "12 juin 2025".
+    private var dateLabel: String {
+        recipe.createdAt.formatted(.dateTime.day().month(.abbreviated).year())
     }
 
     // MARK: - Header
 
+    // The badges + note line: a normal list row, so it scrolls with the page and
+    // fades under the soft scroll edge.
     private var header: some View {
         Section {
-            HStack(spacing: Theme.Spacing.l) {
-                recipe.type.iconImage
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
-                    .frame(width: tileSize, height: tileSize)
-                    .background(Color(.systemFill), in: Circle())
-
-                VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                    TypeChip(type: recipe.type)
+            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                HStack {
+                    RecipeHeaderBadges(
+                        type: recipe.type,
+                        versionNumber: recipe.bestRatedVersion?.number,
+                        trialCount: recipe.trials.count
+                    )
+                    Spacer(minLength: Theme.Spacing.s)
                     if let average = recipe.overallAverageNote {
-                        HStack(alignment: .firstTextBaseline, spacing: 2) {
-                            Text(NoteFormat.bare(average))
-                                .font(.title2.weight(.semibold))
-                                .monospacedDigit()
-                                .foregroundStyle(Theme.Status.note(Int(average)))
-                            Text("/10")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                            Text("· \(recipe.trials.count) essai\(recipe.trials.count > 1 ? "s" : "")")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.leading, Theme.Spacing.xs)
-                        }
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel("Note moyenne \(NoteFormat.average(average)), \(recipe.trials.count) essais")
-                    } else {
-                        Text("Pas encore testée")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        NoteStars(note: average)
                     }
                 }
-                Spacer()
-            }
-            .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
 
-            if let derived = recipe.derivedFrom {
-                NavigationLink(value: RecipeRoute.recipe(id: derived.id)) {
-                    Label("Dérivée de \(derived.title)", systemImage: "link")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                if let derived = recipe.derivedFrom {
+                    NavigationLink(value: RecipeRoute.recipe(id: derived.id)) {
+                        Label("Dérivée de \(derived.title)", systemImage: "link")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
+            .listRowInsets(EdgeInsets(top: -1, leading: 0, bottom: -1, trailing: 0))
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
         }
     }
 
@@ -129,12 +106,12 @@ struct RecipeDetailPage: View {
 
 #Preview("Café — v4 à tester") {
     NavigationStack {
-        RecipeDetailPage(recipe: Fixtures.espresso, onExecute: { _ in })
+        RecipeDetailPage(recipe: Fixtures.espresso)
     }
 }
 
 #Preview("Thermomix") {
     NavigationStack {
-        RecipeDetailPage(recipe: Fixtures.risotto, onExecute: { _ in })
+        RecipeDetailPage(recipe: Fixtures.risotto)
     }
 }
