@@ -96,13 +96,13 @@ PUBLIC "-//W3C//DTD SVG 1.1//EN"
  </g>
  <g id="Symbols">
   <g id="Black-S" transform="matrix(1 0 0 1 2877.83 696)">
-   <path class="monochrome-1" fill-rule="evenodd" d="M10 -76 L96 -76 L53 -34 Z M20 -71 L86 -71 L53 -40 Z M50.5 -6 L55.5 -6 L55.5 -34 L50.5 -34 Z M34 -2 L72 -2 L58 -6 L48 -6 Z"/>
+   <path class="monochrome-1" fill-rule="nonzero" d="M 20 -75 L 86 -75 Q 92 -75 89.2 -70.8 L 58.2 -36.2 Q 55.5 -33.2 55.5 -29.4 L 55.5 -6.5 L 67.5 -6.5 Q 71.5 -6.5 71.5 -4.25 Q 71.5 -2 67.5 -2 L 38.5 -2 Q 34.5 -2 34.5 -4.25 Q 34.5 -6.5 38.5 -6.5 L 50.5 -6.5 L 50.5 -29.4 Q 50.5 -33.2 47.8 -36.2 L 16.8 -70.8 Q 14 -75 20 -75 Z"/>
   </g>
   <g id="Regular-S" transform="matrix(1 0 0 1 1396.3 696)">
-   <path class="monochrome-1" fill-rule="evenodd" d="M10 -76 L96 -76 L53 -34 Z M20 -71 L86 -71 L53 -40 Z M50.5 -6 L55.5 -6 L55.5 -34 L50.5 -34 Z M34 -2 L72 -2 L58 -6 L48 -6 Z"/>
+   <path class="monochrome-1" fill-rule="nonzero" d="M 20 -75 L 86 -75 Q 92 -75 89.2 -70.8 L 58.2 -36.2 Q 55.5 -33.2 55.5 -29.4 L 55.5 -6.5 L 67.5 -6.5 Q 71.5 -6.5 71.5 -4.25 Q 71.5 -2 67.5 -2 L 38.5 -2 Q 34.5 -2 34.5 -4.25 Q 34.5 -6.5 38.5 -6.5 L 50.5 -6.5 L 50.5 -29.4 Q 50.5 -33.2 47.8 -36.2 L 16.8 -70.8 Q 14 -75 20 -75 Z"/>
   </g>
   <g id="Ultralight-S" transform="matrix(1 0 0 1 508.101 696)">
-   <path class="monochrome-1" fill-rule="evenodd" d="M10 -76 L96 -76 L53 -34 Z M20 -71 L86 -71 L53 -40 Z M50.5 -6 L55.5 -6 L55.5 -34 L50.5 -34 Z M34 -2 L72 -2 L58 -6 L48 -6 Z"/>
+   <path class="monochrome-1" fill-rule="nonzero" d="M 20 -75 L 86 -75 Q 92 -75 89.2 -70.8 L 58.2 -36.2 Q 55.5 -33.2 55.5 -29.4 L 55.5 -6.5 L 67.5 -6.5 Q 71.5 -6.5 71.5 -4.25 Q 71.5 -2 67.5 -2 L 38.5 -2 Q 34.5 -2 34.5 -4.25 Q 34.5 -6.5 38.5 -6.5 L 50.5 -6.5 L 50.5 -29.4 Q 50.5 -33.2 47.8 -36.2 L 16.8 -70.8 Q 14 -75 20 -75 Z"/>
   </g>
  </g>
 </svg>

@@ -65,7 +65,7 @@ PUBLIC "-//W3C//DTD SVG 1.1//EN"
   <text style="stroke:none;fill:black;font-family:sans-serif;font-size:13;" transform="matrix(1 0 0 1 1289 1989)">design is preserved when submitting to Xcode.</text>
   <text id="template-version" style="stroke:none;fill:black;font-family:sans-serif;font-size:13;text-anchor:end;" transform="matrix(1 0 0 1 3036 1933)">Template v.4.0</text>
   <text style="stroke:none;fill:black;font-family:sans-serif;font-size:13;text-anchor:end;" transform="matrix(1 0 0 1 3036 1951)">Requires Xcode 14 or greater</text>
-  <text id="descriptive-name" style="stroke:none;fill:black;font-family:sans-serif;font-size:13;text-anchor:end;" transform="matrix(1 0 0 1 3036 1969)">Generated from badge.plus</text>
+  <text id="descriptive-name" style="stroke:none;fill:black;font-family:sans-serif;font-size:13;text-anchor:end;" transform="matrix(1 0 0 1 3036 1969)">Custom symbol: becher</text>
   <text style="stroke:none;fill:black;font-family:sans-serif;font-size:13;text-anchor:end;" transform="matrix(1 0 0 1 3036 1987)">Typeset at 100 points</text>
   <text style="stroke:none;fill:black;font-family:sans-serif;font-size:13;" transform="matrix(1 0 0 1 263 726)">Small</text>
   <text style="stroke:none;fill:black;font-family:sans-serif;font-size:13;" transform="matrix(1 0 0 1 263 1156)">Medium</text>
@@ -96,13 +96,13 @@ PUBLIC "-//W3C//DTD SVG 1.1//EN"
  </g>
  <g id="Symbols">
   <g id="Black-S" transform="matrix(1 0 0 1 2877.83 696)">
-   <path class="monochrome-1" fill-rule="nonzero" d="M 34 -69 A 14 14 0 0 1 48 -55 A 14 14 0 0 1 34 -41 A 14 14 0 0 1 20 -55 A 14 14 0 0 1 34 -69 Z M 58 -77 A 16 16 0 0 1 74 -61 A 16 16 0 0 1 58 -45 A 16 16 0 0 1 42 -61 A 16 16 0 0 1 58 -77 Z M 77 -61 A 11 11 0 0 1 88 -50 A 11 11 0 0 1 77 -39 A 11 11 0 0 1 66 -50 A 11 11 0 0 1 77 -61 Z M 26 -50 L 81 -50 L 81 -15.5 L 26 -15.5 Z M 29 -12 L 78 -12 Q 81 -12 81 -9 L 81 -5 Q 81 -2 78 -2 L 29 -2 Q 26 -2 26 -5 L 26 -9 Q 26 -12 29 -12 Z"/>
+   <path class="monochrome-1" fill-rule="evenodd" d="M 26 -73 L 80 -73 Q 82 -73 82 -71 Q 82 -69 80 -69 L 26 -69 Q 24 -69 24 -71 Q 24 -73 26 -73 Z M 30 -69 L 30 -8 Q 30 0 38 0 L 68 0 Q 76 0 76 -8 L 76 -69 L 72 -69 L 72 -8 Q 72 -4 68 -4 L 38 -4 Q 34 -4 34 -8 L 34 -69 Z M 42 -36 L 62 -36 Q 64 -36 64 -34 Q 64 -32 62 -32 L 42 -32 Q 40 -32 40 -34 Q 40 -36 42 -36 Z M 42 -24 L 54 -24 Q 56 -24 56 -22 Q 56 -20 54 -20 L 42 -20 Q 40 -20 40 -22 Q 40 -24 42 -24 Z"/>
   </g>
   <g id="Regular-S" transform="matrix(1 0 0 1 1396.3 696)">
-   <path class="monochrome-1" fill-rule="nonzero" d="M 34 -69 A 14 14 0 0 1 48 -55 A 14 14 0 0 1 34 -41 A 14 14 0 0 1 20 -55 A 14 14 0 0 1 34 -69 Z M 58 -77 A 16 16 0 0 1 74 -61 A 16 16 0 0 1 58 -45 A 16 16 0 0 1 42 -61 A 16 16 0 0 1 58 -77 Z M 77 -61 A 11 11 0 0 1 88 -50 A 11 11 0 0 1 77 -39 A 11 11 0 0 1 66 -50 A 11 11 0 0 1 77 -61 Z M 26 -50 L 81 -50 L 81 -15.5 L 26 -15.5 Z M 29 -12 L 78 -12 Q 81 -12 81 -9 L 81 -5 Q 81 -2 78 -2 L 29 -2 Q 26 -2 26 -5 L 26 -9 Q 26 -12 29 -12 Z"/>
+   <path class="monochrome-1" fill-rule="evenodd" d="M 26 -73 L 80 -73 Q 82 -73 82 -71 Q 82 -69 80 -69 L 26 -69 Q 24 -69 24 -71 Q 24 -73 26 -73 Z M 30 -69 L 30 -8 Q 30 0 38 0 L 68 0 Q 76 0 76 -8 L 76 -69 L 72 -69 L 72 -8 Q 72 -4 68 -4 L 38 -4 Q 34 -4 34 -8 L 34 -69 Z M 42 -36 L 62 -36 Q 64 -36 64 -34 Q 64 -32 62 -32 L 42 -32 Q 40 -32 40 -34 Q 40 -36 42 -36 Z M 42 -24 L 54 -24 Q 56 -24 56 -22 Q 56 -20 54 -20 L 42 -20 Q 40 -20 40 -22 Q 40 -24 42 -24 Z"/>
   </g>
   <g id="Ultralight-S" transform="matrix(1 0 0 1 508.101 696)">
-   <path class="monochrome-1" fill-rule="nonzero" d="M 34 -69 A 14 14 0 0 1 48 -55 A 14 14 0 0 1 34 -41 A 14 14 0 0 1 20 -55 A 14 14 0 0 1 34 -69 Z M 58 -77 A 16 16 0 0 1 74 -61 A 16 16 0 0 1 58 -45 A 16 16 0 0 1 42 -61 A 16 16 0 0 1 58 -77 Z M 77 -61 A 11 11 0 0 1 88 -50 A 11 11 0 0 1 77 -39 A 11 11 0 0 1 66 -50 A 11 11 0 0 1 77 -61 Z M 26 -50 L 81 -50 L 81 -15.5 L 26 -15.5 Z M 29 -12 L 78 -12 Q 81 -12 81 -9 L 81 -5 Q 81 -2 78 -2 L 29 -2 Q 26 -2 26 -5 L 26 -9 Q 26 -12 29 -12 Z"/>
+   <path class="monochrome-1" fill-rule="evenodd" d="M 26 -73 L 80 -73 Q 82 -73 82 -71 Q 82 -69 80 -69 L 26 -69 Q 24 -69 24 -71 Q 24 -73 26 -73 Z M 30 -69 L 30 -8 Q 30 0 38 0 L 68 0 Q 76 0 76 -8 L 76 -69 L 72 -69 L 72 -8 Q 72 -4 68 -4 L 38 -4 Q 34 -4 34 -8 L 34 -69 Z M 42 -36 L 62 -36 Q 64 -36 64 -34 Q 64 -32 62 -32 L 42 -32 Q 40 -32 40 -34 Q 40 -36 42 -36 Z M 42 -24 L 54 -24 Q 56 -24 56 -22 Q 56 -20 54 -20 L 42 -20 Q 40 -20 40 -22 Q 40 -24 42 -24 Z"/>
   </g>
  </g>
 </svg>

@@ -20,19 +20,26 @@ enum RecipeType: String, CaseIterable, Sendable, Identifiable {
         }
     }
 
-    /// The type's icon as an `Image`. Coffee is Apple's `mug.fill` SF Symbol; the
-    /// other three are custom symbols in the asset catalog (a martini glass for
-    /// cocktails, a chef's toque for dishes, the Thermomix mark) — referenced by
-    /// asset name, since `Image(systemName:)` only resolves Apple's SF Symbols.
-    /// Custom symbols scale with the font and tint just like SF Symbols.
-    var iconImage: Image {
+    /// The type's icon, in its outline or filled form. Coffee (an espresso cup,
+    /// `cup.and.saucer`) and dishes (`frying.pan`) are Apple SF Symbols; cocktails
+    /// (a martini glass) and Thermomix use custom symbols in the asset catalog —
+    /// referenced by asset name, since `Image(systemName:)` only resolves Apple's
+    /// SF Symbols. Custom symbols pick their variant by asset name because
+    /// `.symbolVariant` only rewrites system symbol names; the cocktail glyph
+    /// ships in a single form. Custom symbols scale with the font and tint just
+    /// like SF Symbols.
+    func iconImage(filled: Bool) -> Image {
         switch self {
-        case .cafe: Image(systemName: "mug.fill")
+        case .cafe: Image(systemName: filled ? "cup.and.saucer.fill" : "cup.and.saucer")
         case .cocktail: Image("cocktail")
-        case .plat: Image("toque")
-        case .tmx: Image("thermomix")
+        case .plat: Image(systemName: filled ? "frying.pan.fill" : "frying.pan")
+        case .tmx: Image(filled ? "thermomix.fill" : "thermomix")
         }
     }
+
+    /// The type's canonical icon — the filled form, used where no selection state
+    /// applies (chips, badges, rows).
+    var iconImage: Image { iconImage(filled: true) }
 
     /// True when this type is constrained to a single variable per iteration.
     var oneVariableRule: Bool {

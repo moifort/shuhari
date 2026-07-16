@@ -47,7 +47,7 @@ struct ContentView: View {
             }
             .accessibilityIdentifier("tab-cuisine")
 
-            Tab("Café", systemImage: "mug", value: RootTab.cafe) {
+            Tab("Café", systemImage: "cup.and.saucer", value: RootTab.cafe) {
                 HomeView(title: "Café", categoryTypes: [.cafe], importedRecipe: $importedRecipe)
             }
             .accessibilityIdentifier("tab-cafe")
