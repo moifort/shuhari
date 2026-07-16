@@ -1,22 +1,22 @@
 import SwiftUI
 
-/// A library row: type icon tile, title (+ "dérivée" tag), a lineage subtitle
-/// ("vN courante · vM à tester") and the mean note as the trailing value.
-/// Designed as a List row — the List provides insets, separators and the
-/// navigation chevron.
+/// A library row: type icon tile, title (+ "dérivée" tag), a subtitle with the
+/// version count and the recipe's best note ("the highest star"), and the mean
+/// note as the trailing value. Designed as a List row — the List provides insets,
+/// separators and the navigation chevron.
 struct LibraryRow: View {
     let title: String
     let type: RecipeType
-    let currentVersionNumber: Int?
+    let versionCount: Int
+    let bestNote: Int?
     let averageNote: Double?
-    let toTestNumber: Int?
     let isDerived: Bool
 
     @ScaledMetric(relativeTo: .body) private var tileSize: CGFloat = 34
 
     var body: some View {
         HStack(spacing: Theme.Spacing.m) {
-            type.iconImage
+            type.iconImage(filled: false)
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .frame(width: tileSize, height: tileSize)
@@ -31,13 +31,20 @@ struct LibraryRow: View {
                     if isDerived {
                         StatusTag(kind: .derived)
                     }
-                    if !subtitle.isEmpty {
-                        Text(subtitle)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                    Text(versionCountText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if let bestNote {
+                        HStack(spacing: 2) {
+                            Image(systemName: "star.fill")
+                            Text("\(bestNote)")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel("Meilleure note \(bestNote) sur 10")
                     }
                 }
+                .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -57,18 +64,15 @@ struct LibraryRow: View {
         .accessibilityElement(children: .combine)
     }
 
-    private var subtitle: String {
-        var parts: [String] = []
-        if let currentVersionNumber { parts.append("v\(currentVersionNumber) courante") }
-        if let toTestNumber { parts.append("v\(toTestNumber) à tester") }
-        return parts.joined(separator: " · ")
+    private var versionCountText: String {
+        "\(versionCount) version\(versionCount > 1 ? "s" : "")"
     }
 }
 
 #Preview {
     List {
-        LibraryRow(title: "Espresso — Brésil", type: .cafe, currentVersionNumber: 3, averageNote: 7.5, toTestNumber: 4, isDerived: false)
-        LibraryRow(title: "Negroni blanc", type: .cocktail, currentVersionNumber: 1, averageNote: 6.0, toTestNumber: nil, isDerived: true)
-        LibraryRow(title: "Risotto au parmesan", type: .tmx, currentVersionNumber: 2, averageNote: 8.5, toTestNumber: nil, isDerived: false)
+        LibraryRow(title: "Espresso — Brésil", type: .cafe, versionCount: 4, bestNote: 9, averageNote: 7.5, isDerived: false)
+        LibraryRow(title: "Negroni blanc", type: .cocktail, versionCount: 1, bestNote: 6, averageNote: 6.0, isDerived: true)
+        LibraryRow(title: "Risotto au parmesan", type: .tmx, versionCount: 2, bestNote: nil, averageNote: 8.5, isDerived: false)
     }
 }

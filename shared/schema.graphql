@@ -237,6 +237,8 @@ type Query {
 
 """A recipe under experimentation, with its version lineage"""
 type Recipe {
+  """The highest trial note the recipe ever scored, or null if never tried"""
+  bestNote: Note
   createdAt: DateTime!
 
   """The current reproducible reference version"""
@@ -261,6 +263,9 @@ type Recipe {
 
   """Recipes derived from this one"""
   variations: [Recipe!]!
+
+  """How many versions the recipe has (its highest version number)"""
+  versionCount: VersionNumber!
 
   """The full lineage, oldest first"""
   versions: [Version!]!

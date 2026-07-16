@@ -76,6 +76,10 @@ RecipeType.implement({
     subtitle: t.string({ nullable: true, resolve: (r) => r.subtitle ?? null }),
     createdAt: t.expose('createdAt', { type: 'DateTime' }),
     updatedAt: t.expose('updatedAt', { type: 'DateTime' }),
+    versionCount: t.expose('versionCount', {
+      type: 'VersionNumber',
+      description: 'How many versions the recipe has (its highest version number)',
+    }),
     currentVersion: t.field({
       type: VersionType,
       nullable: true,

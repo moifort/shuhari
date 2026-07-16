@@ -1,32 +1,29 @@
 import SwiftUI
 
-/// The library, grouped into the four type sections (café / cocktail / plat / tmx).
-/// Each row is a NavigationLink into the recipe fiche. Composes as `Section`s
-/// directly inside a `List`.
+/// The library, grouped by the month of each recipe's last update ("Juillet
+/// 2026"). Each row is a NavigationLink into the recipe fiche. Composes as
+/// `Section`s directly inside a `List`.
 struct LibrarySection: View {
     let data: HomeData
 
     var body: some View {
-        ForEach(RecipeType.allCases) { type in
-            let recipes = data.recipes(of: type)
-            if !recipes.isEmpty {
-                Section {
-                    ForEach(recipes) { recipe in
-                        NavigationLink(value: RecipeRoute.recipe(id: recipe.id)) {
-                            LibraryRow(
-                                title: recipe.title,
-                                type: recipe.type,
-                                currentVersionNumber: recipe.currentVersionNumber,
-                                averageNote: recipe.averageNote,
-                                toTestNumber: recipe.toTestNumber,
-                                isDerived: recipe.isDerived
-                            )
-                        }
-                        .accessibilityIdentifier("recipe-row-\(recipe.id)")
+        ForEach(data.libraryByMonth()) { group in
+            Section {
+                ForEach(group.recipes) { recipe in
+                    NavigationLink(value: RecipeRoute.recipe(id: recipe.id)) {
+                        LibraryRow(
+                            title: recipe.title,
+                            type: recipe.type,
+                            versionCount: recipe.versionCount,
+                            bestNote: recipe.bestNote,
+                            averageNote: recipe.averageNote,
+                            isDerived: recipe.isDerived
+                        )
                     }
-                } header: {
-                    Text("\(type.label) (\(recipes.count))")
+                    .accessibilityIdentifier("recipe-row-\(recipe.id)")
                 }
+            } header: {
+                Text(group.label)
             }
         }
     }

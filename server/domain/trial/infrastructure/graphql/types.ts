@@ -1,6 +1,6 @@
 import { ParamType, RecipeType, VersionType } from '~/domain/recipe/infrastructure/graphql/types'
 import { builder } from '~/domain/shared/graphql/builder'
-import { averageNote } from '~/domain/trial/business-rules'
+import { averageNote, highestNote } from '~/domain/trial/business-rules'
 import type { Trial } from '../../types'
 
 export const TrialType = builder.objectRef<Trial>('Trial').implement({
@@ -31,6 +31,20 @@ builder.objectField(RecipeType, 'trials', (t) =>
     type: [TrialType],
     description: 'The recipe’s trial journal, most recent first',
     resolve: (recipe, _a, { loaders }) => loaders.trials.load(recipe.id).then((v) => v ?? []),
+  }),
+)
+
+// Satellite: the recipe's best trial note across every version, from the same
+// batched loader that backs the per-version aggregates (no extra reads).
+builder.objectField(RecipeType, 'bestNote', (t) =>
+  t.field({
+    type: 'Note',
+    nullable: true,
+    description: 'The highest trial note the recipe ever scored, or null if never tried',
+    resolve: async (recipe, _a, { loaders }) => {
+      const trials = (await loaders.trials.load(recipe.id)) ?? []
+      return highestNote(trials.map((trial) => trial.note))
+    },
   }),
 )
 

@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 import type { Param, ParamKey, ParamValue } from '~/domain/recipe/types'
-import { averageNote, realDeviations, replayParams } from '~/domain/trial/business-rules'
+import {
+  averageNote,
+  highestNote,
+  realDeviations,
+  replayParams,
+} from '~/domain/trial/business-rules'
 import type { Note } from '~/domain/trial/types'
 
 const param = (key: string, value: string): Param => ({
@@ -51,5 +56,18 @@ describe('averageNote', () => {
     expect(averageNote([note(8), note(9), note(10)])).toBe(9)
     expect(averageNote([note(7), note(8)])).toBe(7.5)
     expect(averageNote([note(8), note(9), note(9)])).toBeCloseTo(8.7, 5)
+  })
+})
+
+describe('highestNote', () => {
+  const note = (n: number) => n as Note
+  test('returns null for no trials', () => {
+    expect(highestNote([])).toBeNull()
+  })
+  test('returns the best note', () => {
+    expect(highestNote([note(6), note(9), note(7)])).toBe(note(9))
+  })
+  test('handles a single note', () => {
+    expect(highestNote([note(8)])).toBe(note(8))
   })
 })

@@ -35,7 +35,7 @@ struct HomeView: View {
                 if let data = store.data {
                     HomePage(
                         data: data.filtered(to: effectiveTypes),
-                        title: title,
+                        title: isMultiType ? selectedType.label : title,
                         typeFilter: isMultiType
                             ? .init(options: filterOptions, selection: $selectedType)
                             : nil,

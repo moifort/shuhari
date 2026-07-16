@@ -25,10 +25,11 @@ enum HomeAPI {
                     id: recipe.id,
                     title: recipe.title,
                     type: RecipeType(graphql: recipe.type),
-                    currentVersionNumber: recipe.currentVersion?.number,
+                    versionCount: recipe.versionCount,
+                    bestNote: recipe.bestNote,
                     averageNote: recipe.currentVersion?.averageNote,
-                    toTestNumber: recipe.toTest?.number,
-                    isDerived: recipe.derivedFrom != nil
+                    isDerived: recipe.derivedFrom != nil,
+                    updatedAt: GraphQLHelpers.parseISO8601(recipe.updatedAt) ?? Date.distantPast
                 )
             },
             recentTrials: home.recentTrials.map { trial in

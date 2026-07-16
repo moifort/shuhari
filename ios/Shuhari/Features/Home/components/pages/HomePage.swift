@@ -4,8 +4,9 @@ import SwiftUI
 /// recent activity. Pure presentation — navigation and API calls are owned by
 /// `HomeView`.
 struct HomePage: View {
-    /// The segmented type filter shown atop a multi-type tab (Cuisine). `nil` on
-    /// single-type tabs (Café, Cocktail), which need no selector.
+    /// The type filter offered on a multi-type tab (Cuisine), rendered as round
+    /// glass toolbar buttons — one per type. `nil` on single-type tabs (Café,
+    /// Cocktail), which need no selector.
     struct TypeFilter {
         let options: [RecipeType]
         let selection: Binding<RecipeType>
@@ -18,34 +19,32 @@ struct HomePage: View {
     let onSettings: () -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
-            if let filter = typeFilter {
-                Picker("Type", selection: filter.selection) {
-                    ForEach(filter.options) { type in
-                        type.iconImage
+        content
+            .navigationTitle(title)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: onSettings) {
+                        Image(systemName: "gearshape")
+                    }
+                    .accessibilityIdentifier("home-settings-button")
+                    .accessibilityLabel("Réglages")
+                }
+                if let filter = typeFilter {
+                    ToolbarItemGroup(placement: .topBarTrailing) {
+                        ForEach(filter.options) { type in
+                            let isSelected = filter.selection.wrappedValue == type
+                            Button {
+                                filter.selection.wrappedValue = type
+                            } label: {
+                                type.iconImage(filled: false)
+                            }
+                            .tint(isSelected ? .accentColor : .primary)
                             .accessibilityLabel(type.label)
-                            .tag(type)
+                            .accessibilityIdentifier("home-type-filter-\(type.rawValue)")
+                        }
                     }
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .padding(.horizontal)
-                .padding(.top, 8)
-                .accessibilityIdentifier("home-type-filter")
             }
-
-            content
-        }
-        .navigationTitle(title)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(action: onSettings) {
-                    Image(systemName: "gearshape")
-                }
-                .accessibilityIdentifier("home-settings-button")
-                .accessibilityLabel("Réglages")
-            }
-        }
     }
 
     @ViewBuilder
@@ -82,8 +81,8 @@ private struct HomePagePreview: View {
                         .init(id: "1", title: "Bœuf bourguignon", type: .plat, versionNumber: 4, change: "Cuisson 3 h → 3 h 30", why: "Viande trop ferme."),
                     ],
                     library: [
-                        .init(id: "1", title: "Bœuf bourguignon", type: .plat, currentVersionNumber: 3, averageNote: 7.5, toTestNumber: 4, isDerived: false),
-                        .init(id: "2", title: "Velouté de courge", type: .tmx, currentVersionNumber: 1, averageNote: 7.0, toTestNumber: nil, isDerived: false),
+                        .init(id: "1", title: "Bœuf bourguignon", type: .plat, versionCount: 4, bestNote: 9, averageNote: 7.5, isDerived: false, updatedAt: Date()),
+                        .init(id: "2", title: "Velouté de courge", type: .tmx, versionCount: 1, bestNote: 7, averageNote: 7.0, isDerived: false, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
                     ],
                     recentTrials: [
                         .init(id: "t1", recipeId: "1", versionNumber: 3, note: 8, remarks: "Équilibré, fondant.", realParams: [], photoUrl: nil, executedAt: Date()),
