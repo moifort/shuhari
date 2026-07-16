@@ -17,8 +17,9 @@ Quatre types d'expérimentations : **café**, **cocktail**, **plat** et **tmx**
    structure les paramètres et les étapes. Pour une recette Thermomix, elle
    extrait aussi les réglages de chaque étape (temps, température, vitesse, sens
    inverse), affichés en badges dédiés.
-2. **Exécuter** la version courante et **noter** l'essai (1 à 10), en consignant
-   les paramètres réellement utilisés (pour la reproductibilité).
+2. **Exécuter** la version courante et **noter** l'essai (5 étoiles, remarques et
+   photo à l'appui), en consignant les paramètres réellement utilisés (pour la
+   reproductibilité).
 3. **Itérer** — l'IA propose la modification suivante. Pour un café ou un
    cocktail, elle ne change **qu'une seule variable à la fois** (méthode
    scientifique à variable unique) ; pour un plat ou une recette Thermomix, elle

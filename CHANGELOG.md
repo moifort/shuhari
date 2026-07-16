@@ -4,9 +4,11 @@ Toutes les évolutions notables de Shuhari, la plus récente en premier.
 
 ## Unreleased
 
-- Fiche recette : nouvel affichage plein écran façon visionneuse — le titre et la **date de création** en haut, une **barre d'actions flottante** en bas (historique, exécuter, ingrédients), et une **liste d'ingrédients coulissante** qui reste ouverte pendant qu'on fait défiler les étapes.
+- Fiche recette : affichage façon visionneuse Photos — **pastille de titre** avec la date de création, badges **type / version / essais** avec la note moyenne en **étoiles**, **ingrédients intégrés** à la page puis la **meilleure version** en description ; en bas, un bécher pour la version « à tester », un **bouton rond pour noter un essai** et l'**historique en panneau**.
+- Noter un essai : nouvel écran « Remarque » en demi-écran — note en **5 étoiles**, champ de remarques plus spacieux, ajout de **plusieurs photos** ; validation par une coche en haut.
+- Carnet : la bibliothèque est **groupée par mois** de dernière activité, et chaque recette affiche son **nombre de versions** et sa **meilleure note**.
 - Cuisine : un **filtre Recette / Thermomix** permet de n'afficher qu'un type de recette dans l'onglet Cuisine.
-- Icônes : nouveaux symboles dédiés — tasse pour le café, verre à martini pour les cocktails, toque pour la cuisine.
+- Icônes : nouveaux symboles dédiés — **tasse espresso** pour le café, verre à martini pour les cocktails, toque pour la cuisine, **bécher** pour les essais, variantes contour/rempli du Thermomix.
 - Import : les **ingrédients** sont désormais extraits avec leurs quantités, séparément des paramètres — modifiables à l'import et affichés sur la fiche recette.
 - Import : l'analyse de la recette s'affiche dans une feuille dédiée avec l'animation « écoute » de Siri, et l'aperçu adopte un style natif (Fermer et validation par une coche en haut, type avec icône, étapes modifiables, titre remis en casse normale, sections vides masquées).
 - Import : l'animation d'analyse est plus fluide et se fond en douceur dans l'aperçu une fois la recette prête.
