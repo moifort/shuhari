@@ -42,6 +42,7 @@ Everything versioned and technical is written in **English**: commit messages, c
 3. **README** (`README.md`): update the features / tech-stack sections if the pushed work changed them.
 4. **Changelog** (`CHANGELOG.md`): add user-facing entries (in French) under `## Unreleased`, then run `bun run generate:assets` to regenerate `server/system/changelog-content.ts` (the iOS-facing asset served via GraphQL — never edit it by hand).
 5. Push.
+6. **Analyze the CI**: a push to `main` fires **Unit Tests** + **Deploy** — watch them (`gh run watch`, or `gh run list --branch main` + `gh run view <id> --log-failed` on failure). Not done until CI is green; fix any failure with a follow-up commit + push.
 
 ## Backend Patterns (TypeScript / Nitro)
 
@@ -134,3 +135,9 @@ Look up the current public macOS build at https://developer.apple.com/news/relea
 ## iOS Simulator
 
 - Device: iPhone 17, OS 26.2
+
+## iOS Physical Device Install
+
+- After finishing a task (especially one touching iOS), **offer** to install it on the physical iPhone "TiPhone junior" (UDID `00008130-000A2068029A001C`, automatic dev signing, team `46C337T7YN`). Never install automatically — ask first, run only after a yes.
+- On a yes, run `scripts/install-device.sh` to build → install → launch.
+- The device must be connected, unlocked, and trusted. Relay the raw `xcodebuild`/`devicectl` output — don't claim success without it.
