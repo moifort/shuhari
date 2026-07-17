@@ -1,7 +1,7 @@
 import { make } from 'ts-brand'
 import { z } from 'zod'
 import { RECIPE_MAX } from '~/domain/recipe/limits'
-import { RECIPE_TYPE_VALUES } from '~/domain/recipe/types'
+import { DISH_CATEGORY_VALUES, RECIPE_TYPE_VALUES } from '~/domain/recipe/types'
 import type { ImportAnalysis, ImportHash as ImportHashType, ProposalDraft } from '~/system/ai/types'
 
 export const ImportHash = (value: unknown) => {
@@ -91,6 +91,8 @@ const stepSchema = z.union([
 export const ImportAnalysisSchema = z
   .object({
     type: z.enum(RECIPE_TYPE_VALUES),
+    // Best-effort detection: an unknown/missing category defaults to 'plat'.
+    category: z.enum(DISH_CATEGORY_VALUES).catch('plat'),
     title: clampedField(RECIPE_MAX.title),
     subtitle: optionalClamped(RECIPE_MAX.subtitle),
     sourceLabel: optionalClamped(SOURCE_LABEL_MAX),
@@ -103,6 +105,7 @@ export const ImportAnalysisSchema = z
     const tmxSteps = steps.map((s) => s.tmx)
     return {
       type: raw.type,
+      category: raw.category,
       // Title is required downstream; never let a blank one through.
       title: raw.title || 'Recette importée',
       subtitle: raw.subtitle,

@@ -61,6 +61,30 @@ describe('parseImportResponse — Thermomix steps', () => {
   })
 })
 
+describe('parseImportResponse — dish category', () => {
+  test('parses a valid detected category', () => {
+    const result = parseImportResponse(
+      JSON.stringify({ type: 'plat', category: 'dessert', title: 'Tarte' }),
+    )
+
+    expect(result.category).toBe('dessert')
+  })
+
+  test('falls back to plat on an invalid category', () => {
+    const result = parseImportResponse(
+      JSON.stringify({ type: 'plat', category: 'boisson', title: 'Soupe' }),
+    )
+
+    expect(result.category).toBe('plat')
+  })
+
+  test('falls back to plat when the category is missing', () => {
+    const result = parseImportResponse(JSON.stringify({ type: 'plat', title: 'Soupe' }))
+
+    expect(result.category).toBe('plat')
+  })
+})
+
 describe('parseImportResponse — ingredients', () => {
   test('parses the ingredient list with names and quantities', () => {
     const result = parseImportResponse(

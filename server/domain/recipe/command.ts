@@ -2,6 +2,7 @@ import { alignedTmxSteps, nextVersionNumber } from '~/domain/recipe/business-rul
 import * as repository from '~/domain/recipe/infrastructure/repository'
 import { randomRecipeId, VersionNumber } from '~/domain/recipe/primitives'
 import type {
+  DishCategory,
   Ingredient,
   Param,
   Recipe,
@@ -22,6 +23,7 @@ const FIRST_VERSION = VersionNumber(1)
 
 export type NewRecipeInput = {
   type: RecipeType
+  category: DishCategory
   title: RecipeTitle
   subtitle?: RecipeSubtitle
   params: Param[]
@@ -53,6 +55,7 @@ export namespace RecipeCommand {
       id: randomRecipeId(),
       userId,
       type: input.type,
+      category: input.category,
       title: input.title,
       ...(input.subtitle ? { subtitle: input.subtitle } : {}),
       currentVersion: FIRST_VERSION,
@@ -140,6 +143,7 @@ export namespace RecipeCommand {
       id: randomRecipeId(),
       userId,
       type: input.type,
+      category: input.category,
       title: input.title,
       ...(input.subtitle ? { subtitle: input.subtitle } : {}),
       currentVersion: FIRST_VERSION,

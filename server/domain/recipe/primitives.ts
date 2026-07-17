@@ -2,6 +2,8 @@ import { make } from 'ts-brand'
 import { z } from 'zod'
 import { RECIPE_MAX } from '~/domain/recipe/limits'
 import {
+  DISH_CATEGORY_VALUES,
+  type DishCategory as DishCategoryType,
   type IngredientName as IngredientNameType,
   type IngredientQuantity as IngredientQuantityType,
   type ParamKey as ParamKeyType,
@@ -28,6 +30,9 @@ export const randomRecipeId = () => RecipeId(crypto.randomUUID())
 
 export const RecipeType = (value: unknown) =>
   z.enum(RECIPE_TYPE_VALUES).parse(value) as RecipeTypeType
+
+export const DishCategory = (value: unknown) =>
+  z.enum(DISH_CATEGORY_VALUES).parse(value) as DishCategoryType
 
 export const RecipeTitle = (value: unknown) => {
   const v = z.string().trim().min(1).max(RECIPE_MAX.title).parse(value)

@@ -1,4 +1,4 @@
-import { RecipeTypeEnum } from '~/domain/recipe/infrastructure/graphql/enums'
+import { DishCategoryEnum, RecipeTypeEnum } from '~/domain/recipe/infrastructure/graphql/enums'
 import { builder } from '~/domain/shared/graphql/builder'
 import type { ImportAnalysis, ImportTmxSettings } from '~/system/ai/types'
 
@@ -40,6 +40,10 @@ export const ImportAnalysisType = builder.objectRef<ImportAnalysis>('ImportAnaly
   description: 'Structured recipe extracted from an import source (editable preview)',
   fields: (t) => ({
     type: t.expose('type', { type: RecipeTypeEnum }),
+    category: t.expose('category', {
+      type: DishCategoryEnum,
+      description: 'The dish category detected by the AI',
+    }),
     title: t.exposeString('title'),
     subtitle: t.exposeString('subtitle', { nullable: true }),
     sourceLabel: t.exposeString('sourceLabel', { nullable: true }),

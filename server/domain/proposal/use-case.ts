@@ -131,6 +131,7 @@ export namespace ProposalUseCase {
       recipeId,
       {
         type: recipe.type,
+        category: recipe.category,
         title,
         ...(recipe.subtitle ? { subtitle: recipe.subtitle } : {}),
         params,

@@ -14,6 +14,9 @@ type ChangelogEntry {
 
 """Create a recipe (v1) from a confirmed import preview"""
 input CreateRecipeInput {
+  """The dish category detected at import"""
+  category: DishCategory!
+
   """The recipe’s components with quantities"""
   ingredients: [IngredientInput!]
   params: [ParamInput!]!
@@ -32,6 +35,18 @@ input CreateRecipeInput {
 """ISO 8601 date-time string"""
 scalar DateTime
 
+"""
+The course a dish belongs to — aggregate-level identity, drives library sorting
+"""
+enum DishCategory {
+  BOULANGERIE
+  DESSERT
+  ENTREE
+  PLAT
+  SAUCE
+  SOUPE
+}
+
 """The read model behind the home screen"""
 type Home {
   """Every recipe (the app groups them by type)"""
@@ -46,6 +61,8 @@ type Home {
 
 """Structured recipe extracted from an import source (editable preview)"""
 type ImportAnalysis {
+  """The dish category detected by the AI"""
+  category: DishCategory!
   ingredients: [ImportIngredient!]!
   params: [ImportParam!]!
   sourceLabel: String
@@ -239,6 +256,9 @@ type Query {
 type Recipe {
   """The highest trial note the recipe ever scored, or null if never tried"""
   bestNote: Note
+
+  """The dish category — fixed at import, shared across all versions"""
+  category: DishCategory!
   createdAt: DateTime!
 
   """The current reproducible reference version"""

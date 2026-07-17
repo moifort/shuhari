@@ -6,6 +6,18 @@ import type { UserId } from '~/domain/shared/types'
 export const RECIPE_TYPE_VALUES = ['cafe', 'cocktail', 'plat', 'tmx'] as const
 export type RecipeType = (typeof RECIPE_TYPE_VALUES)[number]
 
+// The course a dish belongs to. Detected by the AI at import and drives sorting
+// in the library (Entrée → Plat → Dessert → Soupe → Sauce → Boulangerie).
+export const DISH_CATEGORY_VALUES = [
+  'entree',
+  'plat',
+  'dessert',
+  'soupe',
+  'sauce',
+  'boulangerie',
+] as const
+export type DishCategory = (typeof DISH_CATEGORY_VALUES)[number]
+
 export type RecipeId = Brand<string, 'RecipeId'>
 export type RecipeTitle = Brand<string, 'RecipeTitle'>
 export type RecipeSubtitle = Brand<string, 'RecipeSubtitle'>
@@ -47,6 +59,9 @@ export type Recipe = {
   id: RecipeId
   userId: UserId
   type: RecipeType
+  // Aggregate-level identity: the dish category is fixed at import and never
+  // changes across versions (unlike the versioned recipe content).
+  category: DishCategory
   title: RecipeTitle
   subtitle?: RecipeSubtitle
   currentVersion: VersionNumber // the reproducible reference

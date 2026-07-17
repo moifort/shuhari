@@ -1,5 +1,5 @@
 import { builder } from '~/domain/shared/graphql/builder'
-import { RecipeTypeEnum } from './enums'
+import { DishCategoryEnum, RecipeTypeEnum } from './enums'
 
 export const ParamInput = builder.inputType('ParamInput', {
   description: 'A recipe parameter (ordered)',
@@ -31,6 +31,11 @@ export const CreateRecipeInput = builder.inputType('CreateRecipeInput', {
   description: 'Create a recipe (v1) from a confirmed import preview',
   fields: (t) => ({
     type: t.field({ type: RecipeTypeEnum, required: true }),
+    category: t.field({
+      type: DishCategoryEnum,
+      required: true,
+      description: 'The dish category detected at import',
+    }),
     title: t.field({ type: 'RecipeTitle', required: true }),
     subtitle: t.field({ type: 'RecipeSubtitle' }),
     sourceLabel: t.string({ description: 'Where the recipe came from' }),

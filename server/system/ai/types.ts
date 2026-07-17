@@ -1,5 +1,5 @@
 import type { Brand } from 'ts-brand'
-import type { RecipeType } from '~/domain/recipe/types'
+import type { DishCategory, RecipeType } from '~/domain/recipe/types'
 
 export type ImportHash = Brand<string, 'ImportHash'>
 
@@ -22,6 +22,7 @@ export type ImportTmxSettings = {
 // validates them into branded types when the user confirms the import.
 export type ImportAnalysis = {
   type: RecipeType
+  category: DishCategory
   title: string
   subtitle: string | null
   sourceLabel: string | null

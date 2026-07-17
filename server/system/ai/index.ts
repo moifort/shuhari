@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { DISH_CATEGORY_VALUES } from '~/domain/recipe/types'
 import { ImportHash, parseImportResponse, parseProposalResponse } from '~/system/ai/primitives'
 import * as repository from '~/system/ai/repository'
 import type {
@@ -27,6 +28,11 @@ const importResponseSchema = {
       enum: RECIPE_TYPE_ENUM,
       description:
         "Type d'expérimentation : cafe, cocktail, plat (recette cuisinée) ou tmx (Thermomix)",
+    },
+    category: {
+      type: 'string',
+      enum: DISH_CATEGORY_VALUES,
+      description: 'Catégorie du plat : entree, plat, dessert, soupe, sauce ou boulangerie',
     },
     title: { type: 'string', description: 'Nom de la recette (concis, ≤200 caractères)' },
     subtitle: {
@@ -113,8 +119,17 @@ const importResponseSchema = {
       },
     },
   },
-  required: ['type', 'title'],
-  propertyOrdering: ['type', 'title', 'subtitle', 'sourceLabel', 'ingredients', 'params', 'steps'],
+  required: ['type', 'category', 'title'],
+  propertyOrdering: [
+    'type',
+    'category',
+    'title',
+    'subtitle',
+    'sourceLabel',
+    'ingredients',
+    'params',
+    'steps',
+  ],
 }
 
 const proposalResponseSchema = {
@@ -166,6 +181,7 @@ const IMPORT_INSTRUCTIONS = `Tu es l'assistant d'un carnet d'expérimentation cu
 
 Règles :
 - Détermine le type : cafe (espresso, filtre…), cocktail, plat (recette cuisinée), tmx (recette Thermomix).
+- Détermine la catégorie du plat : entree, plat, dessert, soupe, sauce ou boulangerie (pâtisserie, pain, viennoiserie). En cas de doute, choisis plat.
 - ingredients : liste ORDONNÉE des composants de la recette avec leur quantité (ex : Gin → 50 ml, Beurre → 170 g, Fraise → 3 pièces). Mets TOUS les ingrédients visibles sur la source, chacun avec sa quantité et son unité. C'est la « liste de courses » de la recette. Le NOM reste court : l'ingrédient seul, jamais sa préparation (« Pommes de terre », pas « Pommes de terre épluchées et coupées en rondelles » — la préparation va dans les étapes).
 - params : réglages reproductibles qui ne sont PAS des ingrédients (ex : Température → 92 °C, Mouture → fine, Ratio → 1:2, Temps d'extraction → 27 s, Four → 180 °C). N'y mets JAMAIS un ingrédient. N'invente pas de valeurs absentes ; ne garde que ce qui est réellement mesurable et reproductible (souvent vide pour un cocktail ou un plat).
 - steps : étapes courtes, à l'impératif, dans l'ordre.

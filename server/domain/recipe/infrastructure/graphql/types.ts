@@ -2,7 +2,7 @@ import { match, P } from 'ts-pattern'
 import { RecipeQuery } from '~/domain/recipe/query'
 import { builder } from '~/domain/shared/graphql/builder'
 import type { Ingredient, Param, Recipe, RecipeVersion, TmxSettings } from '../../types'
-import { RecipeTypeEnum, VersionOriginKindEnum } from './enums'
+import { DishCategoryEnum, RecipeTypeEnum, VersionOriginKindEnum } from './enums'
 
 export const ParamType = builder.objectRef<Param>('Param').implement({
   description: 'A single recipe parameter (ordered list preserves display order)',
@@ -72,6 +72,10 @@ RecipeType.implement({
   fields: (t) => ({
     id: t.expose('id', { type: 'RecipeId' }),
     type: t.expose('type', { type: RecipeTypeEnum }),
+    category: t.expose('category', {
+      type: DishCategoryEnum,
+      description: 'The dish category — fixed at import, shared across all versions',
+    }),
     title: t.expose('title', { type: 'RecipeTitle' }),
     subtitle: t.string({ nullable: true, resolve: (r) => r.subtitle ?? null }),
     createdAt: t.expose('createdAt', { type: 'DateTime' }),

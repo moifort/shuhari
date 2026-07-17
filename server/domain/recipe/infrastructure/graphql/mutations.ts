@@ -36,6 +36,7 @@ builder.mutationField('createRecipe', (t) =>
         userId,
         {
           type: input.type,
+          category: input.category,
           title: input.title,
           ...(input.subtitle ? { subtitle: input.subtitle } : {}),
           params: input.params,

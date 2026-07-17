@@ -30,6 +30,7 @@ const ingredient = (n: string, q: string): Ingredient => ({
 })
 const newInput = () => ({
   type: 'cafe' as const,
+  category: 'plat' as const,
   title: 'Espresso' as RecipeTitle,
   params: [param('Dose', '18 g'), param('Température', '93 °C')],
   steps: ['Moudre', 'Extraire'] as StepText[],
