@@ -13,15 +13,6 @@ enum RecipeAPI {
         return mapRecipe(recipe)
     }
 
-    static func getTrial(id: String) async throws -> Trial {
-        let data = try await GraphQLHelpers.fetch(
-            GraphQLClient.shared.apollo,
-            query: ShuhariGraphQL.TrialDetailQuery(id: id)
-        )
-        guard let trial = data.trial else { throw APIError.invalidResponse }
-        return mapTrial(trial.fragments.trialFields)
-    }
-
     // MARK: - Mutations
 
     static func promoteVersion(recipeId: String, versionNumber: Int) async throws {
@@ -63,8 +54,7 @@ func mapRecipe(_ r: ShuhariGraphQL.RecipeQuery.Data.Recipe) -> Recipe {
         updatedAt: GraphQLHelpers.parseISO8601(r.updatedAt) ?? Date(),
         currentVersion: r.currentVersion.map { mapVersion($0.fragments.versionFields) },
         toTest: r.toTest.map { mapVersion($0.fragments.versionFields) },
-        versions: r.versions.map { mapVersion($0.fragments.versionFields) },
-        trials: r.trials.map { mapTrial($0.fragments.trialFields) }
+        versions: r.versions.map { mapVersion($0.fragments.versionFields) }
     )
 }
 
@@ -80,21 +70,12 @@ func mapVersion(_ v: ShuhariGraphQL.VersionFields) -> RecipeVersion {
         tmxSteps: v.tmxSteps.map { step in
             step.map { TmxSettings(time: $0.time, temperature: $0.temperature, speed: $0.speed, reverse: $0.reverse ?? false) }
         },
-        averageNote: v.averageNote,
-        trialCount: v.trialCount,
+        recipeId: v.recipeId,
+        note: v.note,
+        remarks: v.remarks,
+        executedAt: v.executedAt.flatMap { GraphQLHelpers.parseISO8601($0) },
+        photoUrl: v.photoUrl,
         createdAt: GraphQLHelpers.parseISO8601(v.createdAt) ?? Date()
-    )
-}
-
-func mapTrial(_ t: ShuhariGraphQL.TrialFields) -> Trial {
-    Trial(
-        id: t.id,
-        recipeId: t.recipeId,
-        versionNumber: t.versionNumber,
-        note: t.note,
-        remarks: t.remarks,
-        photoUrl: t.photoUrl,
-        executedAt: GraphQLHelpers.parseISO8601(t.executedAt) ?? Date()
     )
 }
 

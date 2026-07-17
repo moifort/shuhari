@@ -13,7 +13,6 @@ struct ChangelogVersion: Identifiable, Sendable {
 struct ImportSummary: Sendable {
     let recipes: Int
     let versions: Int
-    let trials: Int
 
-    var totalRecords: Int { recipes + versions + trials }
+    var totalRecords: Int { recipes + versions }
 }

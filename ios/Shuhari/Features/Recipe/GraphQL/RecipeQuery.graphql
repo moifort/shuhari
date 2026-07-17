@@ -15,19 +15,13 @@ fragment VersionFields on Version {
     speed
     reverse
   }
-  averageNote
-  trialCount
-  createdAt
-}
-
-fragment TrialFields on Trial {
-  id
   recipeId
-  versionNumber
   note
   remarks
-  photoUrl
   executedAt
+  tried
+  photoUrl
+  createdAt
 }
 
 query Recipe($id: RecipeId!) {
@@ -48,14 +42,5 @@ query Recipe($id: RecipeId!) {
     versions {
       ...VersionFields
     }
-    trials {
-      ...TrialFields
-    }
-  }
-}
-
-query TrialDetail($id: TrialId!) {
-  trial(id: $id) {
-    ...TrialFields
   }
 }

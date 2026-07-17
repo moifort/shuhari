@@ -142,7 +142,7 @@ struct ExecuteFlowView: View {
         // in the journal but skips the AI.
         let hasRemarks = !remarks.isEmpty
         do {
-            let result = try await ExecutionAPI.recordTrial(
+            let result = try await ExecutionAPI.recordEssai(
                 recipeId: request.recipeId,
                 versionNumber: request.versionNumber,
                 note: note,

@@ -1,22 +1,22 @@
 import SwiftUI
 
-/// The "Activité récente" section: the three most recent trials across all recipes.
+/// The "Activité récente" section: the most recent essais across all recipes.
 /// Composes as a `Section` directly inside a `List`.
 struct RecentTrialsSection: View {
-    let trials: [Trial]
+    let essais: [RecentEssai]
     let titleProvider: (String) -> String
 
     var body: some View {
-        if !trials.isEmpty {
+        if !essais.isEmpty {
             Section("Activité récente") {
-                ForEach(trials) { trial in
-                    NavigationLink(value: RecipeRoute.trial(id: trial.id)) {
+                ForEach(essais) { essai in
+                    NavigationLink(value: RecipeRoute.essai(recipeId: essai.recipeId, versionNumber: essai.versionNumber)) {
                         TrialRow(
-                            recipeTitle: titleProvider(trial.recipeId),
-                            versionNumber: trial.versionNumber,
-                            note: trial.note,
-                            remarks: trial.remarks,
-                            date: trial.executedAt
+                            recipeTitle: titleProvider(essai.recipeId),
+                            versionNumber: essai.versionNumber,
+                            note: essai.note,
+                            remarks: essai.remarks,
+                            date: essai.executedAt
                         )
                     }
                 }
@@ -28,7 +28,7 @@ struct RecentTrialsSection: View {
 #Preview {
     NavigationStack {
         List {
-            RecentTrialsSection(trials: Fixtures.bourguignonTrials, titleProvider: { _ in Fixtures.bourguignon.title })
+            RecentTrialsSection(essais: Fixtures.homeData.recentEssais, titleProvider: { _ in Fixtures.bourguignon.title })
         }
     }
 }

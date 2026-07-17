@@ -45,7 +45,10 @@ enum Fixtures {
         originDetail: "Importée par photo",
         ingredients: bourguignonIngredients,
         steps: bourguignonSteps,
-        tmxSteps: [], averageNote: 3.0, trialCount: 1,
+        tmxSteps: [],
+        recipeId: "bourguignon", note: 3,
+        remarks: "Bon mais la sauce manque de corps.",
+        executedAt: date.addingTimeInterval(-86_400 * 28), photoUrl: nil,
         createdAt: date.addingTimeInterval(-86_400 * 30)
     )
 
@@ -54,7 +57,10 @@ enum Fixtures {
         originKind: .aiProposal, originDetail: nil,
         ingredients: bourguignonIngredients,
         steps: bourguignonSteps,
-        tmxSteps: [], averageNote: 3.5, trialCount: 1,
+        tmxSteps: [],
+        recipeId: "bourguignon", note: 3,
+        remarks: "Plus parfumé, encore un peu ferme.",
+        executedAt: date.addingTimeInterval(-86_400 * 18), photoUrl: nil,
         createdAt: date.addingTimeInterval(-86_400 * 20)
     )
 
@@ -67,8 +73,11 @@ enum Fixtures {
         ingredients: bourguignonIngredients,
         steps: bourguignonSteps,
         tmxSteps: [],
-        averageNote: 4.0,
-        trialCount: 2,
+        recipeId: "bourguignon",
+        note: 4,
+        remarks: "Sauce nappante, viande fondante.",
+        executedAt: date.addingTimeInterval(-86_400 * 2),
+        photoUrl: nil,
         createdAt: date.addingTimeInterval(-86_400 * 6)
     )
 
@@ -81,23 +90,13 @@ enum Fixtures {
         ingredients: bourguignonIngredients,
         steps: bourguignonSteps,
         tmxSteps: [],
-        averageNote: nil,
-        trialCount: 0,
+        recipeId: "bourguignon",
+        note: nil,
+        remarks: nil,
+        executedAt: nil,
+        photoUrl: nil,
         createdAt: date.addingTimeInterval(-86_400)
     )
-
-    static let bourguignonTrials = [
-        Trial(
-            id: "t2", recipeId: "bourguignon", versionNumber: 3, note: 4,
-            remarks: "Sauce nappante, viande fondante.", photoUrl: nil,
-            executedAt: date.addingTimeInterval(-86_400 * 2)
-        ),
-        Trial(
-            id: "t1", recipeId: "bourguignon", versionNumber: 3, note: 4,
-            remarks: "Très bon, un peu ferme par endroits.", photoUrl: nil,
-            executedAt: date.addingTimeInterval(-86_400 * 4)
-        ),
-    ]
 
     static let bourguignon = Recipe(
         id: "bourguignon",
@@ -109,9 +108,11 @@ enum Fixtures {
         updatedAt: date,
         currentVersion: bourguignonV3,
         toTest: bourguignonV4,
-        versions: [bourguignonV1, bourguignonV2, bourguignonV3, bourguignonV4],
-        trials: bourguignonTrials
+        versions: [bourguignonV1, bourguignonV2, bourguignonV3, bourguignonV4]
     )
+
+    /// The tried versions of the bourguignon, most recent first — its essai journal.
+    static let bourguignonEssais = bourguignon.essais
 
     // MARK: - Risotto (tmx, per-step machine settings)
 
@@ -136,8 +137,11 @@ enum Fixtures {
             TmxSettings(time: "14 min", temperature: "100 °C", speed: "1", reverse: true),
             nil,
         ],
-        averageNote: 3.5,
-        trialCount: 1,
+        recipeId: "risotto",
+        note: 4,
+        remarks: "Bonne texture, manque un peu de sel.",
+        executedAt: date.addingTimeInterval(-86_400 * 2),
+        photoUrl: nil,
         createdAt: date.addingTimeInterval(-86_400 * 3)
     )
 
@@ -151,14 +155,39 @@ enum Fixtures {
         updatedAt: date,
         currentVersion: risottoV2,
         toTest: nil,
-        versions: [risottoV2],
-        trials: [
-            Trial(
-                id: "rt1", recipeId: "risotto", versionNumber: 2, note: 4,
-                remarks: "Bonne texture, manque un peu de sel.", photoUrl: nil,
-                executedAt: date.addingTimeInterval(-86_400 * 2)
-            ),
-        ]
+        versions: [risottoV2]
+    )
+
+    // MARK: - Fresh import (currentVersion == nil, v1 never tried)
+
+    /// A just-imported recipe: a single untried v1, no promotion yet. Exercises the
+    /// headline nullable-`currentVersion` risk — the fiche must still render (via the
+    /// `bestRatedVersion` fallback) and keep its record CTA.
+    static let freshImportV1 = RecipeVersion(
+        number: 1, change: nil, why: nil, originKind: .import,
+        originDetail: "Importée par photo",
+        ingredients: bourguignonIngredients,
+        steps: bourguignonSteps,
+        tmxSteps: [],
+        recipeId: "fresh-import",
+        note: nil,
+        remarks: nil,
+        executedAt: nil,
+        photoUrl: nil,
+        createdAt: date
+    )
+
+    static let freshImport = Recipe(
+        id: "fresh-import",
+        title: "Daube provençale",
+        subtitle: "Fraîchement importée",
+        type: .plat,
+        category: .plat,
+        createdAt: date,
+        updatedAt: date,
+        currentVersion: nil,
+        toTest: freshImportV1,
+        versions: [freshImportV1]
     )
 
     // MARK: - Transient models
@@ -236,7 +265,15 @@ enum Fixtures {
             LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 2, bestNote: 4, averageNote: 3.5, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
             LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestNote: nil, averageNote: 3.0, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
         ],
-        recentTrials: bourguignonTrials
+        recentEssais: bourguignonEssais.map {
+            RecentEssai(
+                recipeId: $0.recipeId,
+                versionNumber: $0.number,
+                note: $0.note ?? 0,
+                remarks: $0.remarks ?? "",
+                executedAt: $0.executedAt ?? date
+            )
+        }
     )
 }
 #endif

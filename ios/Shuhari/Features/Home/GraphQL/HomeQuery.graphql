@@ -23,13 +23,12 @@ query Home {
       versionCount
       bestNote
       currentVersion {
-        averageNote
+        note
       }
     }
-    recentTrials {
-      id
+    recentEssais {
       recipeId
-      versionNumber
+      number
       note
       remarks
       executedAt

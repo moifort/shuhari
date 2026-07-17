@@ -36,6 +36,8 @@ struct DebugGallery: View {
             RecipeDetailGalleryScreen(recipe: Fixtures.bourguignon)
         case "recipe-tmx":
             RecipeDetailGalleryScreen(recipe: Fixtures.risotto)
+        case "recipe-fresh":
+            RecipeDetailGalleryScreen(recipe: Fixtures.freshImport)
         case "next-trials":
             NextTrialsSheetGalleryScreen()
         case "history":
@@ -46,7 +48,7 @@ struct DebugGallery: View {
             NavigationStack {
                 TrialDetailPage(
                     recipeTitle: Fixtures.bourguignon.title,
-                    trial: Fixtures.bourguignonTrials[1]
+                    version: Fixtures.bourguignonV3
                 )
             }
         case "execute":
@@ -101,7 +103,7 @@ struct DebugGallery: View {
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : home, cuisine, recipe, recipe-tmx, next-trials, history, trial, execute, execute-tmx, capture, draft, import-preview, import-preview-tmx, ai-thinking, import-nothing-found")
+                description: Text("Écrans : home, cuisine, recipe, recipe-tmx, recipe-fresh, next-trials, history, trial, execute, execute-tmx, capture, draft, import-preview, import-preview-tmx, ai-thinking, import-nothing-found")
             )
         }
     }
@@ -135,13 +137,13 @@ private struct NextTrialsSheetGalleryScreen: View {
                     trials: [
                         .init(versionNumber: 4, change: "Cuisson 3 h → 3 h 30", why: "La viande était encore un peu ferme."),
                     ],
-                    pastTrials: Fixtures.bourguignonTrials.map {
+                    pastTrials: Fixtures.bourguignonEssais.map {
                         .init(
-                            id: $0.id,
-                            versionNumber: $0.versionNumber,
-                            note: $0.note,
-                            remarks: $0.remarks,
-                            date: $0.executedAt
+                            id: "\($0.number)",
+                            versionNumber: $0.number,
+                            note: $0.note ?? 0,
+                            remarks: $0.remarks ?? "",
+                            date: $0.executedAt ?? $0.createdAt
                         )
                     },
                     onSelect: { _ in }
@@ -165,7 +167,7 @@ private struct CuisineGalleryScreen: View {
             LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 3, bestNote: 4, averageNote: 3.5, updatedAt: Date()),
             LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestNote: nil, averageNote: nil, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
         ],
-        recentTrials: []
+        recentEssais: []
     )
 
     var body: some View {

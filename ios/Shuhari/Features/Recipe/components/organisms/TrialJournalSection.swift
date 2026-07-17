@@ -1,40 +1,40 @@
 import SwiftUI
 
-/// The recipe's trial journal, most recent first. Each row pushes the trial detail.
+/// The recipe's essai journal, most recent first. Each row pushes the essai detail.
 /// Composes as a `Section` directly inside a `List`.
 struct TrialJournalSection: View {
     let recipeTitle: String
-    let trials: [Trial]
+    let essais: [RecipeVersion]
 
     var body: some View {
         Section {
-            if trials.isEmpty {
+            if essais.isEmpty {
                 Text("Aucun essai — note un essai pour démarrer la boucle.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(trials) { trial in
-                    NavigationLink(value: RecipeRoute.trial(id: trial.id)) {
+                ForEach(essais) { version in
+                    NavigationLink(value: RecipeRoute.essai(recipeId: version.recipeId, versionNumber: version.number)) {
                         TrialRow(
                             recipeTitle: nil,
-                            versionNumber: trial.versionNumber,
-                            note: trial.note,
-                            remarks: trial.remarks,
-                            date: trial.executedAt
+                            versionNumber: version.number,
+                            note: version.note ?? 0,
+                            remarks: version.remarks ?? "",
+                            date: version.executedAt ?? version.createdAt
                         )
                     }
-                    .accessibilityIdentifier("trial-row-\(trial.id)")
+                    .accessibilityIdentifier("trial-row-v\(version.number)")
                 }
             }
         } header: {
-            Text(trials.isEmpty ? "Journal d’essais" : "Journal d’essais (\(trials.count))")
+            Text(essais.isEmpty ? "Journal d’essais" : "Journal d’essais (\(essais.count))")
         }
     }
 }
 
 #Preview {
     List {
-        TrialJournalSection(recipeTitle: Fixtures.bourguignon.title, trials: Fixtures.bourguignonTrials)
-        TrialJournalSection(recipeTitle: "Negroni", trials: [])
+        TrialJournalSection(recipeTitle: Fixtures.bourguignon.title, essais: Fixtures.bourguignon.essais)
+        TrialJournalSection(recipeTitle: "Negroni", essais: [])
     }
 }

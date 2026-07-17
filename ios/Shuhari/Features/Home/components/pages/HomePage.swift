@@ -127,7 +127,7 @@ struct HomePage: View {
                     onPrefetch: onPrefetch,
                     onLoadMore: onLoadMore
                 )
-                RecentTrialsSection(trials: data.recentTrials, titleProvider: data.title(forRecipe:))
+                RecentTrialsSection(essais: data.recentEssais, titleProvider: data.title(forRecipe:))
             }
             .scrollEdgeEffectStyle(.soft, for: .top)
         }
@@ -148,8 +148,8 @@ private struct HomePagePreview: View {
                 .init(id: "1", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0, updatedAt: Date()),
                 .init(id: "2", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestNote: 4, averageNote: 3.5, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
             ],
-            recentTrials: [
-                .init(id: "t1", recipeId: "1", versionNumber: 3, note: 4, remarks: "Équilibré, fondant.", photoUrl: nil, executedAt: Date()),
+            recentEssais: [
+                .init(recipeId: "1", versionNumber: 3, note: 4, remarks: "Équilibré, fondant.", executedAt: Date()),
             ]
         ).filtered(to: [selectedType])
         NavigationStack {

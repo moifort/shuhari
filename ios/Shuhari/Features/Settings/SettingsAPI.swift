@@ -32,8 +32,7 @@ enum SettingsAPI {
         let result = data.importData
         return ImportSummary(
             recipes: result.recipes,
-            versions: result.versions,
-            trials: result.trials
+            versions: result.versions
         )
     }
 }

@@ -90,13 +90,13 @@ struct NextTrialsSheet: View {
                     .init(versionNumber: 4, change: "Cuisson 3 h → 3 h 30", why: "La viande était encore un peu ferme."),
                     .init(versionNumber: 2, change: "Température 93 → 92 °C", why: nil),
                 ],
-                pastTrials: Fixtures.bourguignonTrials.map {
+                pastTrials: Fixtures.bourguignonEssais.map {
                     .init(
-                        id: $0.id,
-                        versionNumber: $0.versionNumber,
-                        note: $0.note,
-                        remarks: $0.remarks,
-                        date: $0.executedAt
+                        id: "\($0.number)",
+                        versionNumber: $0.number,
+                        note: $0.note ?? 0,
+                        remarks: $0.remarks ?? "",
+                        date: $0.executedAt ?? $0.createdAt
                     )
                 },
                 onSelect: { _ in }
@@ -116,13 +116,13 @@ struct NextTrialsSheet: View {
         .sheet(isPresented: .constant(true)) {
             NextTrialsSheet(
                 trials: [],
-                pastTrials: Fixtures.bourguignonTrials.map {
+                pastTrials: Fixtures.bourguignonEssais.map {
                     .init(
-                        id: $0.id,
-                        versionNumber: $0.versionNumber,
-                        note: $0.note,
-                        remarks: $0.remarks,
-                        date: $0.executedAt
+                        id: "\($0.number)",
+                        versionNumber: $0.number,
+                        note: $0.note ?? 0,
+                        remarks: $0.remarks ?? "",
+                        date: $0.executedAt ?? $0.createdAt
                     )
                 },
                 onSelect: { _ in }

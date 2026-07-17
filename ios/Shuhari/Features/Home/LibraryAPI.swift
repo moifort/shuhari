@@ -39,7 +39,7 @@ enum LibraryAPI {
                     category: DishCategory(graphql: recipe.category),
                     versionCount: recipe.versionCount,
                     bestNote: recipe.bestNote,
-                    averageNote: recipe.currentVersion?.averageNote,
+                    averageNote: recipe.currentVersion?.note.map(Double.init),
                     updatedAt: GraphQLHelpers.parseISO8601(recipe.updatedAt) ?? Date.distantPast
                 )
             },

@@ -50,13 +50,13 @@ struct RecipeDetailView: View {
                 .sheet(isPresented: $showToTest) {
                     NextTrialsSheet(
                         trials: toTestItems(recipe),
-                        pastTrials: recipe.trials.map {
+                        pastTrials: recipe.essais.map {
                             NextTrialsSheet.PastItem(
-                                id: $0.id,
-                                versionNumber: $0.versionNumber,
-                                note: $0.note,
-                                remarks: $0.remarks,
-                                date: $0.executedAt
+                                id: "\($0.number)",
+                                versionNumber: $0.number,
+                                note: $0.note ?? 0,
+                                remarks: $0.remarks ?? "",
+                                date: $0.executedAt ?? $0.createdAt
                             )
                         }
                     ) { versionNumber in
@@ -127,10 +127,12 @@ struct RecipeDetailView: View {
         // Floating glass action bar: record trial (left), then the two
         // sheet openers — prochains essais + history — glued in one glass
         // group (no spacer between them).
-        if let reference = recipe.bestRatedVersion {
+        // Record targets the highest-numbered UNTRIED version (set-once: a tried
+        // version can't be re-recorded). Hidden when every version is tried.
+        if let next = toTestItems(recipe).first {
             ToolbarItem(placement: .bottomBar) {
                 Button {
-                    presentRecordTrial(versionNumber: reference.number)
+                    presentRecordTrial(versionNumber: next.versionNumber)
                 } label: {
                     Image(systemName: "pencil.and.ruler")
                 }
@@ -169,7 +171,7 @@ struct RecipeDetailView: View {
 
     private func toTestItems(_ recipe: Recipe) -> [NextTrialsSheet.Item] {
         recipe.versions
-            .filter { $0.trialCount == 0 }
+            .filter { !$0.tried }
             .sorted { $0.number > $1.number }
             .map {
                 NextTrialsSheet.Item(

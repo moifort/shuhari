@@ -8,8 +8,8 @@ struct VersionTimelineItem: View {
     let number: Int
     let change: String?
     let originDetail: String?
-    let averageNote: Double?
-    let trialCount: Int
+    let note: Int?
+    let tried: Bool
     let date: Date
     let isCurrent: Bool
     let isToTest: Bool
@@ -55,7 +55,7 @@ struct VersionTimelineItem: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
-                Text(averageNote.map { "Notée \(NoteFormat.average($0)) · \(trialCount) essai\(trialCount > 1 ? "s" : "")" } ?? "Pas encore testée")
+                Text(essaiLabel)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .padding(.bottom, Theme.Spacing.s)
@@ -63,6 +63,11 @@ struct VersionTimelineItem: View {
         }
         .listRowSeparator(.hidden)
         .accessibilityElement(children: .combine)
+    }
+
+    private var essaiLabel: String {
+        if let note { return "Notée \(note)/5" }
+        return tried ? "Essayée" : "Pas encore essayée"
     }
 
     private var statusIcon: String {
@@ -80,8 +85,8 @@ struct VersionTimelineItem: View {
 
 #Preview {
     List {
-        VersionTimelineItem(number: 4, change: "Température 93 → 92 °C", originDetail: "Extraction trop chaude.", averageNote: nil, trialCount: 0, date: Date(), isCurrent: false, isToTest: true)
-        VersionTimelineItem(number: 3, change: "Mouture plus fine", originDetail: nil, averageNote: 4.0, trialCount: 2, date: Date(), isCurrent: true, isToTest: false)
-        VersionTimelineItem(number: 1, change: nil, originDetail: nil, averageNote: 3.0, trialCount: 1, date: Date(), isCurrent: false, isToTest: false, isLast: true)
+        VersionTimelineItem(number: 4, change: "Température 93 → 92 °C", originDetail: "Extraction trop chaude.", note: nil, tried: false, date: Date(), isCurrent: false, isToTest: true)
+        VersionTimelineItem(number: 3, change: "Mouture plus fine", originDetail: nil, note: 4, tried: true, date: Date(), isCurrent: true, isToTest: false)
+        VersionTimelineItem(number: 1, change: nil, originDetail: nil, note: 3, tried: true, date: Date(), isCurrent: false, isToTest: false, isLast: true)
     }
 }

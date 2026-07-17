@@ -1,8 +1,8 @@
-mutation RecordTrial($input: RecordTrialInput!) {
-  recordTrial(input: $input) {
+mutation RecordEssai($input: RecordEssaiInput!) {
+  recordEssai(input: $input) {
     promotionSuggested
-    trial {
-      ...TrialFields
+    version {
+      ...VersionFields
     }
   }
 }

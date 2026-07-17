@@ -1,13 +1,13 @@
 import SwiftUI
 
-/// A trial's detail: note + remarks and an optional photo of the result.
+/// An essai's detail: note + remarks and an optional photo of the result.
 struct TrialDetailPage: View {
     let recipeTitle: String
-    let trial: Trial
+    let version: RecipeVersion
 
     var body: some View {
         List {
-            if let photoUrl = trial.photoUrl, let url = URL(string: photoUrl) {
+            if let photoUrl = version.photoUrl, let url = URL(string: photoUrl) {
                 Section {
                     AsyncImage(url: url) { image in
                         image.resizable().scaledToFill()
@@ -24,8 +24,8 @@ struct TrialDetailPage: View {
 
             Section {
                 HStack(alignment: .top, spacing: 14) {
-                    NoteBadge(note: trial.note)
-                    Text(trial.remarks)
+                    NoteBadge(note: version.note ?? 0)
+                    Text(version.remarks ?? "")
                         .font(.callout)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -33,8 +33,8 @@ struct TrialDetailPage: View {
             }
         }
         .scrollEdgeEffectStyle(.soft, for: .top)
-        .navigationTitle("Essai du \(trial.executedAt.formatted(.dateTime.day().month(.wide)))")
-        .navigationSubtitle("\(recipeTitle) · v\(trial.versionNumber)")
+        .navigationTitle("Essai du \((version.executedAt ?? version.createdAt).formatted(.dateTime.day().month(.wide)))")
+        .navigationSubtitle("\(recipeTitle) · v\(version.number)")
     }
 }
 
@@ -42,7 +42,7 @@ struct TrialDetailPage: View {
     NavigationStack {
         TrialDetailPage(
             recipeTitle: Fixtures.bourguignon.title,
-            trial: Fixtures.bourguignonTrials[1]
+            version: Fixtures.bourguignonV3
         )
     }
 }

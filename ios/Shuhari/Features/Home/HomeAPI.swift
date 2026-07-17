@@ -29,19 +29,18 @@ enum HomeAPI {
                     category: DishCategory(graphql: recipe.category),
                     versionCount: recipe.versionCount,
                     bestNote: recipe.bestNote,
-                    averageNote: recipe.currentVersion?.averageNote,
+                    averageNote: recipe.currentVersion?.note.map(Double.init),
                     updatedAt: GraphQLHelpers.parseISO8601(recipe.updatedAt) ?? Date.distantPast
                 )
             },
-            recentTrials: home.recentTrials.map { trial in
-                Trial(
-                    id: trial.id,
-                    recipeId: trial.recipeId,
-                    versionNumber: trial.versionNumber,
-                    note: trial.note,
-                    remarks: trial.remarks,
-                    photoUrl: nil,
-                    executedAt: GraphQLHelpers.parseISO8601(trial.executedAt) ?? Date()
+            recentEssais: home.recentEssais.compactMap { essai in
+                guard let note = essai.note, let executedAt = essai.executedAt else { return nil }
+                return RecentEssai(
+                    recipeId: essai.recipeId,
+                    versionNumber: essai.number,
+                    note: note,
+                    remarks: essai.remarks ?? "",
+                    executedAt: GraphQLHelpers.parseISO8601(executedAt) ?? Date()
                 )
             }
         )

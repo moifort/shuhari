@@ -37,8 +37,10 @@ enum VersionOriginKind: Sendable {
     case manual
 }
 
-/// An immutable entry in a recipe's linear lineage (v1 → v2 → …). A version is
-/// its ingredients + steps (+ per-step Thermomix settings) — no parameters.
+/// An entry in a recipe's linear lineage (v1 → v2 → …). Its content (ingredients +
+/// steps + per-step Thermomix settings) is immutable; its essai outcome (`note`,
+/// `remarks`, `executedAt`, `photoUrl`) is written once, when the version is tried.
+/// A version is an "essai à faire" until `executedAt != nil`.
 struct RecipeVersion: Identifiable, Sendable {
     let number: Int
     let change: String?
@@ -51,24 +53,22 @@ struct RecipeVersion: Identifiable, Sendable {
     /// Per-step Thermomix settings, aligned with `steps` (nil entry = plain step).
     /// Empty for non-Thermomix recipes — "is Thermomix" is derived from `type`.
     let tmxSteps: [TmxSettings?]
-    let averageNote: Double?
-    let trialCount: Int
+    /// The recipe this version belongs to.
+    let recipeId: String
+    /// The essai rating (1..5), or nil while the version hasn't been executed yet.
+    let note: Int?
+    /// The essai remarks, or nil while not yet executed.
+    let remarks: String?
+    /// When the essai was executed, or nil while still an "essai à faire".
+    let executedAt: Date?
+    /// Signed URL of the essai photo (nil until photo storage is provisioned).
+    let photoUrl: String?
     let createdAt: Date
 
     var id: Int { number }
-}
 
-// MARK: - Trial
-
-/// One execution of a recipe version.
-struct Trial: Identifiable, Sendable {
-    let id: String
-    let recipeId: String
-    let versionNumber: Int
-    let note: Int
-    let remarks: String
-    let photoUrl: String?
-    let executedAt: Date
+    /// Whether this version has been executed (its essai recorded).
+    var tried: Bool { executedAt != nil }
 }
 
 // MARK: - Draft
@@ -119,28 +119,37 @@ struct Recipe: Identifiable, Sendable {
     let toTest: RecipeVersion?
     /// The full lineage, oldest first.
     let versions: [RecipeVersion]
-    /// The trial journal, most recent first.
-    let trials: [Trial]
 
     /// The version number the next iteration would take.
     var nextVersionNumber: Int { (versions.map(\.number).max() ?? 0) + 1 }
 
-    /// The version the fiche presents as its reference — "la mieux notée": the
-    /// tried version with the highest average note, falling back to the current
-    /// reference when nothing has been rated yet.
-    var bestRatedVersion: RecipeVersion? {
+    /// The essai journal: every tried version, most recent first.
+    var essais: [RecipeVersion] {
         versions
-            .filter { $0.averageNote != nil }
-            // On a tie, favour the more recent version (higher number).
-            .max { ($0.averageNote ?? 0, $0.number) < ($1.averageNote ?? 0, $1.number) }
-            ?? currentVersion
+            .filter(\.tried)
+            .sorted { ($0.executedAt ?? .distantPast) > ($1.executedAt ?? .distantPast) }
     }
 
-    /// Mean note over every trial of the recipe, all versions combined.
+    /// The version the fiche presents as its reference — "la mieux notée": the
+    /// tried version with the highest note. Falls back to the current reference,
+    /// then the pending version, then the highest-numbered version, so a
+    /// never-tried recipe (currentVersion == nil) still renders a fiche and keeps
+    /// its record CTA.
+    var bestRatedVersion: RecipeVersion? {
+        versions
+            .filter { $0.note != nil }
+            // On a tie, favour the more recent version (higher number).
+            .max { ($0.note ?? 0, $0.number) < ($1.note ?? 0, $1.number) }
+            ?? currentVersion
+            ?? toTest
+            ?? versions.max { $0.number < $1.number }
+    }
+
+    /// Mean note over every essai of the recipe, all versions combined.
     var overallAverageNote: Double? {
-        guard !trials.isEmpty else { return nil }
-        let sum = trials.reduce(0) { $0 + $1.note }
-        return Double(sum) / Double(trials.count)
+        let notes = essais.compactMap(\.note)
+        guard !notes.isEmpty else { return nil }
+        return Double(notes.reduce(0, +)) / Double(notes.count)
     }
 
     func version(_ number: Int) -> RecipeVersion? {

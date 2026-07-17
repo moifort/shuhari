@@ -1,6 +1,6 @@
 import Foundation
 
-/// A recipe with a pending version awaiting a trial — rendered as a "À tester" banner.
+/// A recipe with a pending version awaiting an essai — rendered as a "À tester" banner.
 struct HomeTestItem: Identifiable, Sendable {
     let id: String
     let title: String
@@ -11,8 +11,20 @@ struct HomeTestItem: Identifiable, Sendable {
     let why: String?
 }
 
-/// A library row: how many versions the recipe has, its best trial note ("the
-/// highest star") and the current reference's mean note.
+/// A recent essai across all recipes — a lightweight activity row for the home
+/// screen, derived from a tried version.
+struct RecentEssai: Identifiable, Sendable {
+    let recipeId: String
+    let versionNumber: Int
+    let note: Int
+    let remarks: String
+    let executedAt: Date
+
+    var id: String { "\(recipeId)#\(versionNumber)" }
+}
+
+/// A library row: how many versions the recipe has, its best essai note ("the
+/// highest star") and the current reference's note.
 struct LibraryRecipe: Identifiable, Sendable {
     let id: String
     let title: String
@@ -56,7 +68,7 @@ struct LibraryMonthGroup: Identifiable, Sendable {
 struct HomeData: Sendable {
     let toTest: [HomeTestItem]
     let library: [LibraryRecipe]
-    let recentTrials: [Trial]
+    let recentEssais: [RecentEssai]
 
     /// Restrict every section to the given recipe types — backs the per-category tabs.
     func filtered(to types: Set<RecipeType>) -> HomeData {
@@ -65,7 +77,7 @@ struct HomeData: Sendable {
         return HomeData(
             toTest: toTest.filter { types.contains($0.type) },
             library: lib,
-            recentTrials: recentTrials.filter { ids.contains($0.recipeId) }
+            recentEssais: recentEssais.filter { ids.contains($0.recipeId) }
         )
     }
 

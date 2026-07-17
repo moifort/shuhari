@@ -14,7 +14,7 @@ enum Theme {
         /// Thermomix machine settings.
         static let tmx = Color.teal
 
-        /// Trial note thresholds: ≥ 4 high, 3 medium, ≤ 2 low.
+        /// Essai note thresholds: ≥ 4 high, 3 medium, ≤ 2 low.
         static func note(_ note: Int) -> Color {
             if note >= 4 { .green } else if note == 3 { .orange } else { .red }
         }

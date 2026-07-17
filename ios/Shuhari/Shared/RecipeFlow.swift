@@ -13,8 +13,8 @@ struct RecipeRouteView: View {
             RecipeDetailView(recipeId: id, path: $path, onReload: onReload)
         case .history(let id):
             HistoryView(recipeId: id)
-        case .trial(let id):
-            TrialDetailView(trialId: id)
+        case .essai(let recipeId, let versionNumber):
+            TrialDetailView(recipeId: recipeId, versionNumber: versionNumber)
         }
     }
 }

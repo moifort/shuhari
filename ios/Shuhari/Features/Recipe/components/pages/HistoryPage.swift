@@ -16,8 +16,8 @@ struct HistoryPage: View {
                         number: version.number,
                         change: version.change,
                         originDetail: version.originDetail,
-                        averageNote: version.averageNote,
-                        trialCount: version.trialCount,
+                        note: version.note,
+                        tried: version.tried,
                         date: version.createdAt,
                         isCurrent: version.number == recipe.currentVersion?.number,
                         isToTest: version.number == recipe.toTest?.number,
@@ -28,7 +28,7 @@ struct HistoryPage: View {
                 Text("Chaque cran ne change que ce qui est écrit.")
             }
 
-            TrialJournalSection(recipeTitle: recipe.title, trials: recipe.trials)
+            TrialJournalSection(recipeTitle: recipe.title, essais: recipe.essais)
         }
         .navigationTitle("Historique")
         .navigationSubtitle(recipe.title)

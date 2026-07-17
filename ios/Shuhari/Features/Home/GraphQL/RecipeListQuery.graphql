@@ -23,7 +23,7 @@ query RecipeList(
       versionCount
       bestNote
       currentVersion {
-        averageNote
+        note
       }
     }
     hasMore

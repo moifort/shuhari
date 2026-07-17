@@ -1,32 +1,34 @@
 import SwiftUI
 
-/// Coordinator for a trial's detail. Loads the trial, then the parent recipe to
-/// resolve its title.
+/// Coordinator for an essai's detail. Loads the recipe and resolves the version
+/// that carries the essai outcome.
 struct TrialDetailView: View {
-    let trialId: String
+    let recipeId: String
+    let versionNumber: Int
 
-    @State private var trial: Trial?
-    @State private var recipeTitle: String?
+    @State private var recipe: Recipe?
     @State private var error: String?
 
     var body: some View {
         Group {
-            if let trial, let recipeTitle {
-                TrialDetailPage(recipeTitle: recipeTitle, trial: trial)
+            if let recipe {
+                if let version = recipe.version(versionNumber) {
+                    TrialDetailPage(recipeTitle: recipe.title, version: version)
+                } else {
+                    ContentUnavailableView("Essai introuvable", systemImage: "questionmark.circle")
+                }
             } else if let error {
                 ContentUnavailableView("Erreur", systemImage: "exclamationmark.triangle", description: Text(error))
             } else {
                 ProgressView()
             }
         }
-        .task { if trial == nil { await load() } }
+        .task { if recipe == nil { await load() } }
     }
 
     private func load() async {
         do {
-            let loadedTrial = try await RecipeAPI.getTrial(id: trialId)
-            trial = loadedTrial
-            recipeTitle = try await RecipeAPI.getRecipe(id: loadedTrial.recipeId).title
+            recipe = try await RecipeAPI.getRecipe(id: recipeId)
         } catch {
             self.error = reportError(error)
         }

@@ -55,7 +55,7 @@ struct RecipeDetailPage: View {
                     RecipeHeaderBadges(
                         type: recipe.type,
                         versionNumber: recipe.bestRatedVersion?.number,
-                        trialCount: recipe.trials.count
+                        essaiCount: recipe.essais.count
                     )
                     Spacer(minLength: Theme.Spacing.s)
                     if let average = recipe.overallAverageNote {

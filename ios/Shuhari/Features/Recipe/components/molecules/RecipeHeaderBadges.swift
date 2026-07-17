@@ -2,11 +2,11 @@ import SwiftUI
 
 /// The fiche's header badges, in the iOS Photos "CINÉMATIQUE" style: a capsule
 /// carrying the recipe type (icon + short uppercase label), then the displayed
-/// version and the trial count. Primitive-first: no domain struct.
+/// version and the essai count. Primitive-first: no domain struct.
 struct RecipeHeaderBadges: View {
     let type: RecipeType
     let versionNumber: Int?
-    var trialCount: Int = 0
+    var essaiCount: Int = 0
 
     var body: some View {
         HStack(spacing: Theme.Spacing.s) {
@@ -25,13 +25,13 @@ struct RecipeHeaderBadges: View {
                 .accessibilityLabel("Version \(versionNumber)")
             }
 
-            if trialCount > 0 {
+            if essaiCount > 0 {
                 capsule {
                     Image(systemName: "flask")
-                    Text("\(trialCount)")
+                    Text("\(essaiCount)")
                         .monospacedDigit()
                 }
-                .accessibilityLabel("\(trialCount) essais")
+                .accessibilityLabel("\(essaiCount) essais")
             }
         }
     }
@@ -52,7 +52,7 @@ struct RecipeHeaderBadges: View {
 #Preview {
     VStack(alignment: .leading, spacing: 12) {
         ForEach(RecipeType.allCases) { type in
-            RecipeHeaderBadges(type: type, versionNumber: 3, trialCount: 2)
+            RecipeHeaderBadges(type: type, versionNumber: 3, essaiCount: 2)
         }
         RecipeHeaderBadges(type: .plat, versionNumber: nil)
     }
