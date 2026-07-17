@@ -9,29 +9,31 @@ jusqu'à trouver la meilleure.
 
 ## Le concept
 
-Quatre types d'expérimentations : **café**, **cocktail**, **plat** et **tmx**
-(Thermomix). La boucle est toujours la même :
+Deux types d'expérimentations culinaires : **plat** et **tmx** (Thermomix) — le
+café et le cocktail reviendront plus tard, chacun dans son propre domaine. Chaque
+recette porte une **catégorie de plat** (entrée, plat, dessert, soupe, sauce,
+boulangerie). La boucle est toujours la même :
 
 1. **Importer** une recette depuis une photo (prise sur le vif avec l'appareil
    photo ou choisie dans la bibliothèque), un lien ou du texte — l'IA (Gemini)
-   structure les paramètres et les étapes. Pour une recette Thermomix, elle
-   extrait aussi les réglages de chaque étape (temps, température, vitesse, sens
-   inverse), affichés en badges dédiés.
-2. **Exécuter** la version courante et **noter** l'essai (5 étoiles, remarques et
-   photo à l'appui), en consignant les paramètres réellement utilisés (pour la
-   reproductibilité).
-3. **Itérer** — l'IA propose la modification suivante. Pour un café ou un
-   cocktail, elle ne change **qu'une seule variable à la fois** (méthode
-   scientifique à variable unique) ; pour un plat ou une recette Thermomix, elle
-   peut en changer plusieurs.
+   en extrait les **ingrédients** et les **étapes**, et **détecte la catégorie
+   de plat**. Pour une recette Thermomix, elle relève aussi les réglages de
+   chaque étape (temps, température, vitesse, sens inverse), affichés en badges
+   dédiés.
+2. **Exécuter** la version courante — ses ingrédients et ses étapes — et
+   **noter** l'essai de **1 à 5 étoiles** (remarques et photos à l'appui).
+3. **Itérer** — l'IA propose la version suivante sous forme de **brouillon
+   complet** (résumé du changement, justification, ingrédients et étapes), que
+   l'on peut **modifier avant de l'accepter**.
 4. **Valider** la proposition en **itération** (nouvelle version de la même
    recette) ou en **variation** (nouvelle recette dérivée, avec sa propre
    lignée).
-5. **Promouvoir** — dès qu'un essai atteint la note 8 ou plus, la version testée
-   devient la nouvelle référence reproductible.
+5. **Promouvoir** — dès qu'un essai atteint **4 étoiles ou plus**, la version
+   testée devient la nouvelle référence.
 
-La reproductibilité est au cœur du produit : chaque essai trace les paramètres
-réels utilisés, ce qui permet de **rejouer exactement un essai** (mode replay).
+Le carnet rassemble toutes les recettes dans une **bibliothèque paginée**,
+triable par **catégorie de plat** ou par **dernière modification**, avec un
+filtre Plat / Thermomix.
 
 Application mono-utilisateur, mais avec une vraie authentification Firebase +
 Sign in with Apple.
