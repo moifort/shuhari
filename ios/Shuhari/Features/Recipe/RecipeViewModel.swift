@@ -11,6 +11,14 @@ final class RecipeViewModel {
         self.recipeId = recipeId
     }
 
+    /// Seeds the model with a fixture recipe for previews and the debug gallery,
+    /// so `RecipeDetailView` renders fully offline (its `.task` skips loading
+    /// because `recipe` is already set).
+    init(previewRecipe: Recipe) {
+        self.recipeId = previewRecipe.id
+        self.recipe = previewRecipe
+    }
+
     func load() async {
         isLoading = true
         error = nil

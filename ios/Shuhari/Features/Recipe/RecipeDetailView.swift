@@ -26,6 +26,19 @@ struct RecipeDetailView: View {
         self._viewModel = State(initialValue: RecipeViewModel(recipeId: recipeId))
     }
 
+    /// Preview/gallery initializer: renders the full coordinator — action bar and
+    /// sheets included — from a fixture recipe, with no network.
+    init(
+        previewRecipe: Recipe,
+        path: Binding<NavigationPath>,
+        onReload: @escaping () -> Void = {}
+    ) {
+        self.recipeId = previewRecipe.id
+        self._path = path
+        self.onReload = onReload
+        self._viewModel = State(initialValue: RecipeViewModel(previewRecipe: previewRecipe))
+    }
+
     var body: some View {
         Group {
             if let recipe = viewModel.recipe {

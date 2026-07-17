@@ -33,13 +33,9 @@ struct DebugGallery: View {
         case "cuisine":
             CuisineGalleryScreen()
         case "recipe":
-            NavigationStack {
-                RecipeDetailPage(recipe: Fixtures.bourguignon)
-            }
+            RecipeDetailGalleryScreen(recipe: Fixtures.bourguignon)
         case "recipe-tmx":
-            NavigationStack {
-                RecipeDetailPage(recipe: Fixtures.risotto)
-            }
+            RecipeDetailGalleryScreen(recipe: Fixtures.risotto)
         case "history":
             NavigationStack {
                 HistoryPage(recipe: Fixtures.bourguignon)
@@ -105,6 +101,20 @@ struct DebugGallery: View {
                 systemImage: "questionmark.square.dashed",
                 description: Text("Écrans : home, cuisine, recipe, recipe-tmx, history, trial, execute, execute-tmx, capture, proposal, import-preview, import-preview-tmx, ai-thinking")
             )
+        }
+    }
+}
+
+/// The full recipe fiche coordinator (`RecipeDetailView`) over a fixture, so the
+/// gallery can exercise the floating action bar and its sheets offline. Owns the
+/// navigation path the coordinator writes into.
+private struct RecipeDetailGalleryScreen: View {
+    let recipe: Recipe
+    @State private var path = NavigationPath()
+
+    var body: some View {
+        NavigationStack(path: $path) {
+            RecipeDetailView(previewRecipe: recipe, path: $path)
         }
     }
 }
