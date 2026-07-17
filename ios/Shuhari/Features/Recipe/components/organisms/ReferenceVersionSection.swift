@@ -15,9 +15,7 @@ struct ReferenceVersionSection: View {
                     StepsList(steps: version.steps)
                 }
             } header: {
-                // Trim the header's built-in top padding so the fiche stays compact.
                 Text("Description")
-                    .padding(.top, -14)
             }
         }
     }
