@@ -5,9 +5,10 @@ The rules for how work is checkpointed locally and shipped to the remote. CLAUDE
 
 ## Language
 
-Everything in git history is **English**: commit messages, branch names, PR text. The only
-French in the repo is user-facing copy (`CHANGELOG.md` entries, the iOS app's on-screen text).
-Never mix languages inside a commit message.
+Everything in git history is **English**: commit messages, branch names, PR text. `CHANGELOG.md`
+is English too — it is the source of truth. The only French in the repo is user-facing copy
+(`CHANGELOG.fr.md`, the copy served to the app, and the iOS app's on-screen text). Never mix
+languages inside a commit message.
 
 ## Commit cadence — one task, one commit
 
@@ -74,13 +75,30 @@ by hand, then commit the removal; that pain is exactly why one-task-one-commit m
    runs `biome check`) green — a local `bun test` alone does **not** cover Biome.
 3. **README** (`README.md`): update the features / tech-stack sections if the pushed work
    changed them.
-4. **Changelog** (`CHANGELOG.md`): add user-facing entries (in **French**) under
-   `## Unreleased`, then run `bun run generate:assets` to regenerate
-   `server/system/changelog-content.ts` (the iOS-facing asset served via GraphQL — never edit
-   it by hand).
+4. **iOS GraphQL API** (only if the GraphQL schema changed): run `bun run generate:graphql`,
+   then `cd ios && apollo-ios-cli generate`, and commit the regenerated `shared/schema.graphql`
+   and the generated Apollo operations so the app's typed operations stay in sync with the
+   deployed schema.
 5. **Push.**
 6. **Analyze the CI.** A push to `main` fires two workflows — **Unit Tests** (`bun tsc`) and
    **Deploy**. Watch them through to completion rather than assuming green: `gh run watch`, or
    `gh run list --branch main --limit 5` then `gh run view <id> --log-failed` on any failure.
    The push isn't done until CI is green; if a job fails, report it and fix it (a follow-up
    commit + push), don't leave a red `main`.
+
+## The changelog is a release-time activity — never at push time
+
+A normal `main` push carries **no** changelog change. Do **not** touch `CHANGELOG.md` /
+`CHANGELOG.fr.md` when pushing, and do not add `## Unreleased` entries per commit. The changelog
+is written only at the moment of an iOS App Store release:
+
+1. Write the notes in English under `## Unreleased` in `CHANGELOG.md` (grouped `### New` /
+   `### Fixes`), then the French translation under `## Unreleased` in `CHANGELOG.fr.md`.
+2. Rename the `## Unreleased` heading in **both** files to `## <version> (<YYYY.MM.DD>)` — there
+   is no CI date-stamp, versioning is manual.
+3. Push `main`: the Deploy workflow runs `bun run generate:assets`, which regenerates the served
+   asset `server/system/changelog-content.ts` from `CHANGELOG.fr.md` (never edit that asset by
+   hand). The notes reach the app only after this deploy.
+
+See [App Store Distribution in CLAUDE.md](../CLAUDE.md#app-store-distribution) for the full
+release flow.

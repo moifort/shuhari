@@ -26,33 +26,6 @@ jobs:
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
           service_account: ${{ secrets.GCP_DEPLOY_SA }}
 
-      - name: Stamp CHANGELOG.md with deploy date
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import datetime, pathlib
-          p = pathlib.Path("CHANGELOG.md")
-          text = p.read_text()
-          date = datetime.datetime.utcnow().strftime("%Y.%m.%d")
-          if f"## {date}" in text:
-              raise SystemExit(0)
-          if "## Unreleased" in text:
-              text = text.replace("## Unreleased", f"## {date}", 1)
-          else:
-              lines = text.splitlines()
-              out = []
-              inserted = False
-              for line in lines:
-                  out.append(line)
-                  if not inserted and line.startswith("# "):
-                      out.append("")
-                      out.append(f"## {date}")
-                      out.append("- Mise à jour automatique.")
-                      inserted = True
-              text = "\n".join(out) + "\n"
-          p.write_text(text)
-          PY
-
       - name: Build the Nitro bundle (firebase preset)
         run: |
           bun install --frozen-lockfile

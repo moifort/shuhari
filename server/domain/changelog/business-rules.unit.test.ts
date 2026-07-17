@@ -11,13 +11,23 @@ describe('parseChangelog', () => {
     expect(parseChangelog('# Changelog\n\nIntro paragraph.\n')).toEqual([])
   })
 
-  test('parses a single dated version with bullet notes', () => {
-    const md = ['# Changelog', '', '## 2026.04.26', '- First note', '- Second note', ''].join('\n')
+  test('parses a versioned heading into a version and a date', () => {
+    const md = ['# Changelog', '', '## 1.1 (2026.04.26)', '- First note', '- Second note', ''].join(
+      '\n',
+    )
+    const result = parseChangelog(md)
+    expect(result).toHaveLength(1)
+    expect(result[0].version).toBe(ChangelogVersion('1.1'))
+    expect(result[0].date?.toISOString()).toBe('2026-04-26T00:00:00.000Z')
+    expect(result[0].notes).toEqual(['First note', 'Second note'])
+  })
+
+  test('parses a legacy bare-date heading (version equals the date)', () => {
+    const md = ['# Changelog', '', '## 2026.04.26', '- Note', ''].join('\n')
     const result = parseChangelog(md)
     expect(result).toHaveLength(1)
     expect(result[0].version).toBe(ChangelogVersion('2026.04.26'))
     expect(result[0].date?.toISOString()).toBe('2026-04-26T00:00:00.000Z')
-    expect(result[0].notes).toEqual(['First note', 'Second note'])
   })
 
   test('parses an Unreleased section with a null date', () => {
@@ -36,17 +46,17 @@ describe('parseChangelog', () => {
       '## Unreleased',
       '- A',
       '',
-      '## 2026.04.26',
+      '## 1.1 (2026.04.26)',
       '- B',
       '',
-      '## 2026.04.20',
+      '## 1.0 (2026.04.20)',
       '- C',
     ].join('\n')
     const result = parseChangelog(md)
     expect(result.map((entry) => entry.version)).toEqual([
       ChangelogVersion('Unreleased'),
-      ChangelogVersion('2026.04.26'),
-      ChangelogVersion('2026.04.20'),
+      ChangelogVersion('1.1'),
+      ChangelogVersion('1.0'),
     ])
   })
 

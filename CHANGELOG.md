@@ -1,28 +1,34 @@
-# Journal des modifications
+# Changelog
 
-Toutes les évolutions notables de Shuhari, la plus récente en premier.
+Every notable change to Shuhari, most recent first. This English file is the source of truth;
+`CHANGELOG.fr.md` is the French copy served to the app.
 
 ## Unreleased
 
-- Shuhari se recentre sur la **cuisine** : deux types de recettes, **Plat** et **Thermomix** (le café et le cocktail reviendront plus tard). Les onglets se réduisent à **Carnet** et **Importer**.
-- Chaque recette porte désormais une **catégorie de plat** (entrée, plat, dessert, soupe, sauce, boulangerie), **détectée automatiquement à l'import**, modifiable dans l'aperçu et affichée sur la fiche.
-- Notation des essais **de 1 à 5 étoiles** : une version devient la référence **dès qu'un essai atteint 4 étoiles**.
-- Propositions d'itération repensées : l'IA fournit un **brouillon complet de la version suivante** — résumé du changement, justification, ingrédients et étapes — que l'on peut **modifier avant de l'accepter**.
-- Fiche et exécution s'appuient désormais sur les **ingrédients et les étapes** : les paramètres réglables disparaissent au profit d'une recette plus simple à lire et à refaire.
-- Carnet : la bibliothèque se **charge en continu** (chargement paginé) et propose un **tri** — **Type de plat** ou **Dernière modification** — à côté du filtre Plat / Thermomix.
-- **Attention** : à la suite de ces changements, les **sauvegardes exportées avant cette version ne peuvent plus être restaurées**.
-- Fiche recette : affichage façon visionneuse Photos — **pastille de titre** avec la date de création, badges **type / version / essais** avec la note moyenne en **étoiles**, **ingrédients intégrés** à la page puis la **meilleure version** en description ; en bas, un bécher pour la version « à tester », un **bouton rond pour noter un essai** et l'**historique en panneau**.
-- Noter un essai : nouvel écran « Remarque » en demi-écran — note en **5 étoiles**, champ de remarques plus spacieux, ajout de **plusieurs photos** ; validation par une coche en haut.
-- Carnet : chaque recette affiche son **nombre de versions** et sa **meilleure note**.
-- Icônes : nouveaux symboles dédiés — **tasse espresso** pour le café, verre à martini pour les cocktails, toque pour la cuisine, **bécher** pour les essais, variantes contour/rempli du Thermomix.
-- Import : les **ingrédients** sont désormais extraits avec leurs quantités, séparément des paramètres — modifiables à l'import et affichés sur la fiche recette.
-- Import : l'analyse de la recette s'affiche dans une feuille dédiée avec l'animation « écoute » de Siri, et l'aperçu adopte un style natif (Fermer et validation par une coche en haut, type avec icône, étapes modifiables, titre remis en casse normale, sections vides masquées).
-- Import : l'animation d'analyse est plus fluide et se fond en douceur dans l'aperçu une fois la recette prête.
-- Correctif : les recettes dont un ingrédient porte un nom descriptif (long) s'importent désormais sans erreur.
-- Import : choisir ou prendre une photo ferme l'appareil photo avant d'ouvrir l'aperçu.
-- Recette : supprimer une recette demande une confirmation et la liste se met à jour aussitôt.
-- Correctif : fermer l'import ramène à la catégorie d'origine (l'onglet ne reste plus bloqué sur une page vide).
-- Le raccourci d'import (appareil photo) apparaît désormais dans son propre bouton distinct, à droite de la barre d'onglets, séparé des catégories.
-- Import par photo : on peut désormais prendre une photo d'une recette directement avec l'appareil photo, en plus de la choisir dans la bibliothèque, d'un lien ou d'un texte.
-- Recettes Thermomix : l'import extrait désormais les réglages de chaque étape (temps, température, vitesse, sens inverse), affichés en badges sur la fiche recette et l'aperçu d'import.
-- Première version : import de recettes assisté par IA, boucle d'expérimentation (exécuter, noter, itérer), propositions d'itération par l'IA, promotion de version et variations.
+### New
+
+- Shuhari refocuses on **cooking**: two recipe types, **Plat** (dish) and **Thermomix** (coffee and cocktails will come back later). The tabs narrow down to **Carnet** (notebook) and **Import**.
+- Every recipe now carries a **dish category** (starter, main, dessert, soup, sauce, baking), **detected automatically at import**, editable in the preview and shown on the recipe sheet.
+- Trials are now rated **from 1 to 5 stars**: a version becomes the reference **as soon as a trial reaches 4 stars**.
+- Reworked iteration proposals: the AI provides a **complete draft of the next version** — change summary, rationale, ingredients and steps — that can be **edited before accepting it**.
+- The recipe sheet and its run now build on **ingredients and steps**: the tunable parameters give way to a recipe that is simpler to read and to reproduce.
+- Carnet: the library now **loads continuously** (paginated loading) and offers a **sort** — **Dish type** or **Last modified** — next to the Plat / Thermomix filter.
+- **Heads-up**: as a result of these changes, **backups exported before this version can no longer be restored**.
+- Recipe sheet: a Photos-viewer-style layout — a **title pill** with the creation date, **type / version / trials** badges with the average rating in **stars**, **ingredients embedded** in the page then the **best version** as the description; at the bottom, a beaker for the "to test" version, a **round button to log a trial** and the **history in a panel**.
+- Log a trial: a new "Remark" half-sheet screen — a **5-star** rating, a roomier remarks field, and support for **several photos**; confirmed with a checkmark at the top.
+- Carnet: every recipe shows its **number of versions** and its **best rating**.
+- Icons: new dedicated symbols — an **espresso cup** for coffee, a martini glass for cocktails, a chef's toque for cooking, a **beaker** for trials, and outline/filled Thermomix variants.
+- Import: **ingredients** are now extracted with their quantities, separately from the parameters — editable at import and shown on the recipe sheet.
+- Import: recipe analysis now shows in a dedicated sheet with Siri's "listening" animation, and the preview adopts a native style (Close and checkmark confirmation at the top, type with an icon, editable steps, the title back in normal case, empty sections hidden).
+- Import: the analysis animation is smoother and blends gently into the preview once the recipe is ready.
+- Recipe: deleting a recipe now asks for confirmation and the list updates immediately.
+- The import shortcut (camera) now appears in its own separate button, to the right of the tab bar, apart from the categories.
+- Photo import: a recipe photo can now be taken directly with the camera, in addition to picking it from the library, a link, or text.
+- Thermomix recipes: import now extracts each step's settings (time, temperature, speed, reverse direction), shown as badges on the recipe sheet and the import preview.
+- First version: AI-assisted recipe import, an experimentation loop (run, rate, iterate), AI iteration proposals, version promotion and variations.
+
+### Fixes
+
+- Recipes whose ingredient carries a descriptive (long) name now import without an error.
+- Import: picking or taking a photo closes the camera before opening the preview.
+- Closing the import returns to the original category (the tab no longer stays stuck on an empty page).

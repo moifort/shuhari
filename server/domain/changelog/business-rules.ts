@@ -1,37 +1,60 @@
 import { ChangelogVersion } from '~/domain/changelog/primitives'
+import type { ChangelogEntry } from '~/domain/changelog/types'
 
 const headingPattern = /^##\s+(.+?)\s*$/
 const bulletPattern = /^[-*]\s+(.+?)\s*$/
+// Heading forms: "1.1 (2026.07.15)" (version + date), a bare "2026.07.15" (legacy),
+// or a plain label such as "Unreleased" (no date).
+const versionedPattern = /^(.+?)\s*\((\d{4})\.(\d{2})\.(\d{2})\)$/
 const datedPattern = /^(\d{4})\.(\d{2})\.(\d{2})$/
 
-const parseDate = (heading: string) => {
-  const match = headingPattern.exec(heading.trim())
-  if (!match) return null
-  const dated = datedPattern.exec(match[1])
-  if (!dated) return null
-  return new Date(Date.UTC(Number(dated[1]), Number(dated[2]) - 1, Number(dated[3])))
-}
+const toUtcDate = (year: string, month: string, day: string): Date =>
+  new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
 
-const parseHeading = (heading: string) => {
-  const match = headingPattern.exec(heading.trim())
-  return match ? match[1] : null
+const parseHeading = (line: string): { version: string; date: Date | null } | null => {
+  const match = headingPattern.exec(line.trim())
+  if (!match) return null
+  const text = match[1].trim()
+  const versioned = versionedPattern.exec(text)
+  if (versioned)
+    return {
+      version: versioned[1].trim(),
+      date: toUtcDate(versioned[2], versioned[3], versioned[4]),
+    }
+  const dated = datedPattern.exec(text)
+  if (dated) return { version: text, date: toUtcDate(dated[1], dated[2], dated[3]) }
+  return { version: text, date: null }
 }
 
 const isHeading = (line: string) => line.trimStart().startsWith('## ')
 
-// Split the markdown into sections at each `## ` heading, then turn each section
-// (heading line + the bullet lines up to the next heading) into an entry.
-export const parseChangelog = (markdown: string) => {
-  const lines = markdown.split(/\r?\n/).map((raw) => raw.trimEnd())
-  const headings = lines.flatMap((line, index) => (isHeading(line) ? [index] : []))
-  return headings.flatMap((start, i) => {
-    const heading = parseHeading(lines[start])
-    if (!heading) return []
-    const end = headings[i + 1] ?? lines.length
-    const notes = lines.slice(start + 1, end).flatMap((line) => {
-      const bullet = bulletPattern.exec(line)
-      return bullet ? [bullet[1]] : []
-    })
-    return [{ version: ChangelogVersion(heading), date: parseDate(lines[start]), notes }]
-  })
+export const parseChangelog = (markdown: string): ChangelogEntry[] => {
+  const entries: ChangelogEntry[] = []
+  const lines = markdown.split(/\r?\n/)
+
+  let current: ChangelogEntry | null = null
+
+  for (const raw of lines) {
+    const line = raw.trimEnd()
+    if (isHeading(line)) {
+      if (current) entries.push(current)
+      const heading = parseHeading(line)
+      if (!heading) {
+        current = null
+        continue
+      }
+      current = {
+        version: ChangelogVersion(heading.version),
+        date: heading.date,
+        notes: [],
+      }
+      continue
+    }
+    if (!current) continue
+    const bullet = bulletPattern.exec(line)
+    if (bullet) current.notes.push(bullet[1])
+  }
+
+  if (current) entries.push(current)
+  return entries
 }

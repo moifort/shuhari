@@ -6,7 +6,7 @@ propose the next iteration, promote a version once it scores high enough.
 
 ## Language
 
-Everything versioned and technical is written in **English**: commit messages, code, code comments, and documentation (README, this file). The **only** French in the repo is user-facing copy — `CHANGELOG.md` entries and the iOS app's on-screen text. Never mix languages in a commit message or a comment.
+Everything versioned and technical is written in **English**: commit messages, code, code comments, and documentation (README, this file). This includes `CHANGELOG.md`, the English source of truth. The **only** French in the repo is user-facing copy — `CHANGELOG.fr.md` (the copy served to the app) and the iOS app's on-screen text. Never mix languages in a commit message or a comment.
 
 ## Build & Verification Commands
 
@@ -40,9 +40,11 @@ Everything versioned and technical is written in **English**: commit messages, c
 1. **Re-analyze & reshape the pending commits** (`git log origin/<branch>..HEAD`): squash/regroup related ones, rewrite messages, and **elide undone work** — a feature + its revert must collapse and leave no trace on the remote.
 2. **Biome autofix**: run `bun run lint:fix`, confirm `bun run lint` is clean, and commit any changes — CI's `biome check` lints everything (incl. asset-catalog JSON), and local `bun test` doesn't cover it.
 3. **README** (`README.md`): update the features / tech-stack sections if the pushed work changed them.
-4. **Changelog** (`CHANGELOG.md`): add user-facing entries (in French) under `## Unreleased`, then run `bun run generate:assets` to regenerate `server/system/changelog-content.ts` (the iOS-facing asset served via GraphQL — never edit it by hand).
+4. **iOS GraphQL API** (if the schema changed): run `bun run generate:graphql`, then `cd ios && apollo-ios-cli generate`, and commit the regenerated `shared/schema.graphql` + `ios/Shuhari/**/Generated` so the app's typed operations stay in sync with the deployed schema.
 5. Push.
 6. **Analyze the CI**: a push to `main` fires **Unit Tests** + **Deploy** — watch them (`gh run watch`, or `gh run list --branch main` + `gh run view <id> --log-failed` on failure). Not done until CI is green; fix any failure with a follow-up commit + push.
+
+**Not at push time — the changelog.** Do **not** touch `CHANGELOG.md` / `CHANGELOG.fr.md` when pushing. The changelog is written only at the moment of an iOS App Store release, as part of the release flow (see [App Store Distribution](#app-store-distribution)) — a normal `main` push carries no changelog change, and there is no CI date-stamp (versioning is manual).
 
 ## Backend Patterns (TypeScript / Nitro)
 
@@ -109,6 +111,11 @@ Everything versioned and technical is written in **English**: commit messages, c
 ## App Store Distribution
 
 Build with the latest **final** Xcode — never a beta/RC, and never an older release once a newer final ships. Both trigger **ITMS-90111** (Unsupported SDK or Xcode version) on upload.
+
+**Release flow** (the changelog is written here, not at push time), in order:
+1. Write the release notes in English under `## Unreleased` in `CHANGELOG.md` (grouped `### New` / `### Fixes`), then the French translation under `## Unreleased` in `CHANGELOG.fr.md`. Rename the `## Unreleased` heading in **both** files to `## <version> (<YYYY.MM.DD>)` (e.g. `## 1.0 (2026.08.01)`) — matching the version you are about to upload. There is no CI date-stamp; versioning is manual.
+2. **Push `main`** — the Deploy workflow regenerates the served changelog asset (`server/system/changelog-content.ts`) from `CHANGELOG.fr.md` via `bun run generate:assets`. This step is **required for the in-app changelog**: the notes only reach the app once a `main` deploy has rebuilt the asset. The app shows the version as the row title and the date on the right; a plain `## Unreleased` would display literally as "Unreleased", so make sure it was versioned in step 1.
+3. Archive, export and upload to App Store Connect (see below), bumping `CURRENT_PROJECT_VERSION` in `project.pbxproj`.
 
 If the dev Mac runs a **beta macOS**, archives get a prerelease `BuildMachineOSBuild` stamp that App Store validation also rejects with ITMS-90111. After archiving, patch it to the latest **public** macOS build number *before* `-exportArchive` (export re-signs, so the patch survives):
 

@@ -192,8 +192,9 @@ the one deliberate site (the migration runner) — error reporting otherwise goe
 
 ## Language
 
-All code, comments, commit messages, and documentation are in **English**. The only French in the
-repo is user-facing copy (`CHANGELOG.md` and the iOS app's on-screen text).
+All code, comments, commit messages, and documentation are in **English** — including `CHANGELOG.md`,
+the source of truth. The only French in the repo is user-facing copy (`CHANGELOG.fr.md`, the copy
+served to the app, and the iOS app's on-screen text).
 
 ## Swift Rules
 
