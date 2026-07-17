@@ -21,7 +21,6 @@ import type {
   TmxSettings,
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
-import { TrialQuery } from '~/domain/trial/query'
 import { Ai } from '~/system/ai'
 import type { Draft as AiDraft, ImportTmxSettings } from '~/system/ai/types'
 import type { AcceptedDraft, Draft } from './types'
@@ -59,15 +58,23 @@ const brandDraft = (type: RecipeType, draft: AiDraft): BrandedContent => {
 }
 
 export namespace DraftUseCase {
-  // Ask the AI for the next step after a trial. Reads the tested version and its
-  // trials (note/remarks only), drafts the full next version, brands it into
-  // domain shapes, and returns it — nothing is persisted.
+  // Ask the AI for the next step after an essai. Reads the most relevant version —
+  // the pending one to test, else the current reference — with its own essai
+  // outcome (note/remarks), drafts the full next version, brands it into domain
+  // shapes, and returns it — nothing is persisted.
   export const forTrial = async (userId: UserId, recipeId: RecipeId) => {
     const recipe = await RecipeQuery.byId(userId, recipeId)
     if (recipe === 'not-found') return 'not-found'
-    const version = await RecipeQuery.versionBy(recipeId, recipe.currentVersion)
+    const baseVersion = recipe.toTest ?? recipe.currentVersion
+    if (baseVersion === null) return 'not-found'
+    const version = await RecipeQuery.versionBy(recipeId, baseVersion)
     if (version === 'not-found') return 'not-found'
-    const trials = await TrialQuery.byVersion(userId, recipeId, recipe.currentVersion)
+    // The version carries its own outcome; feed it to the AI as the sole essai (or
+    // none when it has not been executed yet).
+    const trials =
+      version.executedAt !== null && version.note !== null && version.remarks !== null
+        ? [{ note: version.note, remarks: version.remarks }]
+        : []
 
     const draft = await Ai.draftNext({
       type: recipe.type,
@@ -87,12 +94,12 @@ export namespace DraftUseCase {
             }
           : null,
       ),
-      trials: trials.map((t) => ({ note: t.note, remarks: t.remarks })),
+      trials,
     })
 
     const { ingredients, steps, tmxSteps } = brandDraft(recipe.type, draft)
     const branded: Draft = {
-      versionNumber: recipe.currentVersion,
+      versionNumber: baseVersion,
       changeSummary: draft.changeSummary,
       rationale: draft.rationale,
       ingredients,

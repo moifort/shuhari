@@ -22,14 +22,21 @@ const versions = () =>
 const versionDocId = (recipeId: RecipeId, number: VersionNumber) => `${recipeId}_${number}`
 
 // Legacy versions written before ingredients/tmxSteps became always-present
-// arrays may lack the fields; default them to [] so the invariant holds on read.
+// arrays, or before the essai outcome was folded onto the version, may lack the
+// fields; default them so the invariant holds on read (outcome null = not yet
+// executed, still an "essai à faire").
 const normalizeVersion = (version: RecipeVersion) => ({
   ...version,
   ingredients: version.ingredients ?? [],
   tmxSteps: version.tmxSteps ?? [],
+  executedAt: version.executedAt ?? null,
+  note: version.note ?? null,
+  remarks: version.remarks ?? null,
+  photoPath: version.photoPath ?? null,
 })
 
 const allCacheKey = (userId: UserId) => `recipes:all:${userId}`
+const allVersionsCacheKey = (userId: UserId) => `recipe-versions:all:${userId}`
 
 export const findAllByUser = (userId: UserId) =>
   memoizedPerRequest(allCacheKey(userId), async () => {
@@ -111,10 +118,14 @@ export const findVersionsOf = async (recipeId: RecipeId) => {
   return snap.docs.map((doc) => normalizeVersion(doc.data()))
 }
 
-export const findAllVersionsByUser = async (userId: UserId) => {
-  const snap = await versions().where('userId', '==', userId).get()
-  return snap.docs.map((doc) => normalizeVersion(doc.data()))
-}
+// One memoized full scan per request backs every full-lineage read (the home
+// journal, the per-recipe best-note loader) — the request pays a single query,
+// mirroring `findAllByUser` for recipes.
+export const findAllVersionsByUser = (userId: UserId) =>
+  memoizedPerRequest(allVersionsCacheKey(userId), async () => {
+    const snap = await versions().where('userId', '==', userId).get()
+    return snap.docs.map((doc) => normalizeVersion(doc.data()))
+  })
 
 // Batch-load specific versions by their deterministic ids (loaders: current/toTest
 // version for a page of recipes) — one getAll, one read per id.
@@ -128,6 +139,9 @@ export const findVersionsByRefs = async (refs: { recipeId: RecipeId; number: Ver
     .map(normalizeVersion)
 }
 
+// Single write point for a version: its immutable content on creation, and the
+// essai outcome once it is executed (the whole document is rewritten, `set` not
+// `update`, so the outcome fields land alongside the content).
 export const saveVersion = async (version: RecipeVersion, batch?: WriteBatch) => {
   const ref = versions().doc(versionDocId(version.recipeId, version.number))
   if (batch) batch.set(ref, version)

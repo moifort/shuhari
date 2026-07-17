@@ -4,9 +4,11 @@ import type { H3Event } from 'h3'
 import type {
   IngredientName,
   IngredientQuantity,
+  Note,
   RecipeId,
   RecipeSubtitle,
   RecipeTitle,
+  Remarks,
   StepText,
   TmxSpeed,
   TmxTemperature,
@@ -14,7 +16,6 @@ import type {
   VersionNumber,
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
-import type { Note, Remarks, TrialId } from '~/domain/trial/types'
 import type { RecipeSatelliteLoaders } from './loaders'
 
 export type GraphQLContext = {
@@ -37,7 +38,6 @@ export const builder = new SchemaBuilder<{
     DateTime: { Input: Date; Output: Date }
     UserId: { Input: UserId; Output: UserId }
     RecipeId: { Input: RecipeId; Output: RecipeId }
-    TrialId: { Input: TrialId; Output: TrialId }
     RecipeTitle: { Input: RecipeTitle; Output: RecipeTitle }
     RecipeSubtitle: { Input: RecipeSubtitle; Output: RecipeSubtitle }
     VersionNumber: { Input: VersionNumber; Output: VersionNumber }

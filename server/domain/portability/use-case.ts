@@ -4,18 +4,14 @@ import { RecipeCommand } from '~/domain/recipe/command'
 import { RecipeQuery } from '~/domain/recipe/query'
 import type { Recipe, RecipeVersion } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
-import { TrialCommand } from '~/domain/trial/command'
-import { TrialQuery } from '~/domain/trial/query'
-import type { Trial } from '~/domain/trial/types'
 
 // Backup/restore orchestrator: reads and replaces each domain's data through its
 // public Query/Command surface (raw records) — never its repository.
 export namespace PortabilityUseCase {
   export const exportAll = async (userId: UserId) => {
-    const [recipes, versions, trials] = await Promise.all([
+    const [recipes, versions] = await Promise.all([
       RecipeQuery.all(userId),
       RecipeQuery.allVersions(userId),
-      TrialQuery.all(userId),
     ])
     return {
       schemaVersion: EXPORT_SCHEMA_VERSION,
@@ -23,7 +19,6 @@ export namespace PortabilityUseCase {
       userId,
       recipes,
       versions,
-      trials,
     }
   }
 
@@ -50,12 +45,10 @@ export namespace PortabilityUseCase {
       rows.map((row) => ({ ...row, userId }))
     const recipes = stamp(envelope.recipes) as unknown as Recipe[]
     const versions = stamp(envelope.versions) as unknown as RecipeVersion[]
-    const trials = stamp(envelope.trials) as unknown as Trial[]
 
     await RecipeCommand.replaceAllForUser(userId, recipes, versions)
-    await TrialCommand.replaceAllForUser(userId, trials)
 
-    return { recipes: recipes.length, versions: versions.length, trials: trials.length }
+    return { recipes: recipes.length, versions: versions.length }
   }
 }
 
@@ -67,5 +60,4 @@ const envelopeSchema = z.object({
   userId: z.string(),
   recipes: z.array(looseRecord),
   versions: z.array(looseRecord),
-  trials: z.array(looseRecord),
 })

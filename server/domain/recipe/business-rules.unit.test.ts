@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   alignedTmxSteps,
   categoryRank,
+  highestNote,
   nextVersionNumber,
   PROMOTION_NOTE,
   readyToPromote,
@@ -9,6 +10,7 @@ import {
 } from '~/domain/recipe/business-rules'
 import {
   DISH_CATEGORY_VALUES,
+  type Note,
   type StepText,
   type TmxSettings,
   type TmxSpeed,
@@ -16,7 +18,6 @@ import {
   type TmxTime,
   type VersionNumber,
 } from '~/domain/recipe/types'
-import type { Note } from '~/domain/trial/types'
 
 const v = (n: number) => n as VersionNumber
 const note = (n: number) => n as Note
@@ -59,6 +60,18 @@ describe('categoryRank', () => {
 describe('nextVersionNumber', () => {
   test('increments the highest allocated number', () => {
     expect(nextVersionNumber(v(3))).toBe(v(4))
+  })
+})
+
+describe('highestNote', () => {
+  test('returns null when no version was ever tried', () => {
+    expect(highestNote([])).toBeNull()
+  })
+  test('returns the best note across the executed versions', () => {
+    expect(highestNote([note(2), note(5), note(3)])).toBe(note(5))
+  })
+  test('handles a single note', () => {
+    expect(highestNote([note(4)])).toBe(note(4))
   })
 })
 

@@ -73,6 +73,7 @@ describe('DraftUseCase.forTrial', () => {
   test('returns the branded draft for the current version without persisting anything', async () => {
     const recipe = await RecipeCommand.importRecipe(userId, recipeInput())
     const readsBefore = fake.reads
+    const queryReadsBefore = fake.queryReads
     const batchesBefore = fake.batches.length
     const result = await DraftUseCase.forTrial(userId, recipe.id)
     if (result === 'not-found') throw new Error('expected a draft')
@@ -83,8 +84,10 @@ describe('DraftUseCase.forTrial', () => {
     expect(result.ingredients).toEqual(DRAFT_INGREDIENTS)
     expect(result.steps).toEqual(stepList('Saisir', 'Mijoter'))
 
-    // Only reads happened (recipe + version + trials); nothing was written back.
-    expect(fake.reads).toBeGreaterThan(readsBefore)
+    // Exactly two keyed doc reads (the recipe pointer + the base version, whose
+    // own outcome feeds the AI): no collection scan, no N+1, nothing written back.
+    expect(fake.reads - readsBefore).toBe(2)
+    expect(fake.queryReads - queryReadsBefore).toBe(0)
     expect(fake.batches.length).toBe(batchesBefore)
   })
 

@@ -1,23 +1,26 @@
 import { RecipeQuery } from '~/domain/recipe/query'
 import type { UserId } from '~/domain/shared/types'
-import { TrialQuery } from '~/domain/trial/query'
 
-const RECENT_TRIAL_LIMIT = 8
+const RECENT_ESSAI_LIMIT = 8
 
-// Composes the home read model from the recipe and trial query surfaces (no
-// repository of its own). Reads: one recipes scan + one trials scan, both
-// memoized per request — three reads total once the loaders resolve the pending
-// versions of the "to test" recipes.
+// Composes the home read model from the recipe query surface alone (no repository
+// of its own). Reads: one recipes scan + one recipe-versions scan, both memoized
+// per request — the recent essais are the executed versions from that same scan,
+// newest first.
 export namespace HomeQuery {
   export const load = async (userId: UserId) => {
-    const [recipes, recentTrials] = await Promise.all([
+    const [recipes, versions] = await Promise.all([
       RecipeQuery.all(userId),
-      TrialQuery.recent(userId, RECENT_TRIAL_LIMIT),
+      RecipeQuery.allVersions(userId),
     ])
+    const recentEssais = versions
+      .filter((version) => version.executedAt !== null)
+      .sort((a, b) => (b.executedAt as Date).getTime() - (a.executedAt as Date).getTime())
+      .slice(0, RECENT_ESSAI_LIMIT)
     return {
       toTest: recipes.filter((recipe) => recipe.toTest !== null),
       library: recipes,
-      recentTrials,
+      recentEssais,
     }
   }
 }

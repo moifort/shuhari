@@ -1,13 +1,11 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test'
-import type { RecipeTitle, StepText } from '~/domain/recipe/types'
+import type { Note, RecipeTitle, Remarks, StepText, VersionNumber } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
-import type { Note, Remarks } from '~/domain/trial/types'
 import { fakeDb, resetFakeFirestore } from '~/test/fake-firestore'
 
 mock.module('~/system/firebase', () => ({ db: fakeDb }))
 
 const { RecipeCommand } = await import('~/domain/recipe/command')
-const { TrialCommand } = await import('~/domain/trial/command')
 const { HomeQuery } = await import('~/domain/home/query')
 const { RecipeQuery } = await import('~/domain/recipe/query')
 
@@ -27,29 +25,25 @@ beforeEach(() => {
 })
 
 describe('HomeQuery.load', () => {
-  test('partitions recipes into to-test vs library and lists recent trials', async () => {
+  test('partitions recipes into to-test vs library and lists recent essais', async () => {
     const a = await RecipeCommand.importRecipe(userId, input('Blanquette'))
     await RecipeCommand.importRecipe(userId, input('Ratatouille'))
-    // Give recipe A a pending version so it shows under "to test".
-    await RecipeCommand.addVersion(userId, a.id, {
-      change: 'Bouillon 700 → 650 ml',
-      steps: ['Mijoter'] as StepText[],
-      ingredients: [],
-      tmxSteps: [],
-    })
-    await TrialCommand.record(userId, {
+    // Record v1's essai on recipe A and promote it, so it leaves "to test" and
+    // shows up as a recent essai — B stays pending (fresh import).
+    await RecipeCommand.recordEssai(userId, {
       recipeId: a.id,
-      versionNumber: a.currentVersion,
+      versionNumber: 1 as VersionNumber,
       note: 5 as Note,
       remarks: 'Trop salé' as Remarks,
     })
+    await RecipeCommand.promote(userId, a.id, 1 as VersionNumber)
 
     const home = await HomeQuery.load(userId)
 
     expect(home.library.length).toBe(2)
-    expect(home.toTest.map((r) => r.id)).toEqual([a.id])
-    expect(home.recentTrials.length).toBe(1)
-    expect(home.recentTrials[0].note).toBe(5 as Note)
+    expect(home.toTest.map((r) => r.title as string)).toEqual(['Ratatouille'])
+    expect(home.recentEssais.length).toBe(1)
+    expect(home.recentEssais[0].note).toBe(5 as Note)
   })
 
   test('costs two collection scans and memoizes repeated recipe reads', async () => {
@@ -57,12 +51,14 @@ describe('HomeQuery.load', () => {
 
     const before = fake.queryReads
     await HomeQuery.load(userId)
-    // One recipes scan + one trials scan.
+    // One recipes scan + one recipe-versions scan.
     expect(fake.queryReads - before).toBe(2)
 
-    // A second recipes read in the same request is served from the request cache.
+    // Both scans are memoized per request: re-reading recipes or the full version
+    // lineage (as the bestNote loader does) in the same request adds no scan.
     const afterLoad = fake.queryReads
     await RecipeQuery.all(userId)
+    await RecipeQuery.allVersions(userId)
     expect(fake.queryReads - afterLoad).toBe(0)
   })
 })

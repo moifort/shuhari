@@ -1,11 +1,22 @@
 import { match, P } from 'ts-pattern'
 import { toTmxSettings } from '~/domain/recipe/business-rules'
-import { RecipeCommand } from '~/domain/recipe/command'
+import { RecipeCommand, type RecordEssaiResult } from '~/domain/recipe/command'
 import { RecipeUseCase } from '~/domain/recipe/use-case'
 import { builder } from '~/domain/shared/graphql/builder'
 import { domainError } from '~/domain/shared/graphql/errors'
-import { CreateRecipeInput, UpdateRecipeInput } from './inputs'
-import { RecipeType } from './types'
+import { CreateRecipeInput, RecordEssaiInput, UpdateRecipeInput } from './inputs'
+import { RecipeType, VersionType } from './types'
+
+const RecordEssaiResultType = builder.objectRef<RecordEssaiResult>('RecordEssaiResult').implement({
+  description: 'Outcome of recording an essai onto a version',
+  fields: (t) => ({
+    version: t.field({ type: VersionType, resolve: (r) => r.version }),
+    promotionSuggested: t.boolean({
+      description: 'True when this essai qualifies its version for promotion',
+      resolve: (r) => r.promotionSuggested,
+    }),
+  }),
+})
 
 builder.mutationField('createRecipe', (t) =>
   t.field({
@@ -72,13 +83,36 @@ builder.mutationField('promoteVersion', (t) =>
 builder.mutationField('deleteRecipe', (t) =>
   t.field({
     type: 'Boolean',
-    description: 'Delete a recipe and all its versions and trials',
+    description: 'Delete a recipe and all its versions',
     args: { id: t.arg({ type: 'RecipeId', required: true }) },
     resolve: async (_root, { id }, { userId }) => {
       const result = await RecipeUseCase.removeCompletely(userId, id)
       return match(result)
         .with('not-found', domainError)
         .with(P.not(P.string), () => true)
+        .exhaustive()
+    },
+  }),
+)
+
+builder.mutationField('recordEssai', (t) =>
+  t.field({
+    type: RecordEssaiResultType,
+    description:
+      'Record an essai onto a version (fast, no AI). Ask for a draft separately if the note is low.',
+    args: { input: t.arg({ type: RecordEssaiInput, required: true }) },
+    resolve: async (_root, { input }, { userId }) => {
+      const result = await RecipeCommand.recordEssai(userId, {
+        recipeId: input.recipeId,
+        versionNumber: input.versionNumber,
+        note: input.note,
+        remarks: input.remarks,
+        photoPath: null,
+      })
+      return match(result)
+        .with('not-found', domainError)
+        .with('already-recorded', domainError)
+        .with(P.not(P.string), (recorded) => recorded)
         .exhaustive()
     },
   }),

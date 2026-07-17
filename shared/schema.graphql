@@ -91,10 +91,10 @@ type Home {
   """Every recipe (the app groups them by type)"""
   library: [Recipe!]!
 
-  """Latest trials across all recipes"""
-  recentTrials: [Trial!]!
+  """Latest executed versions across all recipes, newest first"""
+  recentEssais: [Version!]!
 
-  """Recipes with a pending version awaiting a trial"""
+  """Recipes with a pending version awaiting an essai"""
   toTest: [Recipe!]!
 }
 
@@ -122,7 +122,6 @@ type ImportIngredient {
 """Number of records imported per collection"""
 type ImportResult {
   recipes: Int!
-  trials: Int!
   versions: Int!
 }
 
@@ -177,7 +176,7 @@ type Mutation {
   """Create a recipe and its v1 from a confirmed import preview"""
   createRecipe(input: CreateRecipeInput!): Recipe!
 
-  """Delete a recipe and all its versions and trials"""
+  """Delete a recipe and all its versions"""
   deleteRecipe(id: RecipeId!): Boolean!
 
   """
@@ -191,18 +190,18 @@ type Mutation {
   promoteVersion(recipeId: RecipeId!, versionNumber: VersionNumber!): Recipe!
 
   """
-  Record a trial (fast, no AI). Ask for a draft separately if the note is low.
+  Record an essai onto a version (fast, no AI). Ask for a draft separately if the note is low.
   """
-  recordTrial(input: RecordTrialInput!): RecordTrialResult!
+  recordEssai(input: RecordEssaiInput!): RecordEssaiResult!
 
-  """Ask the AI to analyze the latest trials and draft the next iteration"""
+  """Ask the AI to analyze the latest essai and draft the next iteration"""
   requestDraft(recipeId: RecipeId!): Draft!
 
   """Rename a recipe (title and/or subtitle)"""
   updateRecipe(id: RecipeId!, input: UpdateRecipeInput!): Recipe!
 }
 
-"""Trial rating (integer 1..5)"""
+"""Essai rating (integer 1..5)"""
 scalar Note
 
 type Query {
@@ -242,31 +241,27 @@ type Query {
     """Facet: keep only this recipe type"""
     type: RecipeType
   ): Recipes!
-
-  """A single trial by id"""
-  trial(id: TrialId!): Trial
 }
 
 """A recipe under experimentation, with its version lineage"""
 type Recipe {
-  """The highest trial note the recipe ever scored, or null if never tried"""
+  """The highest essai note the recipe ever scored, or null if never tried"""
   bestNote: Note
 
   """The dish category — fixed at import, shared across all versions"""
   category: DishCategory!
   createdAt: DateTime!
 
-  """The current reproducible reference version"""
+  """
+  The current reproducible reference version, or null until the first promotion
+  """
   currentVersion: Version
   id: RecipeId!
   subtitle: String
   title: RecipeTitle!
 
-  """The pending version awaiting a trial, if any"""
+  """The pending version awaiting an essai, if any"""
   toTest: Version
-
-  """The recipe’s trial journal, most recent first"""
-  trials: [Trial!]!
   type: RecipeType!
   updatedAt: DateTime!
 
@@ -315,25 +310,25 @@ type Recipes {
   totalCount: Int!
 }
 
-"""Record one execution of a recipe version"""
-input RecordTrialInput {
+"""Record the essai outcome of a recipe version (written once)"""
+input RecordEssaiInput {
   note: Note!
 
-  """Base64 JPEG of the result (optional)"""
+  """Base64 JPEG of the result (optional; not yet stored)"""
   photo: String
   recipeId: RecipeId!
   remarks: Remarks!
   versionNumber: VersionNumber!
 }
 
-"""Outcome of recording a trial"""
-type RecordTrialResult {
-  """True when this trial qualifies its version for promotion"""
+"""Outcome of recording an essai onto a version"""
+type RecordEssaiResult {
+  """True when this essai qualifies its version for promotion"""
   promotionSuggested: Boolean!
-  trial: Trial!
+  version: Version!
 }
 
-"""Free-form trial remarks (up to 2000 chars)"""
+"""Free-form essai remarks (up to 2000 chars)"""
 scalar Remarks
 
 """Sort direction"""
@@ -373,24 +368,6 @@ scalar TmxTemperature
 """Thermomix step duration, display-oriented (e.g. "3 min", "30 s")"""
 scalar TmxTime
 
-"""One execution of a recipe version"""
-type Trial {
-  executedAt: DateTime!
-  id: TrialId!
-  note: Note!
-
-  """
-  Signed URL of the trial photo (null until photo storage is provisioned)
-  """
-  photoUrl: String
-  recipeId: RecipeId!
-  remarks: Remarks!
-  versionNumber: VersionNumber!
-}
-
-"""Trial unique identifier (UUID v4)"""
-scalar TrialId
-
 """Update a recipe’s title and subtitle. Absent fields are unchanged."""
 input UpdateRecipeInput {
   subtitle: RecipeSubtitle
@@ -400,18 +377,35 @@ input UpdateRecipeInput {
 """Firebase Auth user identifier"""
 scalar UserId
 
-"""An immutable entry in a recipe’s linear lineage (v1 → v2 → …)"""
+"""
+A recipe version — an entry in the lineage (v1 → v2 → …) that is also an essai
+"""
 type Version {
-  """Mean trial note for this version, or null if never tried"""
-  averageNote: Float
   change: String
   createdAt: DateTime!
 
+  """
+  When the essai was executed, or null while still an "essai à faire"
+  """
+  executedAt: DateTime
+
   """The recipe’s components with quantities ([] when none)"""
   ingredients: [Ingredient!]!
+
+  """The essai rating, or null while not yet executed"""
+  note: Note
   number: VersionNumber!
   originDetail: String
   originKind: VersionOriginKind!
+
+  """
+  Signed URL of the essai photo (null until photo storage is provisioned)
+  """
+  photoUrl: String
+  recipeId: RecipeId!
+
+  """The essai remarks, or null while not yet executed"""
+  remarks: Remarks
   steps: [StepText!]!
 
   """
@@ -419,8 +413,8 @@ type Version {
   """
   tmxSteps: [TmxSettings]!
 
-  """How many trials ran against this version"""
-  trialCount: Int!
+  """Whether this version has been executed (its essai recorded)"""
+  tried: Boolean!
   why: String
 }
 

@@ -25,7 +25,7 @@ const AcceptDraftResultType = builder.objectRef<AcceptResult>('AcceptDraftResult
 builder.mutationField('requestDraft', (t) =>
   t.field({
     type: DraftType,
-    description: 'Ask the AI to analyze the latest trials and draft the next iteration',
+    description: 'Ask the AI to analyze the latest essai and draft the next iteration',
     args: { recipeId: t.arg({ type: 'RecipeId', required: true }) },
     resolve: async (_root, { recipeId }, { userId }) => {
       const result = await DraftUseCase.forTrial(userId, recipeId)

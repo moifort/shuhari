@@ -6,6 +6,5 @@ export const ImportResultType = builder.objectRef<ImportResult>('ImportResult').
   fields: (t) => ({
     recipes: t.exposeInt('recipes'),
     versions: t.exposeInt('versions'),
-    trials: t.exposeInt('trials'),
   }),
 })

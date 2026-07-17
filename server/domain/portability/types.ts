@@ -1,8 +1,7 @@
 import type { Recipe, RecipeVersion } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
-import type { Trial } from '~/domain/trial/types'
 
-export const EXPORT_SCHEMA_VERSION = 2
+export const EXPORT_SCHEMA_VERSION = 3
 
 export type ExportEnvelope = {
   schemaVersion: number
@@ -10,7 +9,6 @@ export type ExportEnvelope = {
   userId: UserId
   recipes: Recipe[]
   versions: RecipeVersion[]
-  trials: Trial[]
 }
 
-export type ImportResult = { recipes: number; versions: number; trials: number }
+export type ImportResult = { recipes: number; versions: number }

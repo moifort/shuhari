@@ -3,9 +3,11 @@ import type {
   Ingredient,
   IngredientName,
   IngredientQuantity,
+  Note,
   Recipe,
   RecipeId,
   RecipeTitle,
+  Remarks,
   StepText,
   TmxSettings,
   TmxSpeed,
@@ -39,17 +41,19 @@ beforeEach(() => {
 })
 
 describe('RecipeCommand.importRecipe', () => {
-  test('creates a pointer recipe (v1 current, nothing to test) and its version atomically', async () => {
+  test('creates a pointer recipe (no reference yet, v1 to test) and its version atomically', async () => {
     const recipe = await RecipeCommand.importRecipe(userId, newInput(), 'Un site')
 
-    expect(recipe.currentVersion).toBe(1 as VersionNumber)
-    expect(recipe.toTest).toBeNull()
+    expect(recipe.currentVersion).toBeNull()
+    expect(recipe.toTest).toBe(1 as VersionNumber)
     expect(recipe.versionCount).toBe(1 as VersionNumber)
     expect(fake.snapshot('recipes').get(recipe.id as string)?.type).toBe('plat')
-    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.origin).toEqual({
-      kind: 'import',
-      detail: 'Un site',
-    })
+    const v1 = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)
+    expect(v1?.origin).toEqual({ kind: 'import', detail: 'Un site' })
+    // v1 starts as an "essai à faire": no outcome recorded yet.
+    expect(v1?.executedAt).toBeNull()
+    expect(v1?.note).toBeNull()
+    expect(v1?.remarks).toBeNull()
     // Both docs land in a single batch (all-or-nothing).
     expect(fake.directWrites).toEqual([])
     expect(fake.batches.length).toBe(1)
@@ -109,7 +113,7 @@ describe('RecipeCommand.addVersion + promote', () => {
 
     expect(withV2.toTest).toBe(2 as VersionNumber)
     expect(withV2.versionCount).toBe(2 as VersionNumber)
-    expect(withV2.currentVersion).toBe(1 as VersionNumber)
+    expect(withV2.currentVersion).toBeNull()
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_2`)?.change).toBe(
       'Bouillon 700 → 650 ml',
     )
@@ -124,8 +128,9 @@ describe('RecipeCommand.addVersion + promote', () => {
   })
 
   test('refuses to promote a version that is not the pending one', async () => {
+    // Fresh import: the pending version is v1, so promoting v2 is a no-op.
     const recipe = await RecipeCommand.importRecipe(userId, newInput())
-    const result = await RecipeCommand.promote(userId, recipe.id, 1 as VersionNumber)
+    const result = await RecipeCommand.promote(userId, recipe.id, 2 as VersionNumber)
     expect(result).toBe('nothing-to-test')
   })
 
@@ -137,5 +142,70 @@ describe('RecipeCommand.addVersion + promote', () => {
       tmxSteps: [],
     })
     expect(result).toBe('not-found')
+  })
+})
+
+describe('RecipeCommand.recordEssai', () => {
+  test('folds the outcome onto v1 and suggests promotion for a high note', async () => {
+    const recipe = await RecipeCommand.importRecipe(userId, newInput())
+    const batchesBefore = fake.batches.length
+
+    const result = await RecipeCommand.recordEssai(userId, {
+      recipeId: recipe.id,
+      versionNumber: 1 as VersionNumber,
+      note: 5 as Note,
+      remarks: 'Parfait' as Remarks,
+    })
+    if (typeof result === 'string') throw new Error(`expected a result, got ${result}`)
+
+    expect(result.version.note).toBe(5 as Note)
+    expect(result.version.remarks).toBe('Parfait' as Remarks)
+    expect(result.version.executedAt).toBeInstanceOf(Date)
+    // v1 is the pending version, so a note >= PROMOTION_NOTE qualifies it.
+    expect(result.promotionSuggested).toBe(true)
+
+    const stored = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)
+    expect(stored?.note).toBe(5 as Note)
+    expect(stored?.executedAt).toBeInstanceOf(Date)
+    // Outcome + recipe bump land in a single batch (all-or-nothing).
+    expect(fake.directWrites).toEqual([])
+    expect(fake.batches.length).toBe(batchesBefore + 1)
+  })
+
+  test('refuses to record a second essai on the same version', async () => {
+    const recipe = await RecipeCommand.importRecipe(userId, newInput())
+    await RecipeCommand.recordEssai(userId, {
+      recipeId: recipe.id,
+      versionNumber: 1 as VersionNumber,
+      note: 3 as Note,
+      remarks: 'Bof' as Remarks,
+    })
+
+    const again = await RecipeCommand.recordEssai(userId, {
+      recipeId: recipe.id,
+      versionNumber: 1 as VersionNumber,
+      note: 4 as Note,
+      remarks: 'Mieux' as Remarks,
+    })
+    expect(again).toBe('already-recorded')
+  })
+
+  test('returns not-found for an unknown recipe or version', async () => {
+    const unknownRecipe = await RecipeCommand.recordEssai(userId, {
+      recipeId: 'nope' as RecipeId,
+      versionNumber: 1 as VersionNumber,
+      note: 4 as Note,
+      remarks: '' as Remarks,
+    })
+    expect(unknownRecipe).toBe('not-found')
+
+    const recipe = await RecipeCommand.importRecipe(userId, newInput())
+    const unknownVersion = await RecipeCommand.recordEssai(userId, {
+      recipeId: recipe.id,
+      versionNumber: 9 as VersionNumber,
+      note: 4 as Note,
+      remarks: '' as Remarks,
+    })
+    expect(unknownVersion).toBe('not-found')
   })
 })

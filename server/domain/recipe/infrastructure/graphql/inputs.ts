@@ -52,3 +52,17 @@ export const UpdateRecipeInput = builder.inputType('UpdateRecipeInput', {
     subtitle: t.field({ type: 'RecipeSubtitle' }),
   }),
 })
+
+export const RecordEssaiInput = builder.inputType('RecordEssaiInput', {
+  description: 'Record the essai outcome of a recipe version (written once)',
+  fields: (t) => ({
+    recipeId: t.field({ type: 'RecipeId', required: true }),
+    versionNumber: t.field({ type: 'VersionNumber', required: true }),
+    note: t.field({ type: 'Note', required: true }),
+    remarks: t.field({ type: 'Remarks', required: true }),
+    // Placeholder: accepted but not yet persisted — recordEssai always stores
+    // photoPath: null and photoUrl resolves null until GCS photo storage is
+    // provisioned. Kept on the contract so the app can send it without a schema change.
+    photo: t.string({ description: 'Base64 JPEG of the result (optional; not yet stored)' }),
+  }),
+})

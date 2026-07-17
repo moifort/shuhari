@@ -6,11 +6,13 @@ import {
   type DishCategory as DishCategoryType,
   type IngredientName as IngredientNameType,
   type IngredientQuantity as IngredientQuantityType,
+  type Note as NoteType,
   RECIPE_TYPE_VALUES,
   type RecipeId as RecipeIdType,
   type RecipeSubtitle as RecipeSubtitleType,
   type RecipeTitle as RecipeTitleType,
   type RecipeType as RecipeTypeType,
+  type Remarks as RemarksType,
   type StepText as StepTextType,
   type TmxSpeed as TmxSpeedType,
   type TmxTemperature as TmxTemperatureType,
@@ -83,3 +85,15 @@ export const TmxSpeed = (value: unknown) => {
 
 export const VersionOriginKind = (value: unknown) =>
   z.enum(['import', 'ai-proposal', 'manual']).parse(value) as VersionOriginKindType
+
+export const Note = (value: unknown) => {
+  const v = z
+    .preprocess((n) => (typeof n === 'string' ? Number(n) : n), z.number().int().min(1).max(5))
+    .parse(value)
+  return make<NoteType>()(v)
+}
+
+export const Remarks = (value: unknown) => {
+  const v = z.string().max(2000).parse(value)
+  return make<RemarksType>()(v)
+}

@@ -1,8 +1,6 @@
 import { RecipeQuery } from '~/domain/recipe/query'
 import type { RecipeId, RecipeVersion, VersionNumber } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
-import { TrialQuery } from '~/domain/trial/query'
-import type { Trial } from '~/domain/trial/types'
 
 // Per-request loaders for the satellite fields of RecipeType. One loader set
 // lives on each GraphQL context (built per request in routes/graphql.ts), so
@@ -49,7 +47,7 @@ const versionKey = (ref: VersionRef) => `${ref.recipeId}_${ref.number}`
 
 export type RecipeSatelliteLoaders = {
   version: Loader<RecipeVersion, VersionRef>
-  trials: Loader<Trial[], RecipeId>
+  versionsByRecipe: Loader<RecipeVersion[], RecipeId>
 }
 
 export const recipeSatelliteLoaders = (userId: UserId): RecipeSatelliteLoaders => ({
@@ -57,12 +55,15 @@ export const recipeSatelliteLoaders = (userId: UserId): RecipeSatelliteLoaders =
     const versions = await RecipeQuery.versionsByRefs(refs)
     return new Map(versions.map((v) => [versionKey({ recipeId: v.recipeId, number: v.number }), v]))
   }),
-  trials: batchedBy(
+  // The full lineage of each recipe, batched from a single recipe-versions scan —
+  // backs the recipe's best-note aggregate over its executed versions.
+  versionsByRecipe: batchedBy(
     (recipeId) => recipeId,
     async (recipeIds) => {
-      const trials = await TrialQuery.byRecipeIds(userId, recipeIds)
-      const grouped = new Map<string, Trial[]>(recipeIds.map((id) => [id, []]))
-      for (const trial of trials) grouped.get(trial.recipeId)?.push(trial)
+      const wanted = new Set(recipeIds)
+      const versions = (await RecipeQuery.allVersions(userId)).filter((v) => wanted.has(v.recipeId))
+      const grouped = new Map<string, RecipeVersion[]>(recipeIds.map((id) => [id, []]))
+      for (const version of versions) grouped.get(version.recipeId)?.push(version)
       return grouped
     },
   ),

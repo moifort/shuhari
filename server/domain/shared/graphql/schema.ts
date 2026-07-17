@@ -3,18 +3,13 @@ import { builder } from './builder'
 // Custom scalars must be registered before any type that references them.
 import './scalars'
 
-// Recipe domain (the aggregate root: Recipe + Version types)
+// Recipe domain (the aggregate root: Recipe + Version types, incl. the essai
+// outcome folded onto each version and the recordEssai mutation)
 import '~/domain/recipe/infrastructure/graphql/enums'
 import '~/domain/recipe/infrastructure/graphql/types'
 import '~/domain/recipe/infrastructure/graphql/inputs'
 import '~/domain/recipe/infrastructure/graphql/queries'
 import '~/domain/recipe/infrastructure/graphql/mutations'
-
-// Trial domain (extends RecipeType with .trials, VersionType with aggregates)
-import '~/domain/trial/infrastructure/graphql/types'
-import '~/domain/trial/infrastructure/graphql/inputs'
-import '~/domain/trial/infrastructure/graphql/mutations'
-import '~/domain/trial/infrastructure/graphql/queries'
 
 // Draft domain (ephemeral AI next-version drafts — request/accept mutations)
 import '~/domain/draft/infrastructure/graphql/types'

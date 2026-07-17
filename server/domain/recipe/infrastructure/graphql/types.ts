@@ -1,3 +1,4 @@
+import { highestNote } from '~/domain/recipe/business-rules'
 import { type RecipeLibraryPage, RecipeQuery } from '~/domain/recipe/query'
 import { builder } from '~/domain/shared/graphql/builder'
 import type { Ingredient, Recipe, RecipeVersion, TmxSettings } from '../../types'
@@ -25,10 +26,13 @@ export const TmxSettingsType = builder.objectRef<TmxSettings>('TmxSettings').imp
   }),
 })
 
-// Satellite fields averageNote / trialCount are grafted on by the trial domain.
+// A version is also an essai: immutable content/lineage, plus its outcome fields
+// (note/remarks/executedAt) written once when executed. `tried` derives from
+// `executedAt`.
 export const VersionType = builder.objectRef<RecipeVersion>('Version').implement({
-  description: 'An immutable entry in a recipe’s linear lineage (v1 → v2 → …)',
+  description: 'A recipe version — an entry in the lineage (v1 → v2 → …) that is also an essai',
   fields: (t) => ({
+    recipeId: t.expose('recipeId', { type: 'RecipeId' }),
     number: t.expose('number', { type: 'VersionNumber' }),
     createdAt: t.expose('createdAt', { type: 'DateTime' }),
     originKind: t.field({ type: VersionOriginKindEnum, resolve: (v) => v.origin.kind }),
@@ -48,10 +52,36 @@ export const VersionType = builder.objectRef<RecipeVersion>('Version').implement
         'Per-step Thermomix settings aligned with steps (null = plain step; [] if not tmx)',
       resolve: (v) => v.tmxSteps,
     }),
+    executedAt: t.field({
+      type: 'DateTime',
+      nullable: true,
+      description: 'When the essai was executed, or null while still an "essai à faire"',
+      resolve: (v) => v.executedAt ?? null,
+    }),
+    tried: t.boolean({
+      description: 'Whether this version has been executed (its essai recorded)',
+      resolve: (v) => v.executedAt !== null,
+    }),
+    note: t.field({
+      type: 'Note',
+      nullable: true,
+      description: 'The essai rating, or null while not yet executed',
+      resolve: (v) => v.note ?? null,
+    }),
+    remarks: t.field({
+      type: 'Remarks',
+      nullable: true,
+      description: 'The essai remarks, or null while not yet executed',
+      resolve: (v) => v.remarks ?? null,
+    }),
+    photoUrl: t.string({
+      nullable: true,
+      description: 'Signed URL of the essai photo (null until photo storage is provisioned)',
+      resolve: () => null,
+    }),
   }),
 })
 
-// Satellite field trials is grafted on by its own domain.
 export const RecipeType = builder.objectRef<Recipe>('Recipe')
 
 RecipeType.implement({
@@ -74,14 +104,18 @@ RecipeType.implement({
     currentVersion: t.field({
       type: VersionType,
       nullable: true,
-      description: 'The current reproducible reference version',
+      description: 'The current reproducible reference version, or null until the first promotion',
       resolve: (r, _a, { loaders }) =>
-        loaders.version.load({ recipeId: r.id, number: r.currentVersion }).then((v) => v ?? null),
+        r.currentVersion === null
+          ? null
+          : loaders.version
+              .load({ recipeId: r.id, number: r.currentVersion })
+              .then((v) => v ?? null),
     }),
     toTest: t.field({
       type: VersionType,
       nullable: true,
-      description: 'The pending version awaiting a trial, if any',
+      description: 'The pending version awaiting an essai, if any',
       resolve: (r, _a, { loaders }) =>
         r.toTest === null
           ? null
@@ -91,6 +125,20 @@ RecipeType.implement({
       type: [VersionType],
       description: 'The full lineage, oldest first',
       resolve: (r) => RecipeQuery.versionsOf(r.id),
+    }),
+    // Satellite: the recipe's best essai note across its executed versions, from
+    // the batched loader that groups the full lineage by recipe (no extra reads).
+    bestNote: t.field({
+      type: 'Note',
+      nullable: true,
+      description: 'The highest essai note the recipe ever scored, or null if never tried',
+      resolve: async (r, _a, { loaders }) => {
+        const versions = (await loaders.versionsByRecipe.load(r.id)) ?? []
+        const notes = versions
+          .map((v) => v.note)
+          .filter((note): note is NonNullable<typeof note> => note !== null)
+        return highestNote(notes)
+      },
     }),
   }),
 })

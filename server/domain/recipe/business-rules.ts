@@ -2,6 +2,7 @@ import { VersionNumber as toVersionNumber } from '~/domain/recipe/primitives'
 import {
   DISH_CATEGORY_VALUES,
   type DishCategory,
+  type Note,
   type StepText,
   type TmxSettings,
   type TmxSpeed,
@@ -9,7 +10,6 @@ import {
   type TmxTime,
   type VersionNumber,
 } from '~/domain/recipe/types'
-import type { Note } from '~/domain/trial/types'
 
 // The library's category sort follows the course order (Entrée → Plat → Dessert →
 // Soupe → Sauce → Boulangerie), not the alphabetical order of the enum values. We
@@ -18,11 +18,11 @@ import type { Note } from '~/domain/trial/types'
 export const categoryRank = (category: DishCategory): number =>
   DISH_CATEGORY_VALUES.indexOf(category)
 
-// A trial promotes its version to "current" (the reproducible reference) when the
+// An essai promotes its version to "current" (the reproducible reference) when the
 // note reaches this threshold (on the 1..5 scale). Mirrors the maquette's saveEssai logic.
 export const PROMOTION_NOTE = 4
 
-// A version becomes the new reference only when a HIGH-scoring trial ran against
+// A version becomes the new reference only when a HIGH-scoring essai ran against
 // the exact version that was awaiting testing.
 export const readyToPromote = (
   note: Note,
@@ -31,6 +31,11 @@ export const readyToPromote = (
 ) => toTest !== null && testedVersion === toTest && note >= PROMOTION_NOTE
 
 export const nextVersionNumber = (versionCount: VersionNumber) => toVersionNumber(versionCount + 1)
+
+// The best note a recipe ever scored across its executed versions, or null when
+// none was ever tried. Returns an actual element so the `Note` brand is preserved.
+export const highestNote = (notes: Note[]): Note | null =>
+  notes.length === 0 ? null : notes.reduce((best, note) => (note > best ? note : best))
 
 // Thermomix settings are only usable when they mirror the steps one-to-one and
 // at least one step actually carries a setting; anything else is dropped so the

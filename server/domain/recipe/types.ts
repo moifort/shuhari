@@ -28,6 +28,8 @@ export type RecipeId = Brand<string, 'RecipeId'>
 export type RecipeTitle = Brand<string, 'RecipeTitle'>
 export type RecipeSubtitle = Brand<string, 'RecipeSubtitle'>
 export type VersionNumber = Brand<number, 'VersionNumber'>
+export type Note = Brand<number, 'Note'> // integer 1..5
+export type Remarks = Brand<string, 'Remarks'>
 export type IngredientName = Brand<string, 'IngredientName'>
 export type IngredientQuantity = Brand<string, 'IngredientQuantity'>
 export type StepText = Brand<string, 'StepText'>
@@ -52,7 +54,8 @@ export type VersionOriginKind = 'import' | 'ai-proposal' | 'manual'
 export type VersionOrigin = { kind: VersionOriginKind; detail?: string }
 
 // The aggregate root. A light pointer document: the heavy version data lives in
-// the append-only `recipe-versions` collection keyed `${recipeId}_${number}`.
+// the satellite `recipe-versions` collection keyed `${recipeId}_${number}` (a
+// version's content is immutable, but its essai outcome is written once in place).
 export type Recipe = {
   id: RecipeId
   userId: UserId
@@ -62,14 +65,18 @@ export type Recipe = {
   category: DishCategory
   title: RecipeTitle
   subtitle?: RecipeSubtitle
-  currentVersion: VersionNumber // the reproducible reference
-  toTest: VersionNumber | null // the version awaiting a trial, if any
+  currentVersion: VersionNumber | null // the reproducible reference, null until the first promotion
+  toTest: VersionNumber | null // the version awaiting an essai, if any
   versionCount: VersionNumber // highest version number allocated so far
   createdAt: Date
   updatedAt: Date
 }
 
-// An immutable entry in a recipe's linear lineage (v1 → v2 → …).
+// One entry in a recipe's linear lineage (v1 → v2 → …). Its content and lineage
+// (steps/ingredients/tmxSteps/origin/change) are immutable, but a version *is* an
+// essai: it is an "essai à faire" while `executedAt === null`, then carries its
+// outcome (note/remarks/photo) once — written a single time, never overwritten.
+// To try again, append a new version rather than re-recording this one.
 export type RecipeVersion = {
   userId: UserId
   recipeId: RecipeId
@@ -86,4 +93,10 @@ export type RecipeVersion = {
   // for non-tmx recipes — "is Thermomix" is derived from `type === 'tmx'`, never
   // from the presence of this array.
   tmxSteps: (TmxSettings | null)[]
+  // The essai outcome, written once when the version is executed. All null while
+  // the version is still an "essai à faire" (`executedAt === null`).
+  executedAt: Date | null
+  note: Note | null
+  remarks: Remarks | null
+  photoPath: string | null // GCS object path; never exposed raw (see photoUrl)
 }

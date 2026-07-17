@@ -3,9 +3,11 @@ import { ZodError } from 'zod'
 import {
   IngredientName,
   IngredientQuantity,
+  Note,
   RecipeId,
   RecipeSubtitle,
   RecipeTitle,
+  Remarks,
   StepText,
   TmxSpeed,
   TmxTemperature,
@@ -13,7 +15,6 @@ import {
   VersionNumber,
 } from '~/domain/recipe/primitives'
 import { UserId } from '~/domain/shared/primitives'
-import { Note, Remarks, TrialId } from '~/domain/trial/primitives'
 import { builder } from './builder'
 
 const validatedParse =
@@ -44,12 +45,6 @@ builder.scalarType('RecipeId', {
   parseValue: validatedParse('RecipeId', RecipeId),
 })
 
-builder.scalarType('TrialId', {
-  description: 'Trial unique identifier (UUID v4)',
-  serialize: (value) => value as string,
-  parseValue: validatedParse('TrialId', TrialId),
-})
-
 builder.scalarType('RecipeTitle', {
   description: 'Recipe title (1-200 chars)',
   serialize: (value) => value as string,
@@ -69,7 +64,7 @@ builder.scalarType('VersionNumber', {
 })
 
 builder.scalarType('Note', {
-  description: 'Trial rating (integer 1..5)',
+  description: 'Essai rating (integer 1..5)',
   serialize: (value) => value as number,
   parseValue: validatedParse('Note', Note),
 })
@@ -111,7 +106,7 @@ builder.scalarType('TmxSpeed', {
 })
 
 builder.scalarType('Remarks', {
-  description: 'Free-form trial remarks (up to 2000 chars)',
+  description: 'Free-form essai remarks (up to 2000 chars)',
   serialize: (value) => value as string,
   parseValue: validatedParse('Remarks', Remarks),
 })
