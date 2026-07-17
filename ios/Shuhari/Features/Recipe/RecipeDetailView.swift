@@ -130,7 +130,7 @@ struct RecipeDetailView: View {
             Button {
                 showToTest = true
             } label: {
-                Image(systemName: "flask.fill")
+                Image(systemName: "flask")
             }
             .accessibilityIdentifier("to-test-button")
             .accessibilityLabel("Prochains essais")
