@@ -50,10 +50,10 @@ Sign in with Apple.
 | Infra    | Terraform sur GCP (projet `shuhari-polyforms`), déploiement CI via WIF           |
 
 Le backend suit une architecture **DDD/CQRS** stricte. Domaines dans
-`server/domain/` : `recipe` (la recette et sa lignée de versions), `trial`
-(les essais notés), `proposal` (les propositions d'itération de l'IA), `home`
-(l'agrégation d'accueil), `portability` (export/import des données),
-`changelog`. Les concerns transverses sont dans `server/system/`
+`server/domain/` : `recipe` (la recette et sa lignée de versions — chaque
+version porte son essai noté), `draft` (les brouillons d'itération de l'IA,
+éphémères), `home` (l'agrégation d'accueil), `portability` (export/import des
+données), `changelog`. Les concerns transverses sont dans `server/system/`
 (`ai`, `firebase`, `config`, `migration`, `request-cache`).
 
 ## Documentation
