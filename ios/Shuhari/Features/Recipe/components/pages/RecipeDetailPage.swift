@@ -59,7 +59,6 @@ struct RecipeDetailPage: View {
                 HStack {
                     RecipeHeaderBadges(
                         type: recipe.type,
-                        category: recipe.category,
                         versionNumber: recipe.bestRatedVersion?.number,
                         trialCount: recipe.trials.count
                     )
