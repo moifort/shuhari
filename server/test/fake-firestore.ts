@@ -93,9 +93,12 @@ export const createFakeFirestore = () => {
     value instanceof Date ? value.getTime() : (value as number | string)
 
   type Filter = [field: string, op: string, value: unknown]
+  type Order = { field: string; direction: 'asc' | 'desc' }
   type QueryState = {
     filters: Filter[]
-    order?: { field: string; direction: 'asc' | 'desc' }
+    // Chained orderBy calls, applied in sequence (primary, secondary, …) like
+    // real Firestore composite ordering — the document id breaks final ties.
+    orders: Order[]
     limit?: number
     offset?: number
     startAfterId?: string
@@ -113,7 +116,7 @@ export const createFakeFirestore = () => {
     where: (field, op, value) =>
       makeQuery(collection, { ...state, filters: [...state.filters, [field, op, value]] }),
     orderBy: (field, direction = 'asc') =>
-      makeQuery(collection, { ...state, order: { field, direction } }),
+      makeQuery(collection, { ...state, orders: [...state.orders, { field, direction }] }),
     limit: (count) => makeQuery(collection, { ...state, limit: count }),
     offset: (count) => makeQuery(collection, { ...state, offset: count }),
     startAfter: (cursor) => makeQuery(collection, { ...state, startAfterId: cursor.id }),
@@ -122,15 +125,19 @@ export const createFakeFirestore = () => {
       let matching = [...docsOf(collection).entries()].filter(([, data]) =>
         state.filters.every((filter) => matchesFilter(data, filter)),
       )
-      if (state.order) {
-        const { field, direction } = state.order
-        // Firestore uses the document id as an implicit tie-break — mirror it.
+      if (state.orders.length > 0) {
+        // Firestore appends an implicit __name__ tie-break in the direction of the
+        // LAST orderBy — mirror it so equal-key rows page deterministically.
+        const lastDir = state.orders[state.orders.length - 1]?.direction ?? 'asc'
         matching.sort(([idA, a], [idB, b]) => {
-          const left = sortValue(a[field])
-          const right = sortValue(b[field])
-          const primary = left < right ? -1 : left > right ? 1 : 0
-          const comparison = primary !== 0 ? primary : idA < idB ? -1 : idA > idB ? 1 : 0
-          return direction === 'desc' ? -comparison : comparison
+          for (const { field, direction } of state.orders) {
+            const left = sortValue(a[field])
+            const right = sortValue(b[field])
+            const primary = left < right ? -1 : left > right ? 1 : 0
+            if (primary !== 0) return direction === 'desc' ? -primary : primary
+          }
+          const tie = idA < idB ? -1 : idA > idB ? 1 : 0
+          return lastDir === 'desc' ? -tie : tie
         })
       }
       if (state.startAfterId) {
@@ -163,10 +170,11 @@ export const createFakeFirestore = () => {
       await ref.set(data)
       return ref
     },
-    where: (field, op, value) => makeQuery(name, { filters: [[field, op, value]] }),
-    orderBy: (field, direction) => makeQuery(name, { filters: [] }).orderBy(field, direction),
-    limit: (count) => makeQuery(name, { filters: [] }).limit(count),
-    get: () => makeQuery(name, { filters: [] }).get(),
+    where: (field, op, value) => makeQuery(name, { filters: [[field, op, value]], orders: [] }),
+    orderBy: (field, direction) =>
+      makeQuery(name, { filters: [], orders: [] }).orderBy(field, direction),
+    limit: (count) => makeQuery(name, { filters: [], orders: [] }).limit(count),
+    get: () => makeQuery(name, { filters: [], orders: [] }).get(),
   })
 
   const makeBatch = (): FakeBatch => {

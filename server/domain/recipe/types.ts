@@ -18,6 +18,12 @@ export const DISH_CATEGORY_VALUES = [
 ] as const
 export type DishCategory = (typeof DISH_CATEGORY_VALUES)[number]
 
+// How the paginated library is ordered. `updatedAt` honours the requested
+// direction; `category` always follows the fixed business rank (see
+// `categoryRank`) with `updatedAt` desc as the secondary key.
+export type RecipeSort = 'updatedAt' | 'category'
+export type SortOrder = 'asc' | 'desc'
+
 export type RecipeId = Brand<string, 'RecipeId'>
 export type RecipeTitle = Brand<string, 'RecipeTitle'>
 export type RecipeSubtitle = Brand<string, 'RecipeSubtitle'>

@@ -235,8 +235,25 @@ type Query {
   """A single recipe by id"""
   recipe(id: RecipeId!): Recipe
 
-  """The current user’s recipes, optionally filtered by type"""
-  recipes(type: RecipeType): [Recipe!]!
+  """
+  A page of the current user’s recipe library, filtered by type and sorted per view
+  """
+  recipes(
+    """Cursor: return the page following this recipe id"""
+    after: RecipeId
+
+    """Maximum recipes returned in the page"""
+    limit: Int = 20
+
+    """Sort direction (ignored for the category sort, which is fixed)"""
+    order: SortOrder = DESC
+
+    """Field the page is ordered by"""
+    sort: RecipeSort = UPDATED_AT
+
+    """Facet: keep only this recipe type"""
+    type: RecipeType
+  ): Recipes!
 
   """A single trial by id"""
   trial(id: TrialId!): Trial
@@ -284,6 +301,17 @@ type Recipe {
 """Recipe unique identifier (UUID v4)"""
 scalar RecipeId
 
+"""Field the paginated recipe library is ordered by"""
+enum RecipeSort {
+  """
+  Dish course order (Entrée → Plat → Dessert → Soupe → Sauce → Boulangerie), most recently modified first within a course
+  """
+  CATEGORY
+
+  """Most recently modified first (honours order)"""
+  UPDATED_AT
+}
+
 """Recipe subtitle (1-200 chars)"""
 scalar RecipeSubtitle
 
@@ -294,6 +322,18 @@ scalar RecipeTitle
 enum RecipeType {
   PLAT
   TMX
+}
+
+"""A page of the recipe library"""
+type Recipes {
+  """Whether more recipes are available after this page"""
+  hasMore: Boolean!
+  items: [Recipe!]!
+
+  """
+  Number of recipes in this page (the full library count is not computed)
+  """
+  totalCount: Int!
 }
 
 """Record one execution of a recipe version"""
@@ -316,6 +356,15 @@ type RecordTrialResult {
 
 """Free-form trial remarks (up to 2000 chars)"""
 scalar Remarks
+
+"""Sort direction"""
+enum SortOrder {
+  """Ascending (oldest / lowest first)"""
+  ASC
+
+  """Descending (newest / highest first)"""
+  DESC
+}
 
 """A short recipe step (1-300 chars)"""
 scalar StepText

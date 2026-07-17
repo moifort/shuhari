@@ -1,5 +1,14 @@
 import type { WriteBatch } from 'firebase-admin/firestore'
-import type { Recipe, RecipeId, RecipeVersion, VersionNumber } from '~/domain/recipe/types'
+import { categoryRank } from '~/domain/recipe/business-rules'
+import type {
+  Recipe,
+  RecipeId,
+  RecipeSort,
+  RecipeType,
+  RecipeVersion,
+  SortOrder,
+  VersionNumber,
+} from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
 import { db } from '~/system/firebase'
 import { isInRequestCache, memoizedPerRequest } from '~/system/request-cache'
@@ -54,9 +63,43 @@ export const findVariationsOf = async (userId: UserId, id: RecipeId) => {
 
 export const save = async (recipe: Recipe, batch?: WriteBatch) => {
   const ref = recipes().doc(recipe.id)
-  if (batch) batch.set(ref, recipe)
-  else await ref.set(recipe)
+  // `categoryRank` is a storage-only, derived sort key (never on the domain type
+  // nor exposed via GraphQL): the single write point stamps it so the library's
+  // Firestore category ordering always has a fresh, cursor-safe field to sort on.
+  const stored = { ...recipe, categoryRank: categoryRank(recipe.category) }
+  if (batch) batch.set(ref, stored)
+  else await ref.set(stored)
   return recipe
+}
+
+export type RecipePage = { recipes: Recipe[]; hasMore: boolean }
+export type RecipePageArgs = {
+  type?: RecipeType
+  sort: RecipeSort
+  order: SortOrder
+  limit: number
+  after?: RecipeId
+}
+
+// One page of the user's recipes, ordered per the requested sort. Reads limit+1
+// docs to know whether a next page exists, then trims. The cursor (`after`) is
+// resolved to a document snapshot so Firestore can page on the composite order;
+// a stale cursor (deleted recipe) simply restarts from the top.
+export const findPage = async (userId: UserId, args: RecipePageArgs): Promise<RecipePage> => {
+  let query = recipes().where('userId', '==', userId)
+  if (args.type) query = query.where('type', '==', args.type)
+  query =
+    args.sort === 'category'
+      ? query.orderBy('categoryRank', 'asc').orderBy('updatedAt', 'desc')
+      : query.orderBy('updatedAt', args.order)
+  if (args.after) {
+    const cursor = await recipes().doc(args.after).get()
+    if (cursor.exists) query = query.startAfter(cursor)
+  }
+  const snap = await query.limit(args.limit + 1).get()
+  const docs = snap.docs.map((doc) => doc.data())
+  const hasMore = docs.length > args.limit
+  return { recipes: hasMore ? docs.slice(0, args.limit) : docs, hasMore }
 }
 
 export const findVersion = async (recipeId: RecipeId, number: VersionNumber) => {

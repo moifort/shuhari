@@ -1,13 +1,22 @@
 import { VersionNumber as toVersionNumber } from '~/domain/recipe/primitives'
-import type {
-  StepText,
-  TmxSettings,
-  TmxSpeed,
-  TmxTemperature,
-  TmxTime,
-  VersionNumber,
+import {
+  DISH_CATEGORY_VALUES,
+  type DishCategory,
+  type StepText,
+  type TmxSettings,
+  type TmxSpeed,
+  type TmxTemperature,
+  type TmxTime,
+  type VersionNumber,
 } from '~/domain/recipe/types'
 import type { Note } from '~/domain/trial/types'
+
+// The library's category sort follows the course order (Entrée → Plat → Dessert →
+// Soupe → Sauce → Boulangerie), not the alphabetical order of the enum values. We
+// denormalize that business rank (0..5) onto each recipe document so Firestore can
+// order by it with a stable cursor — sorting client-side would break pagination.
+export const categoryRank = (category: DishCategory): number =>
+  DISH_CATEGORY_VALUES.indexOf(category)
 
 // A trial promotes its version to "current" (the reproducible reference) when the
 // note reaches this threshold (on the 1..5 scale). Mirrors the maquette's saveEssai logic.

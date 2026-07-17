@@ -20,6 +20,27 @@ export const DishCategoryEnum = builder.enumType('DishCategory', {
   } as const,
 })
 
+export const RecipeSortEnum = builder.enumType('RecipeSort', {
+  description: 'Field the paginated recipe library is ordered by',
+  values: {
+    UPDATED_AT: { value: 'updatedAt', description: 'Most recently modified first (honours order)' },
+    CATEGORY: {
+      value: 'category',
+      description:
+        'Dish course order (Entrée → Plat → Dessert → Soupe → Sauce → Boulangerie), ' +
+        'most recently modified first within a course',
+    },
+  } as const,
+})
+
+export const SortOrderEnum = builder.enumType('SortOrder', {
+  description: 'Sort direction',
+  values: {
+    ASC: { value: 'asc', description: 'Ascending (oldest / lowest first)' },
+    DESC: { value: 'desc', description: 'Descending (newest / highest first)' },
+  } as const,
+})
+
 export const VersionOriginKindEnum = builder.enumType('VersionOriginKind', {
   description: 'How a version came to exist',
   values: {

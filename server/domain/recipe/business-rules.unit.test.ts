@@ -1,18 +1,20 @@
 import { describe, expect, test } from 'bun:test'
 import {
   alignedTmxSteps,
+  categoryRank,
   nextVersionNumber,
   PROMOTION_NOTE,
   readyToPromote,
   toTmxSettings,
 } from '~/domain/recipe/business-rules'
-import type {
-  StepText,
-  TmxSettings,
-  TmxSpeed,
-  TmxTemperature,
-  TmxTime,
-  VersionNumber,
+import {
+  DISH_CATEGORY_VALUES,
+  type StepText,
+  type TmxSettings,
+  type TmxSpeed,
+  type TmxTemperature,
+  type TmxTime,
+  type VersionNumber,
 } from '~/domain/recipe/types'
 import type { Note } from '~/domain/trial/types'
 
@@ -32,6 +34,25 @@ describe('readyToPromote', () => {
   })
   test('does not promote when nothing is pending', () => {
     expect(readyToPromote(note(5), v(3), null)).toBe(false)
+  })
+})
+
+describe('categoryRank', () => {
+  test('ranks the courses in business order, not alphabetically', () => {
+    expect(categoryRank('entree')).toBe(0)
+    expect(categoryRank('plat')).toBe(1)
+    expect(categoryRank('dessert')).toBe(2)
+    expect(categoryRank('soupe')).toBe(3)
+    expect(categoryRank('sauce')).toBe(4)
+    expect(categoryRank('boulangerie')).toBe(5)
+  })
+  test('an entrée outranks a dessert which outranks a boulangerie (non-alphabetical)', () => {
+    expect(categoryRank('entree')).toBeLessThan(categoryRank('dessert'))
+    expect(categoryRank('dessert')).toBeLessThan(categoryRank('boulangerie'))
+  })
+  test('assigns a distinct rank to every category', () => {
+    const ranks = DISH_CATEGORY_VALUES.map(categoryRank)
+    expect(new Set(ranks).size).toBe(DISH_CATEGORY_VALUES.length)
   })
 })
 

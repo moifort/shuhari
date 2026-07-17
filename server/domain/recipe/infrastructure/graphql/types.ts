@@ -1,5 +1,5 @@
 import { match, P } from 'ts-pattern'
-import { RecipeQuery } from '~/domain/recipe/query'
+import { type RecipeLibraryPage, RecipeQuery } from '~/domain/recipe/query'
 import { builder } from '~/domain/shared/graphql/builder'
 import type { Ingredient, Recipe, RecipeVersion, TmxSettings } from '../../types'
 import { DishCategoryEnum, RecipeTypeEnum, VersionOriginKindEnum } from './enums'
@@ -113,6 +113,21 @@ RecipeType.implement({
       type: [RecipeType],
       description: 'Recipes derived from this one',
       resolve: (r, _a, { loaders }) => loaders.variations.load(r.id).then((v) => v ?? []),
+    }),
+  }),
+})
+
+// A page of the recipe library. `totalCount` is the size of THIS page — the full
+// library count is never computed (an infinite-scroll list, not a total).
+export const RecipesType = builder.objectRef<RecipeLibraryPage>('Recipes').implement({
+  description: 'A page of the recipe library',
+  fields: (t) => ({
+    items: t.field({ type: [RecipeType], resolve: ({ items }) => items }),
+    hasMore: t.exposeBoolean('hasMore', {
+      description: 'Whether more recipes are available after this page',
+    }),
+    totalCount: t.exposeInt('totalCount', {
+      description: 'Number of recipes in this page (the full library count is not computed)',
     }),
   }),
 })
