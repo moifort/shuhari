@@ -1,6 +1,5 @@
-"""Result of accepting a proposal (an iteration or a variation)"""
+"""Result of accepting a proposal as an iteration"""
 type AcceptProposalResult {
-  createdRecipeId: RecipeId
   createdVersion: VersionNumber
   recipe: Recipe!
 }
@@ -115,12 +114,8 @@ scalar IngredientName
 scalar IngredientQuantity
 
 type Mutation {
-  """
-  Accept a proposal as an iteration or a variation (optionally editing the draft first)
-  """
+  """Accept a proposal as an iteration (optionally editing the draft first)"""
   acceptProposal(
-    choice: ProposalRecommendation!
-
     """The edited next-version draft, replacing the AI proposal when provided"""
     editedDraft: ProposalDraftInput
     recipeId: RecipeId!
@@ -165,9 +160,7 @@ type Mutation {
   """Refuse a proposal (removes it)"""
   refuseProposal(recipeId: RecipeId!, versionNumber: VersionNumber!): Boolean!
 
-  """
-  Ask the AI to analyze the latest trials and propose the next step (iterate or vary)
-  """
+  """Ask the AI to analyze the latest trials and propose the next iteration"""
   requestProposal(recipeId: RecipeId!): Proposal!
 
   """Rename a recipe (title and/or subtitle)"""
@@ -187,7 +180,6 @@ type Proposal {
   ingredients: [Ingredient!]!
   rationale: String!
   recipeId: RecipeId!
-  recommendation: ProposalRecommendation!
 
   """The full step list of the drafted next version"""
   steps: [StepText!]!
@@ -196,7 +188,6 @@ type Proposal {
   Per-step Thermomix settings aligned with steps (null = plain step; [] if not tmx)
   """
   tmxSteps: [TmxSettings]!
-  variation: VariationSuggestion
   versionNumber: VersionNumber!
 }
 
@@ -212,14 +203,6 @@ input ProposalDraftInput {
 
   """Per-step Thermomix settings, aligned with steps (null = plain step)"""
   tmxSteps: [TmxSettingsInput]
-}
-
-"""
-Whether the AI recommends iterating the recipe or spinning off a variation
-"""
-enum ProposalRecommendation {
-  ITERATION
-  VARIATION
 }
 
 type Query {
@@ -275,9 +258,6 @@ type Recipe {
 
   """The current reproducible reference version"""
   currentVersion: Version
-
-  """The parent recipe when this is a variation"""
-  derivedFrom: Recipe
   id: RecipeId!
 
   """The AI proposal awaiting a decision, if any"""
@@ -292,9 +272,6 @@ type Recipe {
   trials: [Trial!]!
   type: RecipeType!
   updatedAt: DateTime!
-
-  """Recipes derived from this one"""
-  variations: [Recipe!]!
 
   """How many versions the recipe has (its highest version number)"""
   versionCount: VersionNumber!
@@ -425,12 +402,6 @@ input UpdateRecipeInput {
 
 """Firebase Auth user identifier"""
 scalar UserId
-
-"""A suggested name and description when the AI recommends a variation"""
-type VariationSuggestion {
-  description: String!
-  title: RecipeTitle!
-}
 
 """An immutable entry in a recipe’s linear lineage (v1 → v2 → …)"""
 type Version {

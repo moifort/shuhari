@@ -17,7 +17,6 @@ import '~/domain/trial/infrastructure/graphql/mutations'
 import '~/domain/trial/infrastructure/graphql/queries'
 
 // Proposal domain (extends RecipeType with .pendingProposal)
-import '~/domain/proposal/infrastructure/graphql/enums'
 import '~/domain/proposal/infrastructure/graphql/types'
 import '~/domain/proposal/infrastructure/graphql/inputs'
 import '~/domain/proposal/infrastructure/graphql/mutations'

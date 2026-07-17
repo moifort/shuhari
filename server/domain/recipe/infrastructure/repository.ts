@@ -57,11 +57,6 @@ export const findManyByIds = async (userId: UserId, ids: RecipeId[]) => {
     .filter((recipe): recipe is Recipe => recipe !== undefined && recipe.userId === userId)
 }
 
-export const findVariationsOf = async (userId: UserId, id: RecipeId) => {
-  const snap = await recipes().where('userId', '==', userId).where('derivedFrom', '==', id).get()
-  return snap.docs.map((doc) => doc.data())
-}
-
 export const save = async (recipe: Recipe, batch?: WriteBatch) => {
   const ref = recipes().doc(recipe.id)
   // `categoryRank` is a storage-only, derived sort key (never on the domain type

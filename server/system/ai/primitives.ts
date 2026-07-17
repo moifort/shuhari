@@ -49,7 +49,6 @@ const nullToNull = <T>(schema: z.ZodType<T>) => schema.nullish().transform((v) =
 // they can't 400, but an unbounded value would bloat the Firestore document.
 const SOURCE_LABEL_MAX = 200
 const RATIONALE_MAX = 2000
-const DESCRIPTION_MAX = 2000
 
 // Cap array element counts so a runaway response can't produce thousands of rows.
 // Generous — real recipes/proposals stay well under this.
@@ -137,13 +136,6 @@ export const ProposalDraftSchema = z
     rationale: clampedField(RATIONALE_MAX),
     ingredients: z.array(ingredientSchema).default([]),
     steps: z.array(stepSchema).default([]),
-    recommendation: z.enum(['iteration', 'variation']).default('iteration'),
-    variation: nullToNull(
-      z.object({
-        title: clampedField(RECIPE_MAX.title),
-        description: clampedField(DESCRIPTION_MAX),
-      }),
-    ),
   })
   .transform((raw): ProposalDraft => {
     const { steps, tmxSteps } = foldSteps(raw.steps)
@@ -153,9 +145,6 @@ export const ProposalDraftSchema = z
       ingredients: foldIngredients(raw.ingredients),
       steps,
       tmxSteps,
-      recommendation: raw.recommendation,
-      // A variation needs a title (it becomes a RecipeTitle) — drop it if blank.
-      variation: raw.variation?.title ? raw.variation : null,
     }
   })
 

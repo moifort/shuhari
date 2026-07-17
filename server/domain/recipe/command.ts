@@ -57,7 +57,6 @@ export namespace RecipeCommand {
       currentVersion: FIRST_VERSION,
       toTest: null,
       versionCount: FIRST_VERSION,
-      derivedFrom: null,
       createdAt: now,
       updatedAt: now,
     }
@@ -120,39 +119,6 @@ export namespace RecipeCommand {
       updatedAt: new Date(),
     }
     return repository.save(updated)
-  }
-
-  // Accepted AI variation → a brand-new recipe linked to its parent, with its own
-  // fresh v1 lineage.
-  export const deriveVariation = async (
-    userId: UserId,
-    parentId: RecipeId,
-    input: NewRecipeInput,
-    change: string,
-  ) => {
-    const parent = await repository.findBy(userId, parentId)
-    if (!parent) return 'not-found' as const
-    const now = new Date()
-    const recipe: Recipe = {
-      id: randomRecipeId(),
-      userId,
-      type: input.type,
-      category: input.category,
-      title: input.title,
-      ...(input.subtitle ? { subtitle: input.subtitle } : {}),
-      currentVersion: FIRST_VERSION,
-      toTest: null,
-      versionCount: FIRST_VERSION,
-      derivedFrom: parentId,
-      createdAt: now,
-      updatedAt: now,
-    }
-    const origin: VersionOrigin = { kind: 'ai-proposal', detail: change }
-    return atomically(async (batch) => {
-      await repository.save(recipe, batch)
-      await repository.saveVersion(firstVersion(recipe, origin, input), batch)
-      return recipe
-    })
   }
 
   export const rename = async (

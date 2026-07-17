@@ -4,18 +4,7 @@ import {
   TmxSettingsType,
 } from '~/domain/recipe/infrastructure/graphql/types'
 import { builder } from '~/domain/shared/graphql/builder'
-import type { Proposal, VariationSuggestion } from '../../types'
-import { ProposalRecommendationEnum } from './enums'
-
-const VariationSuggestionType = builder
-  .objectRef<VariationSuggestion>('VariationSuggestion')
-  .implement({
-    description: 'A suggested name and description when the AI recommends a variation',
-    fields: (t) => ({
-      title: t.expose('title', { type: 'RecipeTitle' }),
-      description: t.exposeString('description'),
-    }),
-  })
+import type { Proposal } from '../../types'
 
 export const ProposalType = builder.objectRef<Proposal>('Proposal').implement({
   description: 'An AI proposal for the next version of a recipe (presence == pending)',
@@ -42,12 +31,6 @@ export const ProposalType = builder.objectRef<Proposal>('Proposal').implement({
       description:
         'Per-step Thermomix settings aligned with steps (null = plain step; [] if not tmx)',
       resolve: (p) => p.tmxSteps,
-    }),
-    recommendation: t.expose('recommendation', { type: ProposalRecommendationEnum }),
-    variation: t.field({
-      type: VariationSuggestionType,
-      nullable: true,
-      resolve: (p) => p.variation ?? null,
     }),
   }),
 })

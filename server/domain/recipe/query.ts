@@ -70,7 +70,4 @@ export namespace RecipeQuery {
 
   export const versionsByRefs = async (refs: { recipeId: RecipeId; number: VersionNumber }[]) =>
     repository.findVersionsByRefs(refs)
-
-  export const variationsOf = async (userId: UserId, recipeId: RecipeId) =>
-    repository.findVariationsOf(userId, recipeId)
 }

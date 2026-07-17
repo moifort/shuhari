@@ -58,8 +58,6 @@ const baseDraft = (): ProposalDraft => ({
   ],
   steps: ['Saisir', 'Mijoter'],
   tmxSteps: null,
-  recommendation: 'iteration',
-  variation: null,
 })
 
 // Import a recipe and persist an AI proposal against its current version.
@@ -88,7 +86,6 @@ describe('ProposalUseCase.proposeFromTrial', () => {
     expect(proposal?.rationale).toBe('Trop liquide')
     expect(proposal?.ingredients).toEqual(DRAFT_INGREDIENTS)
     expect(proposal?.steps).toEqual(stepList('Saisir', 'Mijoter'))
-    expect(proposal?.recommendation).toBe('iteration')
   })
 
   test('aligns tmxSteps with the steps for a tmx recipe, [] for a plat recipe', async () => {
@@ -144,38 +141,5 @@ describe('ProposalUseCase.acceptAsIteration', () => {
   test('returns no-proposal when there is nothing to accept', async () => {
     const recipe = await RecipeCommand.importRecipe(userId, recipeInput())
     expect(await ProposalUseCase.acceptAsIteration(userId, recipe.id, V1)).toBe('no-proposal')
-  })
-})
-
-describe('ProposalUseCase.acceptAsVariation', () => {
-  test('returns not-found for an unknown recipe', async () => {
-    expect(await ProposalUseCase.acceptAsVariation(userId, 'nope' as RecipeId, V1)).toBe(
-      'not-found',
-    )
-  })
-
-  test('forks a new recipe with a fresh v1 lineage inheriting the parent identity', async () => {
-    const parent = await seedProposal({
-      subtitle: 'Grand-mère' as RecipeSubtitle,
-    })
-
-    const child = (await ProposalUseCase.acceptAsVariation(userId, parent.id, V1)) as Recipe
-
-    expect(child.id).not.toBe(parent.id)
-    expect(child.derivedFrom).toBe(parent.id)
-    expect(child.type).toBe(parent.type)
-    expect(child.category).toBe(parent.category)
-    expect(child.subtitle).toBe(parent.subtitle)
-    expect(child.currentVersion).toBe(V1)
-    expect(child.versionCount).toBe(V1)
-    expect(child.toTest).toBeNull()
-
-    const v1 = fake.snapshot('recipe-versions').get(`${child.id}_1`)
-    expect(v1?.change).toBeNull()
-    expect(v1?.ingredients).toEqual(DRAFT_INGREDIENTS)
-    expect(v1?.steps).toEqual(stepList('Saisir', 'Mijoter'))
-
-    // Parent's proposal consumed.
-    expect(await ProposalQuery.byRef(parent.id, V1)).toBeNull()
   })
 })

@@ -211,7 +211,6 @@ describe('parseProposalResponse — full next-version draft', () => {
           { text: 'Saisir', tmxTime: '5 min', tmxTemperature: '120°C', tmxSpeed: '1' },
           { text: 'Mijoter' },
         ],
-        recommendation: 'iteration',
       }),
     )
 
@@ -226,43 +225,22 @@ describe('parseProposalResponse — full next-version draft', () => {
       { time: '5 min', temperature: '120°C', speed: '1', reverse: null },
       null,
     ])
-    expect(result.recommendation).toBe('iteration')
-    expect(result.variation).toBeNull()
   })
 
-  test('clamps the change summary and variation title, drops a blank-titled variation', () => {
+  test('clamps the change summary to the domain limit', () => {
     const result = parseProposalResponse(
       JSON.stringify({
         changeSummary: 'C'.repeat(500),
         rationale: 'ok',
         ingredients: [{ name: 'Riz', quantity: '300 g' }],
         steps: ['Cuire'],
-        recommendation: 'variation',
-        variation: { title: '  ', description: 'd' },
       }),
     )
 
     expect(result.changeSummary.length).toBe(RECIPE_MAX.changeSummary)
-    expect(result.variation).toBeNull()
   })
 
-  test('keeps a variation with a title, clamped to the recipe-title limit', () => {
-    const result = parseProposalResponse(
-      JSON.stringify({
-        changeSummary: 'Version végétarienne',
-        rationale: 'ok',
-        ingredients: [],
-        steps: [],
-        recommendation: 'variation',
-        variation: { title: 'V'.repeat(500), description: 'd' },
-      }),
-    )
-
-    expect(result.variation?.title.length).toBe(RECIPE_MAX.title)
-    expect(() => RecipeTitle(result.variation?.title ?? '')).not.toThrow()
-  })
-
-  test('drops blank ingredients/steps and defaults recommendation to iteration', () => {
+  test('drops blank ingredients/steps', () => {
     const result = parseProposalResponse(
       JSON.stringify({
         changeSummary: 'Ajustement',
@@ -278,6 +256,5 @@ describe('parseProposalResponse — full next-version draft', () => {
     expect(result.ingredients).toEqual([{ name: 'Sel', quantity: '5 g' }])
     expect(result.steps).toEqual(['Saler'])
     expect(result.tmxSteps).toBeNull()
-    expect(result.recommendation).toBe('iteration')
   })
 })

@@ -1,16 +1,11 @@
 import type {
   Ingredient,
   RecipeId,
-  RecipeTitle,
   StepText,
   TmxSettings,
   VersionNumber,
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
-
-export type ProposalRecommendation = 'iteration' | 'variation'
-
-export type VariationSuggestion = { title: RecipeTitle; description: string }
 
 // An AI proposal for the next step of a recipe, tied to the version that was
 // tested. It carries the FULL draft of version n+1 (ingredients + steps) plus a
@@ -27,6 +22,4 @@ export type Proposal = {
   ingredients: Ingredient[] // full draft of version n+1
   steps: StepText[]
   tmxSteps: (TmxSettings | null)[]
-  recommendation: ProposalRecommendation
-  variation?: VariationSuggestion
 }

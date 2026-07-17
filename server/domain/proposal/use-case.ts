@@ -10,7 +10,6 @@ import { RecipeCommand } from '~/domain/recipe/command'
 import {
   IngredientName,
   IngredientQuantity,
-  RecipeTitle,
   StepText,
   TmxSpeed,
   TmxTemperature,
@@ -106,15 +105,6 @@ export namespace ProposalUseCase {
       ingredients,
       steps,
       tmxSteps,
-      recommendation: draft.recommendation,
-      ...(draft.variation
-        ? {
-            variation: {
-              title: RecipeTitle(draft.variation.title),
-              description: draft.variation.description,
-            },
-          }
-        : {}),
     }
     return ProposalCommand.propose(proposal)
   }
@@ -137,39 +127,6 @@ export namespace ProposalUseCase {
       steps: draft.steps,
       tmxSteps: draft.tmxSteps,
     })
-    if (result !== 'not-found') await ProposalCommand.discard(recipeId, versionNumber)
-    return result
-  }
-
-  // Accept a proposal as a variation: a brand-new recipe derived from this one,
-  // carrying the draft (or the user's inline edits) as its v1.
-  export const acceptAsVariation = async (
-    userId: UserId,
-    recipeId: RecipeId,
-    versionNumber: VersionNumber,
-    editedDraft?: EditedDraft,
-  ) => {
-    const recipe = await RecipeQuery.byId(userId, recipeId)
-    if (recipe === 'not-found') return 'not-found'
-    const proposal = await ProposalQuery.byRef(recipeId, versionNumber)
-    if (!proposal) return 'no-proposal'
-    const draft = editedDraft ?? proposal
-
-    const title = proposal.variation?.title ?? recipe.title
-    const result = await RecipeCommand.deriveVariation(
-      userId,
-      recipeId,
-      {
-        type: recipe.type,
-        category: recipe.category,
-        title,
-        ...(recipe.subtitle ? { subtitle: recipe.subtitle } : {}),
-        ingredients: draft.ingredients,
-        steps: draft.steps,
-        tmxSteps: draft.tmxSteps,
-      },
-      proposal.changeSummary,
-    )
     if (result !== 'not-found') await ProposalCommand.discard(recipeId, versionNumber)
     return result
   }

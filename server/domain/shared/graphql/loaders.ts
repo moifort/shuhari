@@ -1,7 +1,7 @@
 import { ProposalQuery } from '~/domain/proposal/query'
 import type { Proposal } from '~/domain/proposal/types'
 import { RecipeQuery } from '~/domain/recipe/query'
-import type { Recipe, RecipeId, RecipeVersion, VersionNumber } from '~/domain/recipe/types'
+import type { RecipeId, RecipeVersion, VersionNumber } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
 import { TrialQuery } from '~/domain/trial/query'
 import type { Trial } from '~/domain/trial/types'
@@ -55,7 +55,6 @@ export type RecipeSatelliteLoaders = {
   version: Loader<RecipeVersion, VersionRef>
   trials: Loader<Trial[], RecipeId>
   proposal: Loader<Proposal, ProposalRef>
-  variations: Loader<Recipe[], RecipeId>
 }
 
 export const recipeSatelliteLoaders = (userId: UserId): RecipeSatelliteLoaders => ({
@@ -81,14 +80,4 @@ export const recipeSatelliteLoaders = (userId: UserId): RecipeSatelliteLoaders =
       ]),
     )
   }),
-  variations: batchedBy(
-    (recipeId) => recipeId,
-    async (recipeIds) => {
-      const all = await RecipeQuery.all(userId)
-      const grouped = new Map<string, Recipe[]>(recipeIds.map((id) => [id, []]))
-      for (const recipe of all)
-        if (recipe.derivedFrom) grouped.get(recipe.derivedFrom)?.push(recipe)
-      return grouped
-    },
-  ),
 })

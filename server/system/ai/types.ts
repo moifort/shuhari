@@ -62,6 +62,4 @@ export type ProposalDraft = {
   steps: string[]
   // Aligned with `steps` by index; null when no step carries a setting.
   tmxSteps: (ImportTmxSettings | null)[] | null
-  recommendation: 'iteration' | 'variation'
-  variation: { title: string; description: string } | null
 }

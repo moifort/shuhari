@@ -1,4 +1,3 @@
-import { match, P } from 'ts-pattern'
 import { type RecipeLibraryPage, RecipeQuery } from '~/domain/recipe/query'
 import { builder } from '~/domain/shared/graphql/builder'
 import type { Ingredient, Recipe, RecipeVersion, TmxSettings } from '../../types'
@@ -53,8 +52,6 @@ export const VersionType = builder.objectRef<RecipeVersion>('Version').implement
 })
 
 // Satellite fields trials / pendingProposal are grafted on by their own domains.
-// Declared then implemented separately so the recursive derivedFrom/variations
-// fields can reference the ref without TS inferring `any` (Pothos recursion pattern).
 export const RecipeType = builder.objectRef<Recipe>('Recipe')
 
 RecipeType.implement({
@@ -94,25 +91,6 @@ RecipeType.implement({
       type: [VersionType],
       description: 'The full lineage, oldest first',
       resolve: (r) => RecipeQuery.versionsOf(r.id),
-    }),
-    derivedFrom: t.field({
-      type: RecipeType,
-      nullable: true,
-      description: 'The parent recipe when this is a variation',
-      resolve: (r, _a, { userId }) =>
-        r.derivedFrom === null
-          ? null
-          : RecipeQuery.byId(userId, r.derivedFrom).then((res) =>
-              match(res)
-                .with('not-found', () => null)
-                .with(P.not(P.string), (found) => found)
-                .exhaustive(),
-            ),
-    }),
-    variations: t.field({
-      type: [RecipeType],
-      description: 'Recipes derived from this one',
-      resolve: (r, _a, { loaders }) => loaders.variations.load(r.id).then((v) => v ?? []),
     }),
   }),
 })

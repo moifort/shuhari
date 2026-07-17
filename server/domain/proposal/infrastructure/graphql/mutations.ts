@@ -3,33 +3,29 @@ import type { EditedDraft } from '~/domain/proposal/use-case'
 import { ProposalUseCase } from '~/domain/proposal/use-case'
 import { toTmxSettings } from '~/domain/recipe/business-rules'
 import { RecipeType } from '~/domain/recipe/infrastructure/graphql/types'
-import type { Recipe, RecipeId, VersionNumber } from '~/domain/recipe/types'
+import type { Recipe, VersionNumber } from '~/domain/recipe/types'
 import { builder } from '~/domain/shared/graphql/builder'
 import { domainError, notFound } from '~/domain/shared/graphql/errors'
-import { ProposalRecommendationEnum } from './enums'
 import { ProposalDraftInput } from './inputs'
 import { ProposalType } from './types'
 
 type AcceptResult = {
   recipe: Recipe
   createdVersion: VersionNumber | null
-  createdRecipeId: RecipeId | null
 }
 
 const AcceptProposalResultType = builder.objectRef<AcceptResult>('AcceptProposalResult').implement({
-  description: 'Result of accepting a proposal (an iteration or a variation)',
+  description: 'Result of accepting a proposal as an iteration',
   fields: (t) => ({
     recipe: t.field({ type: RecipeType, resolve: (r) => r.recipe }),
     createdVersion: t.expose('createdVersion', { type: 'VersionNumber', nullable: true }),
-    createdRecipeId: t.expose('createdRecipeId', { type: 'RecipeId', nullable: true }),
   }),
 })
 
 builder.mutationField('requestProposal', (t) =>
   t.field({
     type: ProposalType,
-    description:
-      'Ask the AI to analyze the latest trials and propose the next step (iterate or vary)',
+    description: 'Ask the AI to analyze the latest trials and propose the next iteration',
     args: { recipeId: t.arg({ type: 'RecipeId', required: true }) },
     resolve: async (_root, { recipeId }, { userId }) => {
       const result = await ProposalUseCase.proposeFromTrial(userId, recipeId)
@@ -44,12 +40,10 @@ builder.mutationField('requestProposal', (t) =>
 builder.mutationField('acceptProposal', (t) =>
   t.field({
     type: AcceptProposalResultType,
-    description:
-      'Accept a proposal as an iteration or a variation (optionally editing the draft first)',
+    description: 'Accept a proposal as an iteration (optionally editing the draft first)',
     args: {
       recipeId: t.arg({ type: 'RecipeId', required: true }),
       versionNumber: t.arg({ type: 'VersionNumber', required: true }),
-      choice: t.arg({ type: ProposalRecommendationEnum, required: true }),
       editedDraft: t.arg({
         type: ProposalDraftInput,
         description: 'The edited next-version draft, replacing the AI proposal when provided',
@@ -63,24 +57,14 @@ builder.mutationField('acceptProposal', (t) =>
             tmxSteps: args.editedDraft.tmxSteps ? toTmxSettings(args.editedDraft.tmxSteps) : [],
           }
         : undefined
-      if (args.choice === 'iteration') {
-        const result = await ProposalUseCase.acceptAsIteration(
-          userId,
-          args.recipeId,
-          args.versionNumber,
-          editedDraft,
-        )
-        const recipe = ensureRecipe(result)
-        return { recipe, createdVersion: recipe.toTest, createdRecipeId: null }
-      }
-      const result = await ProposalUseCase.acceptAsVariation(
+      const result = await ProposalUseCase.acceptAsIteration(
         userId,
         args.recipeId,
         args.versionNumber,
         editedDraft,
       )
       const recipe = ensureRecipe(result)
-      return { recipe, createdVersion: null, createdRecipeId: recipe.id }
+      return { recipe, createdVersion: recipe.toTest }
     },
   }),
 )

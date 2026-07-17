@@ -65,7 +65,6 @@ export type Recipe = {
   currentVersion: VersionNumber // the reproducible reference
   toTest: VersionNumber | null // the version awaiting a trial, if any
   versionCount: VersionNumber // highest version number allocated so far
-  derivedFrom: RecipeId | null // parent recipe when this is a variation
   createdAt: Date
   updatedAt: Date
 }

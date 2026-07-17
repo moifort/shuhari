@@ -128,30 +128,9 @@ const proposalResponseSchema = {
     rationale: { type: 'string', description: 'Explication du raisonnement, en français' },
     ingredients: ingredientsSchemaProperty,
     steps: stepsSchemaProperty,
-    recommendation: {
-      type: 'string',
-      enum: ['iteration', 'variation'],
-      description: 'iteration = améliorer la recette ; variation = créer une déclinaison distincte',
-    },
-    variation: {
-      type: 'object',
-      nullable: true,
-      properties: {
-        title: { type: 'string', description: 'Nom proposé pour la variation, ≤200 caractères' },
-        description: { type: 'string', description: 'En quoi elle diffère' },
-      },
-      required: ['title', 'description'],
-    },
   },
-  required: ['changeSummary', 'rationale', 'ingredients', 'steps', 'recommendation'],
-  propertyOrdering: [
-    'changeSummary',
-    'rationale',
-    'ingredients',
-    'steps',
-    'recommendation',
-    'variation',
-  ],
+  required: ['changeSummary', 'rationale', 'ingredients', 'steps'],
+  propertyOrdering: ['changeSummary', 'rationale', 'ingredients', 'steps'],
 }
 
 const IMPORT_INSTRUCTIONS = `Tu es l'assistant d'un carnet d'expérimentation culinaire. À partir de la source fournie (photos, page web ou texte d'une recette), extrais une recette STRUCTURÉE et REPRODUCTIBLE.
@@ -260,7 +239,7 @@ ${steps}
 Essais réalisés :
 ${trials}
 
-Propose soit une itération (amélioration de cette recette), soit une variation (déclinaison distincte, ex : une version végétarienne d'un plat) si les remarques suggèrent un plat différent plutôt qu'une correction. Renseigne changeSummary (résumé court de ce qui change), rationale (pourquoi), ingredients et steps (la liste COMPLÈTE de la prochaine version), recommendation et, si variation, un titre et une description. Toutes les valeurs textuelles en français.`
+Propose une itération : une amélioration de cette recette. Renseigne changeSummary (résumé court de ce qui change), rationale (pourquoi), ingredients et steps (la liste COMPLÈTE de la prochaine version). Toutes les valeurs textuelles en français.`
   }
 
   const callGemini = async (body: Record<string, unknown>): Promise<string | undefined> => {
