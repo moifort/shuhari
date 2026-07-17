@@ -8,12 +8,12 @@ import XCTest
 final class PromotionFlowTest: BaseUITest {
 
     func testPromotePendingVersion() async throws {
-        let title = "Espresso Promotion"
-        try api.seedRecipeWithPendingVersion(title: title)
+        let title = "Risotto Promotion"
+        try api.seedRecipeWithPendingVersion(title: title, type: "plat", category: "plat")
 
         let tabBar = TabBarPage(app: app)
-        // "Espresso Promotion" is a coffee recipe → the Café tab.
-        let home = try tabBar.goToCategory("Café").verify()
+        // The cuisine-only app has a single content tab: the Carnet.
+        let home = try tabBar.goToCarnet().verify()
         try home.verifyRecipeVisible(title)
 
         let recipe = try home.openRecipe(title)

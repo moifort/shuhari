@@ -11,7 +11,7 @@ final class TrialLoopFlowTest: BaseUITest {
 
         // 1. Seed a recipe through the import flow.
         let importPage = try tabBar.goToImport().openTextEntry()
-        _ = try importPage.typeRecipe("Espresso : 18 g de café, mouture 2.0, sortie 36 g, 93 °C, 25 s.")
+        _ = try importPage.typeRecipe("Sauce tomate : 400 g de tomates pelées, 1 gousse d'ail, 2 c. à soupe d'huile d'olive, basilic, sel. Mijoter 20 min.")
         let recipe = try importPage.analyze().verify().save()
         try recipe.verify()
 

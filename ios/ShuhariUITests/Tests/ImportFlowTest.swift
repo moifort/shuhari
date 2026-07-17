@@ -13,6 +13,7 @@ final class ImportFlowTest: BaseUITest {
 
         let preview = try importPage.analyze().verify()
         try preview.verifyTitleField()
+        try preview.verifyCategoryPicker()
 
         let recipe = try preview.save()
         try recipe.verify()

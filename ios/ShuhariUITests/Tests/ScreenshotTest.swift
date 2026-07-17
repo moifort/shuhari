@@ -20,8 +20,8 @@ final class ScreenshotTest: XCTestCase {
         let tabBar = TabBarPage(app: app)
         try tabBar.verify()
 
-        // 1. Home (Cuisine tab)
-        let home = try tabBar.goToCategory("Cuisine").verify()
+        // 1. Home (Carnet tab)
+        let home = try tabBar.goToCarnet().verify()
         saveScreenshot("home")
 
         // 2. First recipe fiche, if any

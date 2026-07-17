@@ -4,6 +4,7 @@ struct TestRecipe: Decodable {
     let id: String
     let title: String
     let type: String
+    let category: String?
 }
 
 struct TestAPIResponse<T: Decodable>: Decodable {
@@ -37,11 +38,18 @@ final class TestAPIClient: @unchecked Sendable {
 
     /// Seed a recipe with a pending (toTest) version so the trial-loop and
     /// promotion tests have something to execute. Returns the created recipe.
+    /// The cuisine-only model requires a dish `category` on every recipe and no
+    /// longer carries params; the payload mirrors the current server shape.
     @discardableResult
-    func seedRecipeWithPendingVersion(title: String, type: String = "plat") throws -> TestRecipe {
+    func seedRecipeWithPendingVersion(
+        title: String,
+        type: String = "plat",
+        category: String = "plat"
+    ) throws -> TestRecipe {
         let data = try performRequest("POST", path: "/test/seed-recipe", jsonBody: [
             "title": title,
             "type": type,
+            "category": category,
             "withPendingVersion": true,
         ])
         return try decoder.decode(TestAPIResponse<TestRecipe>.self, from: data).data

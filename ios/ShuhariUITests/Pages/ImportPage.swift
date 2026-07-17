@@ -42,6 +42,15 @@ struct ImportPreviewPage {
         try app.textFields["import-title-field"].waitOrFail()
     }
 
+    /// The cuisine-only preview surfaces a dish-category Picker (Entrée, Plat, …)
+    /// the AI pre-selects; assert it is present so the model change is covered.
+    func verifyCategoryPicker() throws {
+        // A Form Picker surfaces as a button (menu) or an otherElement depending
+        // on the OS; match on the identifier regardless of element type.
+        let picker = app.descendants(matching: .any)["import-category-picker"].firstMatch
+        try picker.waitOrFail(timeout: 2, "category picker not shown in the import preview")
+    }
+
     @discardableResult
     func save() throws -> RecipeDetailPage {
         try app.buttons["save-recipe-button"].tapOrFail()
