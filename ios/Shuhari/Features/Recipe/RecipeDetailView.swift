@@ -35,16 +35,20 @@ struct RecipeDetailView: View {
                 // floating action bar owns the bottom edge.
                 .toolbar(.hidden, for: .tabBar)
                 .sheet(isPresented: $showToTest) {
-                    if let toTest = recipe.toTest {
-                        ToTestSheet(
-                            versionNumber: toTest.number,
-                            change: toTest.change,
-                            why: toTest.why ?? toTest.originDetail,
-                            type: recipe.type
-                        ) {
-                            showToTest = false
-                            presentRecordTrial(versionNumber: toTest.number)
-                        }
+                    NextTrialsSheet(
+                        trials: recipe.versions
+                            .filter { $0.trialCount == 0 }
+                            .sorted { $0.number > $1.number }
+                            .map {
+                                NextTrialsSheet.Item(
+                                    versionNumber: $0.number,
+                                    change: $0.change,
+                                    why: $0.why ?? $0.originDetail
+                                )
+                            }
+                    ) { versionNumber in
+                        showToTest = false
+                        presentRecordTrial(versionNumber: versionNumber)
                     }
                 }
                 // The record-trial flow as a half-screen sheet: capture at .medium,
@@ -107,23 +111,16 @@ struct RecipeDetailView: View {
             .accessibilityIdentifier("recipe-menu")
         }
 
-        // Floating glass action bar: à-tester (left) · record trial (centre) ·
-        // history (right). The left slot keeps a hidden placeholder when no
-        // pending version exists, so the centre CTA stays centred.
+        // Floating glass action bar: prochains essais (left) · record trial
+        // (centre) · history (right).
         ToolbarItem(placement: .bottomBar) {
-            if recipe.toTest != nil {
-                Button {
-                    showToTest = true
-                } label: {
-                    Image(systemName: "flask.fill")
-                }
-                .accessibilityIdentifier("to-test-button")
-                .accessibilityLabel("À tester")
-            } else {
+            Button {
+                showToTest = true
+            } label: {
                 Image(systemName: "flask.fill")
-                    .hidden()
-                    .accessibilityHidden(true)
             }
+            .accessibilityIdentifier("to-test-button")
+            .accessibilityLabel("Prochains essais")
         }
         ToolbarSpacer(.flexible, placement: .bottomBar)
         if let reference = recipe.bestRatedVersion {
