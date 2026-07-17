@@ -15,7 +15,7 @@ struct HistorySheet: View {
             HistoryView(recipeId: recipeId)
                 .recipeFlow(path: $path, execution: $execution, onReload: onReload)
         }
-        .presentationDetents([.large])
+        .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
 }

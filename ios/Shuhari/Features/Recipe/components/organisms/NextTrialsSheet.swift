@@ -2,9 +2,9 @@ import SwiftUI
 
 /// The recipe's upcoming trials — the versions still awaiting a first run —
 /// as a compact list, presented from the fiche's beaker CTA. A half-screen
-/// sheet (detent .medium) that stays up while the fiche scrolls behind it;
-/// tapping a row launches that version's trial capture. Empty when every
-/// version has already been tried.
+/// sheet (detent .medium) that dims the fiche behind it, so a tap outside
+/// dismisses it; tapping a row launches that version's trial capture. Empty
+/// when every version has already been tried.
 struct NextTrialsSheet: View {
     struct Item: Identifiable {
         let versionNumber: Int
@@ -49,7 +49,6 @@ struct NextTrialsSheet: View {
         .accessibilityIdentifier("next-trials-sheet")
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
-        .presentationBackgroundInteraction(.enabled(upThrough: .medium))
     }
 }
 
