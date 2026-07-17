@@ -70,16 +70,16 @@ struct DebugGallery: View {
                     onSave: { _, _, _ in }
                 )
             }
-        case "proposal":
+        case "draft":
             NavigationStack {
-                ProposalPage(
+                DraftPage(
                     type: .plat,
-                    proposal: Fixtures.proposal,
+                    draft: Fixtures.draft,
                     nextVersionNumber: 5,
                     baseIngredients: Fixtures.bourguignonV4.ingredients,
                     baseSteps: Fixtures.bourguignonV4.steps,
                     isWorking: false,
-                    onRefuse: {},
+                    onClose: {},
                     onValidate: { _ in }
                 )
             }
@@ -97,7 +97,7 @@ struct DebugGallery: View {
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : home, cuisine, recipe, recipe-tmx, history, trial, execute, execute-tmx, capture, proposal, import-preview, import-preview-tmx, ai-thinking")
+                description: Text("Écrans : home, cuisine, recipe, recipe-tmx, history, trial, execute, execute-tmx, capture, draft, import-preview, import-preview-tmx, ai-thinking")
             )
         }
     }

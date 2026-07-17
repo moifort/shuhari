@@ -33,13 +33,13 @@ enum ExecutionAPI {
         )
     }
 
-    /// Ask the AI to analyze the latest trials and propose the next step.
+    /// Ask the AI to analyze the latest trials and draft the next version.
     @discardableResult
-    static func requestProposal(recipeId: String) async throws -> Proposal {
+    static func requestDraft(recipeId: String) async throws -> Draft {
         let data = try await GraphQLHelpers.perform(
             GraphQLClient.shared.apollo,
-            mutation: ShuhariGraphQL.RequestProposalMutation(recipeId: recipeId)
+            mutation: ShuhariGraphQL.RequestDraftMutation(recipeId: recipeId)
         )
-        return mapProposal(data.requestProposal.fragments.proposalFields)
+        return mapDraft(data.requestDraft.fragments.draftFields)
     }
 }

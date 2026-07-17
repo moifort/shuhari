@@ -1,11 +1,11 @@
 import XCTest
 
 /// Experimentation loop: import a recipe, execute its current version, record a
-/// low-scoring trial, receive an AI proposal, validate it as an iteration, and
+/// low-scoring trial, receive an AI draft, validate it as an iteration, and
 /// see the new pending version surface as "à tester".
 final class TrialLoopFlowTest: BaseUITest {
 
-    func testTrialToProposalToPendingVersion() async throws {
+    func testTrialToDraftToPendingVersion() async throws {
         let tabBar = TabBarPage(app: app)
         try tabBar.verify()
 
@@ -19,15 +19,16 @@ final class TrialLoopFlowTest: BaseUITest {
         //    (no pending "à tester" version yet).
         let capture = try recipe.recordTrial().verify()
 
-        // 3. Record a low-scoring trial → triggers an AI proposal.
-        _ = try capture.pickStars(3) // 3/5 < 4 → proposition
+        // 3. Record a trial with a remark → triggers an AI draft (the note itself
+        //    no longer matters; the written remark is what asks for a draft).
+        _ = try capture.pickStars(3)
         _ = try capture.typeRemarks("Coule trop vite, amertume sèche en finale.")
         try capture.save()
 
-        // 4. Proposal → validate the iteration.
-        let proposal = ProposalPage(app: app)
-        try proposal.verify()
-        try proposal.validate()
+        // 4. Draft → validate the iteration.
+        let draft = DraftPage(app: app)
+        try draft.verify()
+        try draft.validate()
 
         // 5. Back on the fiche, the pending v2 banner is now present.
         try recipe.verifyPendingVersion(2)

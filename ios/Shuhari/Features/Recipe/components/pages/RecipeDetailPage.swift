@@ -1,19 +1,14 @@
 import SwiftUI
 
 /// The recipe fiche, iOS Photos style: header badges (type + version), the
-/// optional pending-proposal banner, the ingredients and the best-rated version
-/// step by step. Trials live in the history. Navigation and mutations are owned
-/// by `RecipeDetailView`.
+/// ingredients and the best-rated version step by step. Trials live in the
+/// history. Navigation and mutations are owned by `RecipeDetailView`.
 struct RecipeDetailPage: View {
     let recipe: Recipe
 
     var body: some View {
         List {
             header
-
-            if let proposal = recipe.pendingProposal {
-                pendingProposalSection(proposal)
-            }
 
             if let reference = recipe.bestRatedVersion {
                 IngredientsSection(ingredients: reference.ingredients)
@@ -71,26 +66,6 @@ struct RecipeDetailPage: View {
             .listRowInsets(EdgeInsets(top: -1, leading: 0, bottom: -1, trailing: 0))
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
-        }
-    }
-
-    // MARK: - Pending proposal
-
-    private func pendingProposalSection(_ proposal: Proposal) -> some View {
-        Section {
-            NavigationLink(value: RecipeRoute.proposal(recipeId: recipe.id)) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Label("Proposition de l’IA en attente", systemImage: "flask.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Theme.Status.toTest)
-                    Text(proposal.rationale)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                }
-            }
-            .accessibilityElement(children: .combine)
-            .accessibilityIdentifier("pending-proposal-banner")
         }
     }
 }

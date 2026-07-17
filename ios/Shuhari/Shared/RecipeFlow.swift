@@ -15,11 +15,6 @@ struct RecipeRouteView: View {
             HistoryView(recipeId: id)
         case .trial(let id):
             TrialDetailView(trialId: id)
-        case .proposal(let recipeId):
-            ProposalView(recipeId: recipeId) {
-                if !path.isEmpty { path.removeLast() }
-                onReload()
-            }
         }
     }
 }

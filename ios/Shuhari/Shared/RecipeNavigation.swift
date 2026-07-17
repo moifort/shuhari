@@ -5,7 +5,6 @@ enum RecipeRoute: Hashable {
     case recipe(id: String)
     case history(id: String)
     case trial(id: String)
-    case proposal(recipeId: String)
 }
 
 /// A request to run the execution flow (presented as a full-screen cover).

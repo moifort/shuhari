@@ -1,27 +1,28 @@
 import SwiftUI
 
-/// The AI proposal screen: a short summary of what changes and why, then the FULL
+/// The AI draft screen: a short summary of what changes and why, then the FULL
 /// draft of the next version — ingredients and steps, each row editable inline and
-/// tinted when it differs from the base version. Finally Valider/Refuser.
+/// tinted when it differs from the base version. Finally Valider/Fermer.
 ///
 /// Diff highlighting: rows are always editable `TextField`s, so a from→to
 /// `DiffValue` doesn't fit; instead a row carries the `Theme.Status.changed` tint
 /// whenever its current value differs from the base version (new or modified). It
 /// updates live as the user types.
 ///
-/// On accept the page sends an `editedDraft` only when the user actually changed
-/// something versus the AI draft; the draft always carries the COMPLETE lists
-/// (full-replacement semantics).
-struct ProposalPage: View {
+/// The draft is ephemeral (never persisted): Fermer discards it, Valider accepts it.
+/// On accept the page emits the COMPLETE draft (full-replacement semantics) — the
+/// `changeSummary` and `rationale` carried through from the in-memory AI draft, the
+/// ingredient and step lists taken from the form's current (possibly edited) state.
+struct DraftPage: View {
     let type: RecipeType
-    let proposal: Proposal
+    let draft: Draft
     let nextVersionNumber: Int
     /// The base version's content, to highlight what the draft changes.
     let baseIngredients: [Ingredient]
     let baseSteps: [String]
     let isWorking: Bool
-    let onRefuse: () -> Void
-    let onValidate: (_ editedDraft: ProposalDraft?) -> Void
+    let onClose: () -> Void
+    let onValidate: (_ edited: DraftEdit) -> Void
 
     private struct EditableIngredient: Identifiable {
         let id = UUID()
@@ -41,27 +42,27 @@ struct ProposalPage: View {
 
     init(
         type: RecipeType,
-        proposal: Proposal,
+        draft: Draft,
         nextVersionNumber: Int,
         baseIngredients: [Ingredient],
         baseSteps: [String],
         isWorking: Bool,
-        onRefuse: @escaping () -> Void,
-        onValidate: @escaping (_ editedDraft: ProposalDraft?) -> Void
+        onClose: @escaping () -> Void,
+        onValidate: @escaping (_ edited: DraftEdit) -> Void
     ) {
         self.type = type
-        self.proposal = proposal
+        self.draft = draft
         self.nextVersionNumber = nextVersionNumber
         self.baseIngredients = baseIngredients
         self.baseSteps = baseSteps
         self.isWorking = isWorking
-        self.onRefuse = onRefuse
+        self.onClose = onClose
         self.onValidate = onValidate
-        self._ingredients = State(initialValue: proposal.ingredients.map {
+        self._ingredients = State(initialValue: draft.ingredients.map {
             EditableIngredient(name: $0.name, quantity: $0.quantity)
         })
-        self._steps = State(initialValue: proposal.steps.enumerated().map { index, text in
-            EditableStep(text: text, tmx: proposal.tmxSteps[safe: index] ?? nil)
+        self._steps = State(initialValue: draft.steps.enumerated().map { index, text in
+            EditableStep(text: text, tmx: draft.tmxSteps[safe: index] ?? nil)
         })
     }
 
@@ -76,27 +77,27 @@ struct ProposalPage: View {
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Proposition")
         .navigationBarTitleDisplayMode(.inline)
-        // Fermer = refuse the draft (discard); Valider = accept. Hiding the back
-        // button makes Fermer own the leading slot and disables the back-swipe, so
-        // the only exits are an explicit decision.
+        // Fermer = discard the draft (nothing is persisted); Valider = accept. Hiding
+        // the back button makes Fermer own the leading slot and disables the
+        // back-swipe, so the only exits are an explicit decision.
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button(action: onRefuse) {
+                Button(action: onClose) {
                     Image(systemName: "xmark")
                 }
                 .disabled(isWorking)
-                .accessibilityIdentifier("refuse-proposal-button")
+                .accessibilityIdentifier("close-draft-button")
                 .accessibilityLabel("Fermer")
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    onValidate(editedDraftIfChanged)
+                    onValidate(currentDraft)
                 } label: {
                     if isWorking { ProgressView() } else { Image(systemName: "checkmark") }
                 }
                 .disabled(isWorking)
-                .accessibilityIdentifier("validate-proposal-button")
+                .accessibilityIdentifier("validate-draft-button")
                 .accessibilityLabel("Valider")
             }
         }
@@ -107,9 +108,9 @@ struct ProposalPage: View {
     private var summarySection: some View {
         Section {
             VStack(alignment: .leading, spacing: 6) {
-                Text(proposal.changeSummary)
+                Text(draft.changeSummary)
                     .font(.headline)
-                Text(proposal.rationale)
+                Text(draft.rationale)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -180,7 +181,7 @@ struct ProposalPage: View {
         !baseSteps.contains(text)
     }
 
-    // MARK: - Edited draft
+    // MARK: - Accepted draft
 
     private var currentIngredients: [Ingredient] {
         ingredients.compactMap { row in
@@ -191,10 +192,11 @@ struct ProposalPage: View {
         }
     }
 
-    /// Only send an edited draft when the user changed the ingredients or steps
-    /// versus the AI draft. The draft always carries the COMPLETE lists, and steps
-    /// stay aligned with their per-step Thermomix settings.
-    private var editedDraftIfChanged: ProposalDraft? {
+    /// The COMPLETE draft to accept: the AI summary and rationale carried through
+    /// unchanged, the ingredient and step lists from the form's current state. The
+    /// draft always carries the COMPLETE lists, and steps stay aligned with their
+    /// per-step Thermomix settings.
+    private var currentDraft: DraftEdit {
         // Drop emptied steps, carrying each surviving row's tmx settings so `steps`
         // and `tmxSteps` keep the same length — a cleared step must not desync them
         // (a length mismatch makes the backend drop ALL Thermomix settings).
@@ -206,12 +208,11 @@ struct ProposalPage: View {
         let editedSteps = survivingSteps.map(\.text)
         // Empty for a non-Thermomix recipe (the draft had no tmxSteps); otherwise
         // aligned 1:1 with the surviving steps.
-        let editedTmxSteps: [TmxSettings?] = proposal.tmxSteps.isEmpty ? [] : survivingSteps.map(\.tmx)
+        let editedTmxSteps: [TmxSettings?] = draft.tmxSteps.isEmpty ? [] : survivingSteps.map(\.tmx)
 
-        let ingredientsChanged = currentIngredients != proposal.ingredients
-        let stepsChanged = editedSteps != proposal.steps
-        guard ingredientsChanged || stepsChanged else { return nil }
-        return ProposalDraft(
+        return DraftEdit(
+            changeSummary: draft.changeSummary,
+            rationale: draft.rationale,
             ingredients: currentIngredients,
             steps: editedSteps,
             tmxSteps: editedTmxSteps
@@ -227,14 +228,14 @@ private extension Array {
 
 #Preview {
     NavigationStack {
-        ProposalPage(
+        DraftPage(
             type: .plat,
-            proposal: Fixtures.proposal,
+            draft: Fixtures.draft,
             nextVersionNumber: 5,
             baseIngredients: Fixtures.bourguignonV4.ingredients,
             baseSteps: Fixtures.bourguignonV4.steps,
             isWorking: false,
-            onRefuse: {},
+            onClose: {},
             onValidate: { _ in }
         )
     }

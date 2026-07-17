@@ -4,7 +4,7 @@ import Foundation
 /// Deterministic domain fixtures shared by `#Preview`s and the debug gallery.
 /// One realistic recipe per shape the UI must handle: a plated dish mid-iteration
 /// (Bœuf bourguignon), a Thermomix dish with per-step machine settings (Risotto),
-/// and the transient models (proposal, trial, import analysis, home read model)
+/// and the transient models (draft, trial, import analysis, home read model)
 /// around them. Cuisine-only — no params, no café/cocktail.
 enum Fixtures {
     static let date = Date(timeIntervalSince1970: 1_752_300_000)
@@ -38,7 +38,7 @@ enum Fixtures {
         Ingredient(name: "Parmesan", quantity: "60 g"),
     ]
 
-    // MARK: - Bœuf bourguignon (plat, pending v4, pending proposal on demand)
+    // MARK: - Bœuf bourguignon (plat, pending v4)
 
     static let bourguignonV1 = RecipeVersion(
         number: 1, change: nil, why: nil, originKind: .import,
@@ -110,8 +110,7 @@ enum Fixtures {
         currentVersion: bourguignonV3,
         toTest: bourguignonV4,
         versions: [bourguignonV1, bourguignonV2, bourguignonV3, bourguignonV4],
-        trials: bourguignonTrials,
-        pendingProposal: nil
+        trials: bourguignonTrials
     )
 
     // MARK: - Risotto (tmx, per-step machine settings)
@@ -159,16 +158,14 @@ enum Fixtures {
                 remarks: "Bonne texture, manque un peu de sel.", photoUrl: nil,
                 executedAt: date.addingTimeInterval(-86_400 * 2)
             ),
-        ],
-        pendingProposal: nil
+        ]
     )
 
     // MARK: - Transient models
 
     /// The full draft of v5: the base v4 lists with a longer cooking time and a
     /// touch less bouillon — a couple of rows differ from the base for the diff.
-    static let proposal = Proposal(
-        recipeId: "bourguignon",
+    static let draft = Draft(
         versionNumber: 4,
         changeSummary: "Bouillon 50 → 40 cl, cuisson 3 h 30 → 4 h",
         rationale: "La sauce reste un peu liquide et la viande gagnerait à confire plus longtemps ; réduire le bouillon et allonger la cuisson devrait concentrer les arômes.",
@@ -189,8 +186,7 @@ enum Fixtures {
             "Mouiller au vin et au bouillon, ajouter le bouquet garni.",
             "Cuire à couvert 4 h.",
         ],
-        tmxSteps: [],
-        createdAt: date
+        tmxSteps: []
     )
 
     static let importAnalysis = ImportAnalysis(

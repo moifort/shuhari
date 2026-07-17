@@ -8,7 +8,7 @@ import SwiftUI
 /// refresh.
 struct ExecuteFlowView: View {
     /// How the flow is hosted. `.sheet` sizes the capture at `.medium` and grows to
-    /// `.large` for the AI proposal; `.cover` is the full-screen presentation.
+    /// `.large` for the AI draft; `.cover` is the full-screen presentation.
     enum Presentation { case cover, sheet }
 
     let request: ExecutionRequest
@@ -28,8 +28,11 @@ struct ExecuteFlowView: View {
     @State private var lastNote = 0
     @State private var detent: PresentationDetent = .medium
     @State private var errorPresenter = ErrorPresenter()
+    /// The ephemeral AI draft, held in memory while the `.draft` step is shown.
+    @State private var draft: Draft?
+    @State private var isAcceptingDraft = false
 
-    private enum Step: Hashable { case capture, proposal }
+    private enum Step: Hashable { case capture, draft }
 
     var body: some View {
         if presentation == .sheet {
@@ -96,8 +99,22 @@ struct ExecuteFlowView: View {
         switch step {
         case .capture:
             captureScreen(recipe: recipe, version: version)
-        case .proposal:
-            ProposalView(recipeId: request.recipeId) { finish() }
+        case .draft:
+            if let draft {
+                // The ephemeral AI draft is already in memory (from `save`); show it
+                // directly against the recipe already loaded — no extra fetch.
+                let base = recipe.version(draft.versionNumber) ?? recipe.currentVersion
+                DraftPage(
+                    type: recipe.type,
+                    draft: draft,
+                    nextVersionNumber: recipe.nextVersionNumber,
+                    baseIngredients: base?.ingredients ?? [],
+                    baseSteps: base?.steps ?? [],
+                    isWorking: isAcceptingDraft,
+                    onClose: { finish() },
+                    onValidate: { edited in Task { await acceptDraft(edited) } }
+                )
+            }
         }
     }
 
@@ -139,8 +156,8 @@ struct ExecuteFlowView: View {
                 detent = .large
                 analyzing = true
                 defer { analyzing = false }
-                _ = try await ExecutionAPI.requestProposal(recipeId: request.recipeId)
-                path.append(.proposal)
+                draft = try await ExecutionAPI.requestDraft(recipeId: request.recipeId)
+                path.append(.draft)
             } else if result.promotionSuggested {
                 detent = .large
                 showPromotion = true
@@ -150,6 +167,17 @@ struct ExecuteFlowView: View {
         } catch {
             isSaving = false
             analyzing = false
+            errorPresenter.message = reportError(error)
+        }
+    }
+
+    private func acceptDraft(_ edited: DraftEdit) async {
+        isAcceptingDraft = true
+        defer { isAcceptingDraft = false }
+        do {
+            try await DraftAPI.accept(recipeId: request.recipeId, draft: edited)
+            finish()
+        } catch {
             errorPresenter.message = reportError(error)
         }
     }

@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The Carnet content tab (cuisine — plats & Thermomix). Owns the
 /// NavigationStack, the settings sheet and the recipe flow (fiche → historique →
-/// essai → proposition + execution cover). Reads the shared `HomeStore` (the
+/// essai → draft + execution cover). Reads the shared `HomeStore` (the
 /// `home` read model behind the "À tester" and recent-activity sections) from the
 /// environment, and owns a `LibraryStore` for the paginated, server-sorted library.
 struct HomeView: View {

@@ -1,0 +1,8 @@
+mutation AcceptDraft($recipeId: RecipeId!, $draft: DraftInput!) {
+  acceptDraft(recipeId: $recipeId, draft: $draft) {
+    recipe {
+      id
+    }
+    createdVersion
+  }
+}

@@ -7,8 +7,25 @@ mutation RecordTrial($input: RecordTrialInput!) {
   }
 }
 
-mutation RequestProposal($recipeId: RecipeId!) {
-  requestProposal(recipeId: $recipeId) {
-    ...ProposalFields
+mutation RequestDraft($recipeId: RecipeId!) {
+  requestDraft(recipeId: $recipeId) {
+    ...DraftFields
+  }
+}
+
+fragment DraftFields on Draft {
+  versionNumber
+  changeSummary
+  rationale
+  ingredients {
+    name
+    quantity
+  }
+  steps
+  tmxSteps {
+    time
+    temperature
+    speed
+    reverse
   }
 }

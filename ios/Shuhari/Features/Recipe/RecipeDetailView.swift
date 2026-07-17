@@ -65,7 +65,7 @@ struct RecipeDetailView: View {
                     }
                 }
                 // The record-trial flow as a half-screen sheet: capture at .medium,
-                // grows to .large for the AI proposal.
+                // grows to .large for the AI draft.
                 .sheet(item: $recordRequest) { request in
                     ExecuteFlowView(request: request, presentation: .sheet) {
                         onReload()
@@ -98,7 +98,7 @@ struct RecipeDetailView: View {
                     }
                     .accessibilityIdentifier("confirm-delete-recipe")
                 } message: {
-                    Text("Toutes ses versions, essais et propositions seront supprimés. Action irréversible.")
+                    Text("Toutes ses versions et essais seront supprimés. Action irréversible.")
                 }
             } else if let error = viewModel.error {
                 ContentUnavailableView("Erreur", systemImage: "exclamationmark.triangle", description: Text(error))

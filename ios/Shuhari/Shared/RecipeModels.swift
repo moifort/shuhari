@@ -71,13 +71,12 @@ struct Trial: Identifiable, Sendable {
     let executedAt: Date
 }
 
-// MARK: - Proposal
+// MARK: - Draft
 
-/// An AI proposal for the next version of a recipe (presence == pending). It
-/// carries the COMPLETE draft of version n+1 (ingredients + steps + tmxSteps)
-/// plus a short human summary of what changed.
-struct Proposal: Sendable {
-    let recipeId: String
+/// An ephemeral AI draft of the next version of a recipe. Generated on demand,
+/// held in memory and never persisted: it carries the COMPLETE next version
+/// (ingredients + steps + tmxSteps) plus a short human summary of what changed.
+struct Draft: Sendable {
     let versionNumber: Int
     /// A short human summary of what the next version changes.
     let changeSummary: String
@@ -89,12 +88,14 @@ struct Proposal: Sendable {
     /// Per-step Thermomix settings aligned with `steps` (nil = plain step; empty
     /// when not a Thermomix recipe).
     let tmxSteps: [TmxSettings?]
-    let createdAt: Date
 }
 
-/// An edited next-version draft handed back from the proposal screen. It FULLY
-/// REPLACES the AI draft on accept — the lists are complete, not partial.
-struct ProposalDraft: Sendable {
+/// The complete next-version draft handed back from the draft screen and sent to
+/// `acceptDraft`. Full-replacement semantics — the lists are complete, not partial;
+/// `changeSummary` and `rationale` carry through from the AI draft unchanged.
+struct DraftEdit: Sendable {
+    let changeSummary: String
+    let rationale: String
     let ingredients: [Ingredient]
     let steps: [String]
     let tmxSteps: [TmxSettings?]
@@ -120,8 +121,6 @@ struct Recipe: Identifiable, Sendable {
     let versions: [RecipeVersion]
     /// The trial journal, most recent first.
     let trials: [Trial]
-    /// The AI proposal awaiting a decision, if any.
-    let pendingProposal: Proposal?
 
     /// The version number the next iteration would take.
     var nextVersionNumber: Int { (versions.map(\.number).max() ?? 0) + 1 }

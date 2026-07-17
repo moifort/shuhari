@@ -64,8 +64,7 @@ func mapRecipe(_ r: ShuhariGraphQL.RecipeQuery.Data.Recipe) -> Recipe {
         currentVersion: r.currentVersion.map { mapVersion($0.fragments.versionFields) },
         toTest: r.toTest.map { mapVersion($0.fragments.versionFields) },
         versions: r.versions.map { mapVersion($0.fragments.versionFields) },
-        trials: r.trials.map { mapTrial($0.fragments.trialFields) },
-        pendingProposal: r.pendingProposal.map { mapProposal($0.fragments.proposalFields) }
+        trials: r.trials.map { mapTrial($0.fragments.trialFields) }
     )
 }
 
@@ -99,17 +98,15 @@ func mapTrial(_ t: ShuhariGraphQL.TrialFields) -> Trial {
     )
 }
 
-func mapProposal(_ p: ShuhariGraphQL.ProposalFields) -> Proposal {
-    Proposal(
-        recipeId: p.recipeId,
-        versionNumber: p.versionNumber,
-        changeSummary: p.changeSummary,
-        rationale: p.rationale,
-        ingredients: p.ingredients.map { Ingredient(name: $0.name, quantity: $0.quantity) },
-        steps: p.steps,
-        tmxSteps: p.tmxSteps.map { step in
+func mapDraft(_ d: ShuhariGraphQL.DraftFields) -> Draft {
+    Draft(
+        versionNumber: d.versionNumber,
+        changeSummary: d.changeSummary,
+        rationale: d.rationale,
+        ingredients: d.ingredients.map { Ingredient(name: $0.name, quantity: $0.quantity) },
+        steps: d.steps,
+        tmxSteps: d.tmxSteps.map { step in
             step.map { TmxSettings(time: $0.time, temperature: $0.temperature, speed: $0.speed, reverse: $0.reverse ?? false) }
-        },
-        createdAt: GraphQLHelpers.parseISO8601(p.createdAt) ?? Date()
+        }
     )
 }

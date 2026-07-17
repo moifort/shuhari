@@ -30,25 +30,6 @@ fragment TrialFields on Trial {
   executedAt
 }
 
-fragment ProposalFields on Proposal {
-  recipeId
-  versionNumber
-  changeSummary
-  rationale
-  ingredients {
-    name
-    quantity
-  }
-  steps
-  tmxSteps {
-    time
-    temperature
-    speed
-    reverse
-  }
-  createdAt
-}
-
 query Recipe($id: RecipeId!) {
   recipe(id: $id) {
     id
@@ -69,9 +50,6 @@ query Recipe($id: RecipeId!) {
     }
     trials {
       ...TrialFields
-    }
-    pendingProposal {
-      ...ProposalFields
     }
   }
 }
