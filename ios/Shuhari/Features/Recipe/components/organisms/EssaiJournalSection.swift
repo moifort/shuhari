@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The recipe's essai journal, most recent first. Each row pushes the essai detail.
 /// Composes as a `Section` directly inside a `List`.
-struct TrialJournalSection: View {
+struct EssaiJournalSection: View {
     let recipeTitle: String
     let essais: [RecipeVersion]
 
@@ -15,7 +15,7 @@ struct TrialJournalSection: View {
             } else {
                 ForEach(essais) { version in
                     NavigationLink(value: RecipeRoute.essai(recipeId: version.recipeId, versionNumber: version.number)) {
-                        TrialRow(
+                        EssaiRow(
                             recipeTitle: nil,
                             versionNumber: version.number,
                             note: version.note ?? 0,
@@ -34,7 +34,7 @@ struct TrialJournalSection: View {
 
 #Preview {
     List {
-        TrialJournalSection(recipeTitle: Fixtures.bourguignon.title, essais: Fixtures.bourguignon.essais)
-        TrialJournalSection(recipeTitle: "Negroni", essais: [])
+        EssaiJournalSection(recipeTitle: Fixtures.bourguignon.title, essais: Fixtures.bourguignon.essais)
+        EssaiJournalSection(recipeTitle: "Negroni", essais: [])
     }
 }

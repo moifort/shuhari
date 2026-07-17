@@ -46,7 +46,7 @@ struct DebugGallery: View {
             }
         case "trial":
             NavigationStack {
-                TrialDetailPage(
+                EssaiDetailPage(
                     recipeTitle: Fixtures.bourguignon.title,
                     version: Fixtures.bourguignonV3
                 )

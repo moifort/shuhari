@@ -14,7 +14,7 @@ struct RecipeRouteView: View {
         case .history(let id):
             HistoryView(recipeId: id)
         case .essai(let recipeId, let versionNumber):
-            TrialDetailView(recipeId: recipeId, versionNumber: versionNumber)
+            EssaiDetailView(recipeId: recipeId, versionNumber: versionNumber)
         }
     }
 }

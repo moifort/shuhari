@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Coordinator for an essai's detail. Loads the recipe and resolves the version
 /// that carries the essai outcome.
-struct TrialDetailView: View {
+struct EssaiDetailView: View {
     let recipeId: String
     let versionNumber: Int
 
@@ -13,7 +13,7 @@ struct TrialDetailView: View {
         Group {
             if let recipe {
                 if let version = recipe.version(versionNumber) {
-                    TrialDetailPage(recipeTitle: recipe.title, version: version)
+                    EssaiDetailPage(recipeTitle: recipe.title, version: version)
                 } else {
                     ContentUnavailableView("Essai introuvable", systemImage: "questionmark.circle")
                 }

@@ -127,7 +127,7 @@ struct HomePage: View {
                     onPrefetch: onPrefetch,
                     onLoadMore: onLoadMore
                 )
-                RecentTrialsSection(essais: data.recentEssais, titleProvider: data.title(forRecipe:))
+                RecentEssaisSection(essais: data.recentEssais, titleProvider: data.title(forRecipe:))
             }
             .scrollEdgeEffectStyle(.soft, for: .top)
         }

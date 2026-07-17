@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// An essai's detail: note + remarks and an optional photo of the result.
-struct TrialDetailPage: View {
+struct EssaiDetailPage: View {
     let recipeTitle: String
     let version: RecipeVersion
 
@@ -40,7 +40,7 @@ struct TrialDetailPage: View {
 
 #Preview {
     NavigationStack {
-        TrialDetailPage(
+        EssaiDetailPage(
             recipeTitle: Fixtures.bourguignon.title,
             version: Fixtures.bourguignonV3
         )

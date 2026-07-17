@@ -2,7 +2,7 @@ import SwiftUI
 
 /// A journal / recent-activity row: coloured note badge, recipe name + version,
 /// and a truncated remarks excerpt with the date. Designed as a List row.
-struct TrialRow: View {
+struct EssaiRow: View {
     let recipeTitle: String?
     let versionNumber: Int
     let note: Int
@@ -39,7 +39,7 @@ struct TrialRow: View {
 
 #Preview {
     List {
-        TrialRow(
+        EssaiRow(
             recipeTitle: "Espresso — Brésil",
             versionNumber: 3,
             note: 4,

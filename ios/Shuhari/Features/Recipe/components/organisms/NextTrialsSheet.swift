@@ -59,7 +59,7 @@ struct NextTrialsSheet: View {
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(pastTrials) { item in
-                            TrialRow(
+                            EssaiRow(
                                 recipeTitle: nil,
                                 versionNumber: item.versionNumber,
                                 note: item.note,
