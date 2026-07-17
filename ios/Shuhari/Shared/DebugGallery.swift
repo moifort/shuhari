@@ -73,7 +73,6 @@ struct DebugGallery: View {
         case "proposal":
             NavigationStack {
                 ProposalPage(
-                    recipeTitle: Fixtures.bourguignon.title,
                     type: .plat,
                     proposal: Fixtures.proposal,
                     nextVersionNumber: 5,

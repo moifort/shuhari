@@ -15,7 +15,6 @@ struct ProposalView: View {
             if let recipe, let proposal = recipe.pendingProposal {
                 let base = recipe.version(proposal.versionNumber) ?? recipe.currentVersion
                 ProposalPage(
-                    recipeTitle: recipe.title,
                     type: recipe.type,
                     proposal: proposal,
                     nextVersionNumber: recipe.nextVersionNumber,

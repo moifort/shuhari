@@ -13,7 +13,6 @@ import SwiftUI
 /// something versus the AI draft; the draft always carries the COMPLETE lists
 /// (full-replacement semantics).
 struct ProposalPage: View {
-    let recipeTitle: String
     let type: RecipeType
     let proposal: Proposal
     let nextVersionNumber: Int
@@ -41,7 +40,6 @@ struct ProposalPage: View {
     @State private var steps: [EditableStep]
 
     init(
-        recipeTitle: String,
         type: RecipeType,
         proposal: Proposal,
         nextVersionNumber: Int,
@@ -51,7 +49,6 @@ struct ProposalPage: View {
         onRefuse: @escaping () -> Void,
         onValidate: @escaping (_ editedDraft: ProposalDraft?) -> Void
     ) {
-        self.recipeTitle = recipeTitle
         self.type = type
         self.proposal = proposal
         self.nextVersionNumber = nextVersionNumber
@@ -78,34 +75,30 @@ struct ProposalPage: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Proposition")
-        .navigationSubtitle(recipeTitle)
-        .safeAreaInset(edge: .bottom) {
-            GlassEffectContainer {
-                VStack(spacing: 10) {
-                    Button {
-                        onValidate(editedDraftIfChanged)
-                    } label: {
-                        Group {
-                            if isWorking { ProgressView() } else {
-                                Text("Valider — créer la v\(nextVersionNumber)")
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.glassProminent)
-                    .controlSize(.large)
-                    .disabled(isWorking)
-                    .accessibilityIdentifier("validate-proposal-button")
-
-                    Button("Refuser la proposition", role: .destructive, action: onRefuse)
-                        .buttonStyle(.glass)
-                        .tint(.red)
-                        .disabled(isWorking)
-                        .accessibilityIdentifier("refuse-proposal-button")
+        .navigationBarTitleDisplayMode(.inline)
+        // Fermer = refuse the draft (discard); Valider = accept. Hiding the back
+        // button makes Fermer own the leading slot and disables the back-swipe, so
+        // the only exits are an explicit decision.
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(action: onRefuse) {
+                    Image(systemName: "xmark")
                 }
+                .disabled(isWorking)
+                .accessibilityIdentifier("refuse-proposal-button")
+                .accessibilityLabel("Fermer")
             }
-            .padding(.horizontal)
-            .padding(.bottom, 8)
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    onValidate(editedDraftIfChanged)
+                } label: {
+                    if isWorking { ProgressView() } else { Image(systemName: "checkmark") }
+                }
+                .disabled(isWorking)
+                .accessibilityIdentifier("validate-proposal-button")
+                .accessibilityLabel("Valider")
+            }
         }
     }
 
@@ -121,12 +114,6 @@ struct ProposalPage: View {
                     .foregroundStyle(.secondary)
             }
             .padding(.vertical, 2)
-        } header: {
-            Label("Ce qui change — proposition de l’IA", systemImage: "flask.fill")
-                .foregroundStyle(Theme.Status.toTest)
-                .textCase(nil)
-        } footer: {
-            Text("D’après ton essai sur la v\(proposal.versionNumber) — rien n’est créé sans ta validation. Retouche librement le brouillon avant de valider.")
         }
     }
 
@@ -241,7 +228,6 @@ private extension Array {
 #Preview {
     NavigationStack {
         ProposalPage(
-            recipeTitle: Fixtures.bourguignon.title,
             type: .plat,
             proposal: Fixtures.proposal,
             nextVersionNumber: 5,
