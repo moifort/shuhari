@@ -2,8 +2,8 @@ import SwiftUI
 
 /// The recipe fiche, iOS Photos style: header badges (type + version), the
 /// optional pending-proposal banner, the ingredients and the best-rated version
-/// step by step. Trials and variations live in the history. Navigation and
-/// mutations are owned by `RecipeDetailView`.
+/// step by step. Trials live in the history. Navigation and mutations are owned
+/// by `RecipeDetailView`.
 struct RecipeDetailPage: View {
     let recipe: Recipe
 
@@ -66,15 +66,6 @@ struct RecipeDetailPage: View {
                     if let average = recipe.overallAverageNote {
                         NoteStars(note: average)
                     }
-                }
-
-                if let derived = recipe.derivedFrom {
-                    NavigationLink(value: RecipeRoute.recipe(id: derived.id)) {
-                        Label("Dérivée de \(derived.title)", systemImage: "link")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
                 }
             }
             .listRowInsets(EdgeInsets(top: -1, leading: 0, bottom: -1, trailing: 0))

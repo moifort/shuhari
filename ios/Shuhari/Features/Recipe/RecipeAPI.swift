@@ -65,8 +65,6 @@ func mapRecipe(_ r: ShuhariGraphQL.RecipeQuery.Data.Recipe) -> Recipe {
         toTest: r.toTest.map { mapVersion($0.fragments.versionFields) },
         versions: r.versions.map { mapVersion($0.fragments.versionFields) },
         trials: r.trials.map { mapTrial($0.fragments.trialFields) },
-        variations: r.variations.map { mapRef($0.fragments.recipeRefFields) },
-        derivedFrom: r.derivedFrom.map { mapRef($0.fragments.recipeRefFields) },
         pendingProposal: r.pendingProposal.map { mapProposal($0.fragments.proposalFields) }
     )
 }
@@ -105,7 +103,6 @@ func mapProposal(_ p: ShuhariGraphQL.ProposalFields) -> Proposal {
     Proposal(
         recipeId: p.recipeId,
         versionNumber: p.versionNumber,
-        recommendation: ProposalRecommendation(graphql: p.recommendation),
         changeSummary: p.changeSummary,
         rationale: p.rationale,
         ingredients: p.ingredients.map { Ingredient(name: $0.name, quantity: $0.quantity) },
@@ -113,20 +110,6 @@ func mapProposal(_ p: ShuhariGraphQL.ProposalFields) -> Proposal {
         tmxSteps: p.tmxSteps.map { step in
             step.map { TmxSettings(time: $0.time, temperature: $0.temperature, speed: $0.speed, reverse: $0.reverse ?? false) }
         },
-        variation: p.variation.map { VariationSuggestion(title: $0.title, description: $0.description) },
         createdAt: GraphQLHelpers.parseISO8601(p.createdAt) ?? Date()
-    )
-}
-
-func mapRef(_ r: ShuhariGraphQL.RecipeRefFields) -> RecipeRef {
-    RecipeRef(
-        id: r.id,
-        title: r.title,
-        type: RecipeType(graphql: r.type),
-        category: DishCategory(graphql: r.category),
-        subtitle: r.subtitle,
-        versionCount: r.versionCount,
-        bestNote: r.bestNote,
-        averageNote: r.currentVersion?.averageNote
     )
 }

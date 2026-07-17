@@ -25,9 +25,6 @@ query Home {
       currentVersion {
         averageNote
       }
-      derivedFrom {
-        id
-      }
     }
     recentTrials {
       id

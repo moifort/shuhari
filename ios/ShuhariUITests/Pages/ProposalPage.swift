@@ -10,15 +10,6 @@ struct ProposalPage {
         return self
     }
 
-    @discardableResult
-    func chooseIteration() throws -> Self {
-        let picker = app.segmentedControls["proposal-choice-picker"]
-        if picker.exists {
-            picker.buttons.element(boundBy: 0).tap()
-        }
-        return self
-    }
-
     func validate() throws {
         try app.buttons["validate-proposal-button"].tapOrFail()
     }

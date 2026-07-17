@@ -24,10 +24,9 @@ final class TrialLoopFlowTest: BaseUITest {
         _ = try capture.typeRemarks("Coule trop vite, amertume sèche en finale.")
         try capture.save()
 
-        // 4. Proposal → validate as an iteration.
+        // 4. Proposal → validate the iteration.
         let proposal = ProposalPage(app: app)
         try proposal.verify()
-        _ = try proposal.chooseIteration()
         try proposal.validate()
 
         // 5. Back on the fiche, the pending v2 banner is now present.

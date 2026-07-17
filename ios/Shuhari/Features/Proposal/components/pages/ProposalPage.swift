@@ -2,8 +2,7 @@ import SwiftUI
 
 /// The AI proposal screen: a short summary of what changes and why, then the FULL
 /// draft of the next version — ingredients and steps, each row editable inline and
-/// tinted when it differs from the base version. Finally the iteration/variation
-/// choice and Valider/Refuser.
+/// tinted when it differs from the base version. Finally Valider/Refuser.
 ///
 /// Diff highlighting: rows are always editable `TextField`s, so a from→to
 /// `DiffValue` doesn't fit; instead a row carries the `Theme.Status.changed` tint
@@ -18,13 +17,12 @@ struct ProposalPage: View {
     let type: RecipeType
     let proposal: Proposal
     let nextVersionNumber: Int
-    let variationTitle: String?
     /// The base version's content, to highlight what the draft changes.
     let baseIngredients: [Ingredient]
     let baseSteps: [String]
     let isWorking: Bool
     let onRefuse: () -> Void
-    let onValidate: (_ choice: ProposalRecommendation, _ editedDraft: ProposalDraft?) -> Void
+    let onValidate: (_ editedDraft: ProposalDraft?) -> Void
 
     private struct EditableIngredient: Identifiable {
         let id = UUID()
@@ -39,7 +37,6 @@ struct ProposalPage: View {
         let tmx: TmxSettings?
     }
 
-    @State private var choice: ProposalRecommendation
     @State private var ingredients: [EditableIngredient]
     @State private var steps: [EditableStep]
 
@@ -48,24 +45,21 @@ struct ProposalPage: View {
         type: RecipeType,
         proposal: Proposal,
         nextVersionNumber: Int,
-        variationTitle: String?,
         baseIngredients: [Ingredient],
         baseSteps: [String],
         isWorking: Bool,
         onRefuse: @escaping () -> Void,
-        onValidate: @escaping (_ choice: ProposalRecommendation, _ editedDraft: ProposalDraft?) -> Void
+        onValidate: @escaping (_ editedDraft: ProposalDraft?) -> Void
     ) {
         self.recipeTitle = recipeTitle
         self.type = type
         self.proposal = proposal
         self.nextVersionNumber = nextVersionNumber
-        self.variationTitle = variationTitle
         self.baseIngredients = baseIngredients
         self.baseSteps = baseSteps
         self.isWorking = isWorking
         self.onRefuse = onRefuse
         self.onValidate = onValidate
-        self._choice = State(initialValue: proposal.recommendation)
         self._ingredients = State(initialValue: proposal.ingredients.map {
             EditableIngredient(name: $0.name, quantity: $0.quantity)
         })
@@ -81,7 +75,6 @@ struct ProposalPage: View {
                 ingredientsSection
             }
             stepsSection
-            choiceSection
         }
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Proposition")
@@ -90,11 +83,11 @@ struct ProposalPage: View {
             GlassEffectContainer {
                 VStack(spacing: 10) {
                     Button {
-                        onValidate(choice, editedDraftIfChanged)
+                        onValidate(editedDraftIfChanged)
                     } label: {
                         Group {
                             if isWorking { ProgressView() } else {
-                                Text(choice == .iteration ? "Valider — créer la v\(nextVersionNumber)" : "Valider — créer la variation")
+                                Text("Valider — créer la v\(nextVersionNumber)")
                             }
                         }
                         .frame(maxWidth: .infinity)
@@ -187,35 +180,6 @@ struct ProposalPage: View {
         }
     }
 
-    // MARK: - Choice
-
-    private var choiceSection: some View {
-        Section {
-            Picker("En faire…", selection: $choice) {
-                Text("Itération (v\(nextVersionNumber))").tag(ProposalRecommendation.iteration)
-                Text("Variation").tag(ProposalRecommendation.variation)
-            }
-            .pickerStyle(.segmented)
-            .accessibilityIdentifier("proposal-choice-picker")
-        } header: {
-            Text("En faire…")
-        } footer: {
-            Text(choiceExplanation)
-        }
-    }
-
-    private var choiceExplanation: String {
-        switch choice {
-        case .iteration:
-            return "La v\(nextVersionNumber) rejoint la lignée de \(recipeTitle) et devient « à tester »."
-        case .variation:
-            if let variationTitle {
-                return "Crée « \(variationTitle) », une recette liée dérivée de \(recipeTitle), avec sa propre lignée."
-            }
-            return "Crée une nouvelle recette liée, dérivée de \(recipeTitle), avec sa propre lignée de versions."
-        }
-    }
-
     // MARK: - Diff
 
     /// An ingredient row differs from the base version when the base has no
@@ -281,12 +245,11 @@ private extension Array {
             type: .plat,
             proposal: Fixtures.proposal,
             nextVersionNumber: 5,
-            variationTitle: Fixtures.proposal.variation?.title,
             baseIngredients: Fixtures.bourguignonV4.ingredients,
             baseSteps: Fixtures.bourguignonV4.steps,
             isWorking: false,
             onRefuse: {},
-            onValidate: { _, _ in }
+            onValidate: { _ in }
         )
     }
 }

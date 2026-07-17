@@ -33,7 +33,6 @@ fragment TrialFields on Trial {
 fragment ProposalFields on Proposal {
   recipeId
   versionNumber
-  recommendation
   changeSummary
   rationale
   ingredients {
@@ -47,25 +46,7 @@ fragment ProposalFields on Proposal {
     speed
     reverse
   }
-  variation {
-    title
-    description
-  }
   createdAt
-}
-
-fragment RecipeRefFields on Recipe {
-  id
-  title
-  subtitle
-  type
-  category
-  versionCount
-  bestNote
-  currentVersion {
-    number
-    averageNote
-  }
 }
 
 query Recipe($id: RecipeId!) {
@@ -88,12 +69,6 @@ query Recipe($id: RecipeId!) {
     }
     trials {
       ...TrialFields
-    }
-    variations {
-      ...RecipeRefFields
-    }
-    derivedFrom {
-      ...RecipeRefFields
     }
     pendingProposal {
       ...ProposalFields

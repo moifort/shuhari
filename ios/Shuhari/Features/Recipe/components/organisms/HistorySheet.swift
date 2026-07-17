@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// The full version history, presented as a sheet from the fiche's bottom bar:
-/// every version, the trial journal and linked variations. Hosts its own
-/// navigation stack so trial and variation links stay tappable inside the sheet.
+/// every version and the trial journal. Hosts its own navigation stack so trial
+/// links stay tappable inside the sheet.
 struct HistorySheet: View {
     let recipeId: String
     let onReload: () -> Void

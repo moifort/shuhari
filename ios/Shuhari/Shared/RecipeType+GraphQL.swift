@@ -38,25 +38,3 @@ extension VersionOriginKind {
         }
     }
 }
-
-/// Recommendation bridge.
-extension ProposalRecommendation {
-    init(graphql: GraphQLEnum<ShuhariGraphQL.ProposalRecommendation>) {
-        switch graphql {
-        case .case(let value):
-            switch value {
-            case .iteration: self = .iteration
-            case .variation: self = .variation
-            }
-        case .unknown:
-            self = .iteration
-        }
-    }
-
-    var graphQLValue: GraphQLEnum<ShuhariGraphQL.ProposalRecommendation> {
-        switch self {
-        case .iteration: .case(.iteration)
-        case .variation: .case(.variation)
-        }
-    }
-}

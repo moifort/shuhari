@@ -19,7 +19,6 @@ struct ProposalView: View {
                     type: recipe.type,
                     proposal: proposal,
                     nextVersionNumber: recipe.nextVersionNumber,
-                    variationTitle: proposal.variation?.title,
                     baseIngredients: base?.ingredients ?? [],
                     baseSteps: base?.steps ?? [],
                     isWorking: actionError.isRunning,
@@ -30,13 +29,12 @@ struct ProposalView: View {
                             } onSuccess: { onResolved() }
                         }
                     },
-                    onValidate: { choice, editedDraft in
+                    onValidate: { editedDraft in
                         Task {
                             await actionError.run {
                                 try await ProposalAPI.accept(
                                     recipeId: recipeId,
                                     versionNumber: proposal.versionNumber,
-                                    choice: choice,
                                     editedDraft: editedDraft
                                 )
                             } onSuccess: { onResolved() }

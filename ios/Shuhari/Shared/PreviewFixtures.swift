@@ -111,10 +111,6 @@ enum Fixtures {
         toTest: bourguignonV4,
         versions: [bourguignonV1, bourguignonV2, bourguignonV3, bourguignonV4],
         trials: bourguignonTrials,
-        variations: [
-            RecipeRef(id: "joues", title: "Joues de bœuf confites", type: .plat, category: .plat, subtitle: nil, versionCount: 1, bestNote: 4, averageNote: 3.5),
-        ],
-        derivedFrom: nil,
         pendingProposal: nil
     )
 
@@ -164,8 +160,6 @@ enum Fixtures {
                 executedAt: date.addingTimeInterval(-86_400 * 2)
             ),
         ],
-        variations: [],
-        derivedFrom: nil,
         pendingProposal: nil
     )
 
@@ -176,7 +170,6 @@ enum Fixtures {
     static let proposal = Proposal(
         recipeId: "bourguignon",
         versionNumber: 4,
-        recommendation: .iteration,
         changeSummary: "Bouillon 50 → 40 cl, cuisson 3 h 30 → 4 h",
         rationale: "La sauce reste un peu liquide et la viande gagnerait à confire plus longtemps ; réduire le bouillon et allonger la cuisson devrait concentrer les arômes.",
         ingredients: [
@@ -197,10 +190,6 @@ enum Fixtures {
             "Cuire à couvert 4 h.",
         ],
         tmxSteps: [],
-        variation: VariationSuggestion(
-            title: "Bourguignon express",
-            description: "Même base, cuisson à l’autocuiseur pour un service rapide."
-        ),
         createdAt: date
     )
 
@@ -246,10 +235,10 @@ enum Fixtures {
             ),
         ],
         library: [
-            LibraryRecipe(id: "bourguignon", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0, isDerived: false, updatedAt: Date()),
-            LibraryRecipe(id: "joues", title: "Joues de bœuf confites", type: .plat, category: .plat, versionCount: 1, bestNote: 4, averageNote: 3.5, isDerived: true, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
-            LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 2, bestNote: 4, averageNote: 3.5, isDerived: false, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
-            LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestNote: nil, averageNote: 3.0, isDerived: false, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
+            LibraryRecipe(id: "bourguignon", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0, updatedAt: Date()),
+            LibraryRecipe(id: "joues", title: "Joues de bœuf confites", type: .plat, category: .plat, versionCount: 1, bestNote: 4, averageNote: 3.5, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
+            LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 2, bestNote: 4, averageNote: 3.5, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+            LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestNote: nil, averageNote: 3.0, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
         ],
         recentTrials: bourguignonTrials
     )

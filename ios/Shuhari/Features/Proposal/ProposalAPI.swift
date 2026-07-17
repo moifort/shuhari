@@ -3,12 +3,11 @@ import ApolloAPI
 import Foundation
 
 enum ProposalAPI {
-    /// Accept a proposal as an iteration or a variation. When `editedDraft` is
-    /// non-nil it FULLY REPLACES the AI draft — the lists must be complete.
+    /// Accept a proposal as an iteration. When `editedDraft` is non-nil it FULLY
+    /// REPLACES the AI draft — the lists must be complete.
     static func accept(
         recipeId: String,
         versionNumber: Int,
-        choice: ProposalRecommendation,
         editedDraft: ProposalDraft?
     ) async throws {
         let draft: GraphQLNullable<ShuhariGraphQL.ProposalDraftInput> = editedDraft.map { draft in
@@ -36,7 +35,6 @@ enum ProposalAPI {
             mutation: ShuhariGraphQL.AcceptProposalMutation(
                 recipeId: recipeId,
                 versionNumber: versionNumber,
-                choice: choice.graphQLValue,
                 editedDraft: draft
             )
         )

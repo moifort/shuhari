@@ -12,7 +12,7 @@ struct HomeTestItem: Identifiable, Sendable {
 }
 
 /// A library row: how many versions the recipe has, its best trial note ("the
-/// highest star"), the current reference's mean note, and whether it's a variation.
+/// highest star") and the current reference's mean note.
 struct LibraryRecipe: Identifiable, Sendable {
     let id: String
     let title: String
@@ -21,7 +21,6 @@ struct LibraryRecipe: Identifiable, Sendable {
     let versionCount: Int
     let bestNote: Int?
     let averageNote: Double?
-    let isDerived: Bool
     let updatedAt: Date
 }
 

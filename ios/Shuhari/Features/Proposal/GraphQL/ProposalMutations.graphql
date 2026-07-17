@@ -1,19 +1,16 @@
 mutation AcceptProposal(
   $recipeId: RecipeId!
   $versionNumber: VersionNumber!
-  $choice: ProposalRecommendation!
   $editedDraft: ProposalDraftInput
 ) {
   acceptProposal(
     recipeId: $recipeId
     versionNumber: $versionNumber
-    choice: $choice
     editedDraft: $editedDraft
   ) {
     recipe {
       id
     }
-    createdRecipeId
     createdVersion
   }
 }

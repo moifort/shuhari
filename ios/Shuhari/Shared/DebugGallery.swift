@@ -77,12 +77,11 @@ struct DebugGallery: View {
                     type: .plat,
                     proposal: Fixtures.proposal,
                     nextVersionNumber: 5,
-                    variationTitle: Fixtures.proposal.variation?.title,
                     baseIngredients: Fixtures.bourguignonV4.ingredients,
                     baseSteps: Fixtures.bourguignonV4.steps,
                     isWorking: false,
                     onRefuse: {},
-                    onValidate: { _, _ in }
+                    onValidate: { _ in }
                 )
             }
         case "import-preview":
@@ -130,9 +129,9 @@ private struct CuisineGalleryScreen: View {
             HomeTestItem(id: "boeuf", title: "Bœuf bourguignon", type: .plat, category: .plat, versionNumber: 5, change: "Cuisson 3 h → 3 h 30", why: "Viande encore ferme."),
         ],
         library: [
-            LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0, isDerived: false, updatedAt: Date()),
-            LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 3, bestNote: 4, averageNote: 3.5, isDerived: false, updatedAt: Date()),
-            LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestNote: nil, averageNote: nil, isDerived: true, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+            LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0, updatedAt: Date()),
+            LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 3, bestNote: 4, averageNote: 3.5, updatedAt: Date()),
+            LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestNote: nil, averageNote: nil, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
         ],
         recentTrials: []
     )

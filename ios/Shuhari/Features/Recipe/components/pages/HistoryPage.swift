@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// The version history: newest at the top, plus any linked variations issued
-/// from this recipe.
+/// The version history: newest at the top.
 struct HistoryPage: View {
     let recipe: Recipe
 
@@ -30,8 +29,6 @@ struct HistoryPage: View {
             }
 
             TrialJournalSection(recipeTitle: recipe.title, trials: recipe.trials)
-
-            VariationsSection(variations: recipe.variations)
         }
         .navigationTitle("Historique")
         .navigationSubtitle(recipe.title)

@@ -25,9 +25,6 @@ query RecipeList(
       currentVersion {
         averageNote
       }
-      derivedFrom {
-        id
-      }
     }
     hasMore
     totalCount

@@ -1,13 +1,12 @@
 import SwiftUI
 
 /// A small status capsule: icon + label tinted by the business state. The one
-/// primitive behind "courante" / "à tester" / "dérivée" / version tags, so a
-/// status always looks — and reads to VoiceOver — the same everywhere.
+/// primitive behind "courante" / "à tester" / version tags, so a status always
+/// looks — and reads to VoiceOver — the same everywhere.
 struct StatusTag: View {
     enum Kind {
         case current
         case toTest
-        case derived
         case version(Int)
     }
 
@@ -35,7 +34,6 @@ struct StatusTag: View {
         switch kind {
         case .current: "courante"
         case .toTest: "à tester"
-        case .derived: "dérivée"
         case .version(let number): "v\(number)"
         }
     }
@@ -44,7 +42,6 @@ struct StatusTag: View {
         switch kind {
         case .current: "checkmark.seal.fill"
         case .toTest: "flask.fill"
-        case .derived: "link"
         case .version: nil
         }
     }
@@ -53,7 +50,7 @@ struct StatusTag: View {
         switch kind {
         case .current: Theme.Status.current
         case .toTest: Theme.Status.toTest
-        case .derived, .version: Color.secondary
+        case .version: Color.secondary
         }
     }
 
@@ -61,7 +58,7 @@ struct StatusTag: View {
         switch kind {
         case .current: Theme.Status.current.opacity(0.14)
         case .toTest: Theme.Status.toTest.opacity(0.14)
-        case .derived, .version: Color(.systemFill)
+        case .version: Color(.systemFill)
         }
     }
 
@@ -69,7 +66,6 @@ struct StatusTag: View {
         switch kind {
         case .current: "Version courante"
         case .toTest: "À tester"
-        case .derived: "Dérivée d’une autre recette"
         case .version(let number): "Version \(number)"
         }
     }
@@ -79,7 +75,6 @@ struct StatusTag: View {
     HStack(spacing: 8) {
         StatusTag(kind: .current)
         StatusTag(kind: .toTest)
-        StatusTag(kind: .derived)
         StatusTag(kind: .version(4))
     }
     .padding()

@@ -73,25 +73,12 @@ struct Trial: Identifiable, Sendable {
 
 // MARK: - Proposal
 
-/// Whether the AI recommends iterating the recipe or spinning off a variation.
-enum ProposalRecommendation: Sendable, Equatable {
-    case iteration
-    case variation
-}
-
-/// A suggested name and description when the AI recommends a variation.
-struct VariationSuggestion: Sendable {
-    let title: String
-    let description: String
-}
-
 /// An AI proposal for the next version of a recipe (presence == pending). It
 /// carries the COMPLETE draft of version n+1 (ingredients + steps + tmxSteps)
 /// plus a short human summary of what changed.
 struct Proposal: Sendable {
     let recipeId: String
     let versionNumber: Int
-    let recommendation: ProposalRecommendation
     /// A short human summary of what the next version changes.
     let changeSummary: String
     let rationale: String
@@ -102,7 +89,6 @@ struct Proposal: Sendable {
     /// Per-step Thermomix settings aligned with `steps` (nil = plain step; empty
     /// when not a Thermomix recipe).
     let tmxSteps: [TmxSettings?]
-    let variation: VariationSuggestion?
     let createdAt: Date
 }
 
@@ -115,18 +101,6 @@ struct ProposalDraft: Sendable {
 }
 
 // MARK: - Recipe
-
-/// A lightweight reference to another recipe (parent or variation).
-struct RecipeRef: Identifiable, Sendable {
-    let id: String
-    let title: String
-    let type: RecipeType
-    let category: DishCategory
-    let subtitle: String?
-    let versionCount: Int
-    let bestNote: Int?
-    let averageNote: Double?
-}
 
 /// A recipe under experimentation, with its version lineage.
 struct Recipe: Identifiable, Sendable {
@@ -146,10 +120,6 @@ struct Recipe: Identifiable, Sendable {
     let versions: [RecipeVersion]
     /// The trial journal, most recent first.
     let trials: [Trial]
-    /// Recipes derived from this one.
-    let variations: [RecipeRef]
-    /// The parent recipe when this is a variation.
-    let derivedFrom: RecipeRef?
     /// The AI proposal awaiting a decision, if any.
     let pendingProposal: Proposal?
 

@@ -30,7 +30,6 @@ enum HomeAPI {
                     versionCount: recipe.versionCount,
                     bestNote: recipe.bestNote,
                     averageNote: recipe.currentVersion?.averageNote,
-                    isDerived: recipe.derivedFrom != nil,
                     updatedAt: GraphQLHelpers.parseISO8601(recipe.updatedAt) ?? Date.distantPast
                 )
             },

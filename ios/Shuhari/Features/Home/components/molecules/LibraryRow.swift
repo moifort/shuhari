@@ -1,16 +1,15 @@
 import SwiftUI
 
-/// A library row: type icon tile, title (+ "dérivée" tag), a subtitle with the
-/// version count and the recipe's best note ("the highest star"), and the mean
-/// note as the trailing value. Designed as a List row — the List provides insets,
-/// separators and the navigation chevron.
+/// A library row: type icon tile, title, a subtitle with the version count and
+/// the recipe's best note ("the highest star"), and the mean note as the trailing
+/// value. Designed as a List row — the List provides insets, separators and the
+/// navigation chevron.
 struct LibraryRow: View {
     let title: String
     let type: RecipeType
     let versionCount: Int
     let bestNote: Int?
     let averageNote: Double?
-    let isDerived: Bool
 
     @ScaledMetric(relativeTo: .body) private var tileSize: CGFloat = 34
 
@@ -28,9 +27,6 @@ struct LibraryRow: View {
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 HStack(spacing: 6) {
-                    if isDerived {
-                        StatusTag(kind: .derived)
-                    }
                     Text(versionCountText)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -71,8 +67,8 @@ struct LibraryRow: View {
 
 #Preview {
     List {
-        LibraryRow(title: "Bœuf bourguignon", type: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0, isDerived: false)
-        LibraryRow(title: "Joues de bœuf confites", type: .plat, versionCount: 1, bestNote: 3, averageNote: 3.0, isDerived: true)
-        LibraryRow(title: "Risotto au parmesan", type: .tmx, versionCount: 2, bestNote: nil, averageNote: 4.5, isDerived: false)
+        LibraryRow(title: "Bœuf bourguignon", type: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0)
+        LibraryRow(title: "Joues de bœuf confites", type: .plat, versionCount: 1, bestNote: 3, averageNote: 3.0)
+        LibraryRow(title: "Risotto au parmesan", type: .tmx, versionCount: 2, bestNote: nil, averageNote: 4.5)
     }
 }
