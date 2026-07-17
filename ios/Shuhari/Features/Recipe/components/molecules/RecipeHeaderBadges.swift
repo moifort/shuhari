@@ -1,8 +1,9 @@
 import SwiftUI
 
 /// The fiche's header badges, in the iOS Photos "CINÉMATIQUE" style: a capsule
-/// carrying the recipe type (icon + uppercase label), then the displayed version
-/// and the trial count. Primitive-first: no domain struct.
+/// carrying the recipe type (icon only), the dish category (icon + uppercase
+/// label), then the displayed version and the trial count. Primitive-first: no
+/// domain struct.
 struct RecipeHeaderBadges: View {
     let type: RecipeType
     let category: DishCategory
@@ -13,7 +14,6 @@ struct RecipeHeaderBadges: View {
         HStack(spacing: Theme.Spacing.s) {
             capsule {
                 type.iconImage(filled: false)
-                Text(type.label.uppercased())
             }
             .accessibilityLabel("Type \(type.label)")
 
