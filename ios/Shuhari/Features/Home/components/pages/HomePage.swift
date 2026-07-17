@@ -25,6 +25,9 @@ struct HomePage: View {
     let title: String
     let typeFilter: TypeFilter?
     let sort: Binding<RecipeSortOption>
+    /// Server-side dish-category facet, driven from the filter+sort menu. `nil` =
+    /// every category.
+    let categoryFilter: Binding<DishCategory?>
     let onExecute: (HomeTestItem) -> Void
     let onSettings: () -> Void
     var onPrefetch: (String) -> Void = { _ in }
@@ -55,8 +58,11 @@ struct HomePage: View {
                             .accessibilityIdentifier("home-type-filter-\(type.rawValue)")
                         }
                     }
+                    // Break out of the type-filter capsule so the filter+sort menu
+                    // reads as its own control on Liquid Glass (otherwise they merge).
+                    ToolbarSpacer(.fixed, placement: .topBarTrailing)
                 }
-                // The sort menu sits to the trailing side of the type filter.
+                // The combined filter + sort menu, detached from the type filter.
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Picker("Trier", selection: sort) {
@@ -64,13 +70,38 @@ struct HomePage: View {
                                 Label(option.label, systemImage: option.icon).tag(option)
                             }
                         }
+                        Divider()
+                        Picker("Catégorie", selection: categoryFilter) {
+                            Label("Toutes", systemImage: "circle.dashed")
+                                .tag(DishCategory?.none)
+                                .accessibilityIdentifier("library-category-all")
+                            ForEach(DishCategory.allCases) { category in
+                                Label(category.label, systemImage: category.iconName)
+                                    .tag(DishCategory?.some(category))
+                                    .accessibilityIdentifier("library-category-\(category.rawValue)")
+                            }
+                        }
                     } label: {
-                        Image(systemName: "arrow.up.arrow.down")
+                        Image(systemName: "line.3.horizontal.decrease")
+                            .symbolVariant(categoryFilter.wrappedValue != nil ? .fill : .none)
                     }
-                    .accessibilityLabel("Trier")
+                    .accessibilityLabel("Filtrer et trier")
                     .accessibilityIdentifier("library-sort-menu")
                 }
             }
+    }
+
+    /// Empty-carnet copy. A filter that yields nothing (a type segment or a dish
+    /// category) isn't a first-run state — the tab may well hold other recipes — so
+    /// only the genuinely empty, unfiltered carnet nudges the user to import.
+    private var emptyStateMessage: String {
+        if categoryFilter.wrappedValue != nil {
+            return "Aucune recette dans cette catégorie pour l’instant."
+        }
+        if typeFilter != nil {
+            return "Aucune recette de ce type pour l’instant."
+        }
+        return "Importe ta première recette depuis l’onglet Importer — photo, texte ou lien."
     }
 
     @ViewBuilder
@@ -82,11 +113,7 @@ struct HomePage: View {
                 ContentUnavailableView {
                     Label("Aucune recette", systemImage: "camera.viewfinder")
                 } description: {
-                    // A filtered-but-empty segment isn't a first-run state: the tab may
-                    // hold recipes of the other type, so don't nudge to "import your first".
-                    Text(typeFilter == nil
-                        ? "Importe ta première recette depuis l’onglet Importer — photo, texte ou lien."
-                        : "Aucune recette de ce type pour l’instant.")
+                    Text(emptyStateMessage)
                 }
             }
         } else {
@@ -110,6 +137,7 @@ struct HomePage: View {
 private struct HomePagePreview: View {
     @State private var selectedType: RecipeType = .plat
     @State private var sort: RecipeSortOption = .lastModified
+    @State private var category: DishCategory?
 
     var body: some View {
         let data = HomeData(
@@ -135,6 +163,7 @@ private struct HomePagePreview: View {
                 title: "Cuisine",
                 typeFilter: .init(options: [.plat, .tmx], selection: $selectedType),
                 sort: $sort,
+                categoryFilter: $category,
                 onExecute: { _ in },
                 onSettings: {}
             )
@@ -158,6 +187,7 @@ private struct HomePagePreview: View {
             title: "Cuisine",
             typeFilter: nil,
             sort: .constant(.lastModified),
+            categoryFilter: .constant(nil),
             onExecute: { _ in },
             onSettings: {}
         )

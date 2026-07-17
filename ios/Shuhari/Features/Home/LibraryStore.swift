@@ -28,6 +28,13 @@ final class LibraryStore {
         didSet { if oldValue != type { scheduleReload() } }
     }
 
+    /// Server-side dish-category facet. `nil` = every category. Any change reloads.
+    /// When set, the server coerces the ordering to updatedAt desc (ranking within a
+    /// single course is meaningless) regardless of `sort`.
+    var category: DishCategory? {
+        didSet { if oldValue != category { scheduleReload() } }
+    }
+
     private let pageSize = 20
     // Well below pageSize, otherwise the next page would load as soon as the first
     // appears (unintended chain loading).
@@ -109,6 +116,6 @@ final class LibraryStore {
     }
 
     private func fetchPage(after: String?) async throws -> RecipePage {
-        try await LibraryAPI.list(type: type, sort: sort, limit: pageSize, after: after)
+        try await LibraryAPI.list(type: type, category: category, sort: sort, limit: pageSize, after: after)
     }
 }

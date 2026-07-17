@@ -25,6 +25,7 @@ struct DebugGallery: View {
                     title: "Carnet",
                     typeFilter: nil,
                     sort: .constant(.lastModified),
+                    categoryFilter: .constant(nil),
                     onExecute: { _ in },
                     onSettings: {}
                 )
@@ -135,6 +136,7 @@ private struct CuisineGalleryScreen: View {
                 title: selected.label,
                 typeFilter: .init(options: [.plat, .tmx], selection: $selected),
                 sort: .constant(.lastModified),
+                categoryFilter: .constant(nil),
                 onExecute: { _ in },
                 onSettings: {}
             )

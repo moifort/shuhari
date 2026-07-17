@@ -15,12 +15,14 @@ struct RecipePage: Sendable {
 enum LibraryAPI {
     static func list(
         type: RecipeType?,
+        category: DishCategory?,
         sort: RecipeSortOption,
         limit: Int,
         after: String?
     ) async throws -> RecipePage {
         let query = ShuhariGraphQL.RecipeListQuery(
             type: type.map { .some($0.graphQLValue) } ?? .none,
+            category: category.map { .some($0.graphQLValue) } ?? .none,
             sort: .some(.case(gqlSort(sort))),
             order: .some(.case(gqlOrder(sort))),
             limit: .some(limit),

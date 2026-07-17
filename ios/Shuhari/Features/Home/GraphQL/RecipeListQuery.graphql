@@ -1,11 +1,19 @@
 query RecipeList(
   $type: RecipeType
+  $category: DishCategory
   $sort: RecipeSort
   $order: SortOrder
   $limit: Int
   $after: RecipeId
 ) {
-  recipes(type: $type, sort: $sort, order: $order, limit: $limit, after: $after) {
+  recipes(
+    type: $type
+    category: $category
+    sort: $sort
+    order: $order
+    limit: $limit
+    after: $after
+  ) {
     items {
       id
       title

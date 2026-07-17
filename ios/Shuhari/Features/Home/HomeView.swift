@@ -40,7 +40,11 @@ struct HomeView: View {
                     HomePage(
                         data: data.filtered(to: effectiveTypes),
                         library: library.items,
-                        libraryGrouped: library.sort == .lastModified,
+                        // Month sections apply whenever the effective order is
+                        // chronological — that includes an active category filter,
+                        // which the server coerces to updatedAt desc regardless of
+                        // `sort` (so a dish-category sort request there still groups).
+                        libraryGrouped: library.sort == .lastModified || library.category != nil,
                         libraryLoading: library.isLoading,
                         libraryHasMore: library.hasMore,
                         libraryLoadMoreFailed: library.loadMoreFailed,
@@ -49,6 +53,7 @@ struct HomeView: View {
                             ? .init(options: filterOptions, selection: $selectedType)
                             : nil,
                         sort: $library.sort,
+                        categoryFilter: $library.category,
                         onExecute: { item in
                             execution = ExecutionRequest(recipeId: item.id, versionNumber: item.versionNumber)
                         },
