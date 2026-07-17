@@ -77,7 +77,7 @@ struct ExecuteFlowView: View {
             }
         }
         .task { await load() }
-        .overlay { if analyzing { AnalyzingOverlay(message: "L’IA analyse tes remarques…") } }
+        .overlay { if analyzing { AIThinkingCard(message: "L’IA analyse tes remarques…") } }
         .sheet(isPresented: $showPromotion) {
             PromotionSheet(
                 recipeTitle: recipe?.title ?? "",
@@ -135,11 +135,11 @@ struct ExecuteFlowView: View {
             isSaving = false
             if hasRemarks {
                 // Remarks written → let the AI draft the next version to try,
-                // whatever the note.
+                // whatever the note. Grow first so the Siri loader fills the sheet.
+                detent = .large
                 analyzing = true
                 defer { analyzing = false }
                 _ = try await ExecutionAPI.requestProposal(recipeId: request.recipeId)
-                detent = .large
                 path.append(.proposal)
             } else if result.promotionSuggested {
                 detent = .large
