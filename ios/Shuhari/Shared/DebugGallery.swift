@@ -36,6 +36,8 @@ struct DebugGallery: View {
             RecipeDetailGalleryScreen(recipe: Fixtures.bourguignon)
         case "recipe-tmx":
             RecipeDetailGalleryScreen(recipe: Fixtures.risotto)
+        case "next-trials":
+            NextTrialsSheetGalleryScreen()
         case "history":
             NavigationStack {
                 HistoryPage(recipe: Fixtures.bourguignon)
@@ -97,7 +99,7 @@ struct DebugGallery: View {
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : home, cuisine, recipe, recipe-tmx, history, trial, execute, execute-tmx, capture, draft, import-preview, import-preview-tmx, ai-thinking")
+                description: Text("Écrans : home, cuisine, recipe, recipe-tmx, next-trials, history, trial, execute, execute-tmx, capture, draft, import-preview, import-preview-tmx, ai-thinking")
             )
         }
     }
@@ -114,6 +116,35 @@ private struct RecipeDetailGalleryScreen: View {
         NavigationStack(path: $path) {
             RecipeDetailView(previewRecipe: recipe, path: $path)
         }
+    }
+}
+
+/// The beaker CTA's sheet (`NextTrialsSheet`) presented over the fiche, so the
+/// gallery can capture both sections — upcoming versions to test and the trial
+/// journal — offline. Bœuf bourguignon has one version awaiting a first run (v4)
+/// and two recorded trials.
+private struct NextTrialsSheetGalleryScreen: View {
+    var body: some View {
+        Text("Fiche recette")
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(.systemGroupedBackground))
+            .sheet(isPresented: .constant(true)) {
+                NextTrialsSheet(
+                    trials: [
+                        .init(versionNumber: 4, change: "Cuisson 3 h → 3 h 30", why: "La viande était encore un peu ferme."),
+                    ],
+                    pastTrials: Fixtures.bourguignonTrials.map {
+                        .init(
+                            id: $0.id,
+                            versionNumber: $0.versionNumber,
+                            note: $0.note,
+                            remarks: $0.remarks,
+                            date: $0.executedAt
+                        )
+                    },
+                    onSelect: { _ in }
+                )
+            }
     }
 }
 

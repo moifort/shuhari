@@ -49,16 +49,16 @@ struct RecipeDetailView: View {
                 .toolbar(.hidden, for: .tabBar)
                 .sheet(isPresented: $showToTest) {
                     NextTrialsSheet(
-                        trials: recipe.versions
-                            .filter { $0.trialCount == 0 }
-                            .sorted { $0.number > $1.number }
-                            .map {
-                                NextTrialsSheet.Item(
-                                    versionNumber: $0.number,
-                                    change: $0.change,
-                                    why: $0.why ?? $0.originDetail
-                                )
-                            }
+                        trials: toTestItems(recipe),
+                        pastTrials: recipe.trials.map {
+                            NextTrialsSheet.PastItem(
+                                id: $0.id,
+                                versionNumber: $0.versionNumber,
+                                note: $0.note,
+                                remarks: $0.remarks,
+                                date: $0.executedAt
+                            )
+                        }
                     ) { versionNumber in
                         showToTest = false
                         presentRecordTrial(versionNumber: versionNumber)
@@ -144,6 +144,14 @@ struct RecipeDetailView: View {
                 showToTest = true
             } label: {
                 Image(systemName: "flask")
+                    .overlay(alignment: .topTrailing) {
+                        if !toTestItems(recipe).isEmpty {
+                            Circle()
+                                .fill(Theme.Status.toTest)
+                                .frame(width: 7, height: 7)
+                                .offset(x: 3, y: -2)
+                        }
+                    }
             }
             .accessibilityIdentifier("to-test-button")
             .accessibilityLabel("Prochains essais")
@@ -157,6 +165,19 @@ struct RecipeDetailView: View {
             .accessibilityIdentifier("all-versions-button")
             .accessibilityLabel("Toutes les versions")
         }
+    }
+
+    private func toTestItems(_ recipe: Recipe) -> [NextTrialsSheet.Item] {
+        recipe.versions
+            .filter { $0.trialCount == 0 }
+            .sorted { $0.number > $1.number }
+            .map {
+                NextTrialsSheet.Item(
+                    versionNumber: $0.number,
+                    change: $0.change,
+                    why: $0.why ?? $0.originDetail
+                )
+            }
     }
 
     private func presentRecordTrial(versionNumber: Int) {
