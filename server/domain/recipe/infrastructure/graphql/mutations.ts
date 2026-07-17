@@ -3,7 +3,7 @@ import { toTmxSettings } from '~/domain/recipe/business-rules'
 import { RecipeCommand } from '~/domain/recipe/command'
 import { RecipeUseCase } from '~/domain/recipe/use-case'
 import { builder } from '~/domain/shared/graphql/builder'
-import { domainError, notFound } from '~/domain/shared/graphql/errors'
+import { domainError } from '~/domain/shared/graphql/errors'
 import { CreateRecipeInput, UpdateRecipeInput } from './inputs'
 import { RecipeType } from './types'
 
@@ -43,7 +43,7 @@ builder.mutationField('updateRecipe', (t) =>
         ...(input.subtitle ? { subtitle: input.subtitle } : {}),
       })
       return match(result)
-        .with('not-found', () => notFound('Recipe not found'))
+        .with('not-found', domainError)
         .with(P.not(P.string), (recipe) => recipe)
         .exhaustive()
     },
@@ -61,10 +61,8 @@ builder.mutationField('promoteVersion', (t) =>
     resolve: async (_root, { recipeId, versionNumber }, { userId }) => {
       const result = await RecipeCommand.promote(userId, recipeId, versionNumber)
       return match(result)
-        .with('not-found', () => notFound('Recipe not found'))
-        .with('nothing-to-test', () =>
-          domainError('NOTHING_TO_TEST', 'No version awaiting a trial'),
-        )
+        .with('not-found', domainError)
+        .with('nothing-to-test', domainError)
         .with(P.not(P.string), (recipe) => recipe)
         .exhaustive()
     },
@@ -79,7 +77,7 @@ builder.mutationField('deleteRecipe', (t) =>
     resolve: async (_root, { id }, { userId }) => {
       const result = await RecipeUseCase.removeCompletely(userId, id)
       return match(result)
-        .with('not-found', () => notFound('Recipe not found'))
+        .with('not-found', domainError)
         .with(P.not(P.string), () => true)
         .exhaustive()
     },

@@ -1,11 +1,11 @@
 import { GraphQLError } from 'graphql'
 
-// Throwing helpers for resolvers: the `never` return type lets them sit in
-// match() arms while the success arms keep the resolver's inferred type.
-export const domainError = (code: string, message: string): never => {
-  throw new GraphQLError(message, { extensions: { code } })
+// A domain sentinel IS the error: it is thrown as the message and its GraphQL
+// code is derived mechanically ('no-recipe-found' → NO_RECIPE_FOUND). The
+// `never` return type lets the helper sit in match() arms while success arms
+// keep the resolver's inferred type.
+export const domainError = (sentinel: string): never => {
+  throw new GraphQLError(sentinel, {
+    extensions: { code: sentinel.toUpperCase().replaceAll('-', '_') },
+  })
 }
-
-export const notFound = (message: string): never => domainError('NOT_FOUND', message)
-
-export const badUserInput = (message: string): never => domainError('BAD_USER_INPUT', message)

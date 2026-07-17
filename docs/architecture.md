@@ -159,9 +159,10 @@ in `server/domain/shared/graphql/`:
   (`./scalars` first, then each domain's `enums/types/inputs/queries/mutations`, then AI).
   Ends with `export const schema = builder.toSchema()`.
 - **loaders.ts** — the per-request satellite loaders for `RecipeType`.
-- **errors.ts** — the `never`-returning resolver helpers (`domainError`, `notFound`,
-  `badUserInput`) that map command sentinels to a `GraphQLError`; they sit in `match().exhaustive()`
-  arms. See [error-handling.md](./error-handling.md).
+- **errors.ts** — the `never`-returning `domainError` resolver helper that maps a command sentinel
+  to a `GraphQLError`, deriving `extensions.code` mechanically from the sentinel
+  (`'not-found'` → `NOT_FOUND`); it sits in `match().exhaustive()` arms. See
+  [error-handling.md](./error-handling.md).
 
 Satellite domains graft fields onto the aggregate root via `builder.objectField(RecipeType, …)`.
 The SDL is exported to `shared/schema.graphql` (`bun run generate:graphql`) for Apollo iOS codegen.

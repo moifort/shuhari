@@ -1,6 +1,6 @@
 import { match, P } from 'ts-pattern'
 import { builder } from '~/domain/shared/graphql/builder'
-import { notFound } from '~/domain/shared/graphql/errors'
+import { domainError } from '~/domain/shared/graphql/errors'
 import type { RecordTrialResult } from '~/domain/trial/use-case'
 import { TrialUseCase } from '~/domain/trial/use-case'
 import { RecordTrialInput } from './inputs'
@@ -31,7 +31,7 @@ builder.mutationField('recordTrial', (t) =>
         photoPath: null,
       })
       return match(result)
-        .with('not-found', () => notFound('Recipe or version not found'))
+        .with('not-found', domainError)
         .with(P.not(P.string), (recorded) => recorded)
         .exhaustive()
     },

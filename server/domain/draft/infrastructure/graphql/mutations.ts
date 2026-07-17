@@ -5,7 +5,7 @@ import { toTmxSettings } from '~/domain/recipe/business-rules'
 import { RecipeType } from '~/domain/recipe/infrastructure/graphql/types'
 import type { Recipe, VersionNumber } from '~/domain/recipe/types'
 import { builder } from '~/domain/shared/graphql/builder'
-import { notFound } from '~/domain/shared/graphql/errors'
+import { domainError } from '~/domain/shared/graphql/errors'
 import { DraftInput } from './inputs'
 import { DraftType } from './types'
 
@@ -30,7 +30,7 @@ builder.mutationField('requestDraft', (t) =>
     resolve: async (_root, { recipeId }, { userId }) => {
       const result = await DraftUseCase.forTrial(userId, recipeId)
       return match(result)
-        .with('not-found', () => notFound('Recipe not found'))
+        .with('not-found', domainError)
         .with(P.not(P.string), (draft) => draft)
         .exhaustive()
     },
@@ -63,6 +63,6 @@ builder.mutationField('acceptDraft', (t) =>
 // Turn the use-case's discriminated error strings into GraphQL errors.
 const ensureRecipe = (result: Recipe | 'not-found') =>
   match(result)
-    .with('not-found', () => notFound('Recipe not found'))
+    .with('not-found', domainError)
     .with(P.not(P.string), (recipe) => recipe)
     .exhaustive()

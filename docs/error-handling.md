@@ -31,24 +31,27 @@ lookup). Void commands return `undefined | 'not-found'`.
 
 ## Mapping Sentinels in GraphQL
 
-The resolver translates each sentinel into a `GraphQLError` with a stable `extensions.code`, using
-`match().exhaustive()` from `ts-pattern` and the `never`-returning helpers from
-`server/domain/shared/graphql/errors.ts` (`notFound`, `badUserInput`, `domainError`). The success
-arm matches "not a string" (`P.not(P.string)`) and returns the domain value:
+A domain error **is** the sentinel const. The single `domainError` helper from
+`server/domain/shared/graphql/errors.ts` throws the sentinel as the `GraphQLError` message and
+derives its `extensions.code` mechanically (`'not-found'` → `NOT_FOUND`,
+`'nothing-to-test'` → `NOTHING_TO_TEST`) — no per-site message strings. Because the sentinel is the
+handler's argument, each arm is just `.with('<sentinel>', domainError)`. The resolver maps every
+branch with `match().exhaustive()` from `ts-pattern`; the success arm matches "not a string"
+(`P.not(P.string)`) and returns the domain value:
 
 ```ts
 import { match, P } from 'ts-pattern'
-import { domainError, notFound } from '~/domain/shared/graphql/errors'
+import { domainError } from '~/domain/shared/graphql/errors'
 
 const result = await RecipeCommand.promote(userId, recipeId, versionNumber)
 return match(result)
-  .with('not-found', () => notFound('Recipe not found'))
-  .with('nothing-to-test', () => domainError('NOTHING_TO_TEST', 'No version awaiting a trial'))
+  .with('not-found', domainError)
+  .with('nothing-to-test', domainError)
   .with(P.not(P.string), (recipe) => recipe)
   .exhaustive()
 ```
 
-The helpers' `never` return type lets them sit in a `match` arm while the success arm keeps the
+The helper's `never` return type lets it sit in a `match` arm while the success arm keeps the
 resolver's inferred type. **Never `.otherwise()` for terminal outcome mapping** — `.exhaustive()`
 gives totality: adding a fourth sentinel to the command turns this into a compile error until the
 resolver handles it.
@@ -76,7 +79,10 @@ an outcome map, so `match` would add noise without adding totality.
 
 1. **Domain layer** (`query.ts` / `command.ts`) — returns discriminated unions for expected
    outcomes; **⛔ never `throw new Error`** (enforced by the arch test). Throws only for truly
-   impossible states, and that logic lives outside these two files.
+   impossible states, and that logic lives outside these two files. The same rule reaches beyond the
+   domain: **system services (`server/system/…`) also return bare-string sentinels for
+   business-visible misses** (e.g. `Ai.analyzeImport` → `'no-recipe-found'` when the source holds no
+   recipe); throws there stay reserved for infra faults (an empty API reply, an incoherent state).
 2. **GraphQL layer** — maps sentinels to `GraphQLError` + `extensions.code`; maps invalid input
    to `BAD_USER_INPUT` at the scalar boundary.
 3. **Plugin layer** — `plugins/01-sentry.ts` reports unexpected server faults (via `NITRO_SENTRY_DSN`).

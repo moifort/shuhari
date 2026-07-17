@@ -142,16 +142,18 @@ public `Query`/`Command` namespaces.
 
 `ts-pattern` is a project dependency (`ts-pattern@5.9.0`). Map a command's sentinels in the
 resolver, terminating with `.exhaustive()` (never `.otherwise()`); throw through the shared
-`errors.ts` helpers, whose `never` return type sits in a `match` arm while the success arm keeps the
-resolver's inferred type:
+`errors.ts` `domainError` helper, whose `never` return type sits in a `match` arm while the success
+arm keeps the resolver's inferred type. The helper **is** the sentinel — it throws the sentinel as
+the message and derives its `extensions.code` mechanically — so each arm is just
+`.with('<sentinel>', domainError)`:
 
 ```ts
 import { match, P } from 'ts-pattern'
-import { domainError, notFound } from '~/domain/shared/graphql/errors'
+import { domainError } from '~/domain/shared/graphql/errors'
 
 match(result)
-  .with('not-found', () => notFound('Recipe not found'))
-  .with('nothing-to-test', () => domainError('NOTHING_TO_TEST', 'No version awaiting a trial'))
+  .with('not-found', domainError)
+  .with('nothing-to-test', domainError)
   .with(P.not(P.string), (recipe) => recipe)
   .exhaustive()
 ```

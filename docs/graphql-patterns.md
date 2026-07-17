@@ -190,14 +190,16 @@ builder.queryField('recipes', (t) =>
 ## Mapping Sentinels to GraphQLError
 
 Commands return the entity or a **string sentinel**. Map the sentinel to a `GraphQLError` with a
-stable `extensions.code` using `match().exhaustive()` from `ts-pattern` and the `never`-returning
-helpers from `server/domain/shared/graphql/errors.ts` — never `.otherwise()`, so adding a new
-sentinel becomes a compile error rather than a silent fall-through. The success arm matches "not a
-string" (`P.not(P.string)`):
+stable `extensions.code` using `match().exhaustive()` from `ts-pattern` and the single
+`never`-returning `domainError` helper from `server/domain/shared/graphql/errors.ts` — never
+`.otherwise()`, so adding a new sentinel becomes a compile error rather than a silent fall-through.
+`domainError` **is** the sentinel: it throws the sentinel as the message and derives its
+`extensions.code` mechanically (`'not-found'` → `NOT_FOUND`), so each arm is just
+`.with('<sentinel>', domainError)`. The success arm matches "not a string" (`P.not(P.string)`):
 
 ```ts
 import { match, P } from 'ts-pattern'
-import { domainError, notFound } from '~/domain/shared/graphql/errors'
+import { domainError } from '~/domain/shared/graphql/errors'
 
 builder.mutationField('promoteVersion', (t) =>
   t.field({
@@ -209,8 +211,8 @@ builder.mutationField('promoteVersion', (t) =>
     resolve: async (_root, { recipeId, versionNumber }, { userId }) => {
       const result = await RecipeCommand.promote(userId, recipeId, versionNumber)
       return match(result)
-        .with('not-found', () => notFound('Recipe not found'))
-        .with('nothing-to-test', () => domainError('NOTHING_TO_TEST', 'No version awaiting a trial'))
+        .with('not-found', domainError)
+        .with('nothing-to-test', domainError)
         .with(P.not(P.string), (recipe) => recipe)
         .exhaustive()
     },
@@ -222,7 +224,7 @@ A delete returns a `Boolean` and matches `undefined` (the command's success valu
 
 ```ts
 return match(result)
-  .with('not-found', () => notFound('Recipe not found'))
+  .with('not-found', domainError)
   .with(undefined, () => true)
   .exhaustive()
 ```
