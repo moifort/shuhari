@@ -1,0 +1,27 @@
+query RecipeList(
+  $type: RecipeType
+  $sort: RecipeSort
+  $order: SortOrder
+  $limit: Int
+  $after: RecipeId
+) {
+  recipes(type: $type, sort: $sort, order: $order, limit: $limit, after: $after) {
+    items {
+      id
+      title
+      type
+      category
+      updatedAt
+      versionCount
+      bestNote
+      currentVersion {
+        averageNote
+      }
+      derivedFrom {
+        id
+      }
+    }
+    hasMore
+    totalCount
+  }
+}

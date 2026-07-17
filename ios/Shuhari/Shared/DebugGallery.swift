@@ -15,7 +15,19 @@ struct DebugGallery: View {
                 .environment(HomeStore())
         case "home":
             NavigationStack {
-                HomePage(data: Fixtures.homeData, title: "Carnet", typeFilter: nil, onExecute: { _ in }, onSettings: {})
+                HomePage(
+                    data: Fixtures.homeData,
+                    library: Fixtures.homeData.library,
+                    libraryGrouped: true,
+                    libraryLoading: false,
+                    libraryHasMore: false,
+                    libraryLoadMoreFailed: false,
+                    title: "Carnet",
+                    typeFilter: nil,
+                    sort: .constant(.lastModified),
+                    onExecute: { _ in },
+                    onSettings: {}
+                )
             }
         case "cuisine":
             CuisineGalleryScreen()
@@ -112,10 +124,17 @@ private struct CuisineGalleryScreen: View {
 
     var body: some View {
         NavigationStack {
+            let filtered = data.filtered(to: [selected])
             HomePage(
-                data: data.filtered(to: [selected]),
+                data: filtered,
+                library: filtered.library,
+                libraryGrouped: true,
+                libraryLoading: false,
+                libraryHasMore: false,
+                libraryLoadMoreFailed: false,
                 title: selected.label,
                 typeFilter: .init(options: [.plat, .tmx], selection: $selected),
+                sort: .constant(.lastModified),
                 onExecute: { _ in },
                 onSettings: {}
             )

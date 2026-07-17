@@ -32,19 +32,13 @@ struct LibraryMonthGroup: Identifiable, Sendable {
     let id: String
     let label: String
     let recipes: [LibraryRecipe]
-}
 
-/// The read model behind the home screen.
-struct HomeData: Sendable {
-    let toTest: [HomeTestItem]
-    let library: [LibraryRecipe]
-    let recentTrials: [Trial]
-
-    /// The library grouped by the month of each recipe's last update — most recent
-    /// month first, and within a month the most recently updated recipe first.
-    func libraryByMonth() -> [LibraryMonthGroup] {
+    /// Group accumulated (already server-sorted) recipes by the month of their last
+    /// update — most recent month first, and within a month the most recently updated
+    /// first. Used by the paginated library when sorted by "Dernière modification".
+    static func grouping(_ recipes: [LibraryRecipe]) -> [LibraryMonthGroup] {
         let calendar = Calendar.current
-        let buckets = Dictionary(grouping: library) { recipe in
+        let buckets = Dictionary(grouping: recipes) { recipe in
             calendar.dateComponents([.year, .month], from: recipe.updatedAt)
         }
         return buckets
@@ -57,6 +51,13 @@ struct HomeData: Sendable {
             }
             .sorted { $0.id > $1.id }
     }
+}
+
+/// The read model behind the home screen.
+struct HomeData: Sendable {
+    let toTest: [HomeTestItem]
+    let library: [LibraryRecipe]
+    let recentTrials: [Trial]
 
     /// Restrict every section to the given recipe types — backs the per-category tabs.
     func filtered(to types: Set<RecipeType>) -> HomeData {
