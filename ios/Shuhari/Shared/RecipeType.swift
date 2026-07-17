@@ -16,6 +16,15 @@ enum RecipeType: String, CaseIterable, Sendable, Identifiable {
         }
     }
 
+    /// A compact label for header badges, where the full "Thermomix" would wrap
+    /// onto several lines.
+    var shortLabel: String {
+        switch self {
+        case .plat: "Plat"
+        case .tmx: "TMX"
+        }
+    }
+
     /// The type's icon, in its outline or filled form. Dishes (`frying.pan`) are
     /// Apple SF Symbols; Thermomix uses a custom symbol in the asset catalog —
     /// referenced by asset name, since `Image(systemName:)` only resolves Apple's
