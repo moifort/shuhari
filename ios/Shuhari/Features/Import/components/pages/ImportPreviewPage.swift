@@ -53,23 +53,41 @@ struct ImportPreviewPage: View {
                     Label("Titre", systemImage: "textformat")
                 }
 
-                Picker(selection: $type) {
-                    ForEach(RecipeType.allCases) { candidate in
-                        Label { Text(candidate.label) } icon: { candidate.iconImage }.tag(candidate)
+                LabeledContent {
+                    Menu {
+                        Picker("Type", selection: $type) {
+                            ForEach(RecipeType.allCases) { candidate in
+                                pickerRow(icon: candidate.iconImage(filled: false), label: candidate.label)
+                                    .tag(candidate)
+                            }
+                        }
+                        .pickerStyle(.inline)
+                    } label: {
+                        pickerValue(icon: type.iconImage(filled: false), label: type.label)
                     }
+                    .tint(.secondary)
+                    .accessibilityIdentifier("import-type-picker")
                 } label: {
                     Label("Type", systemImage: "square.grid.2x2")
                 }
-                .accessibilityIdentifier("import-type-picker")
 
-                Picker(selection: $category) {
-                    ForEach(DishCategory.allCases) { candidate in
-                        Label { Text(candidate.label) } icon: { candidate.iconImage }.tag(candidate)
+                LabeledContent {
+                    Menu {
+                        Picker("Catégorie", selection: $category) {
+                            ForEach(DishCategory.allCases) { candidate in
+                                pickerRow(icon: candidate.iconImage, label: candidate.label)
+                                    .tag(candidate)
+                            }
+                        }
+                        .pickerStyle(.inline)
+                    } label: {
+                        pickerValue(icon: category.iconImage, label: category.label)
                     }
+                    .tint(.secondary)
+                    .accessibilityIdentifier("import-category-picker")
                 } label: {
                     Label("Catégorie", systemImage: "tag")
                 }
-                .accessibilityIdentifier("import-category-picker")
             }
 
             if !ingredients.isEmpty {
@@ -119,6 +137,29 @@ struct ImportPreviewPage: View {
                 .accessibilityIdentifier("save-recipe-button")
             }
         }
+    }
+
+    /// One option inside the open dropdown. The menu strips styling modifiers from
+    /// its rows, so this only carries the icon and the label — sizing it here has
+    /// no effect.
+    private func pickerRow(icon: Image, label: String) -> some View {
+        Label { Text(label) } icon: { icon }
+    }
+
+    /// The selected value shown on the row. It is spelled out rather than left to a
+    /// `Picker`, which renders its collapsed value through the system and drops
+    /// every modifier — `.imageScale`, `.font` and even `.resizable().frame()` are
+    /// all ignored there, leaving an icon far larger than the dropdown's. Driving a
+    /// `Menu` label instead is what makes the icon sizable at all.
+    private func pickerValue(icon: Image, label: String) -> some View {
+        HStack(spacing: 6) {
+            icon.imageScale(.small)
+            Text(label)
+            Image(systemName: "chevron.up.chevron.down")
+                .imageScale(.small)
+                .font(.footnote)
+        }
+        .foregroundStyle(.secondary)
     }
 
     /// A numbered, editable step. The step text is editable; the Thermomix

@@ -245,8 +245,9 @@ Every component below page level **must** preview without a running server, fed 
 
 `Shared/DebugGallery.swift` (wrapped in `#if DEBUG`) renders any page with fixtures and no
 server/auth. `ShuhariApp` branches into it when the `gallery` UserDefault / `-gallery <screen>`
-launch argument is set (screens: `home`, `recipe`, `recipe-tmx`, `history`, `trial`, `execute`,
-`execute-tmx`, `capture`, `proposal`, `import-preview`, `root`).
+launch argument is set (screens: `home`, `cuisine`, `recipe`, `recipe-tmx`, `history`, `trial`,
+`execute`, `execute-tmx`, `capture`, `proposal`, `import-preview`, `import-preview-tmx`,
+`ai-thinking`, `root`).
 
 ## Error reporting — Sentry
 

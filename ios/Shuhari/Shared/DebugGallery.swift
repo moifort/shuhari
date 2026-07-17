@@ -93,13 +93,17 @@ struct DebugGallery: View {
             NavigationStack {
                 ImportPreviewPage(analysis: Fixtures.importAnalysis, isSaving: false, onCancel: {}, onSave: { _ in })
             }
+        case "import-preview-tmx":
+            NavigationStack {
+                ImportPreviewPage(analysis: Fixtures.importAnalysisTmx, isSaving: false, onCancel: {}, onSave: { _ in })
+            }
         case "ai-thinking":
             AIThinkingCard(message: "Analyse IA…")
         default:
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : home, cuisine, recipe, recipe-tmx, history, trial, execute, execute-tmx, capture, proposal, import-preview, ai-thinking")
+                description: Text("Écrans : home, cuisine, recipe, recipe-tmx, history, trial, execute, execute-tmx, capture, proposal, import-preview, import-preview-tmx, ai-thinking")
             )
         }
     }
