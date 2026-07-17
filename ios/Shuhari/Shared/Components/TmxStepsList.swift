@@ -81,11 +81,11 @@ struct TmxSettingBadges: View {
             if let temperature {
                 badge(temperature, icon: "thermometer.medium")
             }
-            if let speed {
-                badge(speed, icon: "gauge.with.needle")
-            }
             if reverse {
                 badge("Inverse", icon: "arrow.trianglehead.counterclockwise")
+            }
+            if let speed {
+                badge(speed, icon: "gauge.with.needle")
             }
         }
     }
