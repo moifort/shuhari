@@ -2,15 +2,30 @@
 import Foundation
 
 /// Deterministic domain fixtures shared by `#Preview`s and the debug gallery.
-/// One realistic recipe per shape the UI must handle: a coffee mid-iteration,
-/// a Thermomix dish with per-step machine settings, and the transient models
-/// (proposal, trial, import analysis, home read model) around them.
+/// One realistic recipe per shape the UI must handle: a plated dish mid-iteration
+/// (Bœuf bourguignon), a Thermomix dish with per-step machine settings (Risotto),
+/// and the transient models (proposal, trial, import analysis, home read model)
+/// around them. Cuisine-only — no params, no café/cocktail.
 enum Fixtures {
     static let date = Date(timeIntervalSince1970: 1_752_300_000)
 
-    static let coffeeIngredients = [
-        Ingredient(name: "Café en grains", quantity: "18,5 g"),
-        Ingredient(name: "Eau", quantity: "36 g"),
+    static let bourguignonIngredients = [
+        Ingredient(name: "Bœuf (paleron)", quantity: "1,2 kg"),
+        Ingredient(name: "Lardons", quantity: "200 g"),
+        Ingredient(name: "Oignons", quantity: "2"),
+        Ingredient(name: "Carottes", quantity: "3"),
+        Ingredient(name: "Vin rouge", quantity: "75 cl"),
+        Ingredient(name: "Bouillon", quantity: "50 cl"),
+        Ingredient(name: "Farine", quantity: "30 g"),
+        Ingredient(name: "Bouquet garni", quantity: "1"),
+    ]
+
+    static let bourguignonSteps = [
+        "Saisir le bœuf sur toutes les faces, réserver.",
+        "Faire revenir lardons, oignons et carottes.",
+        "Singer avec la farine, mélanger.",
+        "Mouiller au vin et au bouillon, ajouter le bouquet garni.",
+        "Cuire à couvert 3 h.",
     ]
 
     static let risottoIngredients = [
@@ -23,117 +38,84 @@ enum Fixtures {
         Ingredient(name: "Parmesan", quantity: "60 g"),
     ]
 
-    // MARK: - Espresso (cafe, pending v4, pending proposal on demand)
+    // MARK: - Bœuf bourguignon (plat, pending v4, pending proposal on demand)
 
-    static let espressoV3 = RecipeVersion(
+    static let bourguignonV1 = RecipeVersion(
+        number: 1, change: nil, why: nil, originKind: .import,
+        originDetail: "Importée par photo",
+        ingredients: bourguignonIngredients,
+        steps: bourguignonSteps,
+        tmxSteps: [], averageNote: 3.0, trialCount: 1,
+        createdAt: date.addingTimeInterval(-86_400 * 30)
+    )
+
+    static let bourguignonV2 = RecipeVersion(
+        number: 2, change: "Ajout d’un bouquet garni", why: "Manque d’arômes.",
+        originKind: .aiProposal, originDetail: nil,
+        ingredients: bourguignonIngredients,
+        steps: bourguignonSteps,
+        tmxSteps: [], averageNote: 3.5, trialCount: 1,
+        createdAt: date.addingTimeInterval(-86_400 * 20)
+    )
+
+    static let bourguignonV3 = RecipeVersion(
         number: 3,
-        change: "Mouture plus fine",
-        why: "L’extraction coulait trop vite.",
+        change: "Vin rouge 50 → 75 cl",
+        why: "La sauce manquait de corps.",
         originKind: .aiProposal,
         originDetail: nil,
-        changedKeys: ["Mouture"],
-        params: [
-            Param(key: "Dose", value: "18,5 g"),
-            Param(key: "Température", value: "93 °C"),
-            Param(key: "Mouture", value: "2,0"),
-            Param(key: "Sortie", value: "36 g"),
-            Param(key: "Durée", value: "27 s"),
-        ],
-        ingredients: coffeeIngredients,
-        steps: ["Purger le groupe.", "Distribuer, tasser à niveau.", "Extraire 36 g en 27 s."],
+        ingredients: bourguignonIngredients,
+        steps: bourguignonSteps,
         tmxSteps: [],
         averageNote: 4.0,
         trialCount: 2,
         createdAt: date.addingTimeInterval(-86_400 * 6)
     )
 
-    static let espressoV4 = RecipeVersion(
+    static let bourguignonV4 = RecipeVersion(
         number: 4,
-        change: "Température 93 → 92 °C",
-        why: "Le creux en milieu de bouche pointe vers une extraction trop chaude.",
+        change: "Cuisson 3 h → 3 h 30",
+        why: "Viande encore un peu ferme.",
         originKind: .aiProposal,
         originDetail: nil,
-        changedKeys: ["Température"],
-        params: [
-            Param(key: "Dose", value: "18,5 g"),
-            Param(key: "Température", value: "92 °C"),
-            Param(key: "Mouture", value: "2,0"),
-            Param(key: "Sortie", value: "36 g"),
-            Param(key: "Durée", value: "27 s"),
-        ],
-        ingredients: coffeeIngredients,
-        steps: ["Purger le groupe.", "Distribuer, tasser à niveau.", "Extraire 36 g en 27 s."],
+        ingredients: bourguignonIngredients,
+        steps: bourguignonSteps,
         tmxSteps: [],
         averageNote: nil,
         trialCount: 0,
         createdAt: date.addingTimeInterval(-86_400)
     )
 
-    static let espressoTrials = [
+    static let bourguignonTrials = [
         Trial(
-            id: "t2", recipeId: "espresso", versionNumber: 3, note: 4,
-            remarks: "Équilibré, chocolat noir, belle longueur.",
-            realParams: [], photoUrl: nil,
+            id: "t2", recipeId: "bourguignon", versionNumber: 3, note: 4,
+            remarks: "Sauce nappante, viande fondante.", photoUrl: nil,
             executedAt: date.addingTimeInterval(-86_400 * 2)
         ),
         Trial(
-            id: "t1", recipeId: "espresso", versionNumber: 3, note: 4,
-            remarks: "Un peu court en sucrosité, température réelle 94 °C.",
-            realParams: [Param(key: "Température", value: "94 °C")], photoUrl: nil,
+            id: "t1", recipeId: "bourguignon", versionNumber: 3, note: 4,
+            remarks: "Très bon, un peu ferme par endroits.", photoUrl: nil,
             executedAt: date.addingTimeInterval(-86_400 * 4)
         ),
     ]
 
-    static let espresso = Recipe(
-        id: "espresso",
-        title: "Espresso — Brésil Santa Lúcia",
-        subtitle: "Torréfaction claire, panier 18 g",
-        type: .cafe,
+    static let bourguignon = Recipe(
+        id: "bourguignon",
+        title: "Bœuf bourguignon",
+        subtitle: "Mijoté au vin rouge",
+        type: .plat,
+        category: .plat,
         createdAt: date.addingTimeInterval(-86_400 * 30),
         updatedAt: date,
-        currentVersion: espressoV3,
-        toTest: espressoV4,
-        versions: [espressoV1, espressoV2, espressoV3, espressoV4],
-        trials: espressoTrials,
+        currentVersion: bourguignonV3,
+        toTest: bourguignonV4,
+        versions: [bourguignonV1, bourguignonV2, bourguignonV3, bourguignonV4],
+        trials: bourguignonTrials,
         variations: [
-            RecipeRef(id: "deca", title: "Espresso — déca", type: .cafe, subtitle: nil, versionCount: 1, bestNote: 4, averageNote: 3.5),
+            RecipeRef(id: "joues", title: "Joues de bœuf confites", type: .plat, category: .plat, subtitle: nil, versionCount: 1, bestNote: 4, averageNote: 3.5),
         ],
         derivedFrom: nil,
         pendingProposal: nil
-    )
-
-    static let espressoV1 = RecipeVersion(
-        number: 1, change: nil, why: nil, originKind: .import,
-        originDetail: "Importée par photo",
-        changedKeys: [],
-        params: [
-            Param(key: "Dose", value: "18 g"),
-            Param(key: "Température", value: "93 °C"),
-            Param(key: "Mouture", value: "2,4"),
-            Param(key: "Sortie", value: "36 g"),
-            Param(key: "Durée", value: "25 s"),
-        ],
-        ingredients: coffeeIngredients,
-        steps: ["Purger le groupe.", "Distribuer, tasser à niveau.", "Extraire 36 g en 25 s."],
-        tmxSteps: [], averageNote: 3.0, trialCount: 1,
-        createdAt: date.addingTimeInterval(-86_400 * 30)
-    )
-
-    static let espressoV2 = RecipeVersion(
-        number: 2, change: "Dose 18 → 18,5 g", why: "Corps un peu maigre.",
-        originKind: .aiProposal, originDetail: nil,
-        changedKeys: ["Dose"],
-        params: [
-            Param(key: "Dose", value: "18,5 g"),
-            Param(key: "Température", value: "93 °C"),
-            Param(key: "Mouture", value: "2,4"),
-            Param(key: "Sortie", value: "36 g"),
-            Param(key: "Durée", value: "25 s"),
-        ],
-        ingredients: coffeeIngredients,
-        steps: ["Purger le groupe.", "Distribuer, tasser à niveau.", "Extraire 36 g en 25 s."],
-        tmxSteps: [], averageNote: 3.5, trialCount: 1,
-        createdAt: date.addingTimeInterval(-86_400 * 20)
     )
 
     // MARK: - Risotto (tmx, per-step machine settings)
@@ -144,8 +126,6 @@ enum Fixtures {
         why: "Trop liquide en fin de cuisson.",
         originKind: .aiProposal,
         originDetail: nil,
-        changedKeys: [],
-        params: [],
         ingredients: risottoIngredients,
         steps: [
             "Mettre l’oignon et l’ail dans le bol, mixer.",
@@ -171,6 +151,7 @@ enum Fixtures {
         title: "Risotto au parmesan",
         subtitle: "Thermomix TM6",
         type: .tmx,
+        category: .plat,
         createdAt: date.addingTimeInterval(-86_400 * 12),
         updatedAt: date,
         currentVersion: risottoV2,
@@ -179,8 +160,7 @@ enum Fixtures {
         trials: [
             Trial(
                 id: "rt1", recipeId: "risotto", versionNumber: 2, note: 4,
-                remarks: "Bonne texture, manque un peu de sel.",
-                realParams: [], photoUrl: nil,
+                remarks: "Bonne texture, manque un peu de sel.", photoUrl: nil,
                 executedAt: date.addingTimeInterval(-86_400 * 2)
             ),
         ],
@@ -191,16 +171,35 @@ enum Fixtures {
 
     // MARK: - Transient models
 
+    /// The full draft of v5: the base v4 lists with a longer cooking time and a
+    /// touch less bouillon — a couple of rows differ from the base for the diff.
     static let proposal = Proposal(
-        recipeId: "espresso",
-        versionNumber: 3,
+        recipeId: "bourguignon",
+        versionNumber: 4,
         recommendation: .iteration,
-        vars: [ProposalVar(key: "Température", from: "93 °C", to: "92 °C")],
-        rationale: "Le léger creux en milieu de bouche pointe vers une extraction trop chaude ; un degré de moins devrait préserver la sucrosité.",
-        queued: ["Essayer une pré-infusion de 5 s", "Passer la sortie à 38 g"],
+        changeSummary: "Bouillon 50 → 40 cl, cuisson 3 h 30 → 4 h",
+        rationale: "La sauce reste un peu liquide et la viande gagnerait à confire plus longtemps ; réduire le bouillon et allonger la cuisson devrait concentrer les arômes.",
+        ingredients: [
+            Ingredient(name: "Bœuf (paleron)", quantity: "1,2 kg"),
+            Ingredient(name: "Lardons", quantity: "200 g"),
+            Ingredient(name: "Oignons", quantity: "2"),
+            Ingredient(name: "Carottes", quantity: "3"),
+            Ingredient(name: "Vin rouge", quantity: "75 cl"),
+            Ingredient(name: "Bouillon", quantity: "40 cl"),
+            Ingredient(name: "Farine", quantity: "30 g"),
+            Ingredient(name: "Bouquet garni", quantity: "1"),
+        ],
+        steps: [
+            "Saisir le bœuf sur toutes les faces, réserver.",
+            "Faire revenir lardons, oignons et carottes.",
+            "Singer avec la farine, mélanger.",
+            "Mouiller au vin et au bouillon, ajouter le bouquet garni.",
+            "Cuire à couvert 4 h.",
+        ],
+        tmxSteps: [],
         variation: VariationSuggestion(
-            title: "Espresso — Brésil allongé",
-            description: "Même café, ratio poussé pour un allongé doux."
+            title: "Bourguignon express",
+            description: "Même base, cuisson à l’autocuiseur pour un service rapide."
         ),
         createdAt: date
     )
@@ -209,10 +208,7 @@ enum Fixtures {
         title: "Cookies aux noix de pécan",
         subtitle: nil,
         type: .plat,
-        params: [
-            Param(key: "Four", value: "180 °C"),
-            Param(key: "Cuisson", value: "12 min"),
-        ],
+        category: .dessert,
         ingredients: [
             Ingredient(name: "Beurre", quantity: "170 g"),
             Ingredient(name: "Cassonade", quantity: "200 g"),
@@ -234,7 +230,7 @@ enum Fixtures {
         title: "Risotto au parmesan",
         subtitle: "Thermomix TM6",
         type: .tmx,
-        params: [],
+        category: .plat,
         ingredients: risottoIngredients,
         steps: risottoV2.steps,
         tmxSteps: risottoV2.tmxSteps,
@@ -244,18 +240,18 @@ enum Fixtures {
     static let homeData = HomeData(
         toTest: [
             HomeTestItem(
-                id: "espresso", title: "Espresso — Brésil Santa Lúcia", type: .cafe,
-                versionNumber: 4, change: "Température 93 → 92 °C",
-                why: "Le creux en milieu de bouche pointe vers une extraction trop chaude."
+                id: "bourguignon", title: "Bœuf bourguignon", type: .plat, category: .plat,
+                versionNumber: 4, change: "Cuisson 3 h → 3 h 30",
+                why: "Viande encore un peu ferme."
             ),
         ],
         library: [
-            LibraryRecipe(id: "espresso", title: "Espresso — Brésil Santa Lúcia", type: .cafe, versionCount: 4, bestNote: 5, averageNote: 4.0, isDerived: false, updatedAt: Date()),
-            LibraryRecipe(id: "deca", title: "Espresso — déca", type: .cafe, versionCount: 1, bestNote: 4, averageNote: 3.5, isDerived: true, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
-            LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, versionCount: 2, bestNote: 4, averageNote: 3.5, isDerived: false, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
-            LibraryRecipe(id: "negroni", title: "Negroni blanc", type: .cocktail, versionCount: 1, bestNote: nil, averageNote: 3.0, isDerived: false, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
+            LibraryRecipe(id: "bourguignon", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0, isDerived: false, updatedAt: Date()),
+            LibraryRecipe(id: "joues", title: "Joues de bœuf confites", type: .plat, category: .plat, versionCount: 1, bestNote: 4, averageNote: 3.5, isDerived: true, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
+            LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 2, bestNote: 4, averageNote: 3.5, isDerived: false, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+            LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestNote: nil, averageNote: 3.0, isDerived: false, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
         ],
-        recentTrials: espressoTrials
+        recentTrials: bourguignonTrials
     )
 }
 #endif

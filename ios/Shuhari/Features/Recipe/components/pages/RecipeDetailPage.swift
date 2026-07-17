@@ -59,6 +59,7 @@ struct RecipeDetailPage: View {
                 HStack {
                     RecipeHeaderBadges(
                         type: recipe.type,
+                        category: recipe.category,
                         versionNumber: recipe.bestRatedVersion?.number,
                         trialCount: recipe.trials.count
                     )
@@ -104,9 +105,9 @@ struct RecipeDetailPage: View {
     }
 }
 
-#Preview("Café — v4 à tester") {
+#Preview("Plat — v4 à tester") {
     NavigationStack {
-        RecipeDetailPage(recipe: Fixtures.espresso)
+        RecipeDetailPage(recipe: Fixtures.bourguignon)
     }
 }
 

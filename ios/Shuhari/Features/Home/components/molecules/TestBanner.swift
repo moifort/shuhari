@@ -69,11 +69,11 @@ struct TestBanner: View {
     List {
         Section {
             TestBanner(
-                title: "Espresso — Brésil Santa Lúcia",
+                title: "Bœuf bourguignon",
                 versionNumber: 4,
-                change: "Température 93 → 92 °C",
-                why: "Le léger creux en milieu de bouche pointe vers une extraction trop chaude.",
-                type: .cafe,
+                change: "Cuisson 3 h → 3 h 30",
+                why: "La viande était encore un peu ferme.",
+                type: .plat,
                 onExecute: {}
             )
             .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))

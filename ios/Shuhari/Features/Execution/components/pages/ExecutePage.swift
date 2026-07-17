@@ -1,44 +1,23 @@
 import SwiftUI
 
-/// Hands-busy execution mode: very large parameters and steps, and a pinned
-/// "Terminé — noter cet essai" button. In replay mode the real parameters of a
-/// past trial are reinjected.
+/// Hands-busy execution mode: the version's ingredients and steps shown very
+/// large, and a pinned "Terminé — noter cet essai" button.
 struct ExecutePage: View {
     let recipeTitle: String
     let version: RecipeVersion
-    /// When set, the params actually used in the replayed trial (keyed by name).
-    let replayParams: [Param]?
-    let replayDate: Date?
     let onDone: () -> Void
-
-    private var displayParams: [ParamsGrid.Item] {
-        version.params.map { param in
-            let value = replayParams?.first { $0.key == param.key }?.value ?? param.value
-            let isReplayed = replayParams?.contains { $0.key == param.key } ?? false
-            return ParamsGrid.Item(
-                key: param.key,
-                value: value,
-                highlighted: isReplayed || version.changedKeys.contains(param.key)
-            )
-        }
-    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                if let replayDate {
-                    Label(
-                        "Rejoue exactement l’essai du \(replayDate.formatted(.dateTime.day().month(.abbreviated))) — paramètres réels appliqués.",
-                        systemImage: "arrow.trianglehead.counterclockwise"
-                    )
-                    .font(.footnote.weight(.medium))
-                    .foregroundStyle(Theme.Status.current)
+                if !version.ingredients.isEmpty {
+                    ingredients
                 }
 
-                ParamsGrid(items: displayParams, big: true)
-
                 if !version.steps.isEmpty {
-                    Divider()
+                    if !version.ingredients.isEmpty {
+                        Divider()
+                    }
                     if let tmxItems = TmxStepsList.Item.zipped(steps: version.steps, tmxSteps: version.tmxSteps) {
                         TmxStepsList(items: tmxItems, big: true)
                     } else {
@@ -63,15 +42,33 @@ struct ExecutePage: View {
             .padding(.bottom, 8)
         }
     }
+
+    private var ingredients: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(version.ingredients.enumerated()), id: \.offset) { index, ingredient in
+                HStack {
+                    Text(ingredient.name)
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(ingredient.quantity)
+                        .font(.largeTitle.weight(.semibold))
+                        .monospacedDigit()
+                }
+                .padding(.vertical, 12)
+                if index != version.ingredients.count - 1 {
+                    Divider()
+                }
+            }
+        }
+    }
 }
 
-#Preview("Café") {
+#Preview("Plat") {
     NavigationStack {
         ExecutePage(
-            recipeTitle: Fixtures.espresso.title,
-            version: Fixtures.espressoV4,
-            replayParams: nil,
-            replayDate: nil,
+            recipeTitle: Fixtures.bourguignon.title,
+            version: Fixtures.bourguignonV4,
             onDone: {}
         )
     }
@@ -82,8 +79,6 @@ struct ExecutePage: View {
         ExecutePage(
             recipeTitle: Fixtures.risotto.title,
             version: Fixtures.risottoV2,
-            replayParams: nil,
-            replayDate: nil,
             onDone: {}
         )
     }

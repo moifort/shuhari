@@ -28,7 +28,7 @@ struct RecentTrialsSection: View {
 #Preview {
     NavigationStack {
         List {
-            RecentTrialsSection(trials: Fixtures.espressoTrials, titleProvider: { _ in Fixtures.espresso.title })
+            RecentTrialsSection(trials: Fixtures.bourguignonTrials, titleProvider: { _ in Fixtures.bourguignon.title })
         }
     }
 }

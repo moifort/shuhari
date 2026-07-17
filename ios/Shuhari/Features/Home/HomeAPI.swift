@@ -15,6 +15,7 @@ enum HomeAPI {
                     id: recipe.id,
                     title: recipe.title,
                     type: RecipeType(graphql: recipe.type),
+                    category: DishCategory(graphql: recipe.category),
                     versionNumber: version.number,
                     change: version.change,
                     why: version.why ?? version.originDetail
@@ -25,6 +26,7 @@ enum HomeAPI {
                     id: recipe.id,
                     title: recipe.title,
                     type: RecipeType(graphql: recipe.type),
+                    category: DishCategory(graphql: recipe.category),
                     versionCount: recipe.versionCount,
                     bestNote: recipe.bestNote,
                     averageNote: recipe.currentVersion?.averageNote,
@@ -39,7 +41,6 @@ enum HomeAPI {
                     versionNumber: trial.versionNumber,
                     note: trial.note,
                     remarks: trial.remarks,
-                    realParams: [],
                     photoUrl: nil,
                     executedAt: GraphQLHelpers.parseISO8601(trial.executedAt) ?? Date()
                 )

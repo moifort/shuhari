@@ -4,9 +4,9 @@ import SwiftUI
 /// recent activity. Pure presentation — navigation and API calls are owned by
 /// `HomeView`.
 struct HomePage: View {
-    /// The type filter offered on a multi-type tab (Cuisine), rendered as round
-    /// glass toolbar buttons — one per type. `nil` on single-type tabs (Café,
-    /// Cocktail), which need no selector.
+    /// The type filter offered on a multi-type tab (Carnet), rendered as round
+    /// glass toolbar buttons — one per type (Plat / Thermomix). `nil` on a
+    /// single-type tab, which needs no selector.
     struct TypeFilter {
         let options: [RecipeType]
         let selection: Binding<RecipeType>
@@ -78,14 +78,14 @@ private struct HomePagePreview: View {
             HomePage(
                 data: HomeData(
                     toTest: [
-                        .init(id: "1", title: "Bœuf bourguignon", type: .plat, versionNumber: 4, change: "Cuisson 3 h → 3 h 30", why: "Viande trop ferme."),
+                        .init(id: "1", title: "Bœuf bourguignon", type: .plat, category: .plat, versionNumber: 4, change: "Cuisson 3 h → 3 h 30", why: "Viande trop ferme."),
                     ],
                     library: [
-                        .init(id: "1", title: "Bœuf bourguignon", type: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0, isDerived: false, updatedAt: Date()),
-                        .init(id: "2", title: "Velouté de courge", type: .tmx, versionCount: 1, bestNote: 4, averageNote: 3.5, isDerived: false, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+                        .init(id: "1", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0, isDerived: false, updatedAt: Date()),
+                        .init(id: "2", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestNote: 4, averageNote: 3.5, isDerived: false, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
                     ],
                     recentTrials: [
-                        .init(id: "t1", recipeId: "1", versionNumber: 3, note: 4, remarks: "Équilibré, fondant.", realParams: [], photoUrl: nil, executedAt: Date()),
+                        .init(id: "t1", recipeId: "1", versionNumber: 3, note: 4, remarks: "Équilibré, fondant.", photoUrl: nil, executedAt: Date()),
                     ]
                 ).filtered(to: [selectedType]),
                 title: "Cuisine",

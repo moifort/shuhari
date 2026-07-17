@@ -5,6 +5,7 @@ query Home {
       title
       subtitle
       type
+      category
       toTest {
         number
         change
@@ -17,6 +18,7 @@ query Home {
       title
       subtitle
       type
+      category
       updatedAt
       versionCount
       bestNote

@@ -13,12 +13,15 @@ struct ProposalView: View {
     var body: some View {
         Group {
             if let recipe, let proposal = recipe.pendingProposal {
+                let base = recipe.version(proposal.versionNumber) ?? recipe.currentVersion
                 ProposalPage(
                     recipeTitle: recipe.title,
                     type: recipe.type,
                     proposal: proposal,
                     nextVersionNumber: recipe.nextVersionNumber,
                     variationTitle: proposal.variation?.title,
+                    baseIngredients: base?.ingredients ?? [],
+                    baseSteps: base?.steps ?? [],
                     isWorking: actionError.isRunning,
                     onRefuse: {
                         Task {
@@ -27,14 +30,14 @@ struct ProposalView: View {
                             } onSuccess: { onResolved() }
                         }
                     },
-                    onValidate: { choice, editedVars in
+                    onValidate: { choice, editedDraft in
                         Task {
                             await actionError.run {
                                 try await ProposalAPI.accept(
                                     recipeId: recipeId,
                                     versionNumber: proposal.versionNumber,
                                     choice: choice,
-                                    editedVars: editedVars
+                                    editedDraft: editedDraft
                                 )
                             } onSuccess: { onResolved() }
                         }

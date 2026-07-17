@@ -1,14 +1,12 @@
 import ApolloAPI
 
 /// Bridges the generated `ShuhariGraphQL.RecipeType` enum and the design-facing
-/// `RecipeType` (which carries colours, icons and the one-variable rule).
+/// `RecipeType` (which carries its label and icons).
 extension RecipeType {
     init(graphql: GraphQLEnum<ShuhariGraphQL.RecipeType>) {
         switch graphql {
         case .case(let value):
             switch value {
-            case .cafe: self = .cafe
-            case .cocktail: self = .cocktail
             case .plat: self = .plat
             case .tmx: self = .tmx
             }
@@ -19,8 +17,6 @@ extension RecipeType {
 
     var graphQLValue: GraphQLEnum<ShuhariGraphQL.RecipeType> {
         switch self {
-        case .cafe: .case(.cafe)
-        case .cocktail: .case(.cocktail)
         case .plat: .case(.plat)
         case .tmx: .case(.tmx)
         }

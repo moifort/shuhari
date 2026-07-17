@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// One category tab of the Carnet (Cuisine / Café / Cocktail). Owns the
+/// The Carnet content tab (cuisine — plats & Thermomix). Owns the
 /// NavigationStack, the settings sheet and the recipe flow (fiche → historique →
 /// essai → proposition + execution cover). Reads the shared `HomeStore` from the
 /// environment and filters it to `categoryTypes`.

@@ -34,7 +34,7 @@ struct TrialJournalSection: View {
 
 #Preview {
     List {
-        TrialJournalSection(recipeTitle: Fixtures.espresso.title, trials: Fixtures.espressoTrials)
+        TrialJournalSection(recipeTitle: Fixtures.bourguignon.title, trials: Fixtures.bourguignonTrials)
         TrialJournalSection(recipeTitle: "Negroni", trials: [])
     }
 }

@@ -5,6 +5,7 @@ import SwiftUI
 /// and the trial count. Primitive-first: no domain struct.
 struct RecipeHeaderBadges: View {
     let type: RecipeType
+    let category: DishCategory
     let versionNumber: Int?
     var trialCount: Int = 0
 
@@ -15,6 +16,12 @@ struct RecipeHeaderBadges: View {
                 Text(type.label.uppercased())
             }
             .accessibilityLabel("Type \(type.label)")
+
+            capsule {
+                category.iconImage
+                Text(category.label.uppercased())
+            }
+            .accessibilityLabel("Catégorie \(category.label)")
 
             if let versionNumber {
                 capsule {
@@ -52,9 +59,9 @@ struct RecipeHeaderBadges: View {
 #Preview {
     VStack(alignment: .leading, spacing: 12) {
         ForEach(RecipeType.allCases) { type in
-            RecipeHeaderBadges(type: type, versionNumber: 3, trialCount: 2)
+            RecipeHeaderBadges(type: type, category: .plat, versionNumber: 3, trialCount: 2)
         }
-        RecipeHeaderBadges(type: .cafe, versionNumber: nil)
+        RecipeHeaderBadges(type: .plat, category: .dessert, versionNumber: nil)
     }
     .padding()
 }

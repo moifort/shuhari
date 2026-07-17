@@ -7,20 +7,17 @@ enum ExecutionAPI {
         let promotionSuggested: Bool
     }
 
-    /// Record a trial (fast, no AI). `realParams` are the parameters actually used;
-    /// the server keeps only the ones that deviate from the version's targets.
+    /// Record a trial (fast, no AI).
     static func recordTrial(
         recipeId: String,
         versionNumber: Int,
         note: Int,
         remarks: String,
-        realParams: [Param],
         photoBase64: String?
     ) async throws -> TrialResult {
         let input = ShuhariGraphQL.RecordTrialInput(
             note: note,
             photo: GraphQLHelpers.graphQLNullable(photoBase64),
-            realParams: realParams.map { ShuhariGraphQL.ParamInput(key: $0.key, value: $0.value) },
             recipeId: recipeId,
             remarks: remarks,
             versionNumber: versionNumber

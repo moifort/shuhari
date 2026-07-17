@@ -3,11 +3,8 @@ mutation AnalyzeImport($photos: [String!], $url: String, $text: String) {
     title
     subtitle
     type
+    category
     sourceLabel
-    params {
-      key
-      value
-    }
     ingredients {
       name
       quantity

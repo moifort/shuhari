@@ -5,20 +5,10 @@ import Foundation
 /// previews and tests never depend on Apollo. Mapping from generated types lives
 /// in each feature's `*API.swift`.
 
-// MARK: - Param
-
-/// A single recipe parameter (ordered list preserves display order).
-struct Param: Identifiable, Sendable, Hashable {
-    let key: String
-    let value: String
-    var id: String { key }
-}
-
 // MARK: - Ingredient
 
-/// A recipe component with its measured quantity ("Gin" / "50 ml"). The
-/// shopping-list view of the recipe — distinct from `Param` (the reproducibility
-/// knobs the AI iterates on).
+/// A recipe component with its measured quantity ("Riz" / "320 g"). The
+/// shopping-list view of the recipe.
 struct Ingredient: Identifiable, Sendable, Hashable {
     let name: String
     let quantity: String
@@ -47,15 +37,14 @@ enum VersionOriginKind: Sendable {
     case manual
 }
 
-/// An immutable entry in a recipe's linear lineage (v1 → v2 → …).
+/// An immutable entry in a recipe's linear lineage (v1 → v2 → …). A version is
+/// its ingredients + steps (+ per-step Thermomix settings) — no parameters.
 struct RecipeVersion: Identifiable, Sendable {
     let number: Int
     let change: String?
     let why: String?
     let originKind: VersionOriginKind
     let originDetail: String?
-    let changedKeys: [String]
-    let params: [Param]
     /// The recipe's components with quantities (empty when none/absent).
     let ingredients: [Ingredient]
     let steps: [String]
@@ -78,8 +67,6 @@ struct Trial: Identifiable, Sendable {
     let versionNumber: Int
     let note: Int
     let remarks: String
-    /// Only the parameters that deviated from the version's targets.
-    let realParams: [Param]
     let photoUrl: String?
     let executedAt: Date
 }
@@ -92,30 +79,39 @@ enum ProposalRecommendation: Sendable, Equatable {
     case variation
 }
 
-/// A single proposed parameter change.
-struct ProposalVar: Identifiable, Sendable {
-    let key: String
-    let from: String?
-    let to: String
-    var id: String { key }
-}
-
 /// A suggested name and description when the AI recommends a variation.
 struct VariationSuggestion: Sendable {
     let title: String
     let description: String
 }
 
-/// An AI proposal for the next step of a recipe (presence == pending).
+/// An AI proposal for the next version of a recipe (presence == pending). It
+/// carries the COMPLETE draft of version n+1 (ingredients + steps + tmxSteps)
+/// plus a short human summary of what changed.
 struct Proposal: Sendable {
     let recipeId: String
     let versionNumber: Int
     let recommendation: ProposalRecommendation
-    let vars: [ProposalVar]
+    /// A short human summary of what the next version changes.
+    let changeSummary: String
     let rationale: String
-    let queued: [String]
+    /// The full ingredient list of the drafted next version.
+    let ingredients: [Ingredient]
+    /// The full step list of the drafted next version.
+    let steps: [String]
+    /// Per-step Thermomix settings aligned with `steps` (nil = plain step; empty
+    /// when not a Thermomix recipe).
+    let tmxSteps: [TmxSettings?]
     let variation: VariationSuggestion?
     let createdAt: Date
+}
+
+/// An edited next-version draft handed back from the proposal screen. It FULLY
+/// REPLACES the AI draft on accept — the lists are complete, not partial.
+struct ProposalDraft: Sendable {
+    let ingredients: [Ingredient]
+    let steps: [String]
+    let tmxSteps: [TmxSettings?]
 }
 
 // MARK: - Recipe
@@ -125,6 +121,7 @@ struct RecipeRef: Identifiable, Sendable {
     let id: String
     let title: String
     let type: RecipeType
+    let category: DishCategory
     let subtitle: String?
     let versionCount: Int
     let bestNote: Int?
@@ -137,6 +134,8 @@ struct Recipe: Identifiable, Sendable {
     let title: String
     let subtitle: String?
     let type: RecipeType
+    /// The dish course — fixed at import, shared across all versions.
+    let category: DishCategory
     let createdAt: Date
     let updatedAt: Date
     /// The current reproducible reference version.
@@ -187,7 +186,8 @@ struct ImportAnalysis: Sendable, Hashable {
     var title: String
     var subtitle: String?
     var type: RecipeType
-    var params: [Param]
+    /// The dish course detected by the AI (editable before create).
+    var category: DishCategory
     /// The recipe's components with quantities (empty when none).
     var ingredients: [Ingredient] = []
     var steps: [String]

@@ -58,6 +58,7 @@ func mapRecipe(_ r: ShuhariGraphQL.RecipeQuery.Data.Recipe) -> Recipe {
         title: r.title,
         subtitle: r.subtitle,
         type: RecipeType(graphql: r.type),
+        category: DishCategory(graphql: r.category),
         createdAt: GraphQLHelpers.parseISO8601(r.createdAt) ?? Date(),
         updatedAt: GraphQLHelpers.parseISO8601(r.updatedAt) ?? Date(),
         currentVersion: r.currentVersion.map { mapVersion($0.fragments.versionFields) },
@@ -77,8 +78,6 @@ func mapVersion(_ v: ShuhariGraphQL.VersionFields) -> RecipeVersion {
         why: v.why,
         originKind: VersionOriginKind(graphql: v.originKind),
         originDetail: v.originDetail,
-        changedKeys: v.changedKeys,
-        params: v.params.map { Param(key: $0.key, value: $0.value) },
         ingredients: v.ingredients.map { Ingredient(name: $0.name, quantity: $0.quantity) },
         steps: v.steps,
         tmxSteps: v.tmxSteps.map { step in
@@ -97,7 +96,6 @@ func mapTrial(_ t: ShuhariGraphQL.TrialFields) -> Trial {
         versionNumber: t.versionNumber,
         note: t.note,
         remarks: t.remarks,
-        realParams: t.realParams.map { Param(key: $0.key, value: $0.value) },
         photoUrl: t.photoUrl,
         executedAt: GraphQLHelpers.parseISO8601(t.executedAt) ?? Date()
     )
@@ -108,9 +106,13 @@ func mapProposal(_ p: ShuhariGraphQL.ProposalFields) -> Proposal {
         recipeId: p.recipeId,
         versionNumber: p.versionNumber,
         recommendation: ProposalRecommendation(graphql: p.recommendation),
-        vars: p.vars.map { ProposalVar(key: $0.key, from: $0.from, to: $0.to) },
+        changeSummary: p.changeSummary,
         rationale: p.rationale,
-        queued: p.queued,
+        ingredients: p.ingredients.map { Ingredient(name: $0.name, quantity: $0.quantity) },
+        steps: p.steps,
+        tmxSteps: p.tmxSteps.map { step in
+            step.map { TmxSettings(time: $0.time, temperature: $0.temperature, speed: $0.speed, reverse: $0.reverse ?? false) }
+        },
         variation: p.variation.map { VariationSuggestion(title: $0.title, description: $0.description) },
         createdAt: GraphQLHelpers.parseISO8601(p.createdAt) ?? Date()
     )
@@ -121,6 +123,7 @@ func mapRef(_ r: ShuhariGraphQL.RecipeRefFields) -> RecipeRef {
         id: r.id,
         title: r.title,
         type: RecipeType(graphql: r.type),
+        category: DishCategory(graphql: r.category),
         subtitle: r.subtitle,
         versionCount: r.versionCount,
         bestNote: r.bestNote,

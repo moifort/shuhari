@@ -39,9 +39,9 @@ struct ToTestSheet: View {
         .sheet(isPresented: .constant(true)) {
             ToTestSheet(
                 versionNumber: 4,
-                change: "Température 93 → 92 °C",
-                why: "Le léger creux en milieu de bouche pointe vers une extraction trop chaude.",
-                type: .cafe,
+                change: "Cuisson 3 h → 3 h 30",
+                why: "La viande était encore un peu ferme.",
+                type: .plat,
                 onExecute: {}
             )
         }

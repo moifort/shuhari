@@ -1,12 +1,9 @@
 import SwiftUI
 
-/// A trial's detail: note + remarks, optional photo, the target/real comparison,
-/// and a pinned button to replay it exactly.
+/// A trial's detail: note + remarks and an optional photo of the result.
 struct TrialDetailPage: View {
     let recipeTitle: String
     let trial: Trial
-    let versionTargets: [Param]
-    let onReplay: () -> Void
 
     var body: some View {
         List {
@@ -34,33 +31,18 @@ struct TrialDetailPage: View {
                 }
                 .padding(.vertical, 2)
             }
-
-            TrialComparisonTable(targets: versionTargets, real: trial.realParams)
         }
         .scrollEdgeEffectStyle(.soft, for: .top)
         .navigationTitle("Essai du \(trial.executedAt.formatted(.dateTime.day().month(.wide)))")
         .navigationSubtitle("\(recipeTitle) · v\(trial.versionNumber)")
-        .safeAreaInset(edge: .bottom) {
-            Button(action: onReplay) {
-                Label("Refaire exactement cet essai", systemImage: "arrow.trianglehead.counterclockwise")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.glass)
-            .controlSize(.large)
-            .accessibilityIdentifier("replay-trial-button")
-            .padding(.horizontal)
-            .padding(.bottom, 8)
-        }
     }
 }
 
 #Preview {
     NavigationStack {
         TrialDetailPage(
-            recipeTitle: Fixtures.espresso.title,
-            trial: Fixtures.espressoTrials[1],
-            versionTargets: Fixtures.espressoV3.params,
-            onReplay: {}
+            recipeTitle: Fixtures.bourguignon.title,
+            trial: Fixtures.bourguignonTrials[1]
         )
     }
 }

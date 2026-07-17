@@ -1,31 +1,18 @@
 import SwiftUI
 
 /// Coordinator for a trial's detail. Loads the trial, then the parent recipe to
-/// resolve the version's target parameters (needed for the comparison table and
-/// for replay).
+/// resolve its title.
 struct TrialDetailView: View {
     let trialId: String
-    @Binding var execution: ExecutionRequest?
 
     @State private var trial: Trial?
-    @State private var recipe: Recipe?
+    @State private var recipeTitle: String?
     @State private var error: String?
 
     var body: some View {
         Group {
-            if let trial, let recipe {
-                TrialDetailPage(
-                    recipeTitle: recipe.title,
-                    trial: trial,
-                    versionTargets: recipe.version(trial.versionNumber)?.params ?? [],
-                    onReplay: {
-                        execution = ExecutionRequest(
-                            recipeId: trial.recipeId,
-                            versionNumber: trial.versionNumber,
-                            replayTrialId: trial.id
-                        )
-                    }
-                )
+            if let trial, let recipeTitle {
+                TrialDetailPage(recipeTitle: recipeTitle, trial: trial)
             } else if let error {
                 ContentUnavailableView("Erreur", systemImage: "exclamationmark.triangle", description: Text(error))
             } else {
@@ -39,7 +26,7 @@ struct TrialDetailView: View {
         do {
             let loadedTrial = try await RecipeAPI.getTrial(id: trialId)
             trial = loadedTrial
-            recipe = try await RecipeAPI.getRecipe(id: loadedTrial.recipeId)
+            recipeTitle = try await RecipeAPI.getRecipe(id: loadedTrial.recipeId).title
         } catch {
             self.error = reportError(error)
         }

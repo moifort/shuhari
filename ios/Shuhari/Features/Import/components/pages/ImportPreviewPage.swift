@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// The editable import preview: title, detected type, ingredients, parameters and
-/// steps. Everything is adjustable before creating the recipe (v1). Presented
-/// inside the import review sheet — its actions live in the sheet toolbar
-/// (Fermer / Valider), not a bottom button.
+/// The editable import preview: title, detected type and dish category,
+/// ingredients and steps. Everything is adjustable before creating the recipe
+/// (v1). Presented inside the import review sheet — its actions live in the sheet
+/// toolbar (Fermer / Valider), not a bottom button.
 struct ImportPreviewPage: View {
     let analysis: ImportAnalysis
     let isSaving: Bool
@@ -19,7 +19,7 @@ struct ImportPreviewPage: View {
 
     @State private var title: String
     @State private var type: RecipeType
-    @State private var values: [String: String]
+    @State private var category: DishCategory
     @State private var ingredients: [EditableIngredient]
     @State private var stepTexts: [String]
 
@@ -35,7 +35,7 @@ struct ImportPreviewPage: View {
         self.onSave = onSave
         self._title = State(initialValue: analysis.title)
         self._type = State(initialValue: analysis.type)
-        self._values = State(initialValue: Dictionary(uniqueKeysWithValues: analysis.params.map { ($0.key, $0.value) }))
+        self._category = State(initialValue: analysis.category)
         self._ingredients = State(initialValue: analysis.ingredients.map {
             EditableIngredient(name: $0.name, quantity: $0.quantity)
         })
@@ -61,6 +61,15 @@ struct ImportPreviewPage: View {
                     Label("Type", systemImage: "square.grid.2x2")
                 }
                 .accessibilityIdentifier("import-type-picker")
+
+                Picker(selection: $category) {
+                    ForEach(DishCategory.allCases) { candidate in
+                        Label { Text(candidate.label) } icon: { candidate.iconImage }.tag(candidate)
+                    }
+                } label: {
+                    Label("Catégorie", systemImage: "tag")
+                }
+                .accessibilityIdentifier("import-category-picker")
             }
 
             if !ingredients.isEmpty {
@@ -76,20 +85,6 @@ struct ImportPreviewPage: View {
                         }
                     }
                     .onDelete { ingredients.remove(atOffsets: $0) }
-                }
-            }
-
-            if !analysis.params.isEmpty {
-                Section("Paramètres") {
-                    ForEach(analysis.params) { param in
-                        LabeledContent {
-                            TextField(param.value, text: binding(for: param.key))
-                                .multilineTextAlignment(.trailing)
-                                .keyboardType(.numbersAndPunctuation)
-                        } label: {
-                            Text(param.key)
-                        }
-                    }
                 }
             }
 
@@ -168,7 +163,7 @@ struct ImportPreviewPage: View {
             title: title.trimmingCharacters(in: .whitespacesAndNewlines),
             subtitle: analysis.subtitle,
             type: type,
-            params: analysis.params.map { Param(key: $0.key, value: values[$0.key] ?? $0.value) },
+            category: category,
             ingredients: ingredients.compactMap { row in
                 let name = row.name.trimmingCharacters(in: .whitespacesAndNewlines)
                 let quantity = row.quantity.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -179,10 +174,6 @@ struct ImportPreviewPage: View {
             tmxSteps: tmxSteps,
             sourceLabel: analysis.sourceLabel
         )
-    }
-
-    private func binding(for key: String) -> Binding<String> {
-        Binding(get: { values[key] ?? "" }, set: { values[key] = $0 })
     }
 }
 

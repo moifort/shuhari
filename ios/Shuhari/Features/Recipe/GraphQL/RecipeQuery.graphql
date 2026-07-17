@@ -4,11 +4,6 @@ fragment VersionFields on Version {
   why
   originKind
   originDetail
-  changedKeys
-  params {
-    key
-    value
-  }
   ingredients {
     name
     quantity
@@ -31,10 +26,6 @@ fragment TrialFields on Trial {
   versionNumber
   note
   remarks
-  realParams {
-    key
-    value
-  }
   photoUrl
   executedAt
 }
@@ -43,12 +34,18 @@ fragment ProposalFields on Proposal {
   recipeId
   versionNumber
   recommendation
+  changeSummary
   rationale
-  queued
-  vars {
-    key
-    from
-    to
+  ingredients {
+    name
+    quantity
+  }
+  steps
+  tmxSteps {
+    time
+    temperature
+    speed
+    reverse
   }
   variation {
     title
@@ -62,6 +59,7 @@ fragment RecipeRefFields on Recipe {
   title
   subtitle
   type
+  category
   versionCount
   bestNote
   currentVersion {
@@ -76,6 +74,7 @@ query Recipe($id: RecipeId!) {
     title
     subtitle
     type
+    category
     createdAt
     updatedAt
     currentVersion {

@@ -29,7 +29,7 @@ enum ImportAPI {
             title: normalizedTitle(analysis.title),
             subtitle: analysis.subtitle,
             type: RecipeType(graphql: analysis.type),
-            params: analysis.params.map { Param(key: $0.key, value: $0.value) },
+            category: DishCategory(graphql: analysis.category),
             ingredients: analysis.ingredients.map { Ingredient(name: $0.name, quantity: $0.quantity) },
             steps: analysis.steps,
             tmxSteps: analysis.tmxSteps.map { list in
@@ -58,8 +58,8 @@ enum ImportAPI {
             ? .none
             : .some(analysis.ingredients.map { ShuhariGraphQL.IngredientInput(name: $0.name, quantity: $0.quantity) })
         let input = ShuhariGraphQL.CreateRecipeInput(
+            category: analysis.category.graphQLValue,
             ingredients: ingredients,
-            params: analysis.params.map { ShuhariGraphQL.ParamInput(key: $0.key, value: $0.value) },
             sourceLabel: GraphQLHelpers.graphQLNullable(analysis.sourceLabel),
             steps: analysis.steps,
             subtitle: GraphQLHelpers.graphQLNullable(analysis.subtitle),

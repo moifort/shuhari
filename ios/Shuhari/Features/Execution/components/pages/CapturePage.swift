@@ -1,13 +1,12 @@
 import PhotosUI
 import SwiftUI
 
-/// Capture the trial's feedback: a 5-star note, then (when the recipe has any)
-/// editable real parameters, remarks and photos of the result. Validation lives
-/// in the top-right toolbar; the flow provides the close button.
+/// Capture the trial's feedback: a 5-star note, then remarks and photos of the
+/// result. Validation lives in the top-right toolbar; the flow provides the close
+/// button.
 struct CapturePage: View {
-    let targets: [Param]
     let isSaving: Bool
-    let onSave: (_ note: Int, _ remarks: String, _ realParams: [Param], _ photoBase64: String?) -> Void
+    let onSave: (_ note: Int, _ remarks: String, _ photoBase64: String?) -> Void
 
     /// A picked photo kept both decoded (for the thumbnail) and encoded (payload).
     private struct LoadedPhoto: Identifiable {
@@ -16,23 +15,10 @@ struct CapturePage: View {
         let base64: String
     }
 
-    @State private var values: [String: String]
     @State private var note: Int?
     @State private var remarks: String = ""
     @State private var photoItems: [PhotosPickerItem] = []
     @State private var photos: [LoadedPhoto] = []
-    @FocusState private var focusedParam: String?
-
-    init(
-        targets: [Param],
-        isSaving: Bool,
-        onSave: @escaping (_ note: Int, _ remarks: String, _ realParams: [Param], _ photoBase64: String?) -> Void
-    ) {
-        self.targets = targets
-        self.isSaving = isSaving
-        self.onSave = onSave
-        self._values = State(initialValue: Dictionary(uniqueKeysWithValues: targets.map { ($0.key, $0.value) }))
-    }
 
     var body: some View {
         Form {
@@ -42,22 +28,8 @@ struct CapturePage: View {
             }
             .listRowBackground(Color.clear)
 
-            // Real parameters, remarks and photos share one block.
+            // Remarks and photos share one block.
             Section {
-                if !targets.isEmpty {
-                    ForEach(targets) { target in
-                        LabeledContent(target.key) {
-                            TextField(target.value, text: binding(for: target.key))
-                                .multilineTextAlignment(.trailing)
-                                .keyboardType(.numbersAndPunctuation)
-                                .submitLabel(target.key == targets.last?.key ? .done : .next)
-                                .focused($focusedParam, equals: target.key)
-                                .onSubmit { focusNextParam(after: target.key) }
-                                .accessibilityIdentifier("real-param-\(target.key)")
-                        }
-                    }
-                }
-
                 TextField("Ex. : trop amer, coule trop vite, manque de liant…", text: $remarks, axis: .vertical)
                     .lineLimit(8...20)
                     .frame(minHeight: 140, alignment: .top)
@@ -75,7 +47,7 @@ struct CapturePage: View {
             ToolbarItem(placement: .confirmationAction) {
                 Button {
                     guard let note else { return }
-                    onSave(note, remarks.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "—" : remarks, realParams, photos.first?.base64)
+                    onSave(note, remarks.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "—" : remarks, photos.first?.base64)
                 } label: {
                     if isSaving { ProgressView() } else { Image(systemName: "checkmark") }
                 }
@@ -129,35 +101,13 @@ struct CapturePage: View {
         }
         photos = loaded
     }
-
-    // MARK: - Real params
-
-    private var realParams: [Param] {
-        targets.map { Param(key: $0.key, value: values[$0.key] ?? $0.value) }
-    }
-
-    private func binding(for key: String) -> Binding<String> {
-        Binding(
-            get: { values[key] ?? "" },
-            set: { values[key] = $0 }
-        )
-    }
-
-    private func focusNextParam(after key: String) {
-        guard let index = targets.firstIndex(where: { $0.key == key }), targets.index(after: index) < targets.endIndex else {
-            focusedParam = nil
-            return
-        }
-        focusedParam = targets[targets.index(after: index)].key
-    }
 }
 
 #Preview {
     NavigationStack {
         CapturePage(
-            targets: Fixtures.espressoV4.params,
             isSaving: false,
-            onSave: { _, _, _, _ in }
+            onSave: { _, _, _ in }
         )
     }
 }

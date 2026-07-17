@@ -7,6 +7,6 @@
 import ApolloAPI
 
 extension ShuhariGraphQL {
-    /// Trial rating (integer 1..10)
+    /// Trial rating (integer 1..5)
     typealias Note = Int
 }

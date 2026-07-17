@@ -1,20 +1,47 @@
 import SwiftUI
 
-/// The AI proposal screen: the highlighted diff, the rationale, the one-variable
-/// rule reminder, queued leads, and the iteration/variation choice.
+/// The AI proposal screen: a short summary of what changes and why, then the FULL
+/// draft of the next version — ingredients and steps, each row editable inline and
+/// tinted when it differs from the base version. Finally the iteration/variation
+/// choice and Valider/Refuser.
+///
+/// Diff highlighting: rows are always editable `TextField`s, so a from→to
+/// `DiffValue` doesn't fit; instead a row carries the `Theme.Status.changed` tint
+/// whenever its current value differs from the base version (new or modified). It
+/// updates live as the user types.
+///
+/// On accept the page sends an `editedDraft` only when the user actually changed
+/// something versus the AI draft; the draft always carries the COMPLETE lists
+/// (full-replacement semantics).
 struct ProposalPage: View {
     let recipeTitle: String
     let type: RecipeType
     let proposal: Proposal
     let nextVersionNumber: Int
     let variationTitle: String?
+    /// The base version's content, to highlight what the draft changes.
+    let baseIngredients: [Ingredient]
+    let baseSteps: [String]
     let isWorking: Bool
     let onRefuse: () -> Void
-    let onValidate: (_ choice: ProposalRecommendation, _ editedVars: [ProposalVar]?) -> Void
+    let onValidate: (_ choice: ProposalRecommendation, _ editedDraft: ProposalDraft?) -> Void
+
+    private struct EditableIngredient: Identifiable {
+        let id = UUID()
+        var name: String
+        var quantity: String
+    }
+
+    private struct EditableStep: Identifiable {
+        let id = UUID()
+        var text: String
+        /// Per-step Thermomix settings, read-only, aligned with this step.
+        let tmx: TmxSettings?
+    }
 
     @State private var choice: ProposalRecommendation
-    @State private var isEditing = false
-    @State private var editedTo: [String: String]
+    @State private var ingredients: [EditableIngredient]
+    @State private var steps: [EditableStep]
 
     init(
         recipeTitle: String,
@@ -22,43 +49,48 @@ struct ProposalPage: View {
         proposal: Proposal,
         nextVersionNumber: Int,
         variationTitle: String?,
+        baseIngredients: [Ingredient],
+        baseSteps: [String],
         isWorking: Bool,
         onRefuse: @escaping () -> Void,
-        onValidate: @escaping (_ choice: ProposalRecommendation, _ editedVars: [ProposalVar]?) -> Void
+        onValidate: @escaping (_ choice: ProposalRecommendation, _ editedDraft: ProposalDraft?) -> Void
     ) {
         self.recipeTitle = recipeTitle
         self.type = type
         self.proposal = proposal
         self.nextVersionNumber = nextVersionNumber
         self.variationTitle = variationTitle
+        self.baseIngredients = baseIngredients
+        self.baseSteps = baseSteps
         self.isWorking = isWorking
         self.onRefuse = onRefuse
         self.onValidate = onValidate
         self._choice = State(initialValue: proposal.recommendation)
-        self._editedTo = State(initialValue: Dictionary(uniqueKeysWithValues: proposal.vars.map { ($0.key, $0.to) }))
+        self._ingredients = State(initialValue: proposal.ingredients.map {
+            EditableIngredient(name: $0.name, quantity: $0.quantity)
+        })
+        self._steps = State(initialValue: proposal.steps.enumerated().map { index, text in
+            EditableStep(text: text, tmx: proposal.tmxSteps[safe: index] ?? nil)
+        })
     }
 
     var body: some View {
         List {
-            changesSection
-            queuedSection
+            summarySection
+            if !ingredients.isEmpty {
+                ingredientsSection
+            }
+            stepsSection
             choiceSection
         }
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Proposition")
         .navigationSubtitle(recipeTitle)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(isEditing ? "Terminer" : "Modifier") { isEditing.toggle() }
-                    .disabled(isWorking)
-                    .accessibilityIdentifier("edit-proposal-button")
-            }
-        }
         .safeAreaInset(edge: .bottom) {
             GlassEffectContainer {
                 VStack(spacing: 10) {
                     Button {
-                        onValidate(choice, editedVarsIfChanged)
+                        onValidate(choice, editedDraftIfChanged)
                     } label: {
                         Group {
                             if isWorking { ProgressView() } else {
@@ -84,48 +116,78 @@ struct ProposalPage: View {
         }
     }
 
-    private var changesSection: some View {
+    // MARK: - Summary
+
+    private var summarySection: some View {
         Section {
-            ForEach(proposal.vars) { variable in
-                Group {
-                    if isEditing {
-                        LabeledContent(variable.key) {
-                            TextField(variable.to, text: binding(for: variable.key))
-                                .multilineTextAlignment(.trailing)
-                                .keyboardType(.numbersAndPunctuation)
-                                .accessibilityIdentifier("edit-var-\(variable.key)")
-                        }
-                    } else {
-                        DiffRow(key: variable.key, from: variable.from, to: editedTo[variable.key] ?? variable.to)
-                    }
-                }
-                .listRowBackground(Theme.Status.toTest.opacity(0.08))
+            VStack(alignment: .leading, spacing: 6) {
+                Text(proposal.changeSummary)
+                    .font(.headline)
+                Text(proposal.rationale)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
+            .padding(.vertical, 2)
         } header: {
             Label("Ce qui change — proposition de l’IA", systemImage: "flask.fill")
                 .foregroundStyle(Theme.Status.toTest)
                 .textCase(nil)
         } footer: {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("D’après ton essai sur la v\(proposal.versionNumber) — rien n’est créé sans ta validation.")
-                Text(proposal.rationale)
-                RuleChip(type: type)
+            Text("D’après ton essai sur la v\(proposal.versionNumber) — rien n’est créé sans ta validation. Retouche librement le brouillon avant de valider.")
+        }
+    }
+
+    // MARK: - Ingredients
+
+    private var ingredientsSection: some View {
+        Section("Ingrédients") {
+            ForEach($ingredients) { $ingredient in
+                HStack {
+                    TextField("Ingrédient", text: $ingredient.name)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("edit-ingredient-name")
+                    TextField("Quantité", text: $ingredient.quantity)
+                        .fixedSize()
+                        .multilineTextAlignment(.trailing)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("edit-ingredient-quantity")
+                }
+                .listRowBackground(ingredientDiffers(ingredient) ? Theme.Status.changed.opacity(0.08) : nil)
             }
         }
     }
 
-    @ViewBuilder
-    private var queuedSection: some View {
-        if !proposal.queued.isEmpty {
-            Section("Pistes gardées pour la suite") {
-                ForEach(Array(proposal.queued.enumerated()), id: \.offset) { _, lead in
-                    Label(lead, systemImage: "lightbulb")
-                        .font(.footnote)
+    // MARK: - Steps
+
+    private var stepsSection: some View {
+        Section("Étapes") {
+            ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
+                HStack(alignment: .top, spacing: 12) {
+                    Text("\(index + 1)")
+                        .font(.subheadline.weight(.semibold))
+                        .monospacedDigit()
                         .foregroundStyle(.secondary)
+                        .frame(minWidth: 20, alignment: .trailing)
+                    VStack(alignment: .leading, spacing: 6) {
+                        TextField("Étape", text: $steps[index].text, axis: .vertical)
+                            .lineLimit(1...6)
+                            .accessibilityIdentifier("edit-step")
+                        if let tmx = step.tmx, !tmx.isEmpty {
+                            TmxSettingBadges(
+                                time: tmx.time,
+                                temperature: tmx.temperature,
+                                speed: tmx.speed,
+                                reverse: tmx.reverse
+                            )
+                        }
+                    }
                 }
+                .listRowBackground(stepDiffers(step.text) ? Theme.Status.changed.opacity(0.08) : nil)
             }
         }
     }
+
+    // MARK: - Choice
 
     private var choiceSection: some View {
         Section {
@@ -154,29 +216,74 @@ struct ProposalPage: View {
         }
     }
 
-    private func binding(for key: String) -> Binding<String> {
-        Binding(
-            get: { editedTo[key] ?? "" },
-            set: { editedTo[key] = $0 }
-        )
+    // MARK: - Diff
+
+    /// An ingredient row differs from the base version when the base has no
+    /// ingredient with the exact same name and quantity (new or modified).
+    private func ingredientDiffers(_ ingredient: EditableIngredient) -> Bool {
+        !baseIngredients.contains { $0.name == ingredient.name && $0.quantity == ingredient.quantity }
     }
 
-    /// Only send editedVars when the user actually changed a target value.
-    private var editedVarsIfChanged: [ProposalVar]? {
-        let changed = proposal.vars.contains { (editedTo[$0.key] ?? $0.to) != $0.to }
-        guard changed else { return nil }
-        return proposal.vars.map { ProposalVar(key: $0.key, from: $0.from, to: editedTo[$0.key] ?? $0.to) }
+    /// A step differs when its exact text is absent from the base version's steps.
+    private func stepDiffers(_ text: String) -> Bool {
+        !baseSteps.contains(text)
+    }
+
+    // MARK: - Edited draft
+
+    private var currentIngredients: [Ingredient] {
+        ingredients.compactMap { row in
+            let name = row.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            let quantity = row.quantity.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty, !quantity.isEmpty else { return nil }
+            return Ingredient(name: name, quantity: quantity)
+        }
+    }
+
+    /// Only send an edited draft when the user changed the ingredients or steps
+    /// versus the AI draft. The draft always carries the COMPLETE lists, and steps
+    /// stay aligned with their per-step Thermomix settings.
+    private var editedDraftIfChanged: ProposalDraft? {
+        // Drop emptied steps, carrying each surviving row's tmx settings so `steps`
+        // and `tmxSteps` keep the same length — a cleared step must not desync them
+        // (a length mismatch makes the backend drop ALL Thermomix settings).
+        let survivingSteps = steps.compactMap { row -> (text: String, tmx: TmxSettings?)? in
+            let text = row.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty else { return nil }
+            return (text, row.tmx)
+        }
+        let editedSteps = survivingSteps.map(\.text)
+        // Empty for a non-Thermomix recipe (the draft had no tmxSteps); otherwise
+        // aligned 1:1 with the surviving steps.
+        let editedTmxSteps: [TmxSettings?] = proposal.tmxSteps.isEmpty ? [] : survivingSteps.map(\.tmx)
+
+        let ingredientsChanged = currentIngredients != proposal.ingredients
+        let stepsChanged = editedSteps != proposal.steps
+        guard ingredientsChanged || stepsChanged else { return nil }
+        return ProposalDraft(
+            ingredients: currentIngredients,
+            steps: editedSteps,
+            tmxSteps: editedTmxSteps
+        )
+    }
+}
+
+private extension Array {
+    subscript(safe index: Int) -> Element? {
+        indices.contains(index) ? self[index] : nil
     }
 }
 
 #Preview {
     NavigationStack {
         ProposalPage(
-            recipeTitle: Fixtures.espresso.title,
-            type: .cafe,
+            recipeTitle: Fixtures.bourguignon.title,
+            type: .plat,
             proposal: Fixtures.proposal,
-            nextVersionNumber: 4,
+            nextVersionNumber: 5,
             variationTitle: Fixtures.proposal.variation?.title,
+            baseIngredients: Fixtures.bourguignonV4.ingredients,
+            baseSteps: Fixtures.bourguignonV4.steps,
             isWorking: false,
             onRefuse: {},
             onValidate: { _, _ in }

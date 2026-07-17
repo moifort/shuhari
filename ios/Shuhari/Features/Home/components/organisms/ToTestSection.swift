@@ -32,7 +32,7 @@ struct ToTestSection: View {
     List {
         ToTestSection(
             items: [
-                .init(id: "1", title: "Espresso", type: .cafe, versionNumber: 4, change: "Température 93 → 92 °C", why: "Extraction trop chaude."),
+                .init(id: "1", title: "Bœuf bourguignon", type: .plat, category: .plat, versionNumber: 4, change: "Cuisson 3 h → 3 h 30", why: "Viande encore ferme."),
             ],
             onExecute: { _ in }
         )

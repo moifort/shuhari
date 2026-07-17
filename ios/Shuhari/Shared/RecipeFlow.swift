@@ -5,7 +5,6 @@ import SwiftUI
 struct RecipeRouteView: View {
     let route: RecipeRoute
     @Binding var path: NavigationPath
-    @Binding var execution: ExecutionRequest?
     let onReload: () -> Void
 
     var body: some View {
@@ -15,7 +14,7 @@ struct RecipeRouteView: View {
         case .history(let id):
             HistoryView(recipeId: id)
         case .trial(let id):
-            TrialDetailView(trialId: id, execution: $execution)
+            TrialDetailView(trialId: id)
         case .proposal(let recipeId):
             ProposalView(recipeId: recipeId) {
                 if !path.isEmpty { path.removeLast() }
@@ -34,7 +33,7 @@ struct RecipeFlowModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .navigationDestination(for: RecipeRoute.self) { route in
-                RecipeRouteView(route: route, path: $path, execution: $execution, onReload: onReload)
+                RecipeRouteView(route: route, path: $path, onReload: onReload)
             }
             .fullScreenCover(item: $execution) { request in
                 ExecuteFlowView(request: request) { onReload() }

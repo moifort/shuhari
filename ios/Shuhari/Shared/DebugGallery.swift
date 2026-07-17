@@ -15,13 +15,13 @@ struct DebugGallery: View {
                 .environment(HomeStore())
         case "home":
             NavigationStack {
-                HomePage(data: Fixtures.homeData, title: "Café", typeFilter: nil, onExecute: { _ in }, onSettings: {})
+                HomePage(data: Fixtures.homeData, title: "Carnet", typeFilter: nil, onExecute: { _ in }, onSettings: {})
             }
         case "cuisine":
             CuisineGalleryScreen()
         case "recipe":
             NavigationStack {
-                RecipeDetailPage(recipe: Fixtures.espresso)
+                RecipeDetailPage(recipe: Fixtures.bourguignon)
             }
         case "recipe-tmx":
             NavigationStack {
@@ -29,24 +29,20 @@ struct DebugGallery: View {
             }
         case "history":
             NavigationStack {
-                HistoryPage(recipe: Fixtures.espresso)
+                HistoryPage(recipe: Fixtures.bourguignon)
             }
         case "trial":
             NavigationStack {
                 TrialDetailPage(
-                    recipeTitle: Fixtures.espresso.title,
-                    trial: Fixtures.espressoTrials[1],
-                    versionTargets: Fixtures.espressoV3.params,
-                    onReplay: {}
+                    recipeTitle: Fixtures.bourguignon.title,
+                    trial: Fixtures.bourguignonTrials[1]
                 )
             }
         case "execute":
             NavigationStack {
                 ExecutePage(
-                    recipeTitle: Fixtures.espresso.title,
-                    version: Fixtures.espressoV4,
-                    replayParams: nil,
-                    replayDate: nil,
+                    recipeTitle: Fixtures.bourguignon.title,
+                    version: Fixtures.bourguignonV4,
                     onDone: {}
                 )
             }
@@ -55,27 +51,26 @@ struct DebugGallery: View {
                 ExecutePage(
                     recipeTitle: Fixtures.risotto.title,
                     version: Fixtures.risottoV2,
-                    replayParams: nil,
-                    replayDate: nil,
                     onDone: {}
                 )
             }
         case "capture":
             NavigationStack {
                 CapturePage(
-                    targets: Fixtures.espressoV4.params,
                     isSaving: false,
-                    onSave: { _, _, _, _ in }
+                    onSave: { _, _, _ in }
                 )
             }
         case "proposal":
             NavigationStack {
                 ProposalPage(
-                    recipeTitle: Fixtures.espresso.title,
-                    type: .cafe,
+                    recipeTitle: Fixtures.bourguignon.title,
+                    type: .plat,
                     proposal: Fixtures.proposal,
-                    nextVersionNumber: 4,
+                    nextVersionNumber: 5,
                     variationTitle: Fixtures.proposal.variation?.title,
+                    baseIngredients: Fixtures.bourguignonV4.ingredients,
+                    baseSteps: Fixtures.bourguignonV4.steps,
                     isWorking: false,
                     onRefuse: {},
                     onValidate: { _, _ in }
@@ -105,12 +100,12 @@ private struct CuisineGalleryScreen: View {
 
     private let data = HomeData(
         toTest: [
-            HomeTestItem(id: "boeuf", title: "Bœuf bourguignon", type: .plat, versionNumber: 5, change: "Cuisson 3 h → 3 h 30", why: "Viande encore ferme."),
+            HomeTestItem(id: "boeuf", title: "Bœuf bourguignon", type: .plat, category: .plat, versionNumber: 5, change: "Cuisson 3 h → 3 h 30", why: "Viande encore ferme."),
         ],
         library: [
-            LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0, isDerived: false, updatedAt: Date()),
-            LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, versionCount: 3, bestNote: 4, averageNote: 3.5, isDerived: false, updatedAt: Date()),
-            LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, versionCount: 1, bestNote: nil, averageNote: nil, isDerived: true, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+            LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0, isDerived: false, updatedAt: Date()),
+            LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 3, bestNote: 4, averageNote: 3.5, isDerived: false, updatedAt: Date()),
+            LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestNote: nil, averageNote: nil, isDerived: true, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
         ],
         recentTrials: []
     )

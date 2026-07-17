@@ -40,6 +40,6 @@ struct HistoryPage: View {
 
 #Preview {
     NavigationStack {
-        HistoryPage(recipe: Fixtures.espresso)
+        HistoryPage(recipe: Fixtures.bourguignon)
     }
 }

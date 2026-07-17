@@ -5,6 +5,7 @@ struct HomeTestItem: Identifiable, Sendable {
     let id: String
     let title: String
     let type: RecipeType
+    let category: DishCategory
     let versionNumber: Int
     let change: String?
     let why: String?
@@ -16,6 +17,7 @@ struct LibraryRecipe: Identifiable, Sendable {
     let id: String
     let title: String
     let type: RecipeType
+    let category: DishCategory
     let versionCount: Int
     let bestNote: Int?
     let averageNote: Double?

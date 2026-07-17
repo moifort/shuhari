@@ -28,7 +28,7 @@ struct VariationsSection: View {
 #Preview {
     NavigationStack {
         List {
-            VariationsSection(variations: Fixtures.espresso.variations)
+            VariationsSection(variations: Fixtures.bourguignon.variations)
         }
     }
 }
