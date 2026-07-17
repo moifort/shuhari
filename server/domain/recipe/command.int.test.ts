@@ -29,7 +29,7 @@ const ingredient = (n: string, q: string): Ingredient => ({
   quantity: q as IngredientQuantity,
 })
 const newInput = () => ({
-  type: 'cafe' as const,
+  type: 'plat' as const,
   category: 'plat' as const,
   title: 'Espresso' as RecipeTitle,
   params: [param('Dose', '18 g'), param('Température', '93 °C')],
@@ -50,7 +50,7 @@ describe('RecipeCommand.importRecipe', () => {
     expect(recipe.currentVersion).toBe(1 as VersionNumber)
     expect(recipe.toTest).toBeNull()
     expect(recipe.versionCount).toBe(1 as VersionNumber)
-    expect(fake.snapshot('recipes').get(recipe.id as string)?.type).toBe('cafe')
+    expect(fake.snapshot('recipes').get(recipe.id as string)?.type).toBe('plat')
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.origin).toEqual({
       kind: 'import',
       detail: 'Un site',

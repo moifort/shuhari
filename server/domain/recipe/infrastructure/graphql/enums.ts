@@ -1,10 +1,8 @@
 import { builder } from '~/domain/shared/graphql/builder'
 
 export const RecipeTypeEnum = builder.enumType('RecipeType', {
-  description: 'The kind of culinary experiment — drives the one-variable rule',
+  description: 'The kind of culinary experiment — a cooked dish or a Thermomix recipe',
   values: {
-    CAFE: { value: 'cafe' },
-    COCKTAIL: { value: 'cocktail' },
     PLAT: { value: 'plat' },
     TMX: { value: 'tmx' },
   } as const,

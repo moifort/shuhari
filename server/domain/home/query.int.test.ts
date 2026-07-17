@@ -14,7 +14,7 @@ const { RecipeQuery } = await import('~/domain/recipe/query')
 const userId = 'user-1' as UserId
 const param = (k: string, v: string): Param => ({ key: k as ParamKey, value: v as ParamValue })
 const input = (title: string) => ({
-  type: 'cafe' as const,
+  type: 'plat' as const,
   category: 'plat' as const,
   title: title as RecipeTitle,
   params: [param('Dose', '18 g')],

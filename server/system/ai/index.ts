@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { DISH_CATEGORY_VALUES } from '~/domain/recipe/types'
+import { DISH_CATEGORY_VALUES, RECIPE_TYPE_VALUES } from '~/domain/recipe/types'
 import { ImportHash, parseImportResponse, parseProposalResponse } from '~/system/ai/primitives'
 import * as repository from '~/system/ai/repository'
 import type {
@@ -18,7 +18,7 @@ type GeminiResponse = { candidates?: { content: { parts: { text?: string }[] } }
 
 type GeminiPart = { text: string } | { inline_data: { mime_type: string; data: string } }
 
-const RECIPE_TYPE_ENUM = ['cafe', 'cocktail', 'plat', 'tmx']
+const RECIPE_TYPE_ENUM = [...RECIPE_TYPE_VALUES]
 
 const importResponseSchema = {
   type: 'object',
@@ -26,8 +26,7 @@ const importResponseSchema = {
     type: {
       type: 'string',
       enum: RECIPE_TYPE_ENUM,
-      description:
-        "Type d'expérimentation : cafe, cocktail, plat (recette cuisinée) ou tmx (Thermomix)",
+      description: "Type d'expérimentation : plat (recette cuisinée) ou tmx (Thermomix)",
     },
     category: {
       type: 'string',
@@ -180,10 +179,10 @@ const proposalResponseSchema = {
 const IMPORT_INSTRUCTIONS = `Tu es l'assistant d'un carnet d'expérimentation culinaire. À partir de la source fournie (photos, page web ou texte d'une recette), extrais une recette STRUCTURÉE et REPRODUCTIBLE.
 
 Règles :
-- Détermine le type : cafe (espresso, filtre…), cocktail, plat (recette cuisinée), tmx (recette Thermomix).
+- Détermine le type : plat (recette cuisinée) ou tmx (recette Thermomix).
 - Détermine la catégorie du plat : entree, plat, dessert, soupe, sauce ou boulangerie (pâtisserie, pain, viennoiserie). En cas de doute, choisis plat.
 - ingredients : liste ORDONNÉE des composants de la recette avec leur quantité (ex : Gin → 50 ml, Beurre → 170 g, Fraise → 3 pièces). Mets TOUS les ingrédients visibles sur la source, chacun avec sa quantité et son unité. C'est la « liste de courses » de la recette. Le NOM reste court : l'ingrédient seul, jamais sa préparation (« Pommes de terre », pas « Pommes de terre épluchées et coupées en rondelles » — la préparation va dans les étapes).
-- params : réglages reproductibles qui ne sont PAS des ingrédients (ex : Température → 92 °C, Mouture → fine, Ratio → 1:2, Temps d'extraction → 27 s, Four → 180 °C). N'y mets JAMAIS un ingrédient. N'invente pas de valeurs absentes ; ne garde que ce qui est réellement mesurable et reproductible (souvent vide pour un cocktail ou un plat).
+- params : réglages reproductibles qui ne sont PAS des ingrédients (ex : Température → 92 °C, Mouture → fine, Ratio → 1:2, Temps d'extraction → 27 s, Four → 180 °C). N'y mets JAMAIS un ingrédient. N'invente pas de valeurs absentes ; ne garde que ce qui est réellement mesurable et reproductible (souvent vide pour un plat).
 - steps : étapes courtes, à l'impératif, dans l'ordre.
 - Pour une recette Thermomix (type tmx) : pour chaque étape exécutée au Thermomix, renseigne tmxTime, tmxTemperature, tmxSpeed et tmxReverse tels qu'indiqués dans la recette (durée « 3 min » / « 30 s » / « 1 h 10 min » ; température « 100°C » ou « Varoma » ; vitesse « 0,5 » à « 10 », « pétrin », « mijotage » ou « turbo »). Mets null pour chaque réglage absent, et pour TOUS ces champs quand l'étape ne se fait pas au Thermomix ou que la recette n'est pas de type tmx.
 - Sois concis : chaque valeur reste courte (nom d'ingrédient ≤120, quantité ≤60, paramètre clé ≤60 / valeur ≤120, étape ≤300, titre ≤200, réglage Thermomix ≤20 caractères).
@@ -241,10 +240,8 @@ export namespace Ai {
     return [{ text: `${IMPORT_INSTRUCTIONS}\n\nTexte de la recette :\n${source.text}` }]
   }
 
-  const oneVariableRule = (type: ProposalContext['type']) =>
-    type === 'cafe' || type === 'cocktail'
-      ? "RÈGLE STRICTE : pour un café ou un cocktail, ne change QU'UNE SEULE variable par itération (pour isoler cause et effet). Mets toutes les autres pistes dans queued, ordonnées pour de futures itérations."
-      : 'Pour un plat ou une recette Thermomix, tu peux changer plusieurs variables cohérentes dans la même itération.'
+  const oneVariableRule = (_type: ProposalContext['type']) =>
+    'Pour un plat ou une recette Thermomix, tu peux changer plusieurs variables cohérentes dans la même itération.'
 
   const proposalPrompt = (context: ProposalContext): string => {
     const params = context.currentParams.map((p) => `- ${p.key} : ${p.value}`).join('\n')
@@ -273,7 +270,7 @@ ${steps}
 Essais réalisés :
 ${trials}${queue}
 
-Propose soit une itération (amélioration de cette recette), soit une variation (déclinaison distincte, ex : une version blanche d'un cocktail) si les remarques suggèrent un plat différent plutôt qu'une correction. Renseigne vars (changements), rationale (pourquoi), queued (pistes suivantes), recommendation et, si variation, un titre et une description. Toutes les valeurs textuelles en français.`
+Propose soit une itération (amélioration de cette recette), soit une variation (déclinaison distincte, ex : une version végétarienne d'un plat) si les remarques suggèrent un plat différent plutôt qu'une correction. Renseigne vars (changements), rationale (pourquoi), queued (pistes suivantes), recommendation et, si variation, un titre et une description. Toutes les valeurs textuelles en français.`
   }
 
   const callGemini = async (body: Record<string, unknown>): Promise<string | undefined> => {

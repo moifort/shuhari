@@ -22,8 +22,8 @@ const describeChange = (vars: ProposalVar[]) =>
 
 export namespace ProposalUseCase {
   // Ask the AI for the next step after a trial. Reads the tested version and its
-  // trials, drafts a proposal, enforces the one-variable rule for cafe/cocktail,
-  // and persists it as the single active proposal for that version.
+  // trials, drafts a proposal, enforces the variable budget, and persists it as
+  // the single active proposal for that version.
   export const proposeFromTrial = async (userId: UserId, recipeId: RecipeId) => {
     const recipe = await RecipeQuery.byId(userId, recipeId)
     if (recipe === 'not-found') return 'not-found'

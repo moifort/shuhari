@@ -300,10 +300,8 @@ scalar RecipeSubtitle
 """Recipe title (1-200 chars)"""
 scalar RecipeTitle
 
-"""The kind of culinary experiment — drives the one-variable rule"""
+"""The kind of culinary experiment — a cooked dish or a Thermomix recipe"""
 enum RecipeType {
-  CAFE
-  COCKTAIL
   PLAT
   TMX
 }

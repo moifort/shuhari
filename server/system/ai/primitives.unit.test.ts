@@ -89,20 +89,20 @@ describe('parseImportResponse — ingredients', () => {
   test('parses the ingredient list with names and quantities', () => {
     const result = parseImportResponse(
       JSON.stringify({
-        type: 'cocktail',
-        title: 'Negroni',
+        type: 'plat',
+        title: 'Ratatouille',
         ingredients: [
-          { name: 'Gin', quantity: '30 ml' },
-          { name: 'Vermouth rouge', quantity: '30 ml' },
-          { name: 'Campari', quantity: '30 ml' },
+          { name: 'Aubergine', quantity: '2 pièces' },
+          { name: 'Poivron rouge', quantity: '1 pièce' },
+          { name: 'Courgette', quantity: '2 pièces' },
         ],
       }),
     )
 
     expect(result.ingredients).toEqual([
-      { name: 'Gin', quantity: '30 ml' },
-      { name: 'Vermouth rouge', quantity: '30 ml' },
-      { name: 'Campari', quantity: '30 ml' },
+      { name: 'Aubergine', quantity: '2 pièces' },
+      { name: 'Poivron rouge', quantity: '1 pièce' },
+      { name: 'Courgette', quantity: '2 pièces' },
     ])
   })
 

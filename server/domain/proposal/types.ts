@@ -24,7 +24,7 @@ export type Proposal = {
   createdAt: Date
   vars: ProposalVar[]
   rationale: string
-  queued: string[] // deferred leads (mostly cafe/cocktail, one-variable rule)
+  queued: string[] // deferred leads for future iterations
   recommendation: ProposalRecommendation
   variation?: VariationSuggestion
 }

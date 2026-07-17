@@ -1,9 +1,9 @@
 import type { Brand } from 'ts-brand'
 import type { UserId } from '~/domain/shared/types'
 
-// The four experiment domains. Drives colour/icon in the app and — critically —
-// the number of variables the AI may change per iteration (see proposal domain).
-export const RECIPE_TYPE_VALUES = ['cafe', 'cocktail', 'plat', 'tmx'] as const
+// The culinary experiment domains. Drives colour/icon in the app. `plat` is a
+// cooked dish, `tmx` a Thermomix recipe.
+export const RECIPE_TYPE_VALUES = ['plat', 'tmx'] as const
 export type RecipeType = (typeof RECIPE_TYPE_VALUES)[number]
 
 // The course a dish belongs to. Detected by the AI at import and drives sorting

@@ -1,33 +1,20 @@
 import type { ProposalVar } from '~/domain/proposal/types'
 import type { RecipeType } from '~/domain/recipe/types'
 
-// The scientific constraint at the heart of the product: coffee and cocktails
-// change EXACTLY ONE variable per iteration (so cause and effect stay legible);
-// dishes and Thermomix recipes may change several at once.
+// Dishes and Thermomix recipes may change several variables per iteration.
 export type VariableBudget = 1 | 'many'
 
-export const variableBudget = (type: RecipeType) =>
-  type === 'cafe' || type === 'cocktail' ? 1 : 'many'
+export const variableBudget = (_type: RecipeType): VariableBudget => 'many'
 
-export const respectsVariableBudget = (type: RecipeType, vars: ProposalVar[]) => {
-  const budget = variableBudget(type)
-  if (budget === 'many') return vars.length >= 1
-  return vars.length === 1
-}
+// A proposal must change at least one variable (the 'many' budget imposes no
+// upper bound).
+export const respectsVariableBudget = (_type: RecipeType, vars: ProposalVar[]) => vars.length >= 1
 
-// Enforce the one-variable rule on a raw AI proposal: for coffee/cocktail keep
-// only the first change and push the rest into `queued` as follow-up leads
-// (the AI "orders them into successive iterations" — spec). A textual lead is
-// derived for each overflowed variable so the app can surface the file d'attente.
+// With the current 'many' budget every proposed variable is kept and the queue
+// is passed through untouched. The single-variable overflow path is gone; the
+// function stays until the proposal engine is redesigned.
 export const overflowToQueue = (
-  type: RecipeType,
+  _type: RecipeType,
   vars: ProposalVar[],
   existingQueue: string[] = [],
-) => {
-  if (variableBudget(type) === 'many' || vars.length <= 1) {
-    return { vars, queued: existingQueue }
-  }
-  const [head, ...rest] = vars
-  const overflowLeads = rest.map((v) => `${v.key} : ${v.from ?? '—'} → ${v.to}`)
-  return { vars: [head], queued: [...existingQueue, ...overflowLeads] }
-}
+) => ({ vars, queued: existingQueue })
