@@ -29,6 +29,23 @@ struct SiriLoader: View {
         .blendMode(.hardLight)
         .scaleEffect(scale)
         .frame(width: size, height: size)
+        // Composite over a local black backdrop (the `.hardLight` blend the orb
+        // needs), then fade that composite into a circle with a radial mask so the
+        // wobbling blobs read as one steady round orb. Keeping the backdrop local
+        // means the mask can isolate the layer without breaking the blend.
+        .background(Color.black)
+        .mask {
+            RadialGradient(
+                stops: [
+                    .init(color: .black, location: 0),
+                    .init(color: .black, location: 0.30),
+                    .init(color: .clear, location: 0.66),
+                ],
+                center: .center,
+                startRadius: 0,
+                endRadius: size / 2
+            )
+        }
         .accessibilityHidden(true)
     }
 
