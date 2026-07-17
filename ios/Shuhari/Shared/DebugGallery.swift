@@ -95,11 +95,13 @@ struct DebugGallery: View {
             }
         case "ai-thinking":
             AIThinkingCard(message: "Analyse IA…")
+        case "import-nothing-found":
+            ImportReviewSheet(galleryPhase: .nothingFound)
         default:
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : home, cuisine, recipe, recipe-tmx, next-trials, history, trial, execute, execute-tmx, capture, draft, import-preview, import-preview-tmx, ai-thinking")
+                description: Text("Écrans : home, cuisine, recipe, recipe-tmx, next-trials, history, trial, execute, execute-tmx, capture, draft, import-preview, import-preview-tmx, ai-thinking, import-nothing-found")
             )
         }
     }
