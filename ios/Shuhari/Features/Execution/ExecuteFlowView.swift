@@ -141,7 +141,7 @@ struct ExecuteFlowView: View {
             if result.promotionSuggested {
                 detent = .large
                 showPromotion = true
-            } else if note < 8 {
+            } else if note < 4 {
                 analyzing = true
                 defer { analyzing = false }
                 _ = try await ExecutionAPI.requestProposal(recipeId: request.recipeId)

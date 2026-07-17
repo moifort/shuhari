@@ -1,22 +1,22 @@
 import Foundation
 
-/// Formats trial notes the way the app speaks them: French decimal, "7,5/10".
+/// Formats trial notes the way the app speaks them: French decimal, "3,5/5".
 /// The UI copy is French by design, so the locale is pinned rather than
 /// inherited from the device.
 enum NoteFormat {
     private static let locale = Locale(identifier: "fr_FR")
 
-    /// "7,5" — the bare figure, for layouts that style the "/10" separately.
+    /// "3,5" — the bare figure, for layouts that style the "/5" separately.
     static func bare(_ value: Double) -> String {
         value.formatted(.number.precision(.fractionLength(1)).locale(locale))
     }
 
-    /// "7,5/10"
+    /// "3,5/5"
     static func average(_ value: Double) -> String {
-        "\(value.formatted(.number.precision(.fractionLength(1)).locale(locale)))/10"
+        "\(value.formatted(.number.precision(.fractionLength(1)).locale(locale)))/5"
     }
 
-    /// "7,5/10 moy."
+    /// "3,5/5 moy."
     static func averageWithSuffix(_ value: Double) -> String {
         "\(average(value)) moy."
     }

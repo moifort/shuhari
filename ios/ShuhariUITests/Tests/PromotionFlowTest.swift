@@ -22,7 +22,7 @@ final class PromotionFlowTest: BaseUITest {
 
         // Open the pending version and record a high-scoring trial.
         let capture = try recipe.openToTest(2).verify()
-        _ = try capture.pickStars(5) // 10/10 ≥ 8 → promotion
+        _ = try capture.pickStars(5) // 5/5 ≥ 4 → promotion
         _ = try capture.typeRemarks("Équilibré, chocolat noir en finale. Très proche du but.")
         try capture.save()
 

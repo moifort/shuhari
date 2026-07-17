@@ -20,7 +20,7 @@ final class TrialLoopFlowTest: BaseUITest {
         let capture = try recipe.recordTrial().verify()
 
         // 3. Record a low-scoring trial → triggers an AI proposal.
-        _ = try capture.pickStars(3) // 6/10 < 8 → proposition
+        _ = try capture.pickStars(3) // 3/5 < 4 → proposition
         _ = try capture.typeRemarks("Coule trop vite, amertume sèche en finale.")
         try capture.save()
 

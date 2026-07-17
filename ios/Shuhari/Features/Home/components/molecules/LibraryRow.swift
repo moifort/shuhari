@@ -41,7 +41,7 @@ struct LibraryRow: View {
                         }
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .accessibilityLabel("Meilleure note \(bestNote) sur 10")
+                        .accessibilityLabel("Meilleure note \(bestNote) sur 5")
                     }
                 }
                 .lineLimit(1)
@@ -54,7 +54,7 @@ struct LibraryRow: View {
                         .font(.title3.weight(.semibold))
                         .monospacedDigit()
                         .foregroundStyle(Theme.Status.note(Int(averageNote)))
-                    Text("/10")
+                    Text("/5")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
@@ -71,8 +71,8 @@ struct LibraryRow: View {
 
 #Preview {
     List {
-        LibraryRow(title: "Espresso — Brésil", type: .cafe, versionCount: 4, bestNote: 9, averageNote: 7.5, isDerived: false)
-        LibraryRow(title: "Negroni blanc", type: .cocktail, versionCount: 1, bestNote: 6, averageNote: 6.0, isDerived: true)
-        LibraryRow(title: "Risotto au parmesan", type: .tmx, versionCount: 2, bestNote: nil, averageNote: 8.5, isDerived: false)
+        LibraryRow(title: "Espresso — Brésil", type: .cafe, versionCount: 4, bestNote: 5, averageNote: 4.0, isDerived: false)
+        LibraryRow(title: "Negroni blanc", type: .cocktail, versionCount: 1, bestNote: 3, averageNote: 3.0, isDerived: true)
+        LibraryRow(title: "Risotto au parmesan", type: .tmx, versionCount: 2, bestNote: nil, averageNote: 4.5, isDerived: false)
     }
 }

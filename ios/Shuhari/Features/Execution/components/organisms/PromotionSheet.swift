@@ -12,7 +12,7 @@ struct PromotionSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Label("La v\(versionNumber) a fait ses preuves — \(note)/10", systemImage: "checkmark.seal.fill")
+            Label("La v\(versionNumber) a fait ses preuves — \(note)/5", systemImage: "checkmark.seal.fill")
                 .font(.title3.bold())
                 .foregroundStyle(Theme.Status.current)
                 .fixedSize(horizontal: false, vertical: true)
@@ -54,7 +54,7 @@ struct PromotionSheet: View {
             PromotionSheet(
                 recipeTitle: "Espresso — Brésil",
                 versionNumber: 4,
-                note: 9,
+                note: 5,
                 isWorking: false,
                 onPromote: {},
                 onLater: {}

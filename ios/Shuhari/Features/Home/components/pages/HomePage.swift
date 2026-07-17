@@ -81,11 +81,11 @@ private struct HomePagePreview: View {
                         .init(id: "1", title: "Bœuf bourguignon", type: .plat, versionNumber: 4, change: "Cuisson 3 h → 3 h 30", why: "Viande trop ferme."),
                     ],
                     library: [
-                        .init(id: "1", title: "Bœuf bourguignon", type: .plat, versionCount: 4, bestNote: 9, averageNote: 7.5, isDerived: false, updatedAt: Date()),
-                        .init(id: "2", title: "Velouté de courge", type: .tmx, versionCount: 1, bestNote: 7, averageNote: 7.0, isDerived: false, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+                        .init(id: "1", title: "Bœuf bourguignon", type: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0, isDerived: false, updatedAt: Date()),
+                        .init(id: "2", title: "Velouté de courge", type: .tmx, versionCount: 1, bestNote: 4, averageNote: 3.5, isDerived: false, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
                     ],
                     recentTrials: [
-                        .init(id: "t1", recipeId: "1", versionNumber: 3, note: 8, remarks: "Équilibré, fondant.", realParams: [], photoUrl: nil, executedAt: Date()),
+                        .init(id: "t1", recipeId: "1", versionNumber: 3, note: 4, remarks: "Équilibré, fondant.", realParams: [], photoUrl: nil, executedAt: Date()),
                     ]
                 ).filtered(to: [selectedType]),
                 title: "Cuisine",

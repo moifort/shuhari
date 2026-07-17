@@ -81,7 +81,7 @@ struct VersionTimelineItem: View {
 #Preview {
     List {
         VersionTimelineItem(number: 4, change: "Température 93 → 92 °C", originDetail: "Extraction trop chaude.", averageNote: nil, trialCount: 0, date: Date(), isCurrent: false, isToTest: true)
-        VersionTimelineItem(number: 3, change: "Mouture plus fine", originDetail: nil, averageNote: 7.5, trialCount: 2, date: Date(), isCurrent: true, isToTest: false)
-        VersionTimelineItem(number: 1, change: nil, originDetail: nil, averageNote: 6.0, trialCount: 1, date: Date(), isCurrent: false, isToTest: false, isLast: true)
+        VersionTimelineItem(number: 3, change: "Mouture plus fine", originDetail: nil, averageNote: 4.0, trialCount: 2, date: Date(), isCurrent: true, isToTest: false)
+        VersionTimelineItem(number: 1, change: nil, originDetail: nil, averageNote: 3.0, trialCount: 1, date: Date(), isCurrent: false, isToTest: false, isLast: true)
     }
 }

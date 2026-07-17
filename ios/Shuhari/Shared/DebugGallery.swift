@@ -108,8 +108,8 @@ private struct CuisineGalleryScreen: View {
             HomeTestItem(id: "boeuf", title: "Bœuf bourguignon", type: .plat, versionNumber: 5, change: "Cuisson 3 h → 3 h 30", why: "Viande encore ferme."),
         ],
         library: [
-            LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .plat, versionCount: 4, bestNote: 9, averageNote: 7.5, isDerived: false, updatedAt: Date()),
-            LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, versionCount: 3, bestNote: 8, averageNote: 7.0, isDerived: false, updatedAt: Date()),
+            LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0, isDerived: false, updatedAt: Date()),
+            LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, versionCount: 3, bestNote: 4, averageNote: 3.5, isDerived: false, updatedAt: Date()),
             LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, versionCount: 1, bestNote: nil, averageNote: nil, isDerived: true, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
         ],
         recentTrials: []

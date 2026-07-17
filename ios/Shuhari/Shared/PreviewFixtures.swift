@@ -42,7 +42,7 @@ enum Fixtures {
         ingredients: coffeeIngredients,
         steps: ["Purger le groupe.", "Distribuer, tasser à niveau.", "Extraire 36 g en 27 s."],
         tmxSteps: [],
-        averageNote: 7.5,
+        averageNote: 4.0,
         trialCount: 2,
         createdAt: date.addingTimeInterval(-86_400 * 6)
     )
@@ -71,13 +71,13 @@ enum Fixtures {
 
     static let espressoTrials = [
         Trial(
-            id: "t2", recipeId: "espresso", versionNumber: 3, note: 8,
+            id: "t2", recipeId: "espresso", versionNumber: 3, note: 4,
             remarks: "Équilibré, chocolat noir, belle longueur.",
             realParams: [], photoUrl: nil,
             executedAt: date.addingTimeInterval(-86_400 * 2)
         ),
         Trial(
-            id: "t1", recipeId: "espresso", versionNumber: 3, note: 7,
+            id: "t1", recipeId: "espresso", versionNumber: 3, note: 4,
             remarks: "Un peu court en sucrosité, température réelle 94 °C.",
             realParams: [Param(key: "Température", value: "94 °C")], photoUrl: nil,
             executedAt: date.addingTimeInterval(-86_400 * 4)
@@ -96,7 +96,7 @@ enum Fixtures {
         versions: [espressoV1, espressoV2, espressoV3, espressoV4],
         trials: espressoTrials,
         variations: [
-            RecipeRef(id: "deca", title: "Espresso — déca", type: .cafe, subtitle: nil, versionCount: 1, bestNote: 7, averageNote: 6.5),
+            RecipeRef(id: "deca", title: "Espresso — déca", type: .cafe, subtitle: nil, versionCount: 1, bestNote: 4, averageNote: 3.5),
         ],
         derivedFrom: nil,
         pendingProposal: nil
@@ -115,7 +115,7 @@ enum Fixtures {
         ],
         ingredients: coffeeIngredients,
         steps: ["Purger le groupe.", "Distribuer, tasser à niveau.", "Extraire 36 g en 25 s."],
-        tmxSteps: [], averageNote: 6.0, trialCount: 1,
+        tmxSteps: [], averageNote: 3.0, trialCount: 1,
         createdAt: date.addingTimeInterval(-86_400 * 30)
     )
 
@@ -132,7 +132,7 @@ enum Fixtures {
         ],
         ingredients: coffeeIngredients,
         steps: ["Purger le groupe.", "Distribuer, tasser à niveau.", "Extraire 36 g en 25 s."],
-        tmxSteps: [], averageNote: 6.5, trialCount: 1,
+        tmxSteps: [], averageNote: 3.5, trialCount: 1,
         createdAt: date.addingTimeInterval(-86_400 * 20)
     )
 
@@ -161,7 +161,7 @@ enum Fixtures {
             TmxSettings(time: "14 min", temperature: "100 °C", speed: "1", reverse: true),
             nil,
         ],
-        averageNote: 7.0,
+        averageNote: 3.5,
         trialCount: 1,
         createdAt: date.addingTimeInterval(-86_400 * 3)
     )
@@ -178,7 +178,7 @@ enum Fixtures {
         versions: [risottoV2],
         trials: [
             Trial(
-                id: "rt1", recipeId: "risotto", versionNumber: 2, note: 7,
+                id: "rt1", recipeId: "risotto", versionNumber: 2, note: 4,
                 remarks: "Bonne texture, manque un peu de sel.",
                 realParams: [], photoUrl: nil,
                 executedAt: date.addingTimeInterval(-86_400 * 2)
@@ -250,10 +250,10 @@ enum Fixtures {
             ),
         ],
         library: [
-            LibraryRecipe(id: "espresso", title: "Espresso — Brésil Santa Lúcia", type: .cafe, versionCount: 4, bestNote: 9, averageNote: 7.5, isDerived: false, updatedAt: Date()),
-            LibraryRecipe(id: "deca", title: "Espresso — déca", type: .cafe, versionCount: 1, bestNote: 7, averageNote: 6.5, isDerived: true, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
-            LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, versionCount: 2, bestNote: 8, averageNote: 7.0, isDerived: false, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
-            LibraryRecipe(id: "negroni", title: "Negroni blanc", type: .cocktail, versionCount: 1, bestNote: nil, averageNote: 6.0, isDerived: false, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
+            LibraryRecipe(id: "espresso", title: "Espresso — Brésil Santa Lúcia", type: .cafe, versionCount: 4, bestNote: 5, averageNote: 4.0, isDerived: false, updatedAt: Date()),
+            LibraryRecipe(id: "deca", title: "Espresso — déca", type: .cafe, versionCount: 1, bestNote: 4, averageNote: 3.5, isDerived: true, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
+            LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, versionCount: 2, bestNote: 4, averageNote: 3.5, isDerived: false, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+            LibraryRecipe(id: "negroni", title: "Negroni blanc", type: .cocktail, versionCount: 1, bestNote: nil, averageNote: 3.0, isDerived: false, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
         ],
         recentTrials: espressoTrials
     )

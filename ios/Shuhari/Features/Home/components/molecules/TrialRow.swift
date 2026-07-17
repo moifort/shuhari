@@ -42,7 +42,7 @@ struct TrialRow: View {
         TrialRow(
             recipeTitle: "Espresso — Brésil",
             versionNumber: 3,
-            note: 8,
+            note: 4,
             remarks: "Équilibré, chocolat noir en finale.",
             date: Date()
         )
