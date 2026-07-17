@@ -1,5 +1,7 @@
 import { GraphQLError } from 'graphql'
+import { match, P } from 'ts-pattern'
 import { builder } from '~/domain/shared/graphql/builder'
+import { domainError } from '~/domain/shared/graphql/errors'
 import { Ai } from '~/system/ai'
 import { imageWithinSizeLimit, MAX_IMPORT_PHOTOS } from '~/system/ai/limits'
 import type { ImportSource } from '~/system/ai/types'
@@ -20,12 +22,17 @@ builder.mutationField('analyzeImport', (t) =>
     },
     resolve: async (_root, { photos, url, text }) => {
       const source = pickSource(photos, url, text)
+      let result: Awaited<ReturnType<typeof Ai.analyzeImport>>
       try {
-        return await Ai.analyzeImport(source)
+        result = await Ai.analyzeImport(source)
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Import analysis failed'
         throw new GraphQLError(message, { extensions: { code: 'IMPORT_FAILED' } })
       }
+      return match(result)
+        .with('no-recipe-found', domainError)
+        .with(P.not(P.string), (analysis) => analysis)
+        .exhaustive()
     },
   }),
 )

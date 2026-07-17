@@ -5,7 +5,6 @@ import * as repository from '~/system/ai/repository'
 import type {
   Draft,
   DraftContext,
-  ImportAnalysis,
   ImportHash as ImportHashType,
   ImportSource,
 } from '~/system/ai/types'
@@ -81,6 +80,10 @@ const stepsSchemaProperty = {
 const importResponseSchema = {
   type: 'object',
   properties: {
+    recipeFound: {
+      type: 'boolean',
+      description: 'true si la source contient une recette exploitable, false sinon',
+    },
     type: {
       type: 'string',
       enum: RECIPE_TYPE_ENUM,
@@ -105,8 +108,9 @@ const importResponseSchema = {
     ingredients: ingredientsSchemaProperty,
     steps: stepsSchemaProperty,
   },
-  required: ['type', 'category', 'title'],
+  required: ['recipeFound', 'type', 'category', 'title'],
   propertyOrdering: [
+    'recipeFound',
     'type',
     'category',
     'title',
@@ -142,10 +146,11 @@ Règles :
 - steps : étapes courtes, à l'impératif, dans l'ordre. Les réglages précis (température du four, durée, ratio…) restent dans le texte de l'étape.
 - Pour une recette Thermomix (type tmx) : pour chaque étape exécutée au Thermomix, renseigne tmxTime, tmxTemperature, tmxSpeed et tmxReverse tels qu'indiqués dans la recette (durée « 3 min » / « 30 s » / « 1 h 10 min » ; température « 100°C » ou « Varoma » ; vitesse « 0,5 » à « 10 », « pétrin », « mijotage » ou « turbo »). Mets null pour chaque réglage absent, et pour TOUS ces champs quand l'étape ne se fait pas au Thermomix ou que la recette n'est pas de type tmx.
 - Sois concis : chaque valeur reste courte (nom d'ingrédient ≤120, quantité ≤60, étape ≤300, titre ≤200, réglage Thermomix ≤20 caractères).
+- Si la source ne contient aucune recette exploitable (image illisible ou sans recette, page ou texte hors sujet), mets recipeFound à false et laisse tous les autres champs vides ou null. Sinon mets recipeFound à true.
 - Toutes les valeurs textuelles en français. Mets null pour toute information absente.`
 
 export namespace Ai {
-  export const analyzeImport = async (source: ImportSource): Promise<ImportAnalysis> => {
+  export const analyzeImport = async (source: ImportSource) => {
     const importHash = hashSource(source)
     const cached = await repository.findBy(importHash)
     if (cached) return cached.result
@@ -164,6 +169,9 @@ export namespace Ai {
     const text = await callGemini(body)
     if (!text) throw new Error('Gemini did not return a structured recipe')
     const result = parseImportResponse(text)
+    // The cache stores only real analyses; a "no recipe" outcome must re-scan on
+    // the next attempt rather than serve a memoized miss.
+    if (result === 'no-recipe-found') return result
     // Best-effort cache: a failed write only costs a re-analysis on the next hit.
     repository.save({ importHash, result, cachedAt: new Date() }).catch(() => {})
     return result
@@ -253,15 +261,15 @@ Propose une itération : une amélioration de cette recette. Renseigne changeSum
   }
 
   const hashSource = (source: ImportSource): ImportHashType => {
-    // 'v5' salts the cache: bumped from 'v4' (concise formatting) so the
-    // params-free import schema re-runs on the next import of a previously-analysed
-    // source instead of serving an old result that still carried params/café.
+    // 'v6' salts the cache: bumped from 'v5' because the import prompt/schema
+    // gained the explicit recipeFound signal, so previously-analysed sources —
+    // including empty ones — re-run instead of serving a stale result.
     const material =
       source.kind === 'photos'
-        ? `v5|${source.photos.join('|')}`
+        ? `v6|${source.photos.join('|')}`
         : source.kind === 'url'
-          ? `v5|url:${source.url}`
-          : `v5|text:${source.text}`
+          ? `v6|url:${source.url}`
+          : `v6|text:${source.text}`
     return ImportHash(createHash('sha256').update(material).digest('hex'))
   }
 }

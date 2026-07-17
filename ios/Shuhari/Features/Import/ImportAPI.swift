@@ -9,6 +9,9 @@ enum ImportAPI {
         case text(String)
     }
 
+    /// The AI scan ran fine but detected no recipe in the source.
+    enum ImportError: Error { case noRecipeFound }
+
     /// Analyze an import source into a structured, editable recipe preview.
     static func analyze(_ source: Source) async throws -> ImportAnalysis {
         var photos: GraphQLNullable<[String]> = .none
@@ -20,10 +23,18 @@ enum ImportAPI {
         case .text(let value): text = GraphQLHelpers.graphQLNullable(value)
         }
 
-        let data = try await GraphQLHelpers.perform(
-            GraphQLClient.shared.apollo,
-            mutation: ShuhariGraphQL.AnalyzeImportMutation(photos: photos, url: url, text: text)
-        )
+        let data: ShuhariGraphQL.AnalyzeImportMutation.Data
+        do {
+            data = try await GraphQLHelpers.perform(
+                GraphQLClient.shared.apollo,
+                mutation: ShuhariGraphQL.AnalyzeImportMutation(photos: photos, url: url, text: text)
+            )
+        } catch let error as APIError {
+            if case .graphQL(_, let codes) = error, codes.contains("NO_RECIPE_FOUND") {
+                throw ImportError.noRecipeFound
+            }
+            throw error
+        }
         let analysis = data.analyzeImport
         return ImportAnalysis(
             title: normalizedTitle(analysis.title),

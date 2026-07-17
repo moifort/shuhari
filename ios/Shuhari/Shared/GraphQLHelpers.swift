@@ -12,7 +12,10 @@ enum GraphQLHelpers {
                 case .success(let graphQLResult):
                     if let errors = graphQLResult.errors, !errors.isEmpty {
                         continuation.resume(
-                            throwing: APIError.graphQL(messages: errors.compactMap(\.message))
+                            throwing: APIError.graphQL(
+                                messages: errors.compactMap(\.message),
+                                codes: errors.compactMap { $0.extensions?["code"] as? String }
+                            )
                         )
                         return
                     }
@@ -36,7 +39,10 @@ enum GraphQLHelpers {
                 case .success(let graphQLResult):
                     if let errors = graphQLResult.errors, !errors.isEmpty {
                         continuation.resume(
-                            throwing: APIError.graphQL(messages: errors.compactMap(\.message))
+                            throwing: APIError.graphQL(
+                                messages: errors.compactMap(\.message),
+                                codes: errors.compactMap { $0.extensions?["code"] as? String }
+                            )
                         )
                         return
                     }
@@ -82,7 +88,7 @@ enum GraphQLHelpers {
 enum APIError: LocalizedError {
     case invalidResponse
     case httpError(Int)
-    case graphQL(messages: [String])
+    case graphQL(messages: [String], codes: [String])
 
     var errorDescription: String? {
         switch self {
@@ -90,7 +96,7 @@ enum APIError: LocalizedError {
             return "Réponse invalide du serveur"
         case .httpError(let code):
             return "Erreur serveur (\(code))"
-        case .graphQL(let messages):
+        case .graphQL(let messages, _):
             return messages.joined(separator: " — ")
         }
     }

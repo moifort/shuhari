@@ -148,7 +148,20 @@ export const DraftSchema = z
     }
   })
 
-export const parseImportResponse = (text: string): ImportAnalysis =>
-  ImportAnalysisSchema.parse(JSON.parse(text))
+// The model's explicit signal that the source holds no recipe. Checked before
+// the full schema so a `recipeFound: false` reply with everything else blank
+// never trips the stricter parse.
+const RecipeFoundSchema = z.object({ recipeFound: z.boolean().catch(true) })
+
+export const parseImportResponse = (text: string): ImportAnalysis | 'no-recipe-found' => {
+  const raw = JSON.parse(text)
+  if (!RecipeFoundSchema.parse(raw).recipeFound) return 'no-recipe-found'
+  const analysis = ImportAnalysisSchema.parse(raw)
+  // An allegedly-found recipe with neither ingredients nor steps is equally no
+  // recipe — a real one always yields at least one of the two.
+  return analysis.ingredients.length === 0 && analysis.steps.length === 0
+    ? 'no-recipe-found'
+    : analysis
+}
 
 export const parseDraftResponse = (text: string): Draft => DraftSchema.parse(JSON.parse(text))

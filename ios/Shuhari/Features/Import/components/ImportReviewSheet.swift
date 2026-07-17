@@ -25,15 +25,37 @@ struct ImportReviewSheet: View {
     /// Fermer / analysis-failure close → abandon the import and close the flow.
     let onCancel: () -> Void
 
-    private enum Phase: Equatable {
+    enum Phase: Equatable {
         case analyzing
         case form(ImportAnalysis)
         case failed
+        case nothingFound
     }
 
     @State private var phase: Phase = .analyzing
     @State private var isSaving = false
     @State private var errorPresenter = ErrorPresenter()
+    // A frozen sheet renders its initial phase and never runs the analysis —
+    // keeps every phase previewable in the gallery without a server.
+    private let frozen: Bool
+
+    init(input: ImportInput, onCreated: @escaping (String, RecipeType) -> Void, onCancel: @escaping () -> Void) {
+        self.input = input
+        self.onCreated = onCreated
+        self.onCancel = onCancel
+        frozen = false
+    }
+
+    #if DEBUG
+    /// Gallery/preview entry: show a phase frozen, with inert callbacks.
+    init(galleryPhase: Phase) {
+        input = .source(.text(""))
+        onCreated = { _, _ in }
+        onCancel = {}
+        _phase = State(initialValue: galleryPhase)
+        frozen = true
+    }
+    #endif
 
     var body: some View {
         NavigationStack {
@@ -53,6 +75,9 @@ struct ImportReviewSheet: View {
                 case .failed:
                     failedView
                         .transition(.opacity)
+                case .nothingFound:
+                    nothingFoundView
+                        .transition(.opacity)
                 }
             }
             .animation(.easeInOut(duration: 0.35), value: phase)
@@ -61,7 +86,10 @@ struct ImportReviewSheet: View {
         // While a recipe is being created, block Fermer and swipe-to-dismiss so a
         // cancel can't orphan the create task (which would still fire onCreated).
         .interactiveDismissDisabled(isSaving)
-        .task { await run() }
+        .task {
+            guard !frozen else { return }
+            await run()
+        }
     }
 
     // MARK: - Phases
@@ -94,6 +122,26 @@ struct ImportReviewSheet: View {
         }
     }
 
+    private var nothingFoundView: some View {
+        ContentUnavailableView {
+            Label("Aucune recette détectée", systemImage: "text.magnifyingglass")
+        } description: {
+            Text("L’IA n’a rien trouvé à importer ici. Réessaie avec une photo plus nette ou une autre source.")
+        } actions: {
+            Button("Réessayer") { Task { await run() } }
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
+                .padding(.top, 44)
+        }
+        .navigationTitle("Analyse")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Fermer", systemImage: "xmark") { onCancel() }
+            }
+        }
+    }
+
     // MARK: - Work
 
     private func run() async {
@@ -111,6 +159,9 @@ struct ImportReviewSheet: View {
             let analysis = try await ImportAPI.analyze(source)
             _ = await minimumShown.value
             phase = .form(analysis)
+        } catch ImportAPI.ImportError.noRecipeFound {
+            minimumShown.cancel()
+            phase = .nothingFound
         } catch {
             minimumShown.cancel()
             errorPresenter.message = reportError(error)
