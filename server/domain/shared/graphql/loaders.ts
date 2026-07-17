@@ -1,5 +1,3 @@
-import { ProposalQuery } from '~/domain/proposal/query'
-import type { Proposal } from '~/domain/proposal/types'
 import { RecipeQuery } from '~/domain/recipe/query'
 import type { RecipeId, RecipeVersion, VersionNumber } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
@@ -46,15 +44,12 @@ const batchedBy = <T, A>(
 }
 
 export type VersionRef = { recipeId: RecipeId; number: VersionNumber }
-export type ProposalRef = { recipeId: RecipeId; versionNumber: VersionNumber }
 
 const versionKey = (ref: VersionRef) => `${ref.recipeId}_${ref.number}`
-const proposalKey = (ref: ProposalRef) => `${ref.recipeId}_${ref.versionNumber}`
 
 export type RecipeSatelliteLoaders = {
   version: Loader<RecipeVersion, VersionRef>
   trials: Loader<Trial[], RecipeId>
-  proposal: Loader<Proposal, ProposalRef>
 }
 
 export const recipeSatelliteLoaders = (userId: UserId): RecipeSatelliteLoaders => ({
@@ -71,13 +66,4 @@ export const recipeSatelliteLoaders = (userId: UserId): RecipeSatelliteLoaders =
       return grouped
     },
   ),
-  proposal: batchedBy(proposalKey, async (refs) => {
-    const proposals = await ProposalQuery.byRefs(refs)
-    return new Map(
-      proposals.map((p) => [
-        proposalKey({ recipeId: p.recipeId, versionNumber: p.versionNumber }),
-        p,
-      ]),
-    )
-  }),
 })

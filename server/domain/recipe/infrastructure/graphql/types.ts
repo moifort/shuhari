@@ -51,7 +51,7 @@ export const VersionType = builder.objectRef<RecipeVersion>('Version').implement
   }),
 })
 
-// Satellite fields trials / pendingProposal are grafted on by their own domains.
+// Satellite field trials is grafted on by its own domain.
 export const RecipeType = builder.objectRef<Recipe>('Recipe')
 
 RecipeType.implement({

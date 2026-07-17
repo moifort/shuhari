@@ -20,7 +20,7 @@ const RecordTrialResultType = builder.objectRef<RecordTrialResult>('RecordTrialR
 builder.mutationField('recordTrial', (t) =>
   t.field({
     type: RecordTrialResultType,
-    description: 'Record a trial (fast, no AI). Ask for a proposal separately if the note is low.',
+    description: 'Record a trial (fast, no AI). Ask for a draft separately if the note is low.',
     args: { input: t.arg({ type: RecordTrialInput, required: true }) },
     resolve: async (_root, { input }, { userId }) => {
       const result = await TrialUseCase.record(userId, {

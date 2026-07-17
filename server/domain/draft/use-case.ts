@@ -1,6 +1,3 @@
-import { ProposalCommand } from '~/domain/proposal/command'
-import { ProposalQuery } from '~/domain/proposal/query'
-import type { Proposal } from '~/domain/proposal/types'
 import {
   alignedTmxSteps,
   type LooseTmxSettings,
@@ -22,16 +19,15 @@ import type {
   RecipeType,
   StepText as StepTextT,
   TmxSettings,
-  VersionNumber,
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
 import { TrialQuery } from '~/domain/trial/query'
 import { Ai } from '~/system/ai'
-import type { ImportTmxSettings, ProposalDraft } from '~/system/ai/types'
+import type { Draft as AiDraft, ImportTmxSettings } from '~/system/ai/types'
+import type { AcceptedDraft, Draft } from './types'
 
-// The full next-version draft, already validated into branded domain shapes —
-// either freshly branded from the AI or the user's inline edits from iOS.
-export type EditedDraft = {
+// The content-only slice branded from the AI response.
+type BrandedContent = {
   ingredients: Ingredient[]
   steps: StepTextT[]
   tmxSteps: (TmxSettings | null)[]
@@ -48,7 +44,7 @@ const brandLooseTmx = (raw: ImportTmxSettings): LooseTmxSettings => ({
 
 // Turn the untrusted AI draft into branded domain shapes. tmxSteps are only kept
 // on a tmx recipe and are realigned with the steps (dropped if misaligned).
-const brandDraft = (type: RecipeType, draft: ProposalDraft): EditedDraft => {
+const brandDraft = (type: RecipeType, draft: AiDraft): BrandedContent => {
   const ingredients = draft.ingredients.map((i) => ({
     name: IngredientName(i.name),
     quantity: IngredientQuantity(i.quantity),
@@ -62,18 +58,18 @@ const brandDraft = (type: RecipeType, draft: ProposalDraft): EditedDraft => {
   return { ingredients, steps, tmxSteps }
 }
 
-export namespace ProposalUseCase {
+export namespace DraftUseCase {
   // Ask the AI for the next step after a trial. Reads the tested version and its
-  // trials (note/remarks only), drafts the full next version, and persists it as
-  // the single active proposal for that version.
-  export const proposeFromTrial = async (userId: UserId, recipeId: RecipeId) => {
+  // trials (note/remarks only), drafts the full next version, brands it into
+  // domain shapes, and returns it — nothing is persisted.
+  export const forTrial = async (userId: UserId, recipeId: RecipeId) => {
     const recipe = await RecipeQuery.byId(userId, recipeId)
     if (recipe === 'not-found') return 'not-found'
     const version = await RecipeQuery.versionBy(recipeId, recipe.currentVersion)
     if (version === 'not-found') return 'not-found'
     const trials = await TrialQuery.byVersion(userId, recipeId, recipe.currentVersion)
 
-    const draft = await Ai.proposeNext({
+    const draft = await Ai.draftNext({
       type: recipe.type,
       category: recipe.category,
       currentIngredients: version.ingredients.map((i) => ({
@@ -95,42 +91,25 @@ export namespace ProposalUseCase {
     })
 
     const { ingredients, steps, tmxSteps } = brandDraft(recipe.type, draft)
-    const proposal: Proposal = {
-      userId,
-      recipeId,
+    const branded: Draft = {
       versionNumber: recipe.currentVersion,
-      createdAt: new Date(),
       changeSummary: draft.changeSummary,
       rationale: draft.rationale,
       ingredients,
       steps,
       tmxSteps,
     }
-    return ProposalCommand.propose(proposal)
+    return branded
   }
 
-  // Accept a proposal as an iteration: append version n+1 from the draft (or the
-  // user's inline edits) and mark it "to test".
-  export const acceptAsIteration = async (
-    userId: UserId,
-    recipeId: RecipeId,
-    versionNumber: VersionNumber,
-    editedDraft?: EditedDraft,
-  ) => {
-    const proposal = await ProposalQuery.byRef(recipeId, versionNumber)
-    if (!proposal) return 'no-proposal'
-    const draft = editedDraft ?? proposal
-    const result = await RecipeCommand.addVersion(userId, recipeId, {
-      change: proposal.changeSummary,
-      ...(proposal.rationale ? { why: proposal.rationale } : {}),
+  // Accept a draft as an iteration: append version n+1 from the client-supplied
+  // draft and mark it "to test".
+  export const accept = async (userId: UserId, recipeId: RecipeId, draft: AcceptedDraft) =>
+    RecipeCommand.addVersion(userId, recipeId, {
+      change: draft.changeSummary,
+      ...(draft.rationale ? { why: draft.rationale } : {}),
       ingredients: draft.ingredients,
       steps: draft.steps,
       tmxSteps: draft.tmxSteps,
     })
-    if (result !== 'not-found') await ProposalCommand.discard(recipeId, versionNumber)
-    return result
-  }
-
-  export const refuse = async (recipeId: RecipeId, versionNumber: VersionNumber) =>
-    ProposalCommand.discard(recipeId, versionNumber)
 }

@@ -16,10 +16,10 @@ import '~/domain/trial/infrastructure/graphql/inputs'
 import '~/domain/trial/infrastructure/graphql/mutations'
 import '~/domain/trial/infrastructure/graphql/queries'
 
-// Proposal domain (extends RecipeType with .pendingProposal)
-import '~/domain/proposal/infrastructure/graphql/types'
-import '~/domain/proposal/infrastructure/graphql/inputs'
-import '~/domain/proposal/infrastructure/graphql/mutations'
+// Draft domain (ephemeral AI next-version drafts — request/accept mutations)
+import '~/domain/draft/infrastructure/graphql/types'
+import '~/domain/draft/infrastructure/graphql/inputs'
+import '~/domain/draft/infrastructure/graphql/mutations'
 
 // Home domain (read-only aggregation)
 import '~/domain/home/infrastructure/graphql/types'

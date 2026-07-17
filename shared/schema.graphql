@@ -1,5 +1,5 @@
-"""Result of accepting a proposal as an iteration"""
-type AcceptProposalResult {
+"""Result of accepting a draft as an iteration"""
+type AcceptDraftResult {
   createdVersion: VersionNumber
   recipe: Recipe!
 }
@@ -43,6 +43,47 @@ enum DishCategory {
   PLAT
   SAUCE
   SOUPE
+}
+
+"""
+An ephemeral AI draft of the next version of a recipe (never persisted)
+"""
+type Draft {
+  """A short human summary of what the next version changes"""
+  changeSummary: String!
+
+  """The full ingredient list of the drafted next version"""
+  ingredients: [Ingredient!]!
+  rationale: String!
+
+  """The full step list of the drafted next version"""
+  steps: [StepText!]!
+
+  """
+  Per-step Thermomix settings aligned with steps (null = plain step; [] if not tmx)
+  """
+  tmxSteps: [TmxSettings]!
+  versionNumber: VersionNumber!
+}
+
+"""
+A complete next-version draft to accept as an iteration. Send the FULL next version (omitted ingredients/steps wipe those lists).
+"""
+input DraftInput {
+  """A short human summary of what the next version changes"""
+  changeSummary: String!
+
+  """The complete ingredient list of the next version"""
+  ingredients: [IngredientInput!]!
+
+  """The reasoning behind the change"""
+  rationale: String!
+
+  """The complete step list of the next version"""
+  steps: [StepText!]!
+
+  """Per-step Thermomix settings, aligned with steps (null = plain step)"""
+  tmxSteps: [TmxSettingsInput]
 }
 
 """The read model behind the home screen"""
@@ -114,13 +155,10 @@ scalar IngredientName
 scalar IngredientQuantity
 
 type Mutation {
-  """Accept a proposal as an iteration (optionally editing the draft first)"""
-  acceptProposal(
-    """The edited next-version draft, replacing the AI proposal when provided"""
-    editedDraft: ProposalDraftInput
-    recipeId: RecipeId!
-    versionNumber: VersionNumber!
-  ): AcceptProposalResult!
+  """
+  Accept a draft as an iteration, appending it as the next version to test
+  """
+  acceptDraft(draft: DraftInput!, recipeId: RecipeId!): AcceptDraftResult!
 
   """
   Analyze an import source (photos, a URL or raw text) into a structured recipe preview. Exactly one source must be provided. Results are cached server-side by SHA-256.
@@ -139,7 +177,7 @@ type Mutation {
   """Create a recipe and its v1 from a confirmed import preview"""
   createRecipe(input: CreateRecipeInput!): Recipe!
 
-  """Delete a recipe and all its versions, trials and proposals"""
+  """Delete a recipe and all its versions and trials"""
   deleteRecipe(id: RecipeId!): Boolean!
 
   """
@@ -153,15 +191,12 @@ type Mutation {
   promoteVersion(recipeId: RecipeId!, versionNumber: VersionNumber!): Recipe!
 
   """
-  Record a trial (fast, no AI). Ask for a proposal separately if the note is low.
+  Record a trial (fast, no AI). Ask for a draft separately if the note is low.
   """
   recordTrial(input: RecordTrialInput!): RecordTrialResult!
 
-  """Refuse a proposal (removes it)"""
-  refuseProposal(recipeId: RecipeId!, versionNumber: VersionNumber!): Boolean!
-
-  """Ask the AI to analyze the latest trials and propose the next iteration"""
-  requestProposal(recipeId: RecipeId!): Proposal!
+  """Ask the AI to analyze the latest trials and draft the next iteration"""
+  requestDraft(recipeId: RecipeId!): Draft!
 
   """Rename a recipe (title and/or subtitle)"""
   updateRecipe(id: RecipeId!, input: UpdateRecipeInput!): Recipe!
@@ -169,41 +204,6 @@ type Mutation {
 
 """Trial rating (integer 1..5)"""
 scalar Note
-
-"""An AI proposal for the next version of a recipe (presence == pending)"""
-type Proposal {
-  """A short human summary of what the next version changes"""
-  changeSummary: String!
-  createdAt: DateTime!
-
-  """The full ingredient list of the drafted next version"""
-  ingredients: [Ingredient!]!
-  rationale: String!
-  recipeId: RecipeId!
-
-  """The full step list of the drafted next version"""
-  steps: [StepText!]!
-
-  """
-  Per-step Thermomix settings aligned with steps (null = plain step; [] if not tmx)
-  """
-  tmxSteps: [TmxSettings]!
-  versionNumber: VersionNumber!
-}
-
-"""
-An edited next-version draft. When provided, it FULLY REPLACES the persisted AI draft — send the COMPLETE next version, not a partial edit (omitted ingredients/steps wipe those lists).
-"""
-input ProposalDraftInput {
-  """The complete ingredient list of the next version (replaces the draft)"""
-  ingredients: [IngredientInput!]!
-
-  """The complete step list of the next version (replaces the draft)"""
-  steps: [StepText!]!
-
-  """Per-step Thermomix settings, aligned with steps (null = plain step)"""
-  tmxSteps: [TmxSettingsInput]
-}
 
 type Query {
   """Application changelog, most recent versions first"""
@@ -259,9 +259,6 @@ type Recipe {
   """The current reproducible reference version"""
   currentVersion: Version
   id: RecipeId!
-
-  """The AI proposal awaiting a decision, if any"""
-  pendingProposal: Proposal
   subtitle: String
   title: RecipeTitle!
 

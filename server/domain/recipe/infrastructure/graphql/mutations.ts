@@ -74,7 +74,7 @@ builder.mutationField('promoteVersion', (t) =>
 builder.mutationField('deleteRecipe', (t) =>
   t.field({
     type: 'Boolean',
-    description: 'Delete a recipe and all its versions, trials and proposals',
+    description: 'Delete a recipe and all its versions and trials',
     args: { id: t.arg({ type: 'RecipeId', required: true }) },
     resolve: async (_root, { id }, { userId }) => {
       const result = await RecipeUseCase.removeCompletely(userId, id)
