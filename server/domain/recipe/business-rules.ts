@@ -3,8 +3,8 @@ import type { Param, ParamKey, StepText, TmxSettings, VersionNumber } from '~/do
 import type { Note } from '~/domain/trial/types'
 
 // A trial promotes its version to "current" (the reproducible reference) when the
-// note reaches this threshold. Mirrors the maquette's saveEssai logic.
-export const PROMOTION_NOTE = 8
+// note reaches this threshold (on the 1..5 scale). Mirrors the maquette's saveEssai logic.
+export const PROMOTION_NOTE = 4
 
 // A version becomes the new reference only when a HIGH-scoring trial ran against
 // the exact version that was awaiting testing.

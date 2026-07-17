@@ -71,7 +71,7 @@ builder.scalarType('VersionNumber', {
 })
 
 builder.scalarType('Note', {
-  description: 'Trial rating (integer 1..10)',
+  description: 'Trial rating (integer 1..5)',
   serialize: (value) => value as number,
   parseValue: validatedParse('Note', Note),
 })

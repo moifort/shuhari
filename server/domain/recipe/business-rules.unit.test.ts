@@ -28,16 +28,16 @@ const param = (key: string, value: string): Param => ({
 describe('readyToPromote', () => {
   test('promotes when a high note tests exactly the pending version', () => {
     expect(readyToPromote(note(PROMOTION_NOTE), v(4), v(4))).toBe(true)
-    expect(readyToPromote(note(10), v(2), v(2))).toBe(true)
+    expect(readyToPromote(note(5), v(2), v(2))).toBe(true)
   })
   test('does not promote below the threshold', () => {
-    expect(readyToPromote(note(7), v(4), v(4))).toBe(false)
+    expect(readyToPromote(note(3), v(4), v(4))).toBe(false)
   })
   test('does not promote when the tested version is not the pending one', () => {
-    expect(readyToPromote(note(9), v(3), v(4))).toBe(false)
+    expect(readyToPromote(note(5), v(3), v(4))).toBe(false)
   })
   test('does not promote when nothing is pending', () => {
-    expect(readyToPromote(note(9), v(3), null)).toBe(false)
+    expect(readyToPromote(note(5), v(3), null)).toBe(false)
   })
 })
 

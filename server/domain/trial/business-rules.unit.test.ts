@@ -53,9 +53,9 @@ describe('averageNote', () => {
     expect(averageNote([])).toBeNull()
   })
   test('averages and rounds to one decimal', () => {
-    expect(averageNote([note(8), note(9), note(10)])).toBe(9)
-    expect(averageNote([note(7), note(8)])).toBe(7.5)
-    expect(averageNote([note(8), note(9), note(9)])).toBeCloseTo(8.7, 5)
+    expect(averageNote([note(3), note(4), note(5)])).toBe(4)
+    expect(averageNote([note(4), note(5)])).toBe(4.5)
+    expect(averageNote([note(4), note(5), note(5)])).toBeCloseTo(4.7, 5)
   })
 })
 
@@ -65,9 +65,9 @@ describe('highestNote', () => {
     expect(highestNote([])).toBeNull()
   })
   test('returns the best note', () => {
-    expect(highestNote([note(6), note(9), note(7)])).toBe(note(9))
+    expect(highestNote([note(2), note(5), note(3)])).toBe(note(5))
   })
   test('handles a single note', () => {
-    expect(highestNote([note(8)])).toBe(note(8))
+    expect(highestNote([note(4)])).toBe(note(4))
   })
 })

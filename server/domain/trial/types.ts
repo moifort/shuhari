@@ -3,7 +3,7 @@ import type { Param, RecipeId, VersionNumber } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
 
 export type TrialId = Brand<string, 'TrialId'>
-export type Note = Brand<number, 'Note'> // integer 1..10
+export type Note = Brand<number, 'Note'> // integer 1..5
 export type Remarks = Brand<string, 'Remarks'>
 
 // One execution of a recipe version. `realParams` holds ONLY the parameters that

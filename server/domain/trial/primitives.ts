@@ -15,7 +15,7 @@ export const randomTrialId = () => TrialId(crypto.randomUUID())
 
 export const Note = (value: unknown) => {
   const v = z
-    .preprocess((n) => (typeof n === 'string' ? Number(n) : n), z.number().int().min(1).max(10))
+    .preprocess((n) => (typeof n === 'string' ? Number(n) : n), z.number().int().min(1).max(5))
     .parse(value)
   return make<NoteType>()(v)
 }

@@ -43,7 +43,7 @@ describe('HomeQuery.load', () => {
     await TrialCommand.record(userId, {
       recipeId: a.id,
       versionNumber: a.currentVersion,
-      note: 7 as Note,
+      note: 5 as Note,
       remarks: 'Trop amer' as Remarks,
       targetParams: [param('Dose', '18 g')],
       enteredParams: [param('Dose', '18 g')],
@@ -54,7 +54,7 @@ describe('HomeQuery.load', () => {
     expect(home.library.length).toBe(2)
     expect(home.toTest.map((r) => r.id)).toEqual([a.id])
     expect(home.recentTrials.length).toBe(1)
-    expect(home.recentTrials[0].note).toBe(7 as Note)
+    expect(home.recentTrials[0].note).toBe(5 as Note)
   })
 
   test('costs two collection scans and memoizes repeated recipe reads', async () => {

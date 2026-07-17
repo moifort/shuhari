@@ -237,7 +237,7 @@ export namespace Ai {
       .map((t) => {
         const real =
           t.realParams.map((p) => `${p.key}=${p.value}`).join(', ') || 'conformes aux cibles'
-        return `- Note ${t.note}/10. Remarques : ${t.remarks || '—'}. Paramètres réels : ${real}.`
+        return `- Note ${t.note}/5. Remarques : ${t.remarks || '—'}. Paramètres réels : ${real}.`
       })
       .join('\n')
     const queue = context.previousQueue.length
