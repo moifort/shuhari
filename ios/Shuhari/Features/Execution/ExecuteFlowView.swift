@@ -1,9 +1,11 @@
 import SwiftUI
 
-/// The execution flow: execute → capture → record → (promotion sheet or AI
-/// proposal). Presented as a `fullScreenCover` (`.cover`) from Home/replay, or as
-/// a half-screen `.sheet` from the fiche's record CTA; on completion it dismisses
-/// and asks the caller to refresh.
+/// The execution flow: execute → capture → record → next step. A written remark
+/// asks the AI for the next version to try; otherwise a high-scoring trial on the
+/// pending version offers promotion, and everything else just finishes. Presented
+/// as a `fullScreenCover` (`.cover`) from Home/replay, or as a half-screen `.sheet`
+/// from the fiche's record CTA; on completion it dismisses and asks the caller to
+/// refresh.
 struct ExecuteFlowView: View {
     /// How the flow is hosted. `.sheet` sizes the capture at `.medium` and grows to
     /// `.large` for the AI proposal; `.cover` is the full-screen presentation.
@@ -119,24 +121,29 @@ struct ExecuteFlowView: View {
     private func save(note: Int, remarks: String, photo: String?) async {
         isSaving = true
         lastNote = note
+        // A written remark is the request to iterate; blank input stays a dash
+        // in the journal but skips the AI.
+        let hasRemarks = !remarks.isEmpty
         do {
             let result = try await ExecutionAPI.recordTrial(
                 recipeId: request.recipeId,
                 versionNumber: request.versionNumber,
                 note: note,
-                remarks: remarks,
+                remarks: hasRemarks ? remarks : "—",
                 photoBase64: photo
             )
             isSaving = false
-            if result.promotionSuggested {
-                detent = .large
-                showPromotion = true
-            } else if note < 4 {
+            if hasRemarks {
+                // Remarks written → let the AI draft the next version to try,
+                // whatever the note.
                 analyzing = true
                 defer { analyzing = false }
                 _ = try await ExecutionAPI.requestProposal(recipeId: request.recipeId)
                 detent = .large
                 path.append(.proposal)
+            } else if result.promotionSuggested {
+                detent = .large
+                showPromotion = true
             } else {
                 finish()
             }

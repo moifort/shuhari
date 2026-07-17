@@ -47,7 +47,7 @@ struct CapturePage: View {
             ToolbarItem(placement: .confirmationAction) {
                 Button {
                     guard let note else { return }
-                    onSave(note, remarks.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "—" : remarks, photos.first?.base64)
+                    onSave(note, remarks.trimmingCharacters(in: .whitespacesAndNewlines), photos.first?.base64)
                 } label: {
                     if isSaving { ProgressView() } else { Image(systemName: "checkmark") }
                 }
