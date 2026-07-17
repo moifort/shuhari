@@ -124,18 +124,9 @@ struct RecipeDetailView: View {
             .accessibilityIdentifier("recipe-menu")
         }
 
-        // Floating glass action bar: prochains essais (left) · record trial
-        // (centre) · history (right).
-        ToolbarItem(placement: .bottomBar) {
-            Button {
-                showToTest = true
-            } label: {
-                Image(systemName: "flask")
-            }
-            .accessibilityIdentifier("to-test-button")
-            .accessibilityLabel("Prochains essais")
-        }
-        ToolbarSpacer(.flexible, placement: .bottomBar)
+        // Floating glass action bar: record trial (left), then the two
+        // sheet openers — prochains essais + history — glued in one glass
+        // group (no spacer between them).
         if let reference = recipe.bestRatedVersion {
             ToolbarItem(placement: .bottomBar) {
                 Button {
@@ -148,6 +139,15 @@ struct RecipeDetailView: View {
             }
         }
         ToolbarSpacer(.flexible, placement: .bottomBar)
+        ToolbarItem(placement: .bottomBar) {
+            Button {
+                showToTest = true
+            } label: {
+                Image(systemName: "flask")
+            }
+            .accessibilityIdentifier("to-test-button")
+            .accessibilityLabel("Prochains essais")
+        }
         ToolbarItem(placement: .bottomBar) {
             Button {
                 showHistory = true
