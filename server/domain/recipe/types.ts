@@ -22,8 +22,6 @@ export type RecipeId = Brand<string, 'RecipeId'>
 export type RecipeTitle = Brand<string, 'RecipeTitle'>
 export type RecipeSubtitle = Brand<string, 'RecipeSubtitle'>
 export type VersionNumber = Brand<number, 'VersionNumber'>
-export type ParamKey = Brand<string, 'ParamKey'>
-export type ParamValue = Brand<string, 'ParamValue'>
 export type IngredientName = Brand<string, 'IngredientName'>
 export type IngredientQuantity = Brand<string, 'IngredientQuantity'>
 export type StepText = Brand<string, 'StepText'>
@@ -31,14 +29,8 @@ export type TmxTime = Brand<string, 'TmxTime'>
 export type TmxTemperature = Brand<string, 'TmxTemperature'>
 export type TmxSpeed = Brand<string, 'TmxSpeed'>
 
-// A single recipe parameter. An ORDERED list of these (never a map) is the
-// canonical shape everywhere — it preserves display order and sidesteps
-// Firestore field-path limits on keys with spaces/accents ("Vermouth rouge").
-export type Param = { key: ParamKey; value: ParamValue }
-
 // A recipe component with its measured quantity ("Gin" → "50 ml", "Beurre" →
-// "170 g"). The shopping-list view of the recipe — distinct from `params`, which
-// are the reproducibility knobs the AI iterates on. Ordered list, never a map.
+// "170 g"). The shopping-list view of the recipe. Ordered list, never a map.
 export type Ingredient = { name: IngredientName; quantity: IngredientQuantity }
 
 // Thermomix settings for one step, display-oriented strings (no computation is
@@ -79,14 +71,11 @@ export type RecipeVersion = {
   number: VersionNumber
   createdAt: Date
   origin: VersionOrigin
-  change: string | null // human diff text ("Température 93 → 92 °C"); null for v1
-  changedKeys: ParamKey[] // params touched by this version (for highlighting)
+  change: string | null // human summary of what changed ("Bouillon 700 → 650 ml"); null for v1
   why?: string // AI rationale, for proposed versions
-  params: Param[] // the TARGET parameters
   steps: StepText[]
-  // The recipe's components with quantities. Additive — carried forward across
-  // iterations, but not yet an AI-iteration target. `[]` when the recipe has
-  // nothing measurable.
+  // The recipe's components with quantities. `[]` when the recipe has nothing
+  // measurable.
   ingredients: Ingredient[]
   // Thermomix settings aligned with `steps` by index (null = plain step). `[]`
   // for non-tmx recipes — "is Thermomix" is derived from `type === 'tmx'`, never

@@ -4,8 +4,6 @@ import type { H3Event } from 'h3'
 import type {
   IngredientName,
   IngredientQuantity,
-  ParamKey,
-  ParamValue,
   RecipeId,
   RecipeSubtitle,
   RecipeTitle,
@@ -44,8 +42,6 @@ export const builder = new SchemaBuilder<{
     RecipeSubtitle: { Input: RecipeSubtitle; Output: RecipeSubtitle }
     VersionNumber: { Input: VersionNumber; Output: VersionNumber }
     Note: { Input: Note; Output: Note }
-    ParamKey: { Input: ParamKey; Output: ParamKey }
-    ParamValue: { Input: ParamValue; Output: ParamValue }
     IngredientName: { Input: IngredientName; Output: IngredientName }
     IngredientQuantity: { Input: IngredientQuantity; Output: IngredientQuantity }
     StepText: { Input: StepText; Output: StepText }

@@ -4,8 +4,7 @@
 export const RECIPE_MAX = {
   title: 200,
   subtitle: 200,
-  paramKey: 60,
-  paramValue: 120,
+  changeSummary: 200,
   ingredientName: 120,
   ingredientQuantity: 60,
   stepText: 300,

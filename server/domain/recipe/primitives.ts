@@ -6,8 +6,6 @@ import {
   type DishCategory as DishCategoryType,
   type IngredientName as IngredientNameType,
   type IngredientQuantity as IngredientQuantityType,
-  type ParamKey as ParamKeyType,
-  type ParamValue as ParamValueType,
   RECIPE_TYPE_VALUES,
   type RecipeId as RecipeIdType,
   type RecipeSubtitle as RecipeSubtitleType,
@@ -49,16 +47,6 @@ export const VersionNumber = (value: unknown) => {
     .preprocess((n) => (typeof n === 'string' ? Number(n) : n), z.number().int().min(1))
     .parse(value)
   return make<VersionNumberType>()(v)
-}
-
-export const ParamKey = (value: unknown) => {
-  const v = z.string().trim().min(1).max(RECIPE_MAX.paramKey).parse(value)
-  return make<ParamKeyType>()(v)
-}
-
-export const ParamValue = (value: unknown) => {
-  const v = z.string().trim().min(1).max(RECIPE_MAX.paramValue).parse(value)
-  return make<ParamValueType>()(v)
 }
 
 export const IngredientName = (value: unknown) => {

@@ -1,16 +1,11 @@
-import { RecipeType } from '~/domain/recipe/infrastructure/graphql/types'
+import {
+  IngredientType,
+  RecipeType,
+  TmxSettingsType,
+} from '~/domain/recipe/infrastructure/graphql/types'
 import { builder } from '~/domain/shared/graphql/builder'
-import type { Proposal, ProposalVar, VariationSuggestion } from '../../types'
+import type { Proposal, VariationSuggestion } from '../../types'
 import { ProposalRecommendationEnum } from './enums'
-
-const ProposalVarType = builder.objectRef<ProposalVar>('ProposalVar').implement({
-  description: 'A single proposed parameter change',
-  fields: (t) => ({
-    key: t.expose('key', { type: 'ParamKey' }),
-    from: t.expose('from', { type: 'ParamValue', nullable: true }),
-    to: t.expose('to', { type: 'ParamValue' }),
-  }),
-})
 
 const VariationSuggestionType = builder
   .objectRef<VariationSuggestion>('VariationSuggestion')
@@ -23,14 +18,31 @@ const VariationSuggestionType = builder
   })
 
 export const ProposalType = builder.objectRef<Proposal>('Proposal').implement({
-  description: 'An AI proposal for the next step of a recipe (presence == pending)',
+  description: 'An AI proposal for the next version of a recipe (presence == pending)',
   fields: (t) => ({
     recipeId: t.expose('recipeId', { type: 'RecipeId' }),
     versionNumber: t.expose('versionNumber', { type: 'VersionNumber' }),
     createdAt: t.expose('createdAt', { type: 'DateTime' }),
-    vars: t.field({ type: [ProposalVarType], resolve: (p) => p.vars }),
+    changeSummary: t.exposeString('changeSummary', {
+      description: 'A short human summary of what the next version changes',
+    }),
     rationale: t.exposeString('rationale'),
-    queued: t.exposeStringList('queued'),
+    ingredients: t.field({
+      type: [IngredientType],
+      description: 'The full ingredient list of the drafted next version',
+      resolve: (p) => p.ingredients,
+    }),
+    steps: t.expose('steps', {
+      type: ['StepText'],
+      description: 'The full step list of the drafted next version',
+    }),
+    tmxSteps: t.field({
+      type: [TmxSettingsType],
+      nullable: { list: false, items: true },
+      description:
+        'Per-step Thermomix settings aligned with steps (null = plain step; [] if not tmx)',
+      resolve: (p) => p.tmxSteps,
+    }),
     recommendation: t.expose('recommendation', { type: ProposalRecommendationEnum }),
     variation: t.field({
       type: VariationSuggestionType,

@@ -28,7 +28,6 @@ builder.mutationField('recordTrial', (t) =>
         versionNumber: input.versionNumber,
         note: input.note,
         remarks: input.remarks,
-        enteredParams: input.realParams,
         photoPath: null,
       })
       return match(result)

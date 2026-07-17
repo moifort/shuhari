@@ -1,5 +1,12 @@
 import { VersionNumber as toVersionNumber } from '~/domain/recipe/primitives'
-import type { Param, ParamKey, StepText, TmxSettings, VersionNumber } from '~/domain/recipe/types'
+import type {
+  StepText,
+  TmxSettings,
+  TmxSpeed,
+  TmxTemperature,
+  TmxTime,
+  VersionNumber,
+} from '~/domain/recipe/types'
 import type { Note } from '~/domain/trial/types'
 
 // A trial promotes its version to "current" (the reproducible reference) when the
@@ -30,20 +37,31 @@ export const alignedTmxSteps = (steps: StepText[], tmxSteps: (TmxSettings | null
 const emptySettings = (s: TmxSettings) =>
   s.time === undefined && s.temperature === undefined && s.speed === undefined && !s.reverse
 
-// Ordered merge of a proposal's changes onto a version's target params: an
-// existing key is replaced in place (order preserved), a new key is appended.
-export const applyProposalToParams = (
-  params: Param[],
-  changes: { key: ParamKey; value: Param['value'] }[],
-) => {
-  const changeByKey = new Map(changes.map((change) => [change.key, change.value]))
-  const existingKeys = new Set(params.map((param) => param.key))
-  const updated = params.map((param) => {
-    const value = changeByKey.get(param.key)
-    return value === undefined ? param : { key: param.key, value }
-  })
-  const added = [...changeByKey.entries()]
-    .filter(([key]) => !existingKeys.has(key))
-    .map(([key, value]) => ({ key, value }))
-  return [...updated, ...added]
+// One step's Thermomix settings as they arrive from a GraphQL input or a branded
+// AI draft: each field may be present, null or absent. A `null`/`undefined` entry
+// stands for a plain (non-Thermomix) step.
+export type LooseTmxSettings = {
+  time?: TmxTime | null
+  temperature?: TmxTemperature | null
+  speed?: TmxSpeed | null
+  reverse?: boolean | null
 }
+
+// Normalize loose per-step settings into clean TmxSettings, dropping absent/null
+// keys. `reverse` is kept only when true — false carries no information (a step
+// whose only "setting" is reverse:false is not a Thermomix step). The single home
+// for this rule so the GraphQL and AI-draft paths can never diverge;
+// `alignedTmxSteps` then decides whether the parallel array is kept at all.
+export const toTmxSettings = (
+  entries: (LooseTmxSettings | null | undefined)[],
+): (TmxSettings | null)[] =>
+  entries.map((entry) =>
+    entry
+      ? {
+          ...(entry.time ? { time: entry.time } : {}),
+          ...(entry.temperature ? { temperature: entry.temperature } : {}),
+          ...(entry.speed ? { speed: entry.speed } : {}),
+          ...(entry.reverse ? { reverse: entry.reverse } : {}),
+        }
+      : null,
+  )

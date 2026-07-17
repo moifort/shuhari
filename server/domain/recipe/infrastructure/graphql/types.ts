@@ -1,16 +1,8 @@
 import { match, P } from 'ts-pattern'
 import { RecipeQuery } from '~/domain/recipe/query'
 import { builder } from '~/domain/shared/graphql/builder'
-import type { Ingredient, Param, Recipe, RecipeVersion, TmxSettings } from '../../types'
+import type { Ingredient, Recipe, RecipeVersion, TmxSettings } from '../../types'
 import { DishCategoryEnum, RecipeTypeEnum, VersionOriginKindEnum } from './enums'
-
-export const ParamType = builder.objectRef<Param>('Param').implement({
-  description: 'A single recipe parameter (ordered list preserves display order)',
-  fields: (t) => ({
-    key: t.expose('key', { type: 'ParamKey' }),
-    value: t.expose('value', { type: 'ParamValue' }),
-  }),
-})
 
 export const IngredientType = builder.objectRef<Ingredient>('Ingredient').implement({
   description: 'A recipe component with its measured quantity (ordered list)',
@@ -43,9 +35,7 @@ export const VersionType = builder.objectRef<RecipeVersion>('Version').implement
     originKind: t.field({ type: VersionOriginKindEnum, resolve: (v) => v.origin.kind }),
     originDetail: t.string({ nullable: true, resolve: (v) => v.origin.detail ?? null }),
     change: t.exposeString('change', { nullable: true }),
-    changedKeys: t.expose('changedKeys', { type: ['ParamKey'] }),
     why: t.string({ nullable: true, resolve: (v) => v.why ?? null }),
-    params: t.field({ type: [ParamType], resolve: (v) => v.params }),
     ingredients: t.field({
       type: [IngredientType],
       description: 'The recipe’s components with quantities ([] when none)',

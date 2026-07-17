@@ -1,28 +1,71 @@
-import { overflowToQueue, respectsVariableBudget } from '~/domain/proposal/business-rules'
 import { ProposalCommand } from '~/domain/proposal/command'
 import { ProposalQuery } from '~/domain/proposal/query'
-import type { Proposal, ProposalVar } from '~/domain/proposal/types'
-import { applyProposalToParams } from '~/domain/recipe/business-rules'
+import type { Proposal } from '~/domain/proposal/types'
+import {
+  alignedTmxSteps,
+  type LooseTmxSettings,
+  toTmxSettings,
+} from '~/domain/recipe/business-rules'
 import { RecipeCommand } from '~/domain/recipe/command'
-import { ParamKey, ParamValue, RecipeTitle } from '~/domain/recipe/primitives'
+import {
+  IngredientName,
+  IngredientQuantity,
+  RecipeTitle,
+  StepText,
+  TmxSpeed,
+  TmxTemperature,
+  TmxTime,
+} from '~/domain/recipe/primitives'
 import { RecipeQuery } from '~/domain/recipe/query'
-import type { Param, RecipeId, VersionNumber } from '~/domain/recipe/types'
+import type {
+  Ingredient,
+  RecipeId,
+  RecipeType,
+  StepText as StepTextT,
+  TmxSettings,
+  VersionNumber,
+} from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
 import { TrialQuery } from '~/domain/trial/query'
 import { Ai } from '~/system/ai'
+import type { ImportTmxSettings, ProposalDraft } from '~/system/ai/types'
 
-const toProposalVar = (raw: { key: string; from: string | null; to: string }) => ({
-  key: ParamKey(raw.key),
-  from: raw.from === null ? null : ParamValue(raw.from),
-  to: ParamValue(raw.to),
+// The full next-version draft, already validated into branded domain shapes —
+// either freshly branded from the AI or the user's inline edits from iOS.
+export type EditedDraft = {
+  ingredients: Ingredient[]
+  steps: StepTextT[]
+  tmxSteps: (TmxSettings | null)[]
+}
+
+// Brand one step's raw AI tmx settings into the loose (still-nullable) shape the
+// shared `toTmxSettings` normalizer expects.
+const brandLooseTmx = (raw: ImportTmxSettings): LooseTmxSettings => ({
+  time: raw.time ? TmxTime(raw.time) : null,
+  temperature: raw.temperature ? TmxTemperature(raw.temperature) : null,
+  speed: raw.speed ? TmxSpeed(raw.speed) : null,
+  reverse: raw.reverse,
 })
 
-const describeChange = (vars: ProposalVar[]) =>
-  vars.map((v) => `${v.key} ${v.from ?? '∅'} → ${v.to}`).join(' · ')
+// Turn the untrusted AI draft into branded domain shapes. tmxSteps are only kept
+// on a tmx recipe and are realigned with the steps (dropped if misaligned).
+const brandDraft = (type: RecipeType, draft: ProposalDraft): EditedDraft => {
+  const ingredients = draft.ingredients.map((i) => ({
+    name: IngredientName(i.name),
+    quantity: IngredientQuantity(i.quantity),
+  }))
+  const steps = draft.steps.map((s) => StepText(s))
+  const rawTmx = draft.tmxSteps ?? []
+  const tmxSteps =
+    type === 'tmx'
+      ? alignedTmxSteps(steps, toTmxSettings(rawTmx.map((s) => (s ? brandLooseTmx(s) : null))))
+      : []
+  return { ingredients, steps, tmxSteps }
+}
 
 export namespace ProposalUseCase {
   // Ask the AI for the next step after a trial. Reads the tested version and its
-  // trials, drafts a proposal, enforces the variable budget, and persists it as
+  // trials (note/remarks only), drafts the full next version, and persists it as
   // the single active proposal for that version.
   export const proposeFromTrial = async (userId: UserId, recipeId: RecipeId) => {
     const recipe = await RecipeQuery.byId(userId, recipeId)
@@ -33,30 +76,36 @@ export namespace ProposalUseCase {
 
     const draft = await Ai.proposeNext({
       type: recipe.type,
-      currentParams: version.params.map((p) => ({ key: p.key, value: p.value })),
-      currentSteps: version.steps.map((s) => s as string),
-      trials: trials.map((t) => ({
-        note: t.note,
-        remarks: t.remarks,
-        realParams: t.realParams.map((p) => ({ key: p.key, value: p.value })),
+      category: recipe.category,
+      currentIngredients: version.ingredients.map((i) => ({
+        name: i.name as string,
+        quantity: i.quantity as string,
       })),
-      previousQueue: [],
+      currentSteps: version.steps.map((s) => s as string),
+      currentTmxSteps: version.tmxSteps.map((s) =>
+        s
+          ? {
+              time: s.time ?? null,
+              temperature: s.temperature ?? null,
+              speed: s.speed ?? null,
+              reverse: s.reverse ?? null,
+            }
+          : null,
+      ),
+      trials: trials.map((t) => ({ note: t.note, remarks: t.remarks })),
     })
 
-    const { vars, queued } = overflowToQueue(
-      recipe.type,
-      draft.vars.map(toProposalVar),
-      draft.queued,
-    )
-
+    const { ingredients, steps, tmxSteps } = brandDraft(recipe.type, draft)
     const proposal: Proposal = {
       userId,
       recipeId,
       versionNumber: recipe.currentVersion,
       createdAt: new Date(),
-      vars,
+      changeSummary: draft.changeSummary,
       rationale: draft.rationale,
-      queued,
+      ingredients,
+      steps,
+      tmxSteps,
       recommendation: draft.recommendation,
       ...(draft.variation
         ? {
@@ -70,62 +119,43 @@ export namespace ProposalUseCase {
     return ProposalCommand.propose(proposal)
   }
 
-  // Accept a proposal as an iteration: append version n+1 (target params merged
-  // with the proposed changes) and mark it "to test". editedVars lets the user
-  // tweak the changes before validating — revalidated against the budget.
+  // Accept a proposal as an iteration: append version n+1 from the draft (or the
+  // user's inline edits) and mark it "to test".
   export const acceptAsIteration = async (
     userId: UserId,
     recipeId: RecipeId,
     versionNumber: VersionNumber,
-    editedVars: ProposalVar[],
+    editedDraft?: EditedDraft,
   ) => {
-    const recipe = await RecipeQuery.byId(userId, recipeId)
-    if (recipe === 'not-found') return 'not-found'
     const proposal = await ProposalQuery.byRef(recipeId, versionNumber)
     if (!proposal) return 'no-proposal'
-    const vars = editedVars.length ? editedVars : proposal.vars
-    if (!respectsVariableBudget(recipe.type, vars)) return 'budget-exceeded'
-    const base = await RecipeQuery.versionBy(recipeId, versionNumber)
-    if (base === 'not-found') return 'not-found'
-
-    const params: Param[] = applyProposalToParams(
-      base.params,
-      vars.map((v) => ({ key: v.key, value: v.to })),
-    )
+    const draft = editedDraft ?? proposal
     const result = await RecipeCommand.addVersion(userId, recipeId, {
-      change: describeChange(vars),
-      changedKeys: vars.map((v) => v.key),
+      change: proposal.changeSummary,
       ...(proposal.rationale ? { why: proposal.rationale } : {}),
-      params,
-      steps: base.steps,
-      ingredients: base.ingredients,
-      tmxSteps: base.tmxSteps,
+      ingredients: draft.ingredients,
+      steps: draft.steps,
+      tmxSteps: draft.tmxSteps,
     })
     if (result !== 'not-found') await ProposalCommand.discard(recipeId, versionNumber)
     return result
   }
 
   // Accept a proposal as a variation: a brand-new recipe derived from this one,
-  // carrying the proposed changes as its v1.
+  // carrying the draft (or the user's inline edits) as its v1.
   export const acceptAsVariation = async (
     userId: UserId,
     recipeId: RecipeId,
     versionNumber: VersionNumber,
-    editedVars: ProposalVar[],
+    editedDraft?: EditedDraft,
   ) => {
     const recipe = await RecipeQuery.byId(userId, recipeId)
     if (recipe === 'not-found') return 'not-found'
     const proposal = await ProposalQuery.byRef(recipeId, versionNumber)
     if (!proposal) return 'no-proposal'
-    const vars = editedVars.length ? editedVars : proposal.vars
-    const base = await RecipeQuery.versionBy(recipeId, versionNumber)
-    if (base === 'not-found') return 'not-found'
+    const draft = editedDraft ?? proposal
 
     const title = proposal.variation?.title ?? recipe.title
-    const params: Param[] = applyProposalToParams(
-      base.params,
-      vars.map((v) => ({ key: v.key, value: v.to })),
-    )
     const result = await RecipeCommand.deriveVariation(
       userId,
       recipeId,
@@ -134,12 +164,11 @@ export namespace ProposalUseCase {
         category: recipe.category,
         title,
         ...(recipe.subtitle ? { subtitle: recipe.subtitle } : {}),
-        params,
-        steps: base.steps,
-        ingredients: base.ingredients,
-        tmxSteps: base.tmxSteps,
+        ingredients: draft.ingredients,
+        steps: draft.steps,
+        tmxSteps: draft.tmxSteps,
       },
-      describeChange(vars),
+      proposal.changeSummary,
     )
     if (result !== 'not-found') await ProposalCommand.discard(recipeId, versionNumber)
     return result

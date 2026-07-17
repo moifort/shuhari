@@ -1,6 +1,5 @@
-import type { Param, RecipeId, VersionNumber } from '~/domain/recipe/types'
+import type { RecipeId, VersionNumber } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
-import { realDeviations } from '~/domain/trial/business-rules'
 import * as repository from '~/domain/trial/infrastructure/repository'
 import { randomTrialId } from '~/domain/trial/primitives'
 import type { Note, Remarks, Trial } from '~/domain/trial/types'
@@ -11,14 +10,11 @@ export type RecordTrialInput = {
   versionNumber: VersionNumber
   note: Note
   remarks: Remarks
-  targetParams: Param[]
-  enteredParams: Param[]
   photoPath?: string | null
 }
 
 export namespace TrialCommand {
-  // Record one execution. Only the parameters that deviated from the version's
-  // targets are stored (`realParams`) — the reproducibility delta.
+  // Record one execution: its note, remarks and optional photo.
   export const record = async (userId: UserId, input: RecordTrialInput) => {
     const trial: Trial = {
       id: randomTrialId(),
@@ -28,7 +24,6 @@ export namespace TrialCommand {
       executedAt: new Date(),
       note: input.note,
       remarks: input.remarks,
-      realParams: realDeviations(input.targetParams, input.enteredParams),
       photoPath: input.photoPath ?? null,
     }
     return repository.save(trial)

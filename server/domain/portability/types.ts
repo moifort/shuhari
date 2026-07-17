@@ -2,7 +2,7 @@ import type { Recipe, RecipeVersion } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
 import type { Trial } from '~/domain/trial/types'
 
-export const EXPORT_SCHEMA_VERSION = 1
+export const EXPORT_SCHEMA_VERSION = 2
 
 export type ExportEnvelope = {
   schemaVersion: number

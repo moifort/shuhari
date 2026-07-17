@@ -2,7 +2,12 @@ import { make } from 'ts-brand'
 import { z } from 'zod'
 import { RECIPE_MAX } from '~/domain/recipe/limits'
 import { DISH_CATEGORY_VALUES, RECIPE_TYPE_VALUES } from '~/domain/recipe/types'
-import type { ImportAnalysis, ImportHash as ImportHashType, ProposalDraft } from '~/system/ai/types'
+import type {
+  ImportAnalysis,
+  ImportHash as ImportHashType,
+  ImportTmxSettings,
+  ProposalDraft,
+} from '~/system/ai/types'
 
 export const ImportHash = (value: unknown) => {
   const v = z
@@ -45,16 +50,10 @@ const nullToNull = <T>(schema: z.ZodType<T>) => schema.nullish().transform((v) =
 const SOURCE_LABEL_MAX = 200
 const RATIONALE_MAX = 2000
 const DESCRIPTION_MAX = 2000
-const QUEUED_ITEM_MAX = 200
 
 // Cap array element counts so a runaway response can't produce thousands of rows.
 // Generous — real recipes/proposals stay well under this.
 const MAX_ITEMS = 100
-
-const paramSchema = z.object({
-  key: clampedField(RECIPE_MAX.paramKey),
-  value: clampedField(RECIPE_MAX.paramValue),
-})
 
 const ingredientSchema = z.object({
   name: clampedField(RECIPE_MAX.ingredientName),
@@ -85,6 +84,24 @@ const stepSchema = z.union([
     })),
 ])
 
+// Drop blank ingredients and cap the count. Shared by import and proposal.
+const foldIngredients = (raw: { name: string; quantity: string }[]) =>
+  raw.filter((i) => i.name && i.quantity).slice(0, MAX_ITEMS)
+
+// Drop blank steps, cap the count, and split into aligned steps/tmxSteps arrays.
+// tmxSteps collapses to null when no surviving step carries a setting. Shared by
+// import and proposal.
+const foldSteps = (
+  raw: { text: string; tmx: ImportTmxSettings | null }[],
+): { steps: string[]; tmxSteps: (ImportTmxSettings | null)[] | null } => {
+  const kept = raw.filter((s) => s.text.length > 0).slice(0, MAX_ITEMS)
+  const tmxSteps = kept.map((s) => s.tmx)
+  return {
+    steps: kept.map((s) => s.text),
+    tmxSteps: tmxSteps.some((s) => s !== null) ? tmxSteps : null,
+  }
+}
+
 // Gemini marks absent fields as explicit null (the prompt instructs it to), so
 // every optional field accepts null. All strings are clamped; array items whose
 // required fields came back blank are dropped rather than failing the parse.
@@ -96,13 +113,11 @@ export const ImportAnalysisSchema = z
     title: clampedField(RECIPE_MAX.title),
     subtitle: optionalClamped(RECIPE_MAX.subtitle),
     sourceLabel: optionalClamped(SOURCE_LABEL_MAX),
-    params: z.array(paramSchema).default([]),
     ingredients: z.array(ingredientSchema).default([]),
     steps: z.array(stepSchema).default([]),
   })
   .transform((raw): ImportAnalysis => {
-    const steps = raw.steps.filter((s) => s.text.length > 0).slice(0, MAX_ITEMS)
-    const tmxSteps = steps.map((s) => s.tmx)
+    const { steps, tmxSteps } = foldSteps(raw.steps)
     return {
       type: raw.type,
       category: raw.category,
@@ -110,24 +125,18 @@ export const ImportAnalysisSchema = z
       title: raw.title || 'Recette importée',
       subtitle: raw.subtitle,
       sourceLabel: raw.sourceLabel,
-      params: raw.params.filter((p) => p.key && p.value).slice(0, MAX_ITEMS),
-      ingredients: raw.ingredients.filter((i) => i.name && i.quantity).slice(0, MAX_ITEMS),
-      steps: steps.map((s) => s.text),
-      tmxSteps: tmxSteps.some((s) => s !== null) ? tmxSteps : null,
+      ingredients: foldIngredients(raw.ingredients),
+      steps,
+      tmxSteps,
     }
   })
 
-const proposalVarSchema = z.object({
-  key: clampedField(RECIPE_MAX.paramKey),
-  from: optionalClamped(RECIPE_MAX.paramValue),
-  to: clampedField(RECIPE_MAX.paramValue),
-})
-
 export const ProposalDraftSchema = z
   .object({
-    vars: z.array(proposalVarSchema).default([]),
+    changeSummary: clampedField(RECIPE_MAX.changeSummary),
     rationale: clampedField(RATIONALE_MAX),
-    queued: z.array(clampedField(QUEUED_ITEM_MAX)).default([]),
+    ingredients: z.array(ingredientSchema).default([]),
+    steps: z.array(stepSchema).default([]),
     recommendation: z.enum(['iteration', 'variation']).default('iteration'),
     variation: nullToNull(
       z.object({
@@ -136,16 +145,19 @@ export const ProposalDraftSchema = z
       }),
     ),
   })
-  .transform(
-    (raw): ProposalDraft => ({
-      vars: raw.vars.filter((v) => v.key && v.to).slice(0, MAX_ITEMS),
+  .transform((raw): ProposalDraft => {
+    const { steps, tmxSteps } = foldSteps(raw.steps)
+    return {
+      changeSummary: raw.changeSummary,
       rationale: raw.rationale,
-      queued: raw.queued.filter((q) => q.length > 0).slice(0, MAX_ITEMS),
+      ingredients: foldIngredients(raw.ingredients),
+      steps,
+      tmxSteps,
       recommendation: raw.recommendation,
       // A variation needs a title (it becomes a RecipeTitle) — drop it if blank.
       variation: raw.variation?.title ? raw.variation : null,
-    }),
-  )
+    }
+  })
 
 export const parseImportResponse = (text: string): ImportAnalysis =>
   ImportAnalysisSchema.parse(JSON.parse(text))

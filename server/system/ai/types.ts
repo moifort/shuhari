@@ -26,7 +26,6 @@ export type ImportAnalysis = {
   title: string
   subtitle: string | null
   sourceLabel: string | null
-  params: { key: string; value: string }[]
   ingredients: { name: string; quantity: string }[]
   steps: string[]
   // Aligned with `steps` by index; null when no step carries a setting.
@@ -39,25 +38,30 @@ export type CachedImport = {
   cachedAt: Date
 }
 
-// Context handed to the proposal model: the current version and the trials run
-// against it, so the AI can reason about what to change next.
+// Context handed to the proposal model: the full current version and the trials
+// run against it, so the AI can draft the next version.
 export type ProposalContext = {
   type: RecipeType
-  currentParams: { key: string; value: string }[]
+  category: DishCategory
+  currentIngredients: { name: string; quantity: string }[]
   currentSteps: string[]
+  // Aligned with `currentSteps` by index; null when a step carries no setting.
+  currentTmxSteps: (ImportTmxSettings | null)[]
   trials: {
     note: number
     remarks: string
-    realParams: { key: string; value: string }[]
   }[]
-  previousQueue: string[]
 }
 
-// Raw proposal drafted by Gemini, before the one-variable rule is enforced.
+// Raw next-version draft produced by Gemini — a full ingredient/step list plus a
+// short change summary. Plain strings, validated into branded types on accept.
 export type ProposalDraft = {
-  vars: { key: string; from: string | null; to: string }[]
+  changeSummary: string
   rationale: string
-  queued: string[]
+  ingredients: { name: string; quantity: string }[]
+  steps: string[]
+  // Aligned with `steps` by index; null when no step carries a setting.
+  tmxSteps: (ImportTmxSettings | null)[] | null
   recommendation: 'iteration' | 'variation'
   variation: { title: string; description: string } | null
 }

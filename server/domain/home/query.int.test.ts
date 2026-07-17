@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test'
-import type { Param, ParamKey, ParamValue, RecipeTitle, StepText } from '~/domain/recipe/types'
+import type { RecipeTitle, StepText } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
 import type { Note, Remarks } from '~/domain/trial/types'
 import { fakeDb, resetFakeFirestore } from '~/test/fake-firestore'
@@ -12,13 +12,11 @@ const { HomeQuery } = await import('~/domain/home/query')
 const { RecipeQuery } = await import('~/domain/recipe/query')
 
 const userId = 'user-1' as UserId
-const param = (k: string, v: string): Param => ({ key: k as ParamKey, value: v as ParamValue })
 const input = (title: string) => ({
   type: 'plat' as const,
   category: 'plat' as const,
   title: title as RecipeTitle,
-  params: [param('Dose', '18 g')],
-  steps: ['Extraire'] as StepText[],
+  steps: ['Mijoter'] as StepText[],
   ingredients: [],
   tmxSteps: [],
 })
@@ -30,14 +28,12 @@ beforeEach(() => {
 
 describe('HomeQuery.load', () => {
   test('partitions recipes into to-test vs library and lists recent trials', async () => {
-    const a = await RecipeCommand.importRecipe(userId, input('Espresso'))
-    await RecipeCommand.importRecipe(userId, input('Filtre'))
+    const a = await RecipeCommand.importRecipe(userId, input('Blanquette'))
+    await RecipeCommand.importRecipe(userId, input('Ratatouille'))
     // Give recipe A a pending version so it shows under "to test".
     await RecipeCommand.addVersion(userId, a.id, {
-      change: 'Dose 18 → 19 g',
-      changedKeys: ['Dose' as ParamKey],
-      params: [param('Dose', '19 g')],
-      steps: ['Extraire'] as StepText[],
+      change: 'Bouillon 700 → 650 ml',
+      steps: ['Mijoter'] as StepText[],
       ingredients: [],
       tmxSteps: [],
     })
@@ -45,9 +41,7 @@ describe('HomeQuery.load', () => {
       recipeId: a.id,
       versionNumber: a.currentVersion,
       note: 5 as Note,
-      remarks: 'Trop amer' as Remarks,
-      targetParams: [param('Dose', '18 g')],
-      enteredParams: [param('Dose', '18 g')],
+      remarks: 'Trop salé' as Remarks,
     })
 
     const home = await HomeQuery.load(userId)
@@ -59,7 +53,7 @@ describe('HomeQuery.load', () => {
   })
 
   test('costs two collection scans and memoizes repeated recipe reads', async () => {
-    await RecipeCommand.importRecipe(userId, input('Espresso'))
+    await RecipeCommand.importRecipe(userId, input('Blanquette'))
 
     const before = fake.queryReads
     await HomeQuery.load(userId)

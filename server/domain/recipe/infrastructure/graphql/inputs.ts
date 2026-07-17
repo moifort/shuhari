@@ -1,14 +1,6 @@
 import { builder } from '~/domain/shared/graphql/builder'
 import { DishCategoryEnum, RecipeTypeEnum } from './enums'
 
-export const ParamInput = builder.inputType('ParamInput', {
-  description: 'A recipe parameter (ordered)',
-  fields: (t) => ({
-    key: t.field({ type: 'ParamKey', required: true }),
-    value: t.field({ type: 'ParamValue', required: true }),
-  }),
-})
-
 export const IngredientInput = builder.inputType('IngredientInput', {
   description: 'A recipe ingredient with its quantity (ordered)',
   fields: (t) => ({
@@ -39,7 +31,6 @@ export const CreateRecipeInput = builder.inputType('CreateRecipeInput', {
     title: t.field({ type: 'RecipeTitle', required: true }),
     subtitle: t.field({ type: 'RecipeSubtitle' }),
     sourceLabel: t.string({ description: 'Where the recipe came from' }),
-    params: t.field({ type: [ParamInput], required: true }),
     ingredients: t.field({
       type: [IngredientInput],
       required: { list: false, items: true },

@@ -3,8 +3,6 @@ import { ZodError } from 'zod'
 import {
   IngredientName,
   IngredientQuantity,
-  ParamKey,
-  ParamValue,
   RecipeId,
   RecipeSubtitle,
   RecipeTitle,
@@ -74,18 +72,6 @@ builder.scalarType('Note', {
   description: 'Trial rating (integer 1..5)',
   serialize: (value) => value as number,
   parseValue: validatedParse('Note', Note),
-})
-
-builder.scalarType('ParamKey', {
-  description: 'Recipe parameter key (1-60 chars)',
-  serialize: (value) => value as string,
-  parseValue: validatedParse('ParamKey', ParamKey),
-})
-
-builder.scalarType('ParamValue', {
-  description: 'Recipe parameter value with unit (1-120 chars)',
-  serialize: (value) => value as string,
-  parseValue: validatedParse('ParamValue', ParamValue),
 })
 
 builder.scalarType('IngredientName', {

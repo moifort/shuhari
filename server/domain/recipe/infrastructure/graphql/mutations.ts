@@ -1,30 +1,11 @@
 import { match, P } from 'ts-pattern'
+import { toTmxSettings } from '~/domain/recipe/business-rules'
 import { RecipeCommand } from '~/domain/recipe/command'
-import type { TmxSettings } from '~/domain/recipe/types'
 import { RecipeUseCase } from '~/domain/recipe/use-case'
 import { builder } from '~/domain/shared/graphql/builder'
 import { domainError, notFound } from '~/domain/shared/graphql/errors'
 import { CreateRecipeInput, UpdateRecipeInput } from './inputs'
 import { RecipeType } from './types'
-
-// Pothos hands optional input fields back as `null | undefined`; the domain
-// wants each entry as an explicit TmxSettings | null with absent keys dropped.
-type TmxSettingsInputShape = {
-  [K in keyof TmxSettings]?: TmxSettings[K] | null
-}
-const toTmxSettings = (
-  entries: (TmxSettingsInputShape | null | undefined)[],
-): (TmxSettings | null)[] =>
-  entries.map((e) =>
-    e
-      ? {
-          ...(e.time ? { time: e.time } : {}),
-          ...(e.temperature ? { temperature: e.temperature } : {}),
-          ...(e.speed ? { speed: e.speed } : {}),
-          ...(e.reverse != null ? { reverse: e.reverse } : {}),
-        }
-      : null,
-  )
 
 builder.mutationField('createRecipe', (t) =>
   t.field({
@@ -39,7 +20,6 @@ builder.mutationField('createRecipe', (t) =>
           category: input.category,
           title: input.title,
           ...(input.subtitle ? { subtitle: input.subtitle } : {}),
-          params: input.params,
           steps: input.steps,
           ingredients: input.ingredients ?? [],
           tmxSteps: input.tmxSteps ? toTmxSettings(input.tmxSteps) : [],

@@ -3,8 +3,6 @@ import { RECIPE_MAX } from '~/domain/recipe/limits'
 import {
   IngredientName,
   IngredientQuantity,
-  ParamKey,
-  ParamValue,
   RecipeTitle,
   StepText,
   TmxTime,
@@ -114,13 +112,12 @@ describe('parseImportResponse — ingredients', () => {
 })
 
 describe('parseImportResponse — clamps oversized AI strings to domain limits', () => {
-  test('truncates title, params, ingredients, steps and tmx settings', () => {
+  test('truncates title, ingredients, steps and tmx settings', () => {
     const result = parseImportResponse(
       JSON.stringify({
         type: 'tmx',
         title: 'T'.repeat(500),
         subtitle: 'S'.repeat(500),
-        params: [{ key: 'K'.repeat(200), value: 'V'.repeat(200) }],
         ingredients: [{ name: 'N'.repeat(200), quantity: 'Q'.repeat(200) }],
         steps: [{ text: 'E'.repeat(500), tmxTime: 't'.repeat(50) }],
       }),
@@ -128,8 +125,6 @@ describe('parseImportResponse — clamps oversized AI strings to domain limits',
 
     expect(result.title.length).toBe(RECIPE_MAX.title)
     expect(result.subtitle?.length).toBe(RECIPE_MAX.subtitle)
-    expect(result.params[0].key.length).toBe(RECIPE_MAX.paramKey)
-    expect(result.params[0].value.length).toBe(RECIPE_MAX.paramValue)
     expect(result.ingredients[0].name.length).toBe(RECIPE_MAX.ingredientName)
     expect(result.ingredients[0].quantity.length).toBe(RECIPE_MAX.ingredientQuantity)
     expect(result.steps[0].length).toBe(RECIPE_MAX.stepText)
@@ -138,8 +133,6 @@ describe('parseImportResponse — clamps oversized AI strings to domain limits',
     // Backstop against drift: the clamped values pass the domain constructors,
     // so createRecipe can never 400 on these lengths.
     expect(() => RecipeTitle(result.title)).not.toThrow()
-    expect(() => ParamKey(result.params[0].key)).not.toThrow()
-    expect(() => ParamValue(result.params[0].value)).not.toThrow()
     expect(() => IngredientName(result.ingredients[0].name)).not.toThrow()
     expect(() => IngredientQuantity(result.ingredients[0].quantity)).not.toThrow()
     expect(() => StepText(result.steps[0])).not.toThrow()
@@ -148,7 +141,7 @@ describe('parseImportResponse — clamps oversized AI strings to domain limits',
 })
 
 describe('parseImportResponse — drops blank items instead of failing', () => {
-  test('drops ingredients/params/steps whose required fields came back blank', () => {
+  test('drops ingredients/steps whose required fields came back blank', () => {
     const result = parseImportResponse(
       JSON.stringify({
         type: 'tmx',
@@ -157,13 +150,11 @@ describe('parseImportResponse — drops blank items instead of failing', () => {
           { name: 'Gin', quantity: '30 ml' },
           { name: '   ', quantity: 'x' },
         ],
-        params: [{ key: '', value: 'v' }],
         steps: [{ text: 'Mixer', tmxTime: '5 s' }, { text: '   ' }, { text: 'Servir' }],
       }),
     )
 
     expect(result.ingredients).toEqual([{ name: 'Gin', quantity: '30 ml' }])
-    expect(result.params).toEqual([])
     // Blank step dropped; tmxSteps stays aligned with the surviving steps.
     expect(result.steps).toEqual(['Mixer', 'Servir'])
     expect(result.tmxSteps).toEqual([
@@ -178,13 +169,11 @@ describe('parseImportResponse — drops blank items instead of failing', () => {
         type: 'plat',
         title: 'Soupe',
         ingredients: [{ name: 'Eau', quantity: '1 L' }, { quantity: '2' }, { name: null }],
-        params: [{ value: 'v' }],
         steps: [{ tmxTime: '5 s' }, 'Servir'],
       }),
     )
 
     expect(result.ingredients).toEqual([{ name: 'Eau', quantity: '1 L' }])
-    expect(result.params).toEqual([])
     expect(result.steps).toEqual(['Servir'])
   })
 
@@ -208,41 +197,87 @@ describe('parseImportResponse — drops blank items instead of failing', () => {
   })
 })
 
-describe('parseProposalResponse — clamps and drops', () => {
-  test('truncates var key/from/to and variation title to domain limits', () => {
+describe('parseProposalResponse — full next-version draft', () => {
+  test('parses the change summary, full ingredient/step lists and aligned tmxSteps', () => {
     const result = parseProposalResponse(
       JSON.stringify({
-        vars: [{ key: 'K'.repeat(200), from: 'F'.repeat(200), to: 'T'.repeat(200) }],
-        rationale: 'ok',
-        recommendation: 'variation',
-        variation: { title: 'V'.repeat(500), description: 'd' },
+        changeSummary: 'Bouillon 700 → 650 ml',
+        rationale: 'Trop liquide',
+        ingredients: [
+          { name: 'Veau', quantity: '800 g' },
+          { name: 'Bouillon', quantity: '650 ml' },
+        ],
+        steps: [
+          { text: 'Saisir', tmxTime: '5 min', tmxTemperature: '120°C', tmxSpeed: '1' },
+          { text: 'Mijoter' },
+        ],
+        recommendation: 'iteration',
       }),
     )
 
-    expect(result.vars[0].key.length).toBe(RECIPE_MAX.paramKey)
-    expect(result.vars[0].from?.length).toBe(RECIPE_MAX.paramValue)
-    expect(result.vars[0].to.length).toBe(RECIPE_MAX.paramValue)
-    expect(result.variation?.title.length).toBe(RECIPE_MAX.title)
-
-    expect(() => ParamKey(result.vars[0].key)).not.toThrow()
-    expect(() => ParamValue(result.vars[0].to)).not.toThrow()
-    expect(() => RecipeTitle(result.variation?.title ?? '')).not.toThrow()
+    expect(result.changeSummary).toBe('Bouillon 700 → 650 ml')
+    expect(result.rationale).toBe('Trop liquide')
+    expect(result.ingredients).toEqual([
+      { name: 'Veau', quantity: '800 g' },
+      { name: 'Bouillon', quantity: '650 ml' },
+    ])
+    expect(result.steps).toEqual(['Saisir', 'Mijoter'])
+    expect(result.tmxSteps).toEqual([
+      { time: '5 min', temperature: '120°C', speed: '1', reverse: null },
+      null,
+    ])
+    expect(result.recommendation).toBe('iteration')
+    expect(result.variation).toBeNull()
   })
 
-  test('drops vars missing key/to and a variation whose title is blank', () => {
+  test('clamps the change summary and variation title, drops a blank-titled variation', () => {
     const result = parseProposalResponse(
       JSON.stringify({
-        vars: [
-          { key: 'Dose', to: '19 g' },
-          { key: '', to: 'x' },
-        ],
+        changeSummary: 'C'.repeat(500),
         rationale: 'ok',
+        ingredients: [{ name: 'Riz', quantity: '300 g' }],
+        steps: ['Cuire'],
         recommendation: 'variation',
         variation: { title: '  ', description: 'd' },
       }),
     )
 
-    expect(result.vars).toEqual([{ key: 'Dose', from: null, to: '19 g' }])
+    expect(result.changeSummary.length).toBe(RECIPE_MAX.changeSummary)
     expect(result.variation).toBeNull()
+  })
+
+  test('keeps a variation with a title, clamped to the recipe-title limit', () => {
+    const result = parseProposalResponse(
+      JSON.stringify({
+        changeSummary: 'Version végétarienne',
+        rationale: 'ok',
+        ingredients: [],
+        steps: [],
+        recommendation: 'variation',
+        variation: { title: 'V'.repeat(500), description: 'd' },
+      }),
+    )
+
+    expect(result.variation?.title.length).toBe(RECIPE_MAX.title)
+    expect(() => RecipeTitle(result.variation?.title ?? '')).not.toThrow()
+  })
+
+  test('drops blank ingredients/steps and defaults recommendation to iteration', () => {
+    const result = parseProposalResponse(
+      JSON.stringify({
+        changeSummary: 'Ajustement',
+        rationale: 'ok',
+        ingredients: [
+          { name: 'Sel', quantity: '5 g' },
+          { name: '  ', quantity: 'x' },
+        ],
+        steps: [{ text: 'Saler' }, { text: '   ' }],
+      }),
+    )
+
+    expect(result.ingredients).toEqual([{ name: 'Sel', quantity: '5 g' }])
+    expect(result.steps).toEqual(['Saler'])
+    expect(result.tmxSteps).toBeNull()
+    expect(result.recommendation).toBe('iteration')
   })
 })

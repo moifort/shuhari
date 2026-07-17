@@ -4,7 +4,6 @@ import { randomRecipeId, VersionNumber } from '~/domain/recipe/primitives'
 import type {
   DishCategory,
   Ingredient,
-  Param,
   Recipe,
   RecipeId,
   RecipeSubtitle,
@@ -26,7 +25,6 @@ export type NewRecipeInput = {
   category: DishCategory
   title: RecipeTitle
   subtitle?: RecipeSubtitle
-  params: Param[]
   steps: StepText[]
   ingredients: Ingredient[]
   tmxSteps: (TmxSettings | null)[]
@@ -34,9 +32,7 @@ export type NewRecipeInput = {
 
 export type NewVersionInput = {
   change: string
-  changedKeys: RecipeVersion['changedKeys']
   why?: string
-  params: Param[]
   steps: StepText[]
   ingredients: Ingredient[]
   tmxSteps: (TmxSettings | null)[]
@@ -90,9 +86,7 @@ export namespace RecipeCommand {
       createdAt: new Date(),
       origin: { kind: 'ai-proposal' },
       change: input.change,
-      changedKeys: input.changedKeys,
       ...(input.why ? { why: input.why } : {}),
-      params: input.params,
       steps: input.steps,
       ingredients: input.ingredients,
       tmxSteps,
@@ -205,8 +199,6 @@ export namespace RecipeCommand {
       createdAt: recipe.createdAt,
       origin,
       change: null,
-      changedKeys: [],
-      params: input.params,
       steps: input.steps,
       ingredients: input.ingredients,
       tmxSteps,

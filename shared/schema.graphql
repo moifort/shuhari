@@ -19,7 +19,6 @@ input CreateRecipeInput {
 
   """The recipe’s components with quantities"""
   ingredients: [IngredientInput!]
-  params: [ParamInput!]!
 
   """Where the recipe came from"""
   sourceLabel: String
@@ -64,7 +63,6 @@ type ImportAnalysis {
   """The dish category detected by the AI"""
   category: DishCategory!
   ingredients: [ImportIngredient!]!
-  params: [ImportParam!]!
   sourceLabel: String
   steps: [String!]!
   subtitle: String
@@ -79,12 +77,6 @@ type ImportAnalysis {
 type ImportIngredient {
   name: String!
   quantity: String!
-}
-
-"""A recipe parameter extracted by the AI (unvalidated preview)"""
-type ImportParam {
-  key: String!
-  value: String!
 }
 
 """Number of records imported per collection"""
@@ -124,9 +116,16 @@ scalar IngredientQuantity
 
 type Mutation {
   """
-  Accept a proposal as an iteration or a variation (optionally editing the changes)
+  Accept a proposal as an iteration or a variation (optionally editing the draft first)
   """
-  acceptProposal(choice: ProposalRecommendation!, editedVars: [ProposalVarInput!], recipeId: RecipeId!, versionNumber: VersionNumber!): AcceptProposalResult!
+  acceptProposal(
+    choice: ProposalRecommendation!
+
+    """The edited next-version draft, replacing the AI proposal when provided"""
+    editedDraft: ProposalDraftInput
+    recipeId: RecipeId!
+    versionNumber: VersionNumber!
+  ): AcceptProposalResult!
 
   """
   Analyze an import source (photos, a URL or raw text) into a structured recipe preview. Exactly one source must be provided. Results are cached server-side by SHA-256.
@@ -178,34 +177,41 @@ type Mutation {
 """Trial rating (integer 1..5)"""
 scalar Note
 
-"""A single recipe parameter (ordered list preserves display order)"""
-type Param {
-  key: ParamKey!
-  value: ParamValue!
-}
-
-"""A recipe parameter (ordered)"""
-input ParamInput {
-  key: ParamKey!
-  value: ParamValue!
-}
-
-"""Recipe parameter key (1-60 chars)"""
-scalar ParamKey
-
-"""Recipe parameter value with unit (1-120 chars)"""
-scalar ParamValue
-
-"""An AI proposal for the next step of a recipe (presence == pending)"""
+"""An AI proposal for the next version of a recipe (presence == pending)"""
 type Proposal {
+  """A short human summary of what the next version changes"""
+  changeSummary: String!
   createdAt: DateTime!
-  queued: [String!]!
+
+  """The full ingredient list of the drafted next version"""
+  ingredients: [Ingredient!]!
   rationale: String!
   recipeId: RecipeId!
   recommendation: ProposalRecommendation!
+
+  """The full step list of the drafted next version"""
+  steps: [StepText!]!
+
+  """
+  Per-step Thermomix settings aligned with steps (null = plain step; [] if not tmx)
+  """
+  tmxSteps: [TmxSettings]!
   variation: VariationSuggestion
-  vars: [ProposalVar!]!
   versionNumber: VersionNumber!
+}
+
+"""
+An edited next-version draft. When provided, it FULLY REPLACES the persisted AI draft — send the COMPLETE next version, not a partial edit (omitted ingredients/steps wipe those lists).
+"""
+input ProposalDraftInput {
+  """The complete ingredient list of the next version (replaces the draft)"""
+  ingredients: [IngredientInput!]!
+
+  """The complete step list of the next version (replaces the draft)"""
+  steps: [StepText!]!
+
+  """Per-step Thermomix settings, aligned with steps (null = plain step)"""
+  tmxSteps: [TmxSettingsInput]
 }
 
 """
@@ -214,22 +220,6 @@ Whether the AI recommends iterating the recipe or spinning off a variation
 enum ProposalRecommendation {
   ITERATION
   VARIATION
-}
-
-"""A single proposed parameter change"""
-type ProposalVar {
-  from: ParamValue
-  key: ParamKey!
-  to: ParamValue!
-}
-
-"""
-An edited proposed change (overrides the AI proposal before validating)
-"""
-input ProposalVarInput {
-  from: ParamValue
-  key: ParamKey!
-  to: ParamValue!
 }
 
 type Query {
@@ -312,9 +302,6 @@ input RecordTrialInput {
 
   """Base64 JPEG of the result (optional)"""
   photo: String
-
-  """The parameters actually used (server keeps only the deviations)"""
-  realParams: [ParamInput!]!
   recipeId: RecipeId!
   remarks: Remarks!
   versionNumber: VersionNumber!
@@ -368,9 +355,6 @@ type Trial {
   Signed URL of the trial photo (null until photo storage is provisioned)
   """
   photoUrl: String
-
-  """Only the parameters that deviated from the version’s targets"""
-  realParams: [Param!]!
   recipeId: RecipeId!
   remarks: Remarks!
   versionNumber: VersionNumber!
@@ -399,7 +383,6 @@ type Version {
   """Mean trial note for this version, or null if never tried"""
   averageNote: Float
   change: String
-  changedKeys: [ParamKey!]!
   createdAt: DateTime!
 
   """The recipe’s components with quantities ([] when none)"""
@@ -407,7 +390,6 @@ type Version {
   number: VersionNumber!
   originDetail: String
   originKind: VersionOriginKind!
-  params: [Param!]!
   steps: [StepText!]!
 
   """

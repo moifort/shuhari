@@ -1,18 +1,16 @@
 import { describe, expect, test } from 'bun:test'
 import {
   alignedTmxSteps,
-  applyProposalToParams,
   nextVersionNumber,
   PROMOTION_NOTE,
   readyToPromote,
+  toTmxSettings,
 } from '~/domain/recipe/business-rules'
 import type {
-  Param,
-  ParamKey,
-  ParamValue,
   StepText,
   TmxSettings,
   TmxSpeed,
+  TmxTemperature,
   TmxTime,
   VersionNumber,
 } from '~/domain/recipe/types'
@@ -20,10 +18,6 @@ import type { Note } from '~/domain/trial/types'
 
 const v = (n: number) => n as VersionNumber
 const note = (n: number) => n as Note
-const param = (key: string, value: string): Param => ({
-  key: key as ParamKey,
-  value: value as ParamValue,
-})
 
 describe('readyToPromote', () => {
   test('promotes when a high note tests exactly the pending version', () => {
@@ -72,24 +66,28 @@ describe('alignedTmxSteps', () => {
   })
 })
 
-describe('applyProposalToParams', () => {
-  test('replaces an existing key in place, preserving order', () => {
-    const params = [param('Dose', '18 g'), param('Température', '93 °C')]
-    const result = applyProposalToParams(params, [
-      { key: 'Température' as ParamKey, value: '92 °C' as ParamValue },
-    ])
-    expect(result).toEqual([param('Dose', '18 g'), param('Température', '92 °C')])
+describe('toTmxSettings', () => {
+  test('maps a null/undefined entry to a plain (null) step', () => {
+    expect(toTmxSettings([null, undefined])).toEqual([null, null])
   })
-  test('appends a new key at the end', () => {
-    const params = [param('Dose', '18 g')]
-    const result = applyProposalToParams(params, [
-      { key: 'Pré-infusion' as ParamKey, value: '5 s' as ParamValue },
-    ])
-    expect(result).toEqual([param('Dose', '18 g'), param('Pré-infusion', '5 s')])
+  test('drops absent and null fields', () => {
+    expect(
+      toTmxSettings([
+        { time: '5 min' as TmxTime, temperature: null, speed: undefined, reverse: null },
+      ]),
+    ).toEqual([{ time: '5 min' as TmxTime }])
   })
-  test('does not mutate the input params', () => {
-    const params = [param('Dose', '18 g')]
-    applyProposalToParams(params, [{ key: 'Dose' as ParamKey, value: '19 g' as ParamValue }])
-    expect(params[0].value).toBe('18 g' as ParamValue)
+  test('keeps reverse only when true (false carries no information)', () => {
+    expect(toTmxSettings([{ reverse: true }])).toEqual([{ reverse: true }])
+    expect(toTmxSettings([{ reverse: false }])).toEqual([{}])
+  })
+  test('assembles a fully-populated setting', () => {
+    const entry = {
+      time: '3 min' as TmxTime,
+      temperature: '100°C' as TmxTemperature,
+      speed: '4' as TmxSpeed,
+      reverse: true,
+    }
+    expect(toTmxSettings([entry])).toEqual([entry])
   })
 })

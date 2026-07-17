@@ -20,6 +20,64 @@ type GeminiPart = { text: string } | { inline_data: { mime_type: string; data: s
 
 const RECIPE_TYPE_ENUM = [...RECIPE_TYPE_VALUES]
 
+// Shared ingredient/step item shapes so the import and proposal schemas can't drift.
+const ingredientsSchemaProperty = {
+  type: 'array',
+  description: 'Ingrédients de la recette avec leur quantité',
+  items: {
+    type: 'object',
+    properties: {
+      name: {
+        type: 'string',
+        description:
+          "Nom court de l'ingrédient SEUL, sans préparation (ex : Gin, Beurre, Pommes de terre). La préparation (épluché, coupé en rondelles…) va dans les étapes, PAS dans le nom. ≤120 caractères.",
+      },
+      quantity: {
+        type: 'string',
+        description: 'Quantité avec unité (ex : 50 ml, 170 g, 3 pièces), ≤60 caractères',
+      },
+    },
+    required: ['name', 'quantity'],
+  },
+}
+
+const stepsSchemaProperty = {
+  type: 'array',
+  description: 'Étapes courtes et actionnables, dans l’ordre',
+  items: {
+    type: 'object',
+    properties: {
+      text: {
+        type: 'string',
+        description: "Texte court de l'étape, à l'impératif, ≤300 caractères",
+      },
+      tmxTime: {
+        type: 'string',
+        nullable: true,
+        description: 'Durée Thermomix (ex : « 3 min », « 30 s ») ; null sinon',
+      },
+      tmxTemperature: {
+        type: 'string',
+        nullable: true,
+        description: 'Température Thermomix (ex : « 100°C », « Varoma ») ; null sinon',
+      },
+      tmxSpeed: {
+        type: 'string',
+        nullable: true,
+        description:
+          'Vitesse Thermomix (ex : « 5 », « 3,5 », « pétrin », « mijotage », « turbo ») ; null sinon',
+      },
+      tmxReverse: {
+        type: 'boolean',
+        nullable: true,
+        description: 'Sens inverse activé ; null sinon',
+      },
+    },
+    required: ['text'],
+    propertyOrdering: ['text', 'tmxTime', 'tmxTemperature', 'tmxSpeed', 'tmxReverse'],
+  },
+}
+
 const importResponseSchema = {
   type: 'object',
   properties: {
@@ -44,79 +102,8 @@ const importResponseSchema = {
       nullable: true,
       description: 'Source de la recette (auteur, site, livre) si identifiable',
     },
-    params: {
-      type: 'array',
-      description: 'Paramètres mesurables et reproductibles, avec leur unité',
-      items: {
-        type: 'object',
-        properties: {
-          key: {
-            type: 'string',
-            description: 'Nom du paramètre (ex : Dose, Température), ≤60 caractères',
-          },
-          value: {
-            type: 'string',
-            description: 'Valeur avec unité (ex : 18,5 g, 92 °C), ≤120 caractères',
-          },
-        },
-        required: ['key', 'value'],
-      },
-    },
-    ingredients: {
-      type: 'array',
-      description: 'Ingrédients de la recette avec leur quantité',
-      items: {
-        type: 'object',
-        properties: {
-          name: {
-            type: 'string',
-            description:
-              "Nom court de l'ingrédient SEUL, sans préparation (ex : Gin, Beurre, Pommes de terre). La préparation (épluché, coupé en rondelles…) va dans les étapes, PAS dans le nom. ≤120 caractères.",
-          },
-          quantity: {
-            type: 'string',
-            description: 'Quantité avec unité (ex : 50 ml, 170 g, 3 pièces), ≤60 caractères',
-          },
-        },
-        required: ['name', 'quantity'],
-      },
-    },
-    steps: {
-      type: 'array',
-      description: 'Étapes courtes et actionnables, dans l’ordre',
-      items: {
-        type: 'object',
-        properties: {
-          text: {
-            type: 'string',
-            description: "Texte court de l'étape, à l'impératif, ≤300 caractères",
-          },
-          tmxTime: {
-            type: 'string',
-            nullable: true,
-            description: 'Durée Thermomix (ex : « 3 min », « 30 s ») ; null sinon',
-          },
-          tmxTemperature: {
-            type: 'string',
-            nullable: true,
-            description: 'Température Thermomix (ex : « 100°C », « Varoma ») ; null sinon',
-          },
-          tmxSpeed: {
-            type: 'string',
-            nullable: true,
-            description:
-              'Vitesse Thermomix (ex : « 5 », « 3,5 », « pétrin », « mijotage », « turbo ») ; null sinon',
-          },
-          tmxReverse: {
-            type: 'boolean',
-            nullable: true,
-            description: 'Sens inverse activé ; null sinon',
-          },
-        },
-        required: ['text'],
-        propertyOrdering: ['text', 'tmxTime', 'tmxTemperature', 'tmxSpeed', 'tmxReverse'],
-      },
-    },
+    ingredients: ingredientsSchemaProperty,
+    steps: stepsSchemaProperty,
   },
   required: ['type', 'category', 'title'],
   propertyOrdering: [
@@ -126,7 +113,6 @@ const importResponseSchema = {
     'subtitle',
     'sourceLabel',
     'ingredients',
-    'params',
     'steps',
   ],
 }
@@ -134,29 +120,14 @@ const importResponseSchema = {
 const proposalResponseSchema = {
   type: 'object',
   properties: {
-    vars: {
-      type: 'array',
-      description: 'Changements de paramètres proposés',
-      items: {
-        type: 'object',
-        properties: {
-          key: { type: 'string', description: 'Paramètre à changer, ≤60 caractères' },
-          from: {
-            type: 'string',
-            nullable: true,
-            description: 'Valeur actuelle (null si nouveau), ≤120 caractères',
-          },
-          to: { type: 'string', description: 'Nouvelle valeur avec unité, ≤120 caractères' },
-        },
-        required: ['key', 'to'],
-      },
+    changeSummary: {
+      type: 'string',
+      description:
+        'Résumé court de ce qui change (ex : « Bouillon 700 → 650 ml »), ≤200 caractères',
     },
     rationale: { type: 'string', description: 'Explication du raisonnement, en français' },
-    queued: {
-      type: 'array',
-      items: { type: 'string' },
-      description: 'Autres pistes à explorer plus tard (itérations suivantes)',
-    },
+    ingredients: ingredientsSchemaProperty,
+    steps: stepsSchemaProperty,
     recommendation: {
       type: 'string',
       enum: ['iteration', 'variation'],
@@ -172,8 +143,15 @@ const proposalResponseSchema = {
       required: ['title', 'description'],
     },
   },
-  required: ['vars', 'rationale', 'recommendation'],
-  propertyOrdering: ['vars', 'rationale', 'queued', 'recommendation', 'variation'],
+  required: ['changeSummary', 'rationale', 'ingredients', 'steps', 'recommendation'],
+  propertyOrdering: [
+    'changeSummary',
+    'rationale',
+    'ingredients',
+    'steps',
+    'recommendation',
+    'variation',
+  ],
 }
 
 const IMPORT_INSTRUCTIONS = `Tu es l'assistant d'un carnet d'expérimentation culinaire. À partir de la source fournie (photos, page web ou texte d'une recette), extrais une recette STRUCTURÉE et REPRODUCTIBLE.
@@ -182,10 +160,9 @@ Règles :
 - Détermine le type : plat (recette cuisinée) ou tmx (recette Thermomix).
 - Détermine la catégorie du plat : entree, plat, dessert, soupe, sauce ou boulangerie (pâtisserie, pain, viennoiserie). En cas de doute, choisis plat.
 - ingredients : liste ORDONNÉE des composants de la recette avec leur quantité (ex : Gin → 50 ml, Beurre → 170 g, Fraise → 3 pièces). Mets TOUS les ingrédients visibles sur la source, chacun avec sa quantité et son unité. C'est la « liste de courses » de la recette. Le NOM reste court : l'ingrédient seul, jamais sa préparation (« Pommes de terre », pas « Pommes de terre épluchées et coupées en rondelles » — la préparation va dans les étapes).
-- params : réglages reproductibles qui ne sont PAS des ingrédients (ex : Température → 92 °C, Mouture → fine, Ratio → 1:2, Temps d'extraction → 27 s, Four → 180 °C). N'y mets JAMAIS un ingrédient. N'invente pas de valeurs absentes ; ne garde que ce qui est réellement mesurable et reproductible (souvent vide pour un plat).
-- steps : étapes courtes, à l'impératif, dans l'ordre.
+- steps : étapes courtes, à l'impératif, dans l'ordre. Les réglages précis (température du four, durée, ratio…) restent dans le texte de l'étape.
 - Pour une recette Thermomix (type tmx) : pour chaque étape exécutée au Thermomix, renseigne tmxTime, tmxTemperature, tmxSpeed et tmxReverse tels qu'indiqués dans la recette (durée « 3 min » / « 30 s » / « 1 h 10 min » ; température « 100°C » ou « Varoma » ; vitesse « 0,5 » à « 10 », « pétrin », « mijotage » ou « turbo »). Mets null pour chaque réglage absent, et pour TOUS ces champs quand l'étape ne se fait pas au Thermomix ou que la recette n'est pas de type tmx.
-- Sois concis : chaque valeur reste courte (nom d'ingrédient ≤120, quantité ≤60, paramètre clé ≤60 / valeur ≤120, étape ≤300, titre ≤200, réglage Thermomix ≤20 caractères).
+- Sois concis : chaque valeur reste courte (nom d'ingrédient ≤120, quantité ≤60, étape ≤300, titre ≤200, réglage Thermomix ≤20 caractères).
 - Toutes les valeurs textuelles en français. Mets null pour toute information absente.`
 
 export namespace Ai {
@@ -240,37 +217,50 @@ export namespace Ai {
     return [{ text: `${IMPORT_INSTRUCTIONS}\n\nTexte de la recette :\n${source.text}` }]
   }
 
-  const oneVariableRule = (_type: ProposalContext['type']) =>
-    'Pour un plat ou une recette Thermomix, tu peux changer plusieurs variables cohérentes dans la même itération.'
+  // Cuisine-scoped iteration rule (plat + tmx). Café/cocktail will get their own
+  // rules later — no speculative abstraction here.
+  const cuisineIterationRule = (_type: ProposalContext['type']) =>
+    'Pour un plat ou une recette Thermomix, tu peux ajuster plusieurs éléments cohérents à la fois. Renvoie la liste COMPLÈTE des ingrédients et des étapes de la prochaine version (pas seulement ce qui change), plus un résumé court des changements.'
+
+  const formatTmx = (tmx: NonNullable<ProposalContext['currentTmxSteps'][number]>): string => {
+    const parts = [
+      tmx.time && `durée ${tmx.time}`,
+      tmx.temperature && `température ${tmx.temperature}`,
+      tmx.speed && `vitesse ${tmx.speed}`,
+      tmx.reverse && 'sens inverse',
+    ].filter(Boolean)
+    return parts.length ? ` [Thermomix : ${parts.join(', ')}]` : ''
+  }
 
   const proposalPrompt = (context: ProposalContext): string => {
-    const params = context.currentParams.map((p) => `- ${p.key} : ${p.value}`).join('\n')
-    const steps = context.currentSteps.map((s, i) => `${i + 1}. ${s}`).join('\n')
-    const trials = context.trials
-      .map((t) => {
-        const real =
-          t.realParams.map((p) => `${p.key}=${p.value}`).join(', ') || 'conformes aux cibles'
-        return `- Note ${t.note}/5. Remarques : ${t.remarks || '—'}. Paramètres réels : ${real}.`
-      })
-      .join('\n')
-    const queue = context.previousQueue.length
-      ? `\n\nPistes déjà en file d'attente : ${context.previousQueue.join(' ; ')}.`
-      : ''
+    const ingredients =
+      context.currentIngredients.map((i) => `- ${i.name} : ${i.quantity}`).join('\n') || '—'
+    const steps =
+      context.currentSteps
+        .map((s, i) => {
+          const tmx = context.currentTmxSteps[i]
+          return `${i + 1}. ${s}${tmx ? formatTmx(tmx) : ''}`
+        })
+        .join('\n') || '—'
+    const trials =
+      context.trials
+        .map((t) => `- Note ${t.note}/5. Remarques : ${t.remarks || '—'}.`)
+        .join('\n') || '—'
 
-    return `Tu es l'assistant d'un carnet d'expérimentation culinaire. Analyse les essais et propose la PROCHAINE étape.
+    return `Tu es l'assistant d'un carnet d'expérimentation culinaire. Analyse les essais et propose la PROCHAINE version de la recette.
 
-${oneVariableRule(context.type)}
+${cuisineIterationRule(context.type)}
 
-Recette actuelle (paramètres) :
-${params}
+Ingrédients actuels :
+${ingredients}
 
-Étapes :
+Étapes actuelles :
 ${steps}
 
 Essais réalisés :
-${trials}${queue}
+${trials}
 
-Propose soit une itération (amélioration de cette recette), soit une variation (déclinaison distincte, ex : une version végétarienne d'un plat) si les remarques suggèrent un plat différent plutôt qu'une correction. Renseigne vars (changements), rationale (pourquoi), queued (pistes suivantes), recommendation et, si variation, un titre et une description. Toutes les valeurs textuelles en français.`
+Propose soit une itération (amélioration de cette recette), soit une variation (déclinaison distincte, ex : une version végétarienne d'un plat) si les remarques suggèrent un plat différent plutôt qu'une correction. Renseigne changeSummary (résumé court de ce qui change), rationale (pourquoi), ingredients et steps (la liste COMPLÈTE de la prochaine version), recommendation et, si variation, un titre et une description. Toutes les valeurs textuelles en français.`
   }
 
   const callGemini = async (body: Record<string, unknown>): Promise<string | undefined> => {
@@ -284,15 +274,15 @@ Propose soit une itération (amélioration de cette recette), soit une variation
   }
 
   const hashSource = (source: ImportSource): ImportHashType => {
-    // 'v4' salts the cache: bumped from 'v3' (ingredient extraction) so the
-    // concise-formatting prompt and the clamp/drop guard rails re-run on the next
-    // import of a previously-analysed source instead of serving the old result.
+    // 'v5' salts the cache: bumped from 'v4' (concise formatting) so the
+    // params-free import schema re-runs on the next import of a previously-analysed
+    // source instead of serving an old result that still carried params/café.
     const material =
       source.kind === 'photos'
-        ? `v4|${source.photos.join('|')}`
+        ? `v5|${source.photos.join('|')}`
         : source.kind === 'url'
-          ? `v4|url:${source.url}`
-          : `v4|text:${source.text}`
+          ? `v5|url:${source.url}`
+          : `v5|text:${source.text}`
     return ImportHash(createHash('sha256').update(material).digest('hex'))
   }
 }

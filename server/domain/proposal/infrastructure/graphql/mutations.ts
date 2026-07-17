@@ -1,11 +1,13 @@
 import { match, P } from 'ts-pattern'
+import type { EditedDraft } from '~/domain/proposal/use-case'
 import { ProposalUseCase } from '~/domain/proposal/use-case'
+import { toTmxSettings } from '~/domain/recipe/business-rules'
 import { RecipeType } from '~/domain/recipe/infrastructure/graphql/types'
 import type { Recipe, RecipeId, VersionNumber } from '~/domain/recipe/types'
 import { builder } from '~/domain/shared/graphql/builder'
 import { domainError, notFound } from '~/domain/shared/graphql/errors'
 import { ProposalRecommendationEnum } from './enums'
-import { ProposalVarInput } from './inputs'
+import { ProposalDraftInput } from './inputs'
 import { ProposalType } from './types'
 
 type AcceptResult = {
@@ -43,22 +45,30 @@ builder.mutationField('acceptProposal', (t) =>
   t.field({
     type: AcceptProposalResultType,
     description:
-      'Accept a proposal as an iteration or a variation (optionally editing the changes)',
+      'Accept a proposal as an iteration or a variation (optionally editing the draft first)',
     args: {
       recipeId: t.arg({ type: 'RecipeId', required: true }),
       versionNumber: t.arg({ type: 'VersionNumber', required: true }),
       choice: t.arg({ type: ProposalRecommendationEnum, required: true }),
-      editedVars: t.arg({ type: [ProposalVarInput] }),
+      editedDraft: t.arg({
+        type: ProposalDraftInput,
+        description: 'The edited next-version draft, replacing the AI proposal when provided',
+      }),
     },
     resolve: async (_root, args, { userId }) => {
-      const edited =
-        args.editedVars?.map((v) => ({ key: v.key, from: v.from ?? null, to: v.to })) ?? []
+      const editedDraft: EditedDraft | undefined = args.editedDraft
+        ? {
+            ingredients: args.editedDraft.ingredients,
+            steps: args.editedDraft.steps,
+            tmxSteps: args.editedDraft.tmxSteps ? toTmxSettings(args.editedDraft.tmxSteps) : [],
+          }
+        : undefined
       if (args.choice === 'iteration') {
         const result = await ProposalUseCase.acceptAsIteration(
           userId,
           args.recipeId,
           args.versionNumber,
-          edited,
+          editedDraft,
         )
         const recipe = ensureRecipe(result)
         return { recipe, createdVersion: recipe.toTest, createdRecipeId: null }
@@ -67,7 +77,7 @@ builder.mutationField('acceptProposal', (t) =>
         userId,
         args.recipeId,
         args.versionNumber,
-        edited,
+        editedDraft,
       )
       const recipe = ensureRecipe(result)
       return { recipe, createdVersion: null, createdRecipeId: recipe.id }
@@ -91,12 +101,9 @@ builder.mutationField('refuseProposal', (t) =>
 )
 
 // Turn the use-case's discriminated error strings into GraphQL errors.
-const ensureRecipe = (result: Recipe | 'not-found' | 'no-proposal' | 'budget-exceeded') =>
+const ensureRecipe = (result: Recipe | 'not-found' | 'no-proposal') =>
   match(result)
     .with('not-found', () => notFound('Recipe not found'))
     .with('no-proposal', () => domainError('NO_PROPOSAL', 'No pending proposal for this version'))
-    .with('budget-exceeded', () =>
-      domainError('BUDGET_EXCEEDED', 'Too many variables for this recipe type'),
-    )
     .with(P.not(P.string), (recipe) => recipe)
     .exhaustive()

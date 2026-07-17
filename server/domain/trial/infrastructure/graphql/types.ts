@@ -1,4 +1,4 @@
-import { ParamType, RecipeType, VersionType } from '~/domain/recipe/infrastructure/graphql/types'
+import { RecipeType, VersionType } from '~/domain/recipe/infrastructure/graphql/types'
 import { builder } from '~/domain/shared/graphql/builder'
 import { averageNote, highestNote } from '~/domain/trial/business-rules'
 import type { Trial } from '../../types'
@@ -12,11 +12,6 @@ export const TrialType = builder.objectRef<Trial>('Trial').implement({
     executedAt: t.expose('executedAt', { type: 'DateTime' }),
     note: t.expose('note', { type: 'Note' }),
     remarks: t.expose('remarks', { type: 'Remarks' }),
-    realParams: t.field({
-      type: [ParamType],
-      description: 'Only the parameters that deviated from the version’s targets',
-      resolve: (trial) => trial.realParams,
-    }),
     photoUrl: t.string({
       nullable: true,
       description: 'Signed URL of the trial photo (null until photo storage is provisioned)',

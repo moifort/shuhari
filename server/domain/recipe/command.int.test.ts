@@ -3,9 +3,6 @@ import type {
   Ingredient,
   IngredientName,
   IngredientQuantity,
-  Param,
-  ParamKey,
-  ParamValue,
   Recipe,
   RecipeId,
   RecipeTitle,
@@ -23,7 +20,6 @@ mock.module('~/system/firebase', () => ({ db: fakeDb }))
 const { RecipeCommand } = await import('~/domain/recipe/command')
 
 const userId = 'user-1' as UserId
-const param = (k: string, v: string): Param => ({ key: k as ParamKey, value: v as ParamValue })
 const ingredient = (n: string, q: string): Ingredient => ({
   name: n as IngredientName,
   quantity: q as IngredientQuantity,
@@ -31,9 +27,8 @@ const ingredient = (n: string, q: string): Ingredient => ({
 const newInput = () => ({
   type: 'plat' as const,
   category: 'plat' as const,
-  title: 'Espresso' as RecipeTitle,
-  params: [param('Dose', '18 g'), param('Température', '93 °C')],
-  steps: ['Moudre', 'Extraire'] as StepText[],
+  title: 'Blanquette' as RecipeTitle,
+  steps: ['Saisir', 'Mijoter'] as StepText[],
   ingredients: [] as Ingredient[],
   tmxSteps: [] as (TmxSettings | null)[],
 })
@@ -106,10 +101,8 @@ describe('RecipeCommand.addVersion + promote', () => {
     const recipe = await RecipeCommand.importRecipe(userId, { ...newInput(), type: 'tmx' as const })
 
     const withV2 = (await RecipeCommand.addVersion(userId, recipe.id, {
-      change: 'Température 93 → 92 °C',
-      changedKeys: ['Température' as ParamKey],
-      params: [param('Dose', '18 g'), param('Température', '92 °C')],
-      steps: ['Moudre', 'Extraire'] as StepText[],
+      change: 'Bouillon 700 → 650 ml',
+      steps: ['Saisir', 'Mijoter'] as StepText[],
       ingredients: [],
       tmxSteps: [null, { speed: 'turbo' as TmxSpeed }],
     })) as Recipe
@@ -118,7 +111,7 @@ describe('RecipeCommand.addVersion + promote', () => {
     expect(withV2.versionCount).toBe(2 as VersionNumber)
     expect(withV2.currentVersion).toBe(1 as VersionNumber)
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_2`)?.change).toBe(
-      'Température 93 → 92 °C',
+      'Bouillon 700 → 650 ml',
     )
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_2`)?.tmxSteps).toEqual([
       null,
@@ -139,8 +132,6 @@ describe('RecipeCommand.addVersion + promote', () => {
   test('returns not-found for an unknown recipe', async () => {
     const result = await RecipeCommand.addVersion(userId, 'nope' as RecipeId, {
       change: 'x',
-      changedKeys: [],
-      params: [],
       steps: [],
       ingredients: [],
       tmxSteps: [],
