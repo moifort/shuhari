@@ -141,11 +141,8 @@ struct RecipeDetailView: View {
                 Button {
                     presentRecordTrial(versionNumber: reference.number)
                 } label: {
-                    Image(systemName: "square.and.pencil")
+                    Image(systemName: "pencil.and.ruler")
                 }
-                .buttonStyle(.glassProminent)
-                .buttonBorderShape(.circle)
-                .controlSize(.large)
                 .accessibilityIdentifier("record-trial-button")
                 .accessibilityLabel("Noter un essai")
             }
