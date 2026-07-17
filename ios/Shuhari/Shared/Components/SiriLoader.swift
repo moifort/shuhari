@@ -1,13 +1,14 @@
 import SwiftUI
 
 /// The "listening" Siri orb: eleven layered gradient blobs (vector PDF assets in
-/// `Assets.xcassets/Siri/`) rotating and hue-shifting over a 12 s loop, composited
-/// with `.hardLight`. A faithful port of Amos Gyamfi's ListeningSiriAnimation
-/// (GetStream/purposeful-ios-animations) — same assets, transforms and blend, so
-/// it renders exactly like the reference. Driven by a continuous phase so the loop
-/// begins at its midpoint on appear. Designed for a dark backdrop (the analysing
-/// screen goes black behind it). Respects Reduce Motion by holding a single static
-/// frame. Purely presentational.
+/// `Assets.xcassets/Siri/`) rotating and hue-shifting, composited with `.hardLight`.
+/// A port of Amos Gyamfi's ListeningSiriAnimation
+/// (GetStream/purposeful-ios-animations) — same assets, transforms and blend,
+/// driven here by a seamless oscillation. The phase oscillates smoothly between the
+/// two end poses (a cosine ease), so the motion reads as one endless loop with no
+/// visible start or end — unlike a sawtooth, which would snap pose-B back to pose-A
+/// every cycle. Designed for a dark backdrop (the analysing screen goes black behind
+/// it). Respects Reduce Motion by holding a single static frame. Purely presentational.
 struct SiriLoader: View {
     /// Layout footprint; the artwork (largest layer ≈ 640 pt) is scaled to fit it.
     var size: CGFloat = 260
@@ -16,6 +17,8 @@ struct SiriLoader: View {
     /// Anchor for elapsed time so the loop starts at its midpoint on appear.
     @State private var start = Date()
 
+    /// Seconds for one pose-A → pose-B traversal; the full oscillation (A → B → A)
+    /// takes twice this, all seamless.
     private let period: TimeInterval = 12
     private var scale: CGFloat { size / 640 }
 
@@ -30,9 +33,14 @@ struct SiriLoader: View {
     }
 
     /// Cycle position in `0...1` (0 and 1 are the two end poses); starts at 0.5.
+    /// A raised-cosine ease oscillates 0 → 1 → 0 forever: position AND velocity are
+    /// continuous at the turning points, so the loop has no visible seam or restart
+    /// (a `mod 1` sawtooth would jump pose-B → pose-A once per period). The `+ 0.25`
+    /// offset makes the loop begin at its midpoint (0.5) on appear.
     private func phase(at date: Date) -> Double {
         let elapsed = date.timeIntervalSince(start)
-        return (elapsed / period + 0.5).truncatingRemainder(dividingBy: 1)
+        let cycle = elapsed / (period * 2) + 0.25
+        return (1 - cos(2 * .pi * cycle)) / 2
     }
 
     /// Linear blend between the two end poses at the given cycle position.
