@@ -140,6 +140,74 @@ describe('RecipeQuery.library — type filter', () => {
   })
 })
 
+describe('RecipeQuery.library — category filter', () => {
+  beforeEach(() => {
+    seedRecipe('plat-old', { type: 'plat', category: 'plat', updatedAt: 1000 })
+    seedRecipe('dessert-a', { type: 'plat', category: 'dessert', updatedAt: 2000 })
+    seedRecipe('plat-new', { type: 'tmx', category: 'plat', updatedAt: 3000 })
+    seedRecipe('dessert-b', { type: 'tmx', category: 'dessert', updatedAt: 4000 })
+  })
+
+  test('keeps only the requested category, ordered updatedAt desc', async () => {
+    const page = await RecipeQuery.library(userId, {
+      category: 'dessert',
+      sort: 'updatedAt',
+      order: 'desc',
+      limit: 10,
+    })
+    expect(ids(page)).toEqual(['dessert-b', 'dessert-a'])
+    expect(page.hasMore).toBe(false)
+  })
+
+  test('combines a type facet with the category filter', async () => {
+    const page = await RecipeQuery.library(userId, {
+      type: 'tmx',
+      category: 'plat',
+      sort: 'updatedAt',
+      order: 'desc',
+      limit: 10,
+    })
+    expect(ids(page)).toEqual(['plat-new'])
+  })
+
+  test('pins the order to updatedAt desc even when an ascending sort is requested', async () => {
+    // The category filter coerces the page to updatedAt desc. Requesting the
+    // opposite (updatedAt ASC) proves the coercion actually fires: without it the
+    // page would come back ascending (['dessert-a', 'dessert-b']).
+    const page = await RecipeQuery.library(userId, {
+      category: 'dessert',
+      sort: 'updatedAt',
+      order: 'asc',
+      limit: 10,
+    })
+    expect(ids(page)).toEqual(['dessert-b', 'dessert-a'])
+  })
+
+  test('paginates within a category via the cursor', async () => {
+    // A third dessert so a limit-2 page leaves a remainder to fetch. Ordered
+    // updatedAt desc: dessert-b(4000), dessert-c(3000), dessert-a(2000).
+    seedRecipe('dessert-c', { type: 'plat', category: 'dessert', updatedAt: 3000 })
+    const page1 = await RecipeQuery.library(userId, {
+      category: 'dessert',
+      sort: 'updatedAt',
+      order: 'desc',
+      limit: 2,
+    })
+    expect(ids(page1)).toEqual(['dessert-b', 'dessert-c'])
+    expect(page1.hasMore).toBe(true)
+
+    const page2 = await RecipeQuery.library(userId, {
+      category: 'dessert',
+      sort: 'updatedAt',
+      order: 'desc',
+      limit: 2,
+      after: 'dessert-c' as RecipeId,
+    })
+    expect(ids(page2)).toEqual(['dessert-a'])
+    expect(page2.hasMore).toBe(false)
+  })
+})
+
 describe('RecipeQuery.library — limit clamp', () => {
   beforeEach(() => {
     for (let i = 0; i < 3; i++) seedRecipe(`r${i}`, { category: 'plat', updatedAt: 1000 + i })

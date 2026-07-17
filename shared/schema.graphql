@@ -242,6 +242,11 @@ type Query {
     """Cursor: return the page following this recipe id"""
     after: RecipeId
 
+    """
+    Facet: keep only this dish category. When set, the page is coerced to updatedAt desc — the sort/order args are ignored (ranking within one category is meaningless, and it keeps the composite-index surface bounded)
+    """
+    category: DishCategory
+
     """Maximum recipes returned in the page"""
     limit: Int = 20
 

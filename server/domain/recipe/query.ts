@@ -1,5 +1,6 @@
 import * as repository from '~/domain/recipe/infrastructure/repository'
 import type {
+  DishCategory,
   Recipe,
   RecipeId,
   RecipeSort,
@@ -15,6 +16,7 @@ export type RecipeLibraryPage = { items: Recipe[]; hasMore: boolean; totalCount:
 
 export type RecipeLibraryCriteria = {
   type?: RecipeType
+  category?: DishCategory
   sort: RecipeSort
   order: SortOrder
   limit: number
@@ -34,9 +36,15 @@ export namespace RecipeQuery {
     userId: UserId,
     criteria: RecipeLibraryCriteria,
   ): Promise<RecipeLibraryPage> => {
+    // A category filter pins the order to updatedAt desc: ranking recipes within
+    // a single course is meaningless, and coercing here keeps the composite-index
+    // surface bounded (no per-category × sort index explosion).
+    const effective: RecipeLibraryCriteria = criteria.category
+      ? { ...criteria, sort: 'updatedAt', order: 'desc' }
+      : criteria
     const { recipes, hasMore } = await repository.findPage(userId, {
-      ...criteria,
-      limit: clampLimit(criteria.limit),
+      ...effective,
+      limit: clampLimit(effective.limit),
     })
     return { items: recipes, hasMore, totalCount: recipes.length }
   }

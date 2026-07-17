@@ -1,7 +1,7 @@
 import { match, P } from 'ts-pattern'
 import { RecipeQuery } from '~/domain/recipe/query'
 import { builder } from '~/domain/shared/graphql/builder'
-import { RecipeSortEnum, RecipeTypeEnum, SortOrderEnum } from './enums'
+import { DishCategoryEnum, RecipeSortEnum, RecipeTypeEnum, SortOrderEnum } from './enums'
 import { RecipesType, RecipeType } from './types'
 
 builder.queryField('recipes', (t) =>
@@ -11,6 +11,13 @@ builder.queryField('recipes', (t) =>
       'A page of the current user’s recipe library, filtered by type and sorted per view',
     args: {
       type: t.arg({ type: RecipeTypeEnum, description: 'Facet: keep only this recipe type' }),
+      category: t.arg({
+        type: DishCategoryEnum,
+        description:
+          'Facet: keep only this dish category. When set, the page is coerced to ' +
+          'updatedAt desc — the sort/order args are ignored (ranking within one ' +
+          'category is meaningless, and it keeps the composite-index surface bounded)',
+      }),
       sort: t.arg({
         type: RecipeSortEnum,
         defaultValue: 'updatedAt',
@@ -30,6 +37,7 @@ builder.queryField('recipes', (t) =>
     resolve: async (_root, args, { userId }) =>
       RecipeQuery.library(userId, {
         type: args.type ?? undefined,
+        category: args.category ?? undefined,
         sort: args.sort ?? 'updatedAt',
         order: args.order ?? 'desc',
         limit: args.limit ?? 20,

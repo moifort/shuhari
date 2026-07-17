@@ -1,6 +1,7 @@
 import type { WriteBatch } from 'firebase-admin/firestore'
 import { categoryRank } from '~/domain/recipe/business-rules'
 import type {
+  DishCategory,
   Recipe,
   RecipeId,
   RecipeSort,
@@ -75,6 +76,7 @@ export const save = async (recipe: Recipe, batch?: WriteBatch) => {
 export type RecipePage = { recipes: Recipe[]; hasMore: boolean }
 export type RecipePageArgs = {
   type?: RecipeType
+  category?: DishCategory
   sort: RecipeSort
   order: SortOrder
   limit: number
@@ -88,6 +90,7 @@ export type RecipePageArgs = {
 export const findPage = async (userId: UserId, args: RecipePageArgs): Promise<RecipePage> => {
   let query = recipes().where('userId', '==', userId)
   if (args.type) query = query.where('type', '==', args.type)
+  if (args.category) query = query.where('category', '==', args.category)
   query =
     args.sort === 'category'
       ? query.orderBy('categoryRank', 'asc').orderBy('updatedAt', 'desc')
