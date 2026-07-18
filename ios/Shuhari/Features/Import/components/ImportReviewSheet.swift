@@ -100,7 +100,10 @@ struct ImportReviewSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Fermer", systemImage: "xmark") { onCancel() }
+                    Button { onCancel() } label: {
+                        Image(systemName: "xmark")
+                    }
+                    .accessibilityLabel("Fermer")
                 }
             }
     }
@@ -117,7 +120,10 @@ struct ImportReviewSheet: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("Fermer", systemImage: "xmark") { onCancel() }
+                Button { onCancel() } label: {
+                    Image(systemName: "xmark")
+                }
+                .accessibilityLabel("Fermer")
             }
         }
     }
@@ -137,7 +143,10 @@ struct ImportReviewSheet: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("Fermer", systemImage: "xmark") { onCancel() }
+                Button { onCancel() } label: {
+                    Image(systemName: "xmark")
+                }
+                .accessibilityLabel("Fermer")
             }
         }
     }

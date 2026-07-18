@@ -123,8 +123,11 @@ struct ImportPreviewPage: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("Fermer", systemImage: "xmark") { onCancel() }
-                    .disabled(isSaving)
+                Button { onCancel() } label: {
+                    Image(systemName: "xmark")
+                }
+                .disabled(isSaving)
+                .accessibilityLabel("Fermer")
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button {

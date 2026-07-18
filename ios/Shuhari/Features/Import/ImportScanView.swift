@@ -123,19 +123,23 @@ struct ImportScanView: View {
             .scrollDismissesKeyboard(.interactively)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Annuler") {
+                    Button {
                         pendingSource = nil
                         showTextEntry = false
+                    } label: {
+                        Image(systemName: "xmark")
                     }
+                    .accessibilityLabel("Annuler")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         submitText()
                     } label: {
-                        Label("Analyser", systemImage: "sparkles")
+                        Image(systemName: "sparkles")
                     }
                     .disabled(rawText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .accessibilityIdentifier("analyze-button")
+                    .accessibilityLabel("Analyser")
                 }
             }
         }

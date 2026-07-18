@@ -44,8 +44,11 @@ struct NextTrialsSheet: View {
             .contentMargins(.top, Theme.Spacing.s, for: .scrollContent)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Fermer") { dismiss() }
-                        .accessibilityIdentifier("close-next-trials")
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark")
+                    }
+                    .accessibilityIdentifier("close-next-trials")
+                    .accessibilityLabel("Fermer")
                 }
             }
         }

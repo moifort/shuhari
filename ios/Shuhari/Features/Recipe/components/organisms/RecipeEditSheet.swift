@@ -39,10 +39,13 @@ struct RecipeEditSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Annuler") { dismiss() }
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark")
+                    }
+                    .accessibilityLabel("Annuler")
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Enregistrer") {
+                    Button {
                         Task {
                             await error.run {
                                 try await onSave(
@@ -51,8 +54,11 @@ struct RecipeEditSheet: View {
                                 )
                             } onSuccess: { dismiss() }
                         }
+                    } label: {
+                        Image(systemName: "checkmark")
                     }
                     .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || error.isRunning)
+                    .accessibilityLabel("Enregistrer")
                 }
             }
             .errorAlert(error)

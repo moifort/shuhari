@@ -55,7 +55,10 @@ struct SettingsHomeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Fermer") { dismiss() }
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark")
+                    }
+                    .accessibilityLabel("Fermer")
                 }
             }
             .alert("Erreur", isPresented: Binding(get: { signOutError != nil }, set: { if !$0 { signOutError = nil } })) {

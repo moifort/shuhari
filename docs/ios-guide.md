@@ -232,6 +232,32 @@ struct ParamsGrid: View {
 
 The mapping from model to `Item` happens at the page/organism level.
 
+## Sheet toolbar CTAs — icons, never text
+
+A sheet's toolbar action buttons (`.cancellationAction`, `.confirmationAction`, or any
+`ToolbarItem` in a view presented via `.sheet`) **always** use an SF Symbol, **never** a text
+label. Close is `xmark`, confirm/save is `checkmark`; pick the symbol that fits the action
+otherwise (e.g. `sparkles` to launch an AI analysis). Always attach an `.accessibilityLabel` so
+the intent survives for VoiceOver.
+
+```swift
+// ✅ icon + accessibility label
+ToolbarItem(placement: .cancellationAction) {
+    Button { dismiss() } label: {
+        Image(systemName: "xmark")
+    }
+    .accessibilityLabel("Fermer")
+}
+
+// ❌ text label — also ❌ Button("Fermer", systemImage:) (renders the title next to the icon)
+ToolbarItem(placement: .cancellationAction) {
+    Button("Fermer") { dismiss() }
+}
+```
+
+This keeps every modal's chrome to the compact Liquid Glass icon buttons. It applies to sheet
+toolbars only — pushed pages and tab roots keep the platform's standard text actions.
+
 ## Previews as a Storybook + DebugGallery
 
 Every component below page level **must** preview without a running server, fed by
