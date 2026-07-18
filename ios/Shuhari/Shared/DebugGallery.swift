@@ -141,6 +141,7 @@ private struct NextTrialsSheetGalleryScreen: View {
                         .init(versionNumber: 2, change: "Oignons +50 g", why: "Manque de fond."),
                         .init(versionNumber: 1, change: nil, why: "Version d'origine importée."),
                     ],
+                    onDelete: { _ in },
                     onSelect: { _ in }
                 )
             }

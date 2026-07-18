@@ -49,7 +49,17 @@ struct RecipeDetailView: View {
                 .toolbar(.hidden, for: .tabBar)
                 .sheet(isPresented: $showToTest) {
                     NextTrialsSheet(
-                        trials: toTestItems(recipe)
+                        trials: toTestItems(recipe),
+                        onDelete: { versionNumber in
+                            Task {
+                                await actionError.run {
+                                    try await RecipeAPI.discardPendingVersion(recipeId: recipeId, versionNumber: versionNumber)
+                                } onSuccess: {
+                                    onReload()
+                                    Task { await viewModel.load() }
+                                }
+                            }
+                        }
                     ) { versionNumber in
                         showToTest = false
                         presentRecordTrial(versionNumber: versionNumber)

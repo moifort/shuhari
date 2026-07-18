@@ -13,7 +13,9 @@ struct NextTrialsSheet: View {
     }
 
     let trials: [Item]
+    let onDelete: (Int) -> Void
     let onSelect: (Int) -> Void
+    @State private var pendingDeletion: Item?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -36,6 +38,14 @@ struct NextTrialsSheet: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("next-trial-v\(item.versionNumber)")
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                pendingDeletion = item
+                            } label: {
+                                Label("Supprimer", systemImage: "trash")
+                            }
+                            .accessibilityIdentifier("delete-trial-v\(item.versionNumber)")
+                        }
                     }
                 }
             }
@@ -50,6 +60,19 @@ struct NextTrialsSheet: View {
                     .accessibilityIdentifier("close-next-trials")
                     .accessibilityLabel("Fermer")
                 }
+            }
+            .alert(
+                "Supprimer cet essai ?",
+                isPresented: Binding(get: { pendingDeletion != nil }, set: { if !$0 { pendingDeletion = nil } }),
+                presenting: pendingDeletion
+            ) { item in
+                Button("Annuler", role: .cancel) {}
+                Button("Supprimer", role: .destructive) {
+                    onDelete(item.versionNumber)
+                }
+                .accessibilityIdentifier("confirm-delete-trial")
+            } message: { _ in
+                Text("Cette version en attente d'essai sera définitivement supprimée. Action irréversible.")
             }
         }
         .accessibilityIdentifier("next-trials-sheet")
@@ -70,6 +93,7 @@ struct NextTrialsSheet: View {
                     .init(versionNumber: 2, change: "Oignons +50 g", why: "Manque de fond."),
                     .init(versionNumber: 1, change: nil, why: "Version d'origine importée."),
                 ],
+                onDelete: { _ in },
                 onSelect: { _ in }
             )
         }
@@ -78,6 +102,6 @@ struct NextTrialsSheet: View {
 #Preview("Vide") {
     Text("Fiche recette")
         .sheet(isPresented: .constant(true)) {
-            NextTrialsSheet(trials: [], onSelect: { _ in })
+            NextTrialsSheet(trials: [], onDelete: { _ in }, onSelect: { _ in })
         }
 }

@@ -179,6 +179,9 @@ type Mutation {
   """Delete a recipe and all its versions"""
   deleteRecipe(id: RecipeId!): Boolean!
 
+  """Discard the pending essai — delete its untried version"""
+  discardPendingVersion(recipeId: RecipeId!, versionNumber: VersionNumber!): Boolean!
+
   """
   Replace all the current user records with the contents of a JSON envelope
   """

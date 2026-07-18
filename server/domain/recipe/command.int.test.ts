@@ -145,6 +145,79 @@ describe('RecipeCommand.addVersion + promote', () => {
   })
 })
 
+describe('RecipeCommand.discardPending', () => {
+  // Import v1, promote it to the current reference, then append v2 as the pending
+  // essai — the shape (currentVersion 1, toTest 2, versionCount 2, two satellites)
+  // discardPending rolls back.
+  const withPendingV2 = async () => {
+    const recipe = await RecipeCommand.importRecipe(userId, newInput())
+    await RecipeCommand.recordEssai(userId, {
+      recipeId: recipe.id,
+      versionNumber: 1 as VersionNumber,
+      note: 5 as Note,
+      remarks: 'Parfait' as Remarks,
+    })
+    await RecipeCommand.promote(userId, recipe.id, 1 as VersionNumber)
+    await RecipeCommand.addVersion(userId, recipe.id, {
+      change: 'Moins de sel',
+      steps: ['Saisir', 'Mijoter'] as StepText[],
+      ingredients: [],
+      tmxSteps: [],
+    })
+    return recipe
+  }
+
+  test('deletes the pending version and rolls the recipe back, atomically', async () => {
+    const recipe = await withPendingV2()
+    expect(fake.snapshot('recipe-versions').has(`${recipe.id}_2`)).toBe(true)
+    const batchesBefore = fake.batches.length
+    const directWritesBefore = fake.directWrites.length
+
+    const result = await RecipeCommand.discardPending(userId, recipe.id, 2 as VersionNumber)
+    expect(result).toBeUndefined()
+
+    const stored = fake.snapshot('recipes').get(recipe.id as string)
+    expect(stored?.toTest).toBeNull()
+    expect(stored?.versionCount).toBe(1 as VersionNumber)
+    // currentVersion is never the pending version, so it is untouched.
+    expect(stored?.currentVersion).toBe(1 as VersionNumber)
+    // The v2 satellite is gone, v1 survives.
+    expect(fake.snapshot('recipe-versions').has(`${recipe.id}_2`)).toBe(false)
+    expect(fake.snapshot('recipe-versions').has(`${recipe.id}_1`)).toBe(true)
+    // The delete + recipe update land in a single batch (all-or-nothing), no
+    // direct writes.
+    expect(fake.directWrites.length).toBe(directWritesBefore)
+    expect(fake.batches.length).toBe(batchesBefore + 1)
+  })
+
+  test('returns not-found for an unknown recipe', async () => {
+    const result = await RecipeCommand.discardPending(
+      userId,
+      'nope' as RecipeId,
+      2 as VersionNumber,
+    )
+    expect(result).toBe('not-found')
+  })
+
+  test('returns nothing-to-discard when the version is not the pending one', async () => {
+    const recipe = await withPendingV2()
+    // v1 is the promoted current reference, not the pending essai.
+    const result = await RecipeCommand.discardPending(userId, recipe.id, 1 as VersionNumber)
+    expect(result).toBe('nothing-to-discard')
+    expect(fake.snapshot('recipe-versions').has(`${recipe.id}_2`)).toBe(true)
+  })
+
+  test('refuses to empty a freshly imported v1 and deletes nothing', async () => {
+    const recipe = await RecipeCommand.importRecipe(userId, newInput())
+    expect(recipe.currentVersion).toBeNull()
+    expect(recipe.toTest).toBe(1 as VersionNumber)
+
+    const result = await RecipeCommand.discardPending(userId, recipe.id, 1 as VersionNumber)
+    expect(result).toBe('only-version')
+    expect(fake.snapshot('recipe-versions').has(`${recipe.id}_1`)).toBe(true)
+  })
+})
+
 describe('RecipeCommand.recordEssai', () => {
   test('folds the outcome onto v1 and suggests promotion for a high note', async () => {
     const recipe = await RecipeCommand.importRecipe(userId, newInput())

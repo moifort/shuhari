@@ -80,6 +80,26 @@ builder.mutationField('promoteVersion', (t) =>
   }),
 )
 
+builder.mutationField('discardPendingVersion', (t) =>
+  t.field({
+    type: 'Boolean',
+    description: 'Discard the pending essai — delete its untried version',
+    args: {
+      recipeId: t.arg({ type: 'RecipeId', required: true }),
+      versionNumber: t.arg({ type: 'VersionNumber', required: true }),
+    },
+    resolve: async (_root, { recipeId, versionNumber }, { userId }) => {
+      const result = await RecipeCommand.discardPending(userId, recipeId, versionNumber)
+      return match(result)
+        .with('not-found', domainError)
+        .with('nothing-to-discard', domainError)
+        .with('only-version', domainError)
+        .with(P.not(P.string), () => true)
+        .exhaustive()
+    },
+  }),
+)
+
 builder.mutationField('deleteRecipe', (t) =>
   t.field({
     type: 'Boolean',

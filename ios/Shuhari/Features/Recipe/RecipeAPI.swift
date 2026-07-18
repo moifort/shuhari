@@ -22,6 +22,13 @@ enum RecipeAPI {
         )
     }
 
+    static func discardPendingVersion(recipeId: String, versionNumber: Int) async throws {
+        _ = try await GraphQLHelpers.perform(
+            GraphQLClient.shared.apollo,
+            mutation: ShuhariGraphQL.DiscardPendingVersionMutation(recipeId: recipeId, versionNumber: versionNumber)
+        )
+    }
+
     static func deleteRecipe(id: String) async throws {
         _ = try await GraphQLHelpers.perform(
             GraphQLClient.shared.apollo,

@@ -171,6 +171,34 @@ export namespace RecipeCommand {
     return repository.save(updated)
   }
 
+  // Discard the pending essai: delete the untried `toTest` version and roll the
+  // recipe back to its previous state. The pending version is always the highest
+  // allocated (toTest === versionCount while pending), so discarding it clears the
+  // toTest pointer and steps versionCount down one. `currentVersion` is never the
+  // pending version, so it is untouched. A freshly imported v1 (no prior version,
+  // never promoted) can't be emptied this way — callers should delete the recipe.
+  export const discardPending = async (
+    userId: UserId,
+    recipeId: RecipeId,
+    versionNumber: VersionNumberT,
+  ): Promise<undefined | 'not-found' | 'nothing-to-discard' | 'only-version'> => {
+    const recipe = await repository.findBy(userId, recipeId)
+    if (!recipe) return 'not-found' as const
+    if (recipe.toTest !== versionNumber) return 'nothing-to-discard' as const
+    if (versionNumber <= 1) return 'only-version' as const
+    const updated: Recipe = {
+      ...recipe,
+      toTest: null,
+      versionCount: VersionNumber(versionNumber - 1),
+      updatedAt: new Date(),
+    }
+    return atomically(async (batch) => {
+      repository.removeVersion(recipeId, versionNumber, batch)
+      await repository.save(updated, batch)
+      return undefined
+    })
+  }
+
   export const rename = async (
     userId: UserId,
     recipeId: RecipeId,

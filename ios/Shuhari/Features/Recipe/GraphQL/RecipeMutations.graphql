@@ -4,6 +4,10 @@ mutation PromoteVersion($recipeId: RecipeId!, $versionNumber: VersionNumber!) {
   }
 }
 
+mutation DiscardPendingVersion($recipeId: RecipeId!, $versionNumber: VersionNumber!) {
+  discardPendingVersion(recipeId: $recipeId, versionNumber: $versionNumber)
+}
+
 mutation DeleteRecipe($id: RecipeId!) {
   deleteRecipe(id: $id)
 }

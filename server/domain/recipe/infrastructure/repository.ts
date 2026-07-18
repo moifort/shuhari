@@ -149,6 +149,13 @@ export const saveVersion = async (version: RecipeVersion, batch?: WriteBatch) =>
   return version
 }
 
+// Delete a version satellite, enlisted into a batch alongside its recipe update
+// (discarding a pending essai clears the version and rolls the recipe back in
+// one atomic write).
+export const removeVersion = (recipeId: RecipeId, number: VersionNumber, batch: WriteBatch) => {
+  batch.delete(versions().doc(versionDocId(recipeId, number)))
+}
+
 export const remove = async (id: RecipeId) => {
   const versionSnap = await versions().where('recipeId', '==', id).get()
   await deleteInBatches([recipes().doc(id), ...versionSnap.docs.map((doc) => doc.ref)])
