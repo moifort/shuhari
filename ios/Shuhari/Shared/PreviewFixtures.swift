@@ -268,10 +268,10 @@ enum Fixtures {
     /// A page of library rows spanning both cuisine types and a couple of months —
     /// backs the paginated Carnet list in previews and the debug gallery.
     static let libraryRecipes = [
-        LibraryRecipe(id: "bourguignon", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0, updatedAt: Date()),
-        LibraryRecipe(id: "joues", title: "Joues de bœuf confites", type: .plat, category: .plat, versionCount: 1, bestNote: 4, averageNote: 3.5, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
-        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 2, bestNote: 4, averageNote: 3.5, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
-        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestNote: nil, averageNote: 3.0, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
+        LibraryRecipe(id: "bourguignon", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestNote: 5, updatedAt: Date()),
+        LibraryRecipe(id: "joues", title: "Joues de bœuf confites", type: .plat, category: .plat, versionCount: 1, bestNote: 4, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
+        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 2, bestNote: 4, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestNote: nil, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
     ]
 }
 #endif

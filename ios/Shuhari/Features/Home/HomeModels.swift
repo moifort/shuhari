@@ -9,7 +9,6 @@ struct LibraryRecipe: Identifiable, Sendable {
     let category: DishCategory
     let versionCount: Int
     let bestNote: Int?
-    let averageNote: Double?
     let updatedAt: Date
 }
 

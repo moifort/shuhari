@@ -1,15 +1,14 @@
 import SwiftUI
 
-/// A library row: type icon tile, title, a subtitle with the version count and
-/// the recipe's best note ("the highest star"), and the mean note as the trailing
-/// value. Designed as a List row — the List provides insets, separators and the
-/// navigation chevron.
+/// A library row: type icon tile, title, a subtitle with the version count, and
+/// the recipe's best note ("the highest star" across every version it ever cooked)
+/// as the trailing value. Designed as a List row — the List provides insets,
+/// separators and the navigation chevron.
 struct LibraryRow: View {
     let title: String
     let type: RecipeType
     let versionCount: Int
     let bestNote: Int?
-    let averageNote: Double?
 
     @ScaledMetric(relativeTo: .body) private var tileSize: CGFloat = 34
 
@@ -26,35 +25,24 @@ struct LibraryRow: View {
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                HStack(spacing: 6) {
-                    Text(versionCountText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    if let bestNote {
-                        HStack(spacing: 2) {
-                            Image(systemName: "star.fill")
-                            Text("\(bestNote)")
-                        }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .accessibilityLabel("Meilleure note \(bestNote) sur 5")
-                    }
-                }
-                .lineLimit(1)
+                Text(versionCountText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            if let averageNote {
+            if let bestNote {
                 HStack(alignment: .firstTextBaseline, spacing: 1) {
-                    Text(NoteFormat.bare(averageNote))
+                    Text("\(bestNote)")
                         .font(.title3.weight(.semibold))
                         .monospacedDigit()
-                        .foregroundStyle(Theme.Status.note(Int(averageNote)))
+                        .foregroundStyle(Theme.Status.note(bestNote))
                     Text("/5")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
-                .accessibilityLabel("Note moyenne \(NoteFormat.average(averageNote))")
+                .accessibilityLabel("Meilleure note \(bestNote) sur 5")
             }
         }
         .accessibilityElement(children: .combine)
@@ -67,8 +55,8 @@ struct LibraryRow: View {
 
 #Preview {
     List {
-        LibraryRow(title: "Bœuf bourguignon", type: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0)
-        LibraryRow(title: "Joues de bœuf confites", type: .plat, versionCount: 1, bestNote: 3, averageNote: 3.0)
-        LibraryRow(title: "Risotto au parmesan", type: .tmx, versionCount: 2, bestNote: nil, averageNote: 4.5)
+        LibraryRow(title: "Bœuf bourguignon", type: .plat, versionCount: 4, bestNote: 5)
+        LibraryRow(title: "Joues de bœuf confites", type: .plat, versionCount: 1, bestNote: 3)
+        LibraryRow(title: "Risotto au parmesan", type: .tmx, versionCount: 2, bestNote: nil)
     }
 }
