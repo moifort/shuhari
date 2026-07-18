@@ -3,21 +3,30 @@ import { builder } from '~/domain/shared/graphql/builder'
 import type { Draft } from '../../types'
 
 export const DraftType = builder.objectRef<Draft>('Draft').implement({
-  description: 'An ephemeral AI draft of the next version of a recipe (never persisted)',
+  description:
+    'The AI’s suggestion for your next attempt. After a low-scoring essai, the AI reads your ' +
+    'rating and notes and proposes a tweaked version. It is just a proposal shown on screen — ' +
+    'nothing is saved until you accept it (see acceptDraft).',
   fields: (t) => ({
-    versionNumber: t.expose('versionNumber', { type: 'VersionNumber' }),
-    changeSummary: t.exposeString('changeSummary', {
-      description: 'A short human summary of what the next version changes',
+    versionNumber: t.expose('versionNumber', {
+      type: 'VersionNumber',
+      description: 'The number this version would get if you accept it (the next one in the chain)',
     }),
-    rationale: t.exposeString('rationale'),
+    changeSummary: t.exposeString('changeSummary', {
+      description: 'A one-line summary of what it changes, e.g. "Less sugar, longer resting time"',
+    }),
+    rationale: t.exposeString('rationale', {
+      description:
+        'The AI’s reasoning — why it thinks this change will help, based on your last notes',
+    }),
     ingredients: t.field({
       type: [IngredientType],
-      description: 'The full ingredient list of the drafted next version',
+      description: 'The complete ingredient list of the suggested version (not just what changed)',
       resolve: (d) => d.ingredients,
     }),
     steps: t.expose('steps', {
       type: ['StepText'],
-      description: 'The full step list of the drafted next version',
+      description: 'The complete method of the suggested version (not just what changed)',
     }),
     tmxSteps: t.field({
       type: [TmxSettingsType],

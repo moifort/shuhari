@@ -8,11 +8,17 @@ import { CreateRecipeInput, RecordEssaiInput, UpdateRecipeInput } from './inputs
 import { RecipeType, VersionType } from './types'
 
 const RecordEssaiResultType = builder.objectRef<RecordEssaiResult>('RecordEssaiResult').implement({
-  description: 'Outcome of recording an essai onto a version',
+  description: 'What you get back after saving the result of an attempt',
   fields: (t) => ({
-    version: t.field({ type: VersionType, resolve: (r) => r.version }),
+    version: t.field({
+      type: VersionType,
+      description: 'The version you just rated, now updated with its note and remarks',
+      resolve: (r) => r.version,
+    }),
     promotionSuggested: t.boolean({
-      description: 'True when this essai qualifies its version for promotion',
+      description:
+        'True when this attempt — run on the pending version — scored 4 or more, so this version ' +
+        'can now become the recipe’s new reference; the app then offers to "promote" it',
       resolve: (r) => r.promotionSuggested,
     }),
   }),
@@ -21,8 +27,16 @@ const RecordEssaiResultType = builder.objectRef<RecordEssaiResult>('RecordEssaiR
 builder.mutationField('createRecipe', (t) =>
   t.field({
     type: RecipeType,
-    description: 'Create a recipe and its v1 from a confirmed import preview',
-    args: { input: t.arg({ type: CreateRecipeInput, required: true }) },
+    description:
+      'Save a new recipe. Turns a confirmed import preview into a real recipe with its first ' +
+      'version (v1). Returns the freshly created recipe.',
+    args: {
+      input: t.arg({
+        type: CreateRecipeInput,
+        required: true,
+        description: 'The recipe to create — name, category, ingredients, steps…',
+      }),
+    },
     resolve: async (_root, { input }, { userId }) =>
       RecipeCommand.importRecipe(
         userId,
@@ -43,10 +57,15 @@ builder.mutationField('createRecipe', (t) =>
 builder.mutationField('updateRecipe', (t) =>
   t.field({
     type: RecipeType,
-    description: 'Rename a recipe (title and/or subtitle)',
+    description:
+      'Rename a recipe — change its title and/or its subtitle. Returns the updated recipe.',
     args: {
-      id: t.arg({ type: 'RecipeId', required: true }),
-      input: t.arg({ type: UpdateRecipeInput, required: true }),
+      id: t.arg({ type: 'RecipeId', required: true, description: 'Which recipe to rename' }),
+      input: t.arg({
+        type: UpdateRecipeInput,
+        required: true,
+        description: 'The new title/subtitle (send only what changes)',
+      }),
     },
     resolve: async (_root, { id, input }, { userId }) => {
       const result = await RecipeCommand.rename(userId, id, {
@@ -64,10 +83,16 @@ builder.mutationField('updateRecipe', (t) =>
 builder.mutationField('promoteVersion', (t) =>
   t.field({
     type: RecipeType,
-    description: 'Promote a pending version to the current reference (after a high-scoring trial)',
+    description:
+      'Crown a version as the recipe’s new reference (its "currentVersion") — do this after an ' +
+      'attempt scored high enough. Returns the updated recipe.',
     args: {
-      recipeId: t.arg({ type: 'RecipeId', required: true }),
-      versionNumber: t.arg({ type: 'VersionNumber', required: true }),
+      recipeId: t.arg({ type: 'RecipeId', required: true, description: 'Which recipe' }),
+      versionNumber: t.arg({
+        type: 'VersionNumber',
+        required: true,
+        description: 'Which version to make the reference',
+      }),
     },
     resolve: async (_root, { recipeId, versionNumber }, { userId }) => {
       const result = await RecipeCommand.promote(userId, recipeId, versionNumber)
@@ -83,10 +108,16 @@ builder.mutationField('promoteVersion', (t) =>
 builder.mutationField('discardPendingVersion', (t) =>
   t.field({
     type: 'Boolean',
-    description: 'Discard the pending essai — delete its untried version',
+    description:
+      'Drop a planned-but-not-yet-cooked version from the to-do list and delete it. Returns true ' +
+      'on success. Won’t delete a recipe’s only version.',
     args: {
-      recipeId: t.arg({ type: 'RecipeId', required: true }),
-      versionNumber: t.arg({ type: 'VersionNumber', required: true }),
+      recipeId: t.arg({ type: 'RecipeId', required: true, description: 'Which recipe' }),
+      versionNumber: t.arg({
+        type: 'VersionNumber',
+        required: true,
+        description: 'Which pending (untried) version to discard',
+      }),
     },
     resolve: async (_root, { recipeId, versionNumber }, { userId }) => {
       const result = await RecipeCommand.discardPending(userId, recipeId, versionNumber)
@@ -103,8 +134,11 @@ builder.mutationField('discardPendingVersion', (t) =>
 builder.mutationField('deleteRecipe', (t) =>
   t.field({
     type: 'Boolean',
-    description: 'Delete a recipe and all its versions',
-    args: { id: t.arg({ type: 'RecipeId', required: true }) },
+    description:
+      'Delete a recipe for good, along with every version and attempt on it. Returns true on success.',
+    args: {
+      id: t.arg({ type: 'RecipeId', required: true, description: 'Which recipe to delete' }),
+    },
     resolve: async (_root, { id }, { userId }) => {
       const result = await RecipeUseCase.removeCompletely(userId, id)
       return match(result)
@@ -119,8 +153,16 @@ builder.mutationField('recordEssai', (t) =>
   t.field({
     type: RecordEssaiResultType,
     description:
-      'Record an essai onto a version (fast, no AI). Ask for a draft separately if the note is low.',
-    args: { input: t.arg({ type: RecordEssaiInput, required: true }) },
+      'Save what happened when you cooked a version: its rating and your notes. Fast and does not ' +
+      'call the AI. If the rating is low and you want a suggested improvement, ask for a draft ' +
+      'separately (see requestDraft).',
+    args: {
+      input: t.arg({
+        type: RecordEssaiInput,
+        required: true,
+        description: 'The attempt to record — which version, the rating, the notes',
+      }),
+    },
     resolve: async (_root, { input }, { userId }) => {
       const result = await RecipeCommand.recordEssai(userId, {
         recipeId: input.recipeId,

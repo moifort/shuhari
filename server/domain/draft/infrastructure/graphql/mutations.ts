@@ -15,18 +15,35 @@ type AcceptResult = {
 }
 
 const AcceptDraftResultType = builder.objectRef<AcceptResult>('AcceptDraftResult').implement({
-  description: 'Result of accepting a draft as an iteration',
+  description: 'What you get back after accepting an AI suggestion',
   fields: (t) => ({
-    recipe: t.field({ type: RecipeType, resolve: (r) => r.recipe }),
-    createdVersion: t.expose('createdVersion', { type: 'VersionNumber', nullable: true }),
+    recipe: t.field({
+      type: RecipeType,
+      description: 'The recipe, now with the accepted version added to its chain',
+      resolve: (r) => r.recipe,
+    }),
+    createdVersion: t.expose('createdVersion', {
+      type: 'VersionNumber',
+      nullable: true,
+      description: 'The number of the version that was just created and queued up to try',
+    }),
   }),
 })
 
 builder.mutationField('requestDraft', (t) =>
   t.field({
     type: DraftType,
-    description: 'Ask the AI to analyze the latest essai and draft the next iteration',
-    args: { recipeId: t.arg({ type: 'RecipeId', required: true }) },
+    description:
+      'Ask the AI for a suggested next version. It looks at your most recent attempt (its rating ' +
+      'and notes) and proposes one improvement. Nothing is saved yet — you get a proposal to ' +
+      'review.',
+    args: {
+      recipeId: t.arg({
+        type: 'RecipeId',
+        required: true,
+        description: 'The recipe to get a suggestion for',
+      }),
+    },
     resolve: async (_root, { recipeId }, { userId }) => {
       const result = await DraftUseCase.forTrial(userId, recipeId)
       return match(result)
@@ -40,10 +57,20 @@ builder.mutationField('requestDraft', (t) =>
 builder.mutationField('acceptDraft', (t) =>
   t.field({
     type: AcceptDraftResultType,
-    description: 'Accept a draft as an iteration, appending it as the next version to test',
+    description:
+      'Accept an AI suggestion (optionally after editing it). It becomes the next version in the ' +
+      'chain, added to your to-do list of attempts to cook.',
     args: {
-      recipeId: t.arg({ type: 'RecipeId', required: true }),
-      draft: t.arg({ type: DraftInput, required: true }),
+      recipeId: t.arg({
+        type: 'RecipeId',
+        required: true,
+        description: 'The recipe being iterated on',
+      }),
+      draft: t.arg({
+        type: DraftInput,
+        required: true,
+        description: 'The full suggested version to save (with any edits you made)',
+      }),
     },
     resolve: async (_root, { recipeId, draft }, { userId }) => {
       const accepted: AcceptedDraft = {

@@ -34,79 +34,89 @@ const validatedParse =
   }
 
 builder.scalarType('UserId', {
-  description: 'Firebase Auth user identifier',
+  description: 'Identifies one signed-in cook. Every recipe belongs to exactly one of these.',
   serialize: (value) => value as string,
   parseValue: validatedParse('UserId', UserId),
 })
 
 builder.scalarType('RecipeId', {
-  description: 'Recipe unique identifier (UUID v4)',
+  description:
+    'The unique id of a recipe — a long random string like "9f1c…-a3b2" you pass around to ' +
+    'fetch or change that one recipe',
   serialize: (value) => value as string,
   parseValue: validatedParse('RecipeId', RecipeId),
 })
 
 builder.scalarType('RecipeTitle', {
-  description: 'Recipe title (1-200 chars)',
+  description: 'A recipe’s name, e.g. "Grandma’s lasagna" (1 to 200 characters)',
   serialize: (value) => value as string,
   parseValue: validatedParse('RecipeTitle', RecipeTitle),
 })
 
 builder.scalarType('RecipeSubtitle', {
-  description: 'Recipe subtitle (1-200 chars)',
+  description:
+    'The optional one-line subtitle under the name, e.g. "with fresh basil" (1 to 200 characters)',
   serialize: (value) => value as string,
   parseValue: validatedParse('RecipeSubtitle', RecipeSubtitle),
 })
 
 builder.scalarType('VersionNumber', {
-  description: 'Version number in a recipe lineage (>= 1)',
+  description:
+    'Which attempt in the chain — a whole number starting at 1 (1 = the original, 2 = the first tweak…)',
   serialize: (value) => value as number,
   parseValue: validatedParse('VersionNumber', VersionNumber),
 })
 
 builder.scalarType('Note', {
-  description: 'Essai rating (integer 1..5)',
+  description:
+    'A rating out of 5, as a whole number from 1 (bad) to 5 (excellent). A version rated 4 or ' +
+    'more can become the recipe’s reference.',
   serialize: (value) => value as number,
   parseValue: validatedParse('Note', Note),
 })
 
 builder.scalarType('IngredientName', {
-  description: 'Recipe ingredient name (1-120 chars)',
+  description: 'The name of an ingredient, e.g. "Flour" or "Fine salt" (1 to 120 characters)',
   serialize: (value) => value as string,
   parseValue: validatedParse('IngredientName', IngredientName),
 })
 
 builder.scalarType('IngredientQuantity', {
-  description: 'Recipe ingredient quantity with unit (1-60 chars)',
+  description:
+    'How much of an ingredient, unit included, e.g. "250 g", "2 tbsp", "1 pinch" (1 to 60 characters)',
   serialize: (value) => value as string,
   parseValue: validatedParse('IngredientQuantity', IngredientQuantity),
 })
 
 builder.scalarType('StepText', {
-  description: 'A short recipe step (1-300 chars)',
+  description: 'One instruction in the method, e.g. "Fold in the egg whites" (1 to 300 characters)',
   serialize: (value) => value as string,
   parseValue: validatedParse('StepText', StepText),
 })
 
 builder.scalarType('TmxTime', {
-  description: 'Thermomix step duration, display-oriented (e.g. "3 min", "30 s")',
+  description:
+    'How long a Thermomix step runs, written as you would read it, e.g. "3 min" or "30 s"',
   serialize: (value) => value as string,
   parseValue: validatedParse('TmxTime', TmxTime),
 })
 
 builder.scalarType('TmxTemperature', {
-  description: 'Thermomix step temperature, display-oriented (e.g. "100°C", "Varoma")',
+  description: 'The temperature of a Thermomix step, e.g. "100°C" or "Varoma" (its steam setting)',
   serialize: (value) => value as string,
   parseValue: validatedParse('TmxTemperature', TmxTemperature),
 })
 
 builder.scalarType('TmxSpeed', {
-  description: 'Thermomix step speed, display-oriented (e.g. "5", "pétrin", "turbo")',
+  description: 'The blade speed of a Thermomix step, e.g. "5", "pétrin" (kneading) or "turbo"',
   serialize: (value) => value as string,
   parseValue: validatedParse('TmxSpeed', TmxSpeed),
 })
 
 builder.scalarType('Remarks', {
-  description: 'Free-form essai remarks (up to 2000 chars)',
+  description:
+    'Free notes you jot down about an attempt, e.g. "Still too sweet, cut the sugar next time" ' +
+    '(up to 2000 characters)',
   serialize: (value) => value as string,
   parseValue: validatedParse('Remarks', Remarks),
 })

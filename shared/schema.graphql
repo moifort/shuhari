@@ -1,68 +1,121 @@
-"""Result of accepting a draft as an iteration"""
+"""What you get back after accepting an AI suggestion"""
 type AcceptDraftResult {
+  """The number of the version that was just created and queued up to try"""
   createdVersion: VersionNumber
+
+  """The recipe, now with the accepted version added to its chain"""
   recipe: Recipe!
 }
 
-"""A single version section of the application changelog"""
+"""
+One release in the app’s "What’s new" list — the changes shipped in a given version of the app
+"""
 type ChangelogEntry {
+  """When that version was released (null for a release not yet dated)"""
   date: DateTime
+
+  """
+  The list of changes in this release, one line each, ready to show to the user
+  """
   notes: [String!]!
+
+  """
+  The app version these notes are for, e.g. "1.2"
+  """
   version: String!
 }
 
-"""Create a recipe (v1) from a confirmed import preview"""
+"""
+Everything needed to save a brand-new recipe (its v1), once you have reviewed the import preview and confirmed it
+"""
 input CreateRecipeInput {
-  """The dish category detected at import"""
+  """Its course (starter, main…), as detected during import"""
   category: DishCategory!
 
-  """The recipe’s components with quantities"""
+  """The ingredient list, in order"""
   ingredients: [IngredientInput!]
 
-  """Where the recipe came from"""
+  """
+  Where it came from, e.g. a website name or "Mum"
+  """
   sourceLabel: String
+
+  """The method, one instruction per step, in order"""
   steps: [StepText!]!
+
+  """Optional one-line subtitle"""
   subtitle: RecipeSubtitle
+
+  """The recipe’s name"""
   title: RecipeTitle!
 
-  """Per-step Thermomix settings, aligned with steps (null = plain step)"""
+  """
+  Thermomix settings lined up with the steps above — one entry per step, null for a step with no machine settings (only for TMX recipes)
+  """
   tmxSteps: [TmxSettingsInput]
+
+  """Cooked dish or Thermomix recipe"""
   type: RecipeType!
 }
 
-"""ISO 8601 date-time string"""
+"""
+A date and time, given in the standard ISO 8601 format, e.g. "2026-07-18T14:30:00.000Z" (the "Z" means UTC — the app shows it in your local time)
+"""
 scalar DateTime
 
 """
-The course a dish belongs to — aggregate-level identity, drives library sorting
+The course a dish belongs to. Detected once at import, shared by every version, and used to group and sort the library.
 """
 enum DishCategory {
+  """Bread and bakery"""
   BOULANGERIE
+
+  """Dessert"""
   DESSERT
+
+  """Starter"""
   ENTREE
+
+  """Main course"""
   PLAT
+
+  """Sauce or condiment"""
   SAUCE
+
+  """Soup"""
   SOUPE
 }
 
 """
-An ephemeral AI draft of the next version of a recipe (never persisted)
+The AI’s suggestion for your next attempt. After a low-scoring essai, the AI reads your rating and notes and proposes a tweaked version. It is just a proposal shown on screen — nothing is saved until you accept it (see acceptDraft).
 """
 type Draft {
-  """A short human summary of what the next version changes"""
+  """
+  A one-line summary of what it changes, e.g. "Less sugar, longer resting time"
+  """
   changeSummary: String!
 
-  """The full ingredient list of the drafted next version"""
+  """
+  The complete ingredient list of the suggested version (not just what changed)
+  """
   ingredients: [Ingredient!]!
+
+  """
+  The AI’s reasoning — why it thinks this change will help, based on your last notes
+  """
   rationale: String!
 
-  """The full step list of the drafted next version"""
+  """The complete method of the suggested version (not just what changed)"""
   steps: [StepText!]!
 
   """
   Per-step Thermomix settings aligned with steps (null = plain step; [] if not tmx)
   """
   tmxSteps: [TmxSettings]!
+
+  """
+  The number this version would get if you accept it (the next one in the chain)
+  """
   versionNumber: VersionNumber!
 }
 
@@ -119,9 +172,14 @@ type ImportIngredient {
   quantity: String!
 }
 
-"""Number of records imported per collection"""
+"""
+A tally of what was restored after an import — how many rows of each kind were loaded
+"""
 type ImportResult {
+  """How many recipes were imported"""
   recipes: Int!
+
+  """How many versions (across all those recipes) were imported"""
   versions: Int!
 }
 
@@ -135,29 +193,57 @@ type ImportTmxSettings {
   time: String
 }
 
-"""A recipe component with its measured quantity (ordered list)"""
+"""
+One line of the ingredient list: what it is and how much of it. The list keeps its order, e.g. "Flour — 250 g", then "Butter — 100 g", then "Eggs — 3".
+"""
 type Ingredient {
+  """
+  What the ingredient is, e.g. "Flour" or "Fine salt"
+  """
   name: IngredientName!
+
+  """
+  How much of it, unit included, e.g. "250 g", "2 tbsp", "1 pinch"
+  """
   quantity: IngredientQuantity!
 }
 
-"""A recipe ingredient with its quantity (ordered)"""
+"""
+One ingredient line to save, e.g. name "Flour" + quantity "250 g". Order is kept.
+"""
 input IngredientInput {
+  """
+  What it is, e.g. "Flour"
+  """
   name: IngredientName!
+
+  """
+  How much, unit included, e.g. "250 g"
+  """
   quantity: IngredientQuantity!
 }
 
-"""Recipe ingredient name (1-120 chars)"""
+"""
+The name of an ingredient, e.g. "Flour" or "Fine salt" (1 to 120 characters)
+"""
 scalar IngredientName
 
-"""Recipe ingredient quantity with unit (1-60 chars)"""
+"""
+How much of an ingredient, unit included, e.g. "250 g", "2 tbsp", "1 pinch" (1 to 60 characters)
+"""
 scalar IngredientQuantity
 
 type Mutation {
   """
-  Accept a draft as an iteration, appending it as the next version to test
+  Accept an AI suggestion (optionally after editing it). It becomes the next version in the chain, added to your to-do list of attempts to cook.
   """
-  acceptDraft(draft: DraftInput!, recipeId: RecipeId!): AcceptDraftResult!
+  acceptDraft(
+    """The full suggested version to save (with any edits you made)"""
+    draft: DraftInput!
+
+    """The recipe being iterated on"""
+    recipeId: RecipeId!
+  ): AcceptDraftResult!
 
   """
   Analyze an import source (photos, a URL or raw text) into a structured recipe preview. Exactly one source must be provided. Results are cached server-side by SHA-256.
@@ -173,52 +259,104 @@ type Mutation {
     url: String
   ): ImportAnalysis!
 
-  """Create a recipe and its v1 from a confirmed import preview"""
-  createRecipe(input: CreateRecipeInput!): Recipe!
-
-  """Delete a recipe and all its versions"""
-  deleteRecipe(id: RecipeId!): Boolean!
-
-  """Discard the pending essai — delete its untried version"""
-  discardPendingVersion(recipeId: RecipeId!, versionNumber: VersionNumber!): Boolean!
+  """
+  Save a new recipe. Turns a confirmed import preview into a real recipe with its first version (v1). Returns the freshly created recipe.
+  """
+  createRecipe(
+    """The recipe to create — name, category, ingredients, steps…"""
+    input: CreateRecipeInput!
+  ): Recipe!
 
   """
-  Replace all the current user records with the contents of a JSON envelope
+  Delete a recipe for good, along with every version and attempt on it. Returns true on success.
   """
-  importData(payload: String!): ImportResult!
+  deleteRecipe(
+    """Which recipe to delete"""
+    id: RecipeId!
+  ): Boolean!
 
   """
-  Promote a pending version to the current reference (after a high-scoring trial)
+  Drop a planned-but-not-yet-cooked version from the to-do list and delete it. Returns true on success. Won’t delete a recipe’s only version.
   """
-  promoteVersion(recipeId: RecipeId!, versionNumber: VersionNumber!): Recipe!
+  discardPendingVersion(
+    """Which recipe"""
+    recipeId: RecipeId!
+
+    """Which pending (untried) version to discard"""
+    versionNumber: VersionNumber!
+  ): Boolean!
 
   """
-  Record an essai onto a version (fast, no AI). Ask for a draft separately if the note is low.
+  Restore a backup. WARNING: this REPLACES everything you currently have with the contents of the JSON text (as produced by exportData). Returns a count of what was loaded.
   """
-  recordEssai(input: RecordEssaiInput!): RecordEssaiResult!
+  importData(
+    """The backup as JSON text, exactly as exportData produced it"""
+    payload: String!
+  ): ImportResult!
 
-  """Ask the AI to analyze the latest essai and draft the next iteration"""
-  requestDraft(recipeId: RecipeId!): Draft!
+  """
+  Crown a version as the recipe’s new reference (its "currentVersion") — do this after an attempt scored high enough. Returns the updated recipe.
+  """
+  promoteVersion(
+    """Which recipe"""
+    recipeId: RecipeId!
 
-  """Rename a recipe (title and/or subtitle)"""
-  updateRecipe(id: RecipeId!, input: UpdateRecipeInput!): Recipe!
+    """Which version to make the reference"""
+    versionNumber: VersionNumber!
+  ): Recipe!
+
+  """
+  Save what happened when you cooked a version: its rating and your notes. Fast and does not call the AI. If the rating is low and you want a suggested improvement, ask for a draft separately (see requestDraft).
+  """
+  recordEssai(
+    """The attempt to record — which version, the rating, the notes"""
+    input: RecordEssaiInput!
+  ): RecordEssaiResult!
+
+  """
+  Ask the AI for a suggested next version. It looks at your most recent attempt (its rating and notes) and proposes one improvement. Nothing is saved yet — you get a proposal to review.
+  """
+  requestDraft(
+    """The recipe to get a suggestion for"""
+    recipeId: RecipeId!
+  ): Draft!
+
+  """
+  Rename a recipe — change its title and/or its subtitle. Returns the updated recipe.
+  """
+  updateRecipe(
+    """Which recipe to rename"""
+    id: RecipeId!
+
+    """The new title/subtitle (send only what changes)"""
+    input: UpdateRecipeInput!
+  ): Recipe!
 }
 
-"""Essai rating (integer 1..5)"""
+"""
+A rating out of 5, as a whole number from 1 (bad) to 5 (excellent). A version rated 4 or more can become the recipe’s reference.
+"""
 scalar Note
 
 type Query {
   """Application changelog, most recent versions first"""
   changelog: [ChangelogEntry!]!
 
-  """JSON-encoded export of every record belonging to the current user"""
+  """
+  Download all your data as one JSON text — a full backup of every recipe and version you own. Pair it with importData to move or restore your library.
+  """
   exportData: String!
 
   """The home screen read model for the current user"""
   home: Home!
 
-  """A single recipe by id"""
-  recipe(id: RecipeId!): Recipe
+  """
+  Fetch one recipe by its id, with everything on it. Returns null if no such recipe exists.
+  """
+  recipe(
+    """The id of the recipe to fetch"""
+    id: RecipeId!
+  ): Recipe
 
   """
   A page of the current user’s recipe library, filtered by type and sorted per view
@@ -246,41 +384,71 @@ type Query {
   ): Recipes!
 }
 
-"""A recipe under experimentation, with its version lineage"""
+"""
+A dish you are perfecting over time. A recipe is the whole experiment, not a single recipe card: it holds a chain of versions (v1, v2, v3 …), remembers which one is the current best, and which one is queued up to try next. Think "Grandma’s lasagna" and every attempt you have made to nail it.
+"""
 type Recipe {
-  """The highest essai note the recipe ever scored, or null if never tried"""
+  """
+  The best rating this recipe ever got, across all the attempts you have cooked (1–5). Null if you have never tried any version yet.
+  """
   bestNote: Note
 
-  """The dish category — fixed at import, shared across all versions"""
+  """
+  Which course it is (starter, main, dessert…). Set once at import and shared by every version; used to group the library.
+  """
   category: DishCategory!
+
+  """When the recipe was first imported"""
   createdAt: DateTime!
 
   """
-  The current reproducible reference version, or null until the first promotion
+  The reference version — the one you consider "the recipe" today, the one to reproduce. A version becomes eligible once its essai (run on the pending version) scores 4 or more; you then confirm it with promoteVersion. Null until that first promotion, while the recipe is still being dialled in.
   """
   currentVersion: Version
+
+  """Its unique identifier"""
   id: RecipeId!
 
   """
-  Versions still awaiting their first run, most recent first — empty for a recipe that only holds its original version
+  Your to-do list of attempts: versions created but not yet cooked, newest first. Empty for a brand-new recipe that only has its original v1 (that one is run straight from the recipe card, not offered here).
   """
   pendingEssais: [Version!]!
+
+  """
+  An optional one-liner under the title, e.g. "with fresh basil". Null if none.
+  """
   subtitle: String
+
+  """
+  Its name, e.g. "Grandma’s lasagna"
+  """
   title: RecipeTitle!
 
-  """The pending version awaiting an essai, if any"""
+  """
+  The version queued up to cook next — created but not yet tried. Right after import this points to the original v1. It is null only once every version has been tried (or the pending one was discarded or promoted).
+  """
   toTest: Version
+
+  """Whether it is a cooked dish or a Thermomix recipe"""
   type: RecipeType!
+
+  """
+  When anything last changed on it (a new version, a rating…). Drives library sort.
+  """
   updatedAt: DateTime!
 
-  """How many versions the recipe has (its highest version number)"""
+  """
+  How many versions exist so far — also the number of the most recent one
+  """
   versionCount: VersionNumber!
 
-  """The full lineage, oldest first"""
+  """The whole history, oldest first (v1 → v2 → …)"""
   versions: [Version!]!
 }
 
-"""Recipe unique identifier (UUID v4)"""
+"""
+The unique id of a recipe — a long random string like "9f1c…-a3b2" you pass around to fetch or change that one recipe
+"""
 scalar RecipeId
 
 """Field the paginated recipe library is ordered by"""
@@ -294,49 +462,79 @@ enum RecipeSort {
   UPDATED_AT
 }
 
-"""Recipe subtitle (1-200 chars)"""
+"""
+The optional one-line subtitle under the name, e.g. "with fresh basil" (1 to 200 characters)
+"""
 scalar RecipeSubtitle
 
-"""Recipe title (1-200 chars)"""
+"""A recipe’s name, e.g. "Grandma’s lasagna" (1 to 200 characters)"""
 scalar RecipeTitle
 
-"""The kind of culinary experiment — a cooked dish or a Thermomix recipe"""
+"""
+The kind of culinary experiment. Fixed at import, it decides how a version is displayed and how the AI is allowed to iterate on it.
+"""
 enum RecipeType {
+  """A cooked dish — steps are plain text"""
   PLAT
+
+  """
+  A Thermomix recipe — each step also carries machine settings (time/temp/speed)
+  """
   TMX
 }
 
-"""A page of the recipe library"""
+"""
+One slice of your recipe library — a single "page" of results, the way an app loads a few at a time as you scroll rather than everything at once.
+"""
 type Recipes {
-  """Whether more recipes are available after this page"""
+  """
+  Are there more recipes to load after this page? (true = keep scrolling)
+  """
   hasMore: Boolean!
+
+  """The recipes on this page"""
   items: [Recipe!]!
 
   """
-  Number of recipes in this page (the full library count is not computed)
+  How many recipes are on THIS page — not the size of the whole library, which is never counted (the list is meant to be scrolled, not totalled)
   """
   totalCount: Int!
 }
 
-"""Record the essai outcome of a recipe version (written once)"""
+"""
+The result of cooking one version: which version you tried, how you rate it, and your notes. Recorded once — a version’s outcome cannot be edited afterwards.
+"""
 input RecordEssaiInput {
+  """Your rating, 1 to 5"""
   note: Note!
 
   """Base64 JPEG of the result (optional; not yet stored)"""
   photo: String
+
+  """Which recipe you cooked"""
   recipeId: RecipeId!
+
+  """Your notes on how it turned out"""
   remarks: Remarks!
+
+  """Which version of it you tried"""
   versionNumber: VersionNumber!
 }
 
-"""Outcome of recording an essai onto a version"""
+"""What you get back after saving the result of an attempt"""
 type RecordEssaiResult {
-  """True when this essai qualifies its version for promotion"""
+  """
+  True when this attempt — run on the pending version — scored 4 or more, so this version can now become the recipe’s new reference; the app then offers to "promote" it
+  """
   promotionSuggested: Boolean!
+
+  """The version you just rated, now updated with its note and remarks"""
   version: Version!
 }
 
-"""Free-form essai remarks (up to 2000 chars)"""
+"""
+Free notes you jot down about an attempt, e.g. "Still too sweet, cut the sugar next time" (up to 2000 characters)
+"""
 scalar Remarks
 
 """Sort direction"""
@@ -348,72 +546,140 @@ enum SortOrder {
   DESC
 }
 
-"""A short recipe step (1-300 chars)"""
+"""
+One instruction in the method, e.g. "Fold in the egg whites" (1 to 300 characters)
+"""
 scalar StepText
 
-"""Thermomix settings for one step (display-oriented, all optional)"""
+"""
+The Thermomix machine settings that go with one step (only for TMX recipes). Every field is optional — a step can set just a speed, or a full time + temperature + speed combo, e.g. "10 min / 100°C / speed 2".
+"""
 type TmxSettings {
+  """
+  Whether the blades spin in reverse (gentle mixing) — true/false, null if not set
+  """
   reverse: Boolean
+
+  """The blade speed, e.g. "2", "kneading", "turbo" (null if not set)"""
   speed: TmxSpeed
+
+  """The cooking temperature, e.g. "100°C" or "Varoma" (null if not set)"""
   temperature: TmxTemperature
+
+  """How long the step runs, e.g. "10 min" or "30 s" (null if not set)"""
   time: TmxTime
 }
 
-"""Thermomix settings for one step (all optional)"""
+"""The Thermomix settings to attach to one step. Every field is optional."""
 input TmxSettingsInput {
+  """Reverse (gentle mixing) on or off"""
   reverse: Boolean
+
+  """
+  Blade speed, e.g. "2" or "turbo"
+  """
   speed: TmxSpeed
+
+  """
+  Temperature, e.g. "100°C"
+  """
   temperature: TmxTemperature
+
+  """
+  Duration, e.g. "10 min"
+  """
   time: TmxTime
 }
 
-"""Thermomix step speed, display-oriented (e.g. "5", "pétrin", "turbo")"""
+"""
+The blade speed of a Thermomix step, e.g. "5", "pétrin" (kneading) or "turbo"
+"""
 scalar TmxSpeed
 
-"""Thermomix step temperature, display-oriented (e.g. "100°C", "Varoma")"""
+"""
+The temperature of a Thermomix step, e.g. "100°C" or "Varoma" (its steam setting)
+"""
 scalar TmxTemperature
 
-"""Thermomix step duration, display-oriented (e.g. "3 min", "30 s")"""
+"""
+How long a Thermomix step runs, written as you would read it, e.g. "3 min" or "30 s"
+"""
 scalar TmxTime
 
-"""Update a recipe’s title and subtitle. Absent fields are unchanged."""
+"""
+Fields to rename a recipe. Send only what you want to change — anything you leave out stays as it was.
+"""
 input UpdateRecipeInput {
+  """The new subtitle (leave out to keep the current one)"""
   subtitle: RecipeSubtitle
+
+  """The new name (leave out to keep the current one)"""
   title: RecipeTitle
 }
 
-"""Firebase Auth user identifier"""
+"""
+Identifies one signed-in cook. Every recipe belongs to exactly one of these.
+"""
 scalar UserId
 
 """
-A recipe version — an entry in the lineage (v1 → v2 → …) that is also an essai
+One version of a recipe — and, at the same time, one "essai" (a real attempt in the kitchen). Two sides to it: the CONTENT (its ingredients and steps, frozen the moment the version is created) and the OUTCOME (its rating and remarks, filled in once you have actually cooked it). Versions form a chain: v1 (the import) → v2 → v3 … Each new version builds on the one before, so you can see what changed and whether it made the dish better.
 """
 type Version {
+  """
+  A short summary of what this version changes versus the previous one, e.g. "Baked at 180°C instead of 200°C". A dish or Thermomix recipe may change several things at once. Null on the original v1, which changes nothing.
+  """
   change: String
+
+  """
+  When this version was created (not when it was cooked — see executedAt)
+  """
   createdAt: DateTime!
 
   """
-  When the essai was executed, or null while still an "essai à faire"
+  The day you actually cooked this version. Null means it is still an "essai à faire" (a to-do you have planned but not tried yet).
   """
   executedAt: DateTime
 
-  """The recipe’s components with quantities ([] when none)"""
+  """
+  This version’s full ingredient list, in order (empty list when it has none)
+  """
   ingredients: [Ingredient!]!
 
-  """The essai rating, or null while not yet executed"""
+  """
+  Your rating of this attempt, from 1 (bad) to 5 (excellent). Null until you have cooked it. A version needs 4 or more to become the recipe’s reference (see currentVersion).
+  """
   note: Note
+
+  """
+  Its rank in the chain — 1 is the original import, 2 the first tweak, and so on
+  """
   number: VersionNumber!
+
+  """
+  A short note about its origin, e.g. the source it was imported from, or null if none
+  """
   originDetail: String
+
+  """
+  Where this version came from: the import, an AI suggestion, or written by hand
+  """
   originKind: VersionOriginKind!
 
   """
-  Signed URL of the essai photo (null until photo storage is provisioned)
+  A link to the photo of the result (always null for now — photos aren’t stored yet)
   """
   photoUrl: String
+
+  """Which recipe this version belongs to"""
   recipeId: RecipeId!
 
-  """The essai remarks, or null while not yet executed"""
+  """
+  Your free notes on how it turned out, e.g. "Still a touch too sweet, but the texture is spot on". Null until you have cooked it.
+  """
   remarks: Remarks
+
+  """This version’s method, one short instruction per step, in order"""
   steps: [StepText!]!
 
   """
@@ -421,17 +687,32 @@ type Version {
   """
   tmxSteps: [TmxSettings]!
 
-  """Whether this version has been executed (its essai recorded)"""
+  """
+  The quick yes/no of the field above: true once you have cooked and rated it, false while it is still waiting to be tried
+  """
   tried: Boolean!
+
+  """
+  The reason behind that change, e.g. "The top was burning at 200°C". Null when not given.
+  """
   why: String
 }
 
-"""Version number in a recipe lineage (>= 1)"""
+"""
+Which attempt in the chain — a whole number starting at 1 (1 = the original, 2 = the first tweak…)
+"""
 scalar VersionNumber
 
-"""How a version came to exist"""
+"""Where a version came from — how this entry in the lineage was born"""
 enum VersionOriginKind {
+  """
+  An iteration the AI drafted from the previous essai and the cook accepted
+  """
   AI_PROPOSAL
+
+  """The original v1, created when the recipe was imported"""
   IMPORT
+
+  """A version the cook wrote by hand, without the AI"""
   MANUAL
 }

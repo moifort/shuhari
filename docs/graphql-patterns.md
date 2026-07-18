@@ -247,10 +247,44 @@ export const UpdateRecipeInput = builder.inputType('UpdateRecipeInput', {
 })
 ```
 
-## Document everything
+## Document everything — functionally, for a non-technical reader
 
-Every type, field, enum and argument gets a Pothos `description` — the SDL is the contract shared
-with the iOS app and shows up in Apollo Sandbox. An undocumented field is an incomplete field.
+Every type, field, enum value and argument gets a Pothos `description` — the SDL is the contract
+shared with the iOS app and shows up in Apollo Sandbox. An undocumented field is an incomplete
+field.
+
+Write descriptions **functionally**: explain the *business meaning* in the cook's language, as if
+the reader had never seen the code. The Sandbox schema screen is documentation for a non-technical
+reader, not a type annotation. Concretely:
+
+- **Say what it means in the domain, not what it is technically.** Prefer "The reference version —
+  the one to reproduce" over "The currentVersion pointer". Name the Shu-Ha-Ri concept (recipe,
+  version = essai, iteration, promotion) rather than the storage or GraphQL mechanics.
+- **Give a concrete example** wherever it sharpens understanding — real values in the culinary
+  domain: `e.g. "Grandma’s lasagna"`, `e.g. "250 g"`, `e.g. "Baked at 180°C instead of 200°C"`,
+  `1 (bad) to 5 (excellent)`. Examples beat abstract prose for a non-tech reader.
+- **Explain nullability in plain words**: what does `null` *mean* here? ("Null until you have
+  cooked it", "Null while the recipe is still being dialled in").
+- **Cross-reference sibling fields by name** so the reader can navigate the graph: "see
+  `currentVersion`", "ask for a draft separately (see `requestDraft`)".
+- **Flag destructive actions** in the mutation description ("WARNING: this REPLACES everything…").
+- Keep the domain vocabulary consistent across the schema (an *essai* is an attempt, a *version* is
+  one entry in the chain, an *iteration* is an accepted AI draft).
+
+```typescript
+note: t.field({
+  type: 'Note',
+  nullable: true,
+  description:
+    'Your rating of this attempt, from 1 (bad) to 5 (excellent). Null until you have cooked ' +
+    'it. A version needs 4 or more to become the recipe’s reference (see currentVersion).',
+  resolve: (v) => v.note ?? null,
+}),
+```
+
+Descriptions still obey the repo language rule: **English only** (the schema is versioned/technical;
+only user-facing app copy is French). Wrap long strings with `'…' + '…'` concatenation to stay under
+Biome's 100-column limit.
 
 ## Regenerating the SDL and iOS types
 

@@ -1,22 +1,29 @@
 import { builder } from '~/domain/shared/graphql/builder'
 
 export const RecipeTypeEnum = builder.enumType('RecipeType', {
-  description: 'The kind of culinary experiment — a cooked dish or a Thermomix recipe',
+  description:
+    'The kind of culinary experiment. Fixed at import, it decides how a version is displayed ' +
+    'and how the AI is allowed to iterate on it.',
   values: {
-    PLAT: { value: 'plat' },
-    TMX: { value: 'tmx' },
+    PLAT: { value: 'plat', description: 'A cooked dish — steps are plain text' },
+    TMX: {
+      value: 'tmx',
+      description: 'A Thermomix recipe — each step also carries machine settings (time/temp/speed)',
+    },
   } as const,
 })
 
 export const DishCategoryEnum = builder.enumType('DishCategory', {
-  description: 'The course a dish belongs to — aggregate-level identity, drives library sorting',
+  description:
+    'The course a dish belongs to. Detected once at import, shared by every version, and used ' +
+    'to group and sort the library.',
   values: {
-    ENTREE: { value: 'entree' },
-    PLAT: { value: 'plat' },
-    DESSERT: { value: 'dessert' },
-    SOUPE: { value: 'soupe' },
-    SAUCE: { value: 'sauce' },
-    BOULANGERIE: { value: 'boulangerie' },
+    ENTREE: { value: 'entree', description: 'Starter' },
+    PLAT: { value: 'plat', description: 'Main course' },
+    DESSERT: { value: 'dessert', description: 'Dessert' },
+    SOUPE: { value: 'soupe', description: 'Soup' },
+    SAUCE: { value: 'sauce', description: 'Sauce or condiment' },
+    BOULANGERIE: { value: 'boulangerie', description: 'Bread and bakery' },
   } as const,
 })
 
@@ -42,10 +49,16 @@ export const SortOrderEnum = builder.enumType('SortOrder', {
 })
 
 export const VersionOriginKindEnum = builder.enumType('VersionOriginKind', {
-  description: 'How a version came to exist',
+  description: 'Where a version came from — how this entry in the lineage was born',
   values: {
-    IMPORT: { value: 'import' },
-    AI_PROPOSAL: { value: 'ai-proposal' },
-    MANUAL: { value: 'manual' },
+    IMPORT: {
+      value: 'import',
+      description: 'The original v1, created when the recipe was imported',
+    },
+    AI_PROPOSAL: {
+      value: 'ai-proposal',
+      description: 'An iteration the AI drafted from the previous essai and the cook accepted',
+    },
+    MANUAL: { value: 'manual', description: 'A version the cook wrote by hand, without the AI' },
   } as const,
 })

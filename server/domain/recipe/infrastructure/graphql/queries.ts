@@ -50,8 +50,11 @@ builder.queryField('recipe', (t) =>
   t.field({
     type: RecipeType,
     nullable: true,
-    description: 'A single recipe by id',
-    args: { id: t.arg({ type: 'RecipeId', required: true }) },
+    description:
+      'Fetch one recipe by its id, with everything on it. Returns null if no such recipe exists.',
+    args: {
+      id: t.arg({ type: 'RecipeId', required: true, description: 'The id of the recipe to fetch' }),
+    },
     resolve: async (_root, { id }, { userId }) => {
       const recipe = await RecipeQuery.byId(userId, id)
       return match(recipe)

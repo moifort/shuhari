@@ -5,24 +5,51 @@ import type { Ingredient, Recipe, RecipeVersion, TmxSettings } from '../../types
 import { DishCategoryEnum, RecipeTypeEnum, VersionOriginKindEnum } from './enums'
 
 export const IngredientType = builder.objectRef<Ingredient>('Ingredient').implement({
-  description: 'A recipe component with its measured quantity (ordered list)',
+  description:
+    'One line of the ingredient list: what it is and how much of it. The list keeps its order, ' +
+    'e.g. "Flour — 250 g", then "Butter — 100 g", then "Eggs — 3".',
   fields: (t) => ({
-    name: t.expose('name', { type: 'IngredientName' }),
-    quantity: t.expose('quantity', { type: 'IngredientQuantity' }),
+    name: t.expose('name', {
+      type: 'IngredientName',
+      description: 'What the ingredient is, e.g. "Flour" or "Fine salt"',
+    }),
+    quantity: t.expose('quantity', {
+      type: 'IngredientQuantity',
+      description: 'How much of it, unit included, e.g. "250 g", "2 tbsp", "1 pinch"',
+    }),
   }),
 })
 
 export const TmxSettingsType = builder.objectRef<TmxSettings>('TmxSettings').implement({
-  description: 'Thermomix settings for one step (display-oriented, all optional)',
+  description:
+    'The Thermomix machine settings that go with one step (only for TMX recipes). Every field ' +
+    'is optional — a step can set just a speed, or a full time + temperature + speed combo, ' +
+    'e.g. "10 min / 100°C / speed 2".',
   fields: (t) => ({
-    time: t.field({ type: 'TmxTime', nullable: true, resolve: (s) => s.time ?? null }),
+    time: t.field({
+      type: 'TmxTime',
+      nullable: true,
+      description: 'How long the step runs, e.g. "10 min" or "30 s" (null if not set)',
+      resolve: (s) => s.time ?? null,
+    }),
     temperature: t.field({
       type: 'TmxTemperature',
       nullable: true,
+      description: 'The cooking temperature, e.g. "100°C" or "Varoma" (null if not set)',
       resolve: (s) => s.temperature ?? null,
     }),
-    speed: t.field({ type: 'TmxSpeed', nullable: true, resolve: (s) => s.speed ?? null }),
-    reverse: t.boolean({ nullable: true, resolve: (s) => s.reverse ?? null }),
+    speed: t.field({
+      type: 'TmxSpeed',
+      nullable: true,
+      description: 'The blade speed, e.g. "2", "kneading", "turbo" (null if not set)',
+      resolve: (s) => s.speed ?? null,
+    }),
+    reverse: t.boolean({
+      nullable: true,
+      description:
+        'Whether the blades spin in reverse (gentle mixing) — true/false, null if not set',
+      resolve: (s) => s.reverse ?? null,
+    }),
   }),
 })
 
@@ -30,21 +57,58 @@ export const TmxSettingsType = builder.objectRef<TmxSettings>('TmxSettings').imp
 // (note/remarks/executedAt) written once when executed. `tried` derives from
 // `executedAt`.
 export const VersionType = builder.objectRef<RecipeVersion>('Version').implement({
-  description: 'A recipe version — an entry in the lineage (v1 → v2 → …) that is also an essai',
+  description:
+    'One version of a recipe — and, at the same time, one "essai" (a real attempt in the ' +
+    'kitchen). Two sides to it: the CONTENT (its ingredients and steps, frozen the moment the ' +
+    'version is created) and the OUTCOME (its rating and remarks, filled in once you have ' +
+    'actually cooked it). Versions form a chain: v1 (the import) → v2 → v3 … Each new version ' +
+    'builds on the one before, so you can see what changed and whether it made the dish better.',
   fields: (t) => ({
-    recipeId: t.expose('recipeId', { type: 'RecipeId' }),
-    number: t.expose('number', { type: 'VersionNumber' }),
-    createdAt: t.expose('createdAt', { type: 'DateTime' }),
-    originKind: t.field({ type: VersionOriginKindEnum, resolve: (v) => v.origin.kind }),
-    originDetail: t.string({ nullable: true, resolve: (v) => v.origin.detail ?? null }),
-    change: t.exposeString('change', { nullable: true }),
-    why: t.string({ nullable: true, resolve: (v) => v.why ?? null }),
+    recipeId: t.expose('recipeId', {
+      type: 'RecipeId',
+      description: 'Which recipe this version belongs to',
+    }),
+    number: t.expose('number', {
+      type: 'VersionNumber',
+      description: 'Its rank in the chain — 1 is the original import, 2 the first tweak, and so on',
+    }),
+    createdAt: t.expose('createdAt', {
+      type: 'DateTime',
+      description: 'When this version was created (not when it was cooked — see executedAt)',
+    }),
+    originKind: t.field({
+      type: VersionOriginKindEnum,
+      description: 'Where this version came from: the import, an AI suggestion, or written by hand',
+      resolve: (v) => v.origin.kind,
+    }),
+    originDetail: t.string({
+      nullable: true,
+      description:
+        'A short note about its origin, e.g. the source it was imported from, or null if none',
+      resolve: (v) => v.origin.detail ?? null,
+    }),
+    change: t.exposeString('change', {
+      nullable: true,
+      description:
+        'A short summary of what this version changes versus the previous one, e.g. "Baked at ' +
+        '180°C instead of 200°C". A dish or Thermomix recipe may change several things at once. ' +
+        'Null on the original v1, which changes nothing.',
+    }),
+    why: t.string({
+      nullable: true,
+      description:
+        'The reason behind that change, e.g. "The top was burning at 200°C". Null when not given.',
+      resolve: (v) => v.why ?? null,
+    }),
     ingredients: t.field({
       type: [IngredientType],
-      description: 'The recipe’s components with quantities ([] when none)',
+      description: 'This version’s full ingredient list, in order (empty list when it has none)',
       resolve: (v) => v.ingredients,
     }),
-    steps: t.expose('steps', { type: ['StepText'] }),
+    steps: t.expose('steps', {
+      type: ['StepText'],
+      description: 'This version’s method, one short instruction per step, in order',
+    }),
     tmxSteps: t.field({
       type: [TmxSettingsType],
       nullable: { list: false, items: true },
@@ -55,28 +119,37 @@ export const VersionType = builder.objectRef<RecipeVersion>('Version').implement
     executedAt: t.field({
       type: 'DateTime',
       nullable: true,
-      description: 'When the essai was executed, or null while still an "essai à faire"',
+      description:
+        'The day you actually cooked this version. Null means it is still an "essai à faire" ' +
+        '(a to-do you have planned but not tried yet).',
       resolve: (v) => v.executedAt ?? null,
     }),
     tried: t.boolean({
-      description: 'Whether this version has been executed (its essai recorded)',
+      description:
+        'The quick yes/no of the field above: true once you have cooked and rated it, false while ' +
+        'it is still waiting to be tried',
       resolve: (v) => v.executedAt !== null,
     }),
     note: t.field({
       type: 'Note',
       nullable: true,
-      description: 'The essai rating, or null while not yet executed',
+      description:
+        'Your rating of this attempt, from 1 (bad) to 5 (excellent). Null until you have cooked ' +
+        'it. A version needs 4 or more to become the recipe’s reference (see currentVersion).',
       resolve: (v) => v.note ?? null,
     }),
     remarks: t.field({
       type: 'Remarks',
       nullable: true,
-      description: 'The essai remarks, or null while not yet executed',
+      description:
+        'Your free notes on how it turned out, e.g. "Still a touch too sweet, but the texture ' +
+        'is spot on". Null until you have cooked it.',
       resolve: (v) => v.remarks ?? null,
     }),
     photoUrl: t.string({
       nullable: true,
-      description: 'Signed URL of the essai photo (null until photo storage is provisioned)',
+      description:
+        'A link to the photo of the result (always null for now — photos aren’t stored yet)',
       resolve: () => null,
     }),
   }),
@@ -85,26 +158,53 @@ export const VersionType = builder.objectRef<RecipeVersion>('Version').implement
 export const RecipeType = builder.objectRef<Recipe>('Recipe')
 
 RecipeType.implement({
-  description: 'A recipe under experimentation, with its version lineage',
+  description:
+    'A dish you are perfecting over time. A recipe is the whole experiment, not a single ' +
+    'recipe card: it holds a chain of versions (v1, v2, v3 …), remembers which one is the ' +
+    'current best, and which one is queued up to try next. Think "Grandma’s lasagna" and every ' +
+    'attempt you have made to nail it.',
   fields: (t) => ({
-    id: t.expose('id', { type: 'RecipeId' }),
-    type: t.expose('type', { type: RecipeTypeEnum }),
+    id: t.expose('id', { type: 'RecipeId', description: 'Its unique identifier' }),
+    type: t.expose('type', {
+      type: RecipeTypeEnum,
+      description: 'Whether it is a cooked dish or a Thermomix recipe',
+    }),
     category: t.expose('category', {
       type: DishCategoryEnum,
-      description: 'The dish category — fixed at import, shared across all versions',
+      description:
+        'Which course it is (starter, main, dessert…). Set once at import and shared by every ' +
+        'version; used to group the library.',
     }),
-    title: t.expose('title', { type: 'RecipeTitle' }),
-    subtitle: t.string({ nullable: true, resolve: (r) => r.subtitle ?? null }),
-    createdAt: t.expose('createdAt', { type: 'DateTime' }),
-    updatedAt: t.expose('updatedAt', { type: 'DateTime' }),
+    title: t.expose('title', {
+      type: 'RecipeTitle',
+      description: 'Its name, e.g. "Grandma’s lasagna"',
+    }),
+    subtitle: t.string({
+      nullable: true,
+      description: 'An optional one-liner under the title, e.g. "with fresh basil". Null if none.',
+      resolve: (r) => r.subtitle ?? null,
+    }),
+    createdAt: t.expose('createdAt', {
+      type: 'DateTime',
+      description: 'When the recipe was first imported',
+    }),
+    updatedAt: t.expose('updatedAt', {
+      type: 'DateTime',
+      description:
+        'When anything last changed on it (a new version, a rating…). Drives library sort.',
+    }),
     versionCount: t.expose('versionCount', {
       type: 'VersionNumber',
-      description: 'How many versions the recipe has (its highest version number)',
+      description: 'How many versions exist so far — also the number of the most recent one',
     }),
     currentVersion: t.field({
       type: VersionType,
       nullable: true,
-      description: 'The current reproducible reference version, or null until the first promotion',
+      description:
+        'The reference version — the one you consider "the recipe" today, the one to reproduce. ' +
+        'A version becomes eligible once its essai (run on the pending version) scores 4 or more; ' +
+        'you then confirm it with promoteVersion. Null until that first promotion, while the ' +
+        'recipe is still being dialled in.',
       resolve: (r, _a, { loaders }) =>
         r.currentVersion === null
           ? null
@@ -115,7 +215,10 @@ RecipeType.implement({
     toTest: t.field({
       type: VersionType,
       nullable: true,
-      description: 'The pending version awaiting an essai, if any',
+      description:
+        'The version queued up to cook next — created but not yet tried. Right after import this ' +
+        'points to the original v1. It is null only once every version has been tried (or the ' +
+        'pending one was discarded or promoted).',
       resolve: (r, _a, { loaders }) =>
         r.toTest === null
           ? null
@@ -123,13 +226,15 @@ RecipeType.implement({
     }),
     versions: t.field({
       type: [VersionType],
-      description: 'The full lineage, oldest first',
+      description: 'The whole history, oldest first (v1 → v2 → …)',
       resolve: (r) => RecipeQuery.versionsOf(r.id),
     }),
     pendingEssais: t.field({
       type: [VersionType],
       description:
-        'Versions still awaiting their first run, most recent first — empty for a recipe that only holds its original version',
+        'Your to-do list of attempts: versions created but not yet cooked, newest first. Empty ' +
+        'for a brand-new recipe that only has its original v1 (that one is run straight from the ' +
+        'recipe card, not offered here).',
       resolve: (r) =>
         r.versionCount <= 1 ? [] : RecipeQuery.versionsOf(r.id).then((vs) => pendingEssais(vs)),
     }),
@@ -138,7 +243,9 @@ RecipeType.implement({
     bestNote: t.field({
       type: 'Note',
       nullable: true,
-      description: 'The highest essai note the recipe ever scored, or null if never tried',
+      description:
+        'The best rating this recipe ever got, across all the attempts you have cooked (1–5). ' +
+        'Null if you have never tried any version yet.',
       resolve: async (r, _a, { loaders }) => {
         const versions = (await loaders.versionsByRecipe.load(r.id)) ?? []
         const notes = versions
@@ -153,14 +260,22 @@ RecipeType.implement({
 // A page of the recipe library. `totalCount` is the size of THIS page — the full
 // library count is never computed (an infinite-scroll list, not a total).
 export const RecipesType = builder.objectRef<RecipeLibraryPage>('Recipes').implement({
-  description: 'A page of the recipe library',
+  description:
+    'One slice of your recipe library — a single "page" of results, the way an app loads a few ' +
+    'at a time as you scroll rather than everything at once.',
   fields: (t) => ({
-    items: t.field({ type: [RecipeType], resolve: ({ items }) => items }),
+    items: t.field({
+      type: [RecipeType],
+      description: 'The recipes on this page',
+      resolve: ({ items }) => items,
+    }),
     hasMore: t.exposeBoolean('hasMore', {
-      description: 'Whether more recipes are available after this page',
+      description: 'Are there more recipes to load after this page? (true = keep scrolling)',
     }),
     totalCount: t.exposeInt('totalCount', {
-      description: 'Number of recipes in this page (the full library count is not computed)',
+      description:
+        'How many recipes are on THIS page — not the size of the whole library, which is never ' +
+        'counted (the list is meant to be scrolled, not totalled)',
     }),
   }),
 })
