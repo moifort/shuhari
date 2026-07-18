@@ -21,7 +21,7 @@ This architecture draws from two foundational DDD books:
 | Bounded Context | Each `server/domain/{domain}/` is a self-contained context with clear boundaries |
 | Ubiquitous Language | Function and type names carry business meaning, not technical jargon |
 | Value Objects | Branded types in `types.ts` — identity through value, not reference |
-| Entities | Domain types with an `id` (`Recipe`, `Trial`) in `types.ts` |
+| Entities | Domain types with an `id` (`Recipe`) in `types.ts` |
 | Repository | `infrastructure/repository.ts` — abstracts Firestore, private to the bounded context |
 | Application Services | `query.ts`, `command.ts`, `use-case.ts` — orchestrate domain operations |
 | Anti-Corruption Layer | Zod validation at the GraphQL boundary (scalars) prevents invalid data from entering |
@@ -48,7 +48,7 @@ server/
 │   │   ├── types.ts             # UserId, Count
 │   │   ├── primitives.ts        # their Zod constructors
 │   │   └── graphql/             # builder.ts, scalars.ts, schema.ts, loaders.ts
-│   └── {domain}/                # one folder per domain (recipe, trial, proposal, …)
+│   └── {domain}/                # one folder per domain (recipe, proposition, …)
 │       ├── types.ts             # domain types (branded)
 │       ├── primitives.ts        # Zod validation constructors
 │       ├── command.ts           # write operations (public namespace)
@@ -66,7 +66,7 @@ server/
 │   ├── 01-sentry.ts             # error reporting (Sentry, DSN from NITRO_SENTRY_DSN)
 │   └── 02-graphql.ts            # boots ApolloServer once with the assembled schema
 ├── system/                      # infrastructure concerns + system-hosted mini-domains
-│   ├── ai/                      # Gemini import + proposal engine
+│   ├── ai/                      # Gemini engine: Ai.analyzeImport + Ai.proposeNext
 │   ├── changelog/               # release notes (parses the changelog asset — read-only)
 │   ├── portability/             # user-data export/import (orchestrates over recipe)
 │   ├── config/                  # runtime config (env)
@@ -80,8 +80,10 @@ server/
 └── test/fake-firestore.ts       # in-memory Firestore fake with read/write accounting
 ```
 
-Not every domain has every file. The full-stack domains are `recipe`, `trial`, `proposal`.
-The read-only `changelog` aggregation has no `command.ts`/`repository.ts`;
+Not every domain has every file. `recipe` is the only persisted, full-stack domain; `proposition`
+is ephemeral — it owns a `use-case.ts` + GraphQL slice but **no repository and no storage** (an AI
+proposition is validated and applied, never saved). The read-only `changelog` aggregation has no
+`command.ts`/`repository.ts`;
 `portability` orchestrates through a `use-case.ts` and owns no repository. `changelog` and
 `portability` are system-hosted mini-domains: they live under `server/system/` (not
 `server/domain/`) but still obey the domain rules (folder shape, purity, naming, no-throw).
@@ -98,12 +100,12 @@ Each domain is a self-contained bounded context:
   illegal states unrepresentable — if it parses, it is valid. Must import both `ts-brand`
   and `zod` (checked by the arch test).
 - **command.ts** — Public write operations, exported as a `namespace` (e.g. `RecipeCommand`).
-  Returns the entity or a **string sentinel** (`'not-found'`, `'nothing-to-test'`). See
+  Returns the entity or a **string sentinel** (e.g. `'not-found'`). See
   [error handling](./error-handling.md).
 - **query.ts** — Public read operations (e.g. `RecipeQuery`). Thin pass-through to the
   repository; single-item lookups return `'not-found' as const` on absence.
 - **business-rules.ts** — (optional) Pure, **synchronous** functions. Names ARE the business
-  concept (`readyToPromote`, `nextVersionNumber`, `applyProposalToParams` — never `computeX`).
+  concept (`bestNote`, `versionToOpen`, `nextVersionNumber` — never `computeX`).
   100% test coverage (`business-rules.unit.test.ts`).
 - **use-case.ts** — (optional) Multi-domain orchestration. Goes through commands/queries
   only — **may not import any repository or touch storage** (enforced). Names carry intent
@@ -127,7 +129,8 @@ const recipes = () => db().collection('recipes').withConverter(genericDataConver
 **Aggregate root + append-only satellite.** A light pointer document plus a heavy,
 append-only collection keyed by a deterministic id:
 
-- `recipes` — the aggregate root (a small pointer: `currentVersion`, `toTest`, `versionCount`, …)
+- `recipes` — the aggregate root (a small pointer: `versionCount`, `updatedAt`, …); the recipe's
+  state (best note, version to open) is *derived* from its versions, not stored on it
 - `recipe-versions` — one immutable doc per version, keyed `${recipeId}_${number}`
 
 Multi-document writes are made atomic with `atomically` (a single committed `WriteBatch`);
@@ -140,10 +143,10 @@ There is **no** `read-model/` directory. Composite reads are served two ways:
 
 1. **Read-only domains** — `changelog` (system-hosted under `server/system/`) exposes a
    `query.ts` that assembles data through other domains' public `Query` namespaces.
-2. **GraphQL satellite loaders** — nested fields on `Recipe`/`Version` (`currentVersion`,
-   `trials`, `pendingProposal`, `variations`, …) resolve through per-request, micro-batched
-   loaders in `server/domain/shared/graphql/loaders.ts`, so a page of recipes never triggers
-   N+1 reads. See [graphql-patterns.md](./graphql-patterns.md).
+2. **GraphQL satellite loaders** — derived fields on `Recipe` (`versions`, `versionToOpen`,
+   `bestNote`) resolve through the per-request, micro-batched `versionsByRecipe` loader in
+   `server/domain/shared/graphql/loaders.ts`, so a page of recipes never triggers N+1 reads. See
+   [graphql-patterns.md](./graphql-patterns.md).
 
 Repeated reads within a single request are collapsed by the **request cache**
 (`memoizedPerRequest` in `server/system/request-cache.ts`).

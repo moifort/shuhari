@@ -41,9 +41,9 @@ one capability.
 ```md
 ## What's in the box
 
-- A **backend server** that stores your recipes, their version lineage, trials and AI proposals
-- **AI import & iteration** — paste a recipe to import it, get a scored next version to try
-- An **iOS app** to browse recipes, run a trial, rate it, and promote the best version
+- A **backend server** that stores your recipes and their version lineage, each version carrying its own essai
+- **AI import & iteration** — paste a recipe to import it, get a suggested next version to try
+- An **iOS app** to browse recipes, cook a version, rate the essai, and open the best-rated one
 - **Error monitoring** with Sentry so you know when something breaks (optional)
 ```
 

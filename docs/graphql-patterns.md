@@ -100,18 +100,21 @@ Pothos objects reference domain types as backing models via `objectRef<T>` — n
 duplication. `t.expose(...)` maps a field directly; `t.field({ resolve })` computes one.
 
 ```ts
-export const ParamType = builder.objectRef<Param>('Param').implement({
+export const IngredientType = builder.objectRef<Ingredient>('Ingredient').implement({
   fields: (t) => ({
-    key: t.expose('key', { type: 'ParamKey' }),
-    value: t.expose('value', { type: 'ParamValue' }),
+    name: t.expose('name', { type: 'IngredientName' }),
+    quantity: t.expose('quantity', { type: 'IngredientQuantity' }),
   }),
 })
 ```
 
-### Recursion / satellite grafting: declare then implement
+### Derived / satellite fields: declare then implement
 
-When a type has recursive fields or receives satellite fields from other domains, declare the
-`objectRef` first and `.implement()` it separately (Pothos recursion pattern):
+When a type is referenced before its full field set is known, or carries fields derived from a
+separate collection, declare the `objectRef` first and `.implement()` it separately (Pothos
+forward-reference pattern). `Recipe` holds no derived state of its own — its best rating and the
+version to open are computed from its versions, resolved through the batched `versionsByRecipe`
+loader (see below), so a page of recipes never triggers N+1 reads:
 
 ```ts
 export const RecipeType = builder.objectRef<Recipe>('Recipe')
@@ -119,55 +122,56 @@ export const RecipeType = builder.objectRef<Recipe>('Recipe')
 RecipeType.implement({
   fields: (t) => ({
     id: t.expose('id', { type: 'RecipeId' }),
-    variations: t.field({
-      type: [RecipeType],                      // recursive self-reference
-      resolve: (r, _a, { loaders }) => loaders.variations.load(r.id).then((v) => v ?? []),
+    versions: t.field({
+      type: [VersionType],
+      resolve: (r) => RecipeQuery.versionsOf(r.id),
+    }),
+    // Derived satellite: the version the fiche opens on, computed from the whole
+    // lineage via the batched loader (shares the scan with bestNote — no extra reads).
+    versionToOpen: t.field({
+      type: VersionType,
+      resolve: async (r, _a, { loaders }) => versionToOpen((await loaders.versionsByRecipe.load(r.id)) ?? []),
+    }),
+    bestNote: t.field({
+      type: 'Note',
+      nullable: true,
+      resolve: async (r, _a, { loaders }) => bestNote((await loaders.versionsByRecipe.load(r.id)) ?? [])?.note ?? null,
     }),
   }),
 })
 ```
 
-Other domains then **graft** fields onto it with `builder.objectField`. Example — the `trial`
-domain adds `Recipe.trials` and per-version aggregates, all served by the same batched loader:
-
-```ts
-builder.objectField(RecipeType, 'trials', (t) =>
-  t.field({
-    type: [TrialType],
-    resolve: (recipe, _a, { loaders }) => loaders.trials.load(recipe.id).then((v) => v ?? []),
-  }),
-)
-
-builder.objectField(VersionType, 'trialCount', (t) =>
-  t.int({
-    resolve: async (version, _a, { loaders }) => {
-      const trials = (await loaders.trials.load(version.recipeId)) ?? []
-      return trials.filter((trial) => trial.versionNumber === version.number).length
-    },
-  }),
-)
-```
+A satellite field owned by *another* domain can be **grafted** onto `RecipeType` from that
+domain's slice with `builder.objectField(RecipeType, 'field', …)`, resolving through the same
+per-request loaders — the forward declaration is what makes that cross-domain graft possible.
 
 ## Satellite Loaders — the N+1 budget
 
-Satellite fields (`currentVersion`, `toTest`, `trials`, `pendingProposal`, `variations`) must
-**never** scan a collection or read one doc per parent row. They resolve through per-request
-loaders (`server/domain/shared/graphql/loaders.ts`), built once per request in
+Derived satellite fields (`versions`, `versionToOpen`, `bestNote`) must **never** scan a
+collection or read one doc per parent row. They resolve through per-request loaders
+(`server/domain/shared/graphql/loaders.ts`), built once per request in
 `recipeSatelliteLoaders(userId)`.
 
 `batchedBy` is a DataLoader-style batcher: it memoizes per key, collects every `load(...)` call
 in the resolution tick, flushes on `process.nextTick`, and performs **one keyed read** per batch.
+The single `versionsByRecipe` loader groups the whole lineage by recipe from one scan:
 
 ```ts
-version: batchedBy(versionKey, async (refs) => {
-  const versions = await RecipeQuery.versionsByRefs(refs)   // one getAll for the whole page
-  return new Map(versions.map((v) => [versionKey({ recipeId: v.recipeId, number: v.number }), v]))
-}),
+versionsByRecipe: batchedBy(
+  (recipeId) => recipeId,
+  async (recipeIds) => {
+    const wanted = new Set(recipeIds)
+    const versions = (await RecipeQuery.allVersions(userId)).filter((v) => wanted.has(v.recipeId))
+    const grouped = new Map<string, RecipeVersion[]>(recipeIds.map((id) => [id, []]))
+    for (const version of versions) grouped.get(version.recipeId)?.push(version)
+    return grouped
+  },
+),
 ```
 
-So a page of recipes selecting `currentVersion` costs **one** `getAll`; an unselected satellite
-costs **nothing**. Multiple aggregates (`Version.trialCount`, `Version.averageNote`) reuse the
-same `trials` loader — still one read. These budgets are asserted in `.int.test.ts` via
+So a page of recipes selecting `versionToOpen` costs **one** scan; an unselected satellite costs
+**nothing**. `versionToOpen` and `bestNote` both derive from the full lineage, so they reuse the
+same `versionsByRecipe` batch — still one read. These budgets are asserted in `.int.test.ts` via
 `fake.queryReads` / `fake.docReads` — keep them green.
 
 ## Queries and Mutations delegate to the domain
@@ -201,19 +205,20 @@ stable `extensions.code` using `match().exhaustive()` from `ts-pattern` and the 
 import { match, P } from 'ts-pattern'
 import { domainError } from '~/domain/shared/graphql/errors'
 
-builder.mutationField('promoteVersion', (t) =>
+builder.mutationField('recordEssai', (t) =>
   t.field({
-    type: RecipeType,
+    type: VersionType,
     args: {
       recipeId: t.arg({ type: 'RecipeId', required: true }),
       versionNumber: t.arg({ type: 'VersionNumber', required: true }),
+      note: t.arg({ type: 'Note', required: true }),
+      remarks: t.arg({ type: 'Remarks', required: true }),
     },
-    resolve: async (_root, { recipeId, versionNumber }, { userId }) => {
-      const result = await RecipeCommand.promote(userId, recipeId, versionNumber)
+    resolve: async (_root, { recipeId, versionNumber, note, remarks }, { userId }) => {
+      const result = await RecipeCommand.recordEssai(userId, { recipeId, versionNumber, note, remarks })
       return match(result)
         .with('not-found', domainError)
-        .with('nothing-to-test', domainError)
-        .with(P.not(P.string), (recipe) => recipe)
+        .with(P.not(P.string), (recorded) => recorded)
         .exhaustive()
     },
   }),
@@ -257,9 +262,9 @@ Write descriptions **functionally**: explain the *business meaning* in the cook'
 the reader had never seen the code. The Sandbox schema screen is documentation for a non-technical
 reader, not a type annotation. Concretely:
 
-- **Say what it means in the domain, not what it is technically.** Prefer "The reference version —
-  the one to reproduce" over "The currentVersion pointer". Name the Shu-Ha-Ri concept (recipe,
-  version = essai, iteration, promotion) rather than the storage or GraphQL mechanics.
+- **Say what it means in the domain, not what it is technically.** Prefer "The version to open
+  first when you enter the recipe" over "The versionToOpen resolver". Name the Shu-Ha-Ri concept
+  (recipe, version = essai, iteration, best note) rather than the storage or GraphQL mechanics.
 - **Give a concrete example** wherever it sharpens understanding — real values in the culinary
   domain: `e.g. "Grandma’s lasagna"`, `e.g. "250 g"`, `e.g. "Baked at 180°C instead of 200°C"`,
   `1 (bad) to 5 (excellent)`. Examples beat abstract prose for a non-tech reader.
@@ -276,8 +281,9 @@ note: t.field({
   type: 'Note',
   nullable: true,
   description:
-    'Your rating of this attempt, from 1 (bad) to 5 (excellent). Null until you have cooked ' +
-    'it. A version needs 4 or more to become the recipe’s reference (see currentVersion).',
+    'Your rating of this attempt, from `1` (bad) to `5` (excellent). `null` until you have ' +
+    'cooked it. The recipe’s best rating across its versions drives its display note (see ' +
+    'bestNote).',
   resolve: (v) => v.note ?? null,
 }),
 ```

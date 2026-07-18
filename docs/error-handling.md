@@ -15,13 +15,18 @@ Shuhari does **not** wrap outcomes in `{ outcome: … }` objects. The success pa
 domain entity itself; a miss is a bare string literal with `as const`:
 
 ```ts
-// Return type inferred: Promise<Recipe | 'not-found' | 'nothing-to-test'>
-export const promote = async (userId: UserId, recipeId: RecipeId, versionNumber: VersionNumber) => {
-  const recipe = await repository.findBy(userId, recipeId)
+// Return type inferred: Promise<RecipeVersion | 'not-found'>
+export const recordEssai = async (userId: UserId, input: RecordEssaiInput) => {
+  const recipe = await repository.findBy(userId, input.recipeId)
   if (!recipe) return 'not-found' as const
-  if (recipe.toTest !== versionNumber) return 'nothing-to-test' as const
-  const updated: Recipe = { ...recipe, currentVersion: versionNumber, toTest: null, updatedAt: new Date() }
-  return repository.save(updated)
+  const version = await repository.findVersion(input.recipeId, input.versionNumber)
+  if (!version) return 'not-found' as const
+  const executed: RecipeVersion = { ...version, executedAt: new Date(), note: input.note, remarks: input.remarks }
+  return atomically(async (batch) => {
+    await repository.saveVersion(executed, batch)
+    await repository.save({ ...recipe, updatedAt: new Date() }, batch)
+    return executed
+  })
 }
 ```
 
@@ -34,7 +39,7 @@ lookup). Void commands return `undefined | 'not-found'`.
 A domain error **is** the sentinel const. The single `domainError` helper from
 `server/domain/shared/graphql/errors.ts` throws the sentinel as the `GraphQLError` message and
 derives its `extensions.code` mechanically (`'not-found'` → `NOT_FOUND`,
-`'nothing-to-test'` → `NOTHING_TO_TEST`) — no per-site message strings. Because the sentinel is the
+`'no-recipe-found'` → `NO_RECIPE_FOUND`) — no per-site message strings. Because the sentinel is the
 handler's argument, each arm is just `.with('<sentinel>', domainError)`. The resolver maps every
 branch with `match().exhaustive()` from `ts-pattern`; the success arm matches "not a string"
 (`P.not(P.string)`) and returns the domain value:
@@ -43,17 +48,16 @@ branch with `match().exhaustive()` from `ts-pattern`; the success arm matches "n
 import { match, P } from 'ts-pattern'
 import { domainError } from '~/domain/shared/graphql/errors'
 
-const result = await RecipeCommand.promote(userId, recipeId, versionNumber)
+const result = await RecipeCommand.recordEssai(userId, input)
 return match(result)
   .with('not-found', domainError)
-  .with('nothing-to-test', domainError)
-  .with(P.not(P.string), (recipe) => recipe)
+  .with(P.not(P.string), (version) => version)
   .exhaustive()
 ```
 
 The helper's `never` return type lets it sit in a `match` arm while the success arm keeps the
 resolver's inferred type. **Never `.otherwise()` for terminal outcome mapping** — `.exhaustive()`
-gives totality: adding a fourth sentinel to the command turns this into a compile error until the
+gives totality: adding a new sentinel to the command turns this into a compile error until the
 resolver handles it.
 
 > The `P.not(P.string)` success arm relies on the invariant that **every sentinel is a string** (see

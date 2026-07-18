@@ -24,10 +24,10 @@ ios/
     ├── GoogleService-Info.plist        # Firebase config
     ├── Generated/GraphQL/              # Apollo codegen output (do not edit)
     │   ├── Operations/{Queries,Mutations}/
-    │   ├── Fragments/                  # VersionFields, RecipeRefFields, ProposalFields, TrialFields
+    │   ├── Fragments/                  # VersionFields, DraftFields
     │   └── Schema/                     # CustomScalars (RecipeId, Note, …), Enums, Objects, InputObjects
     ├── Features/
-    │   ├── Auth/  Home/  Recipe/  Proposal/  Execution/  Import/  Settings/
+    │   ├── Auth/  Home/  Recipe/  Draft/  Execution/  Import/  Settings/
     │   └── {Feature}/
     │       ├── {Feature}Store.swift    # ViewModel (@MainActor @Observable) — or {Feature}ViewModel
     │       ├── {Feature}API.swift      # maps generated types → model structs
@@ -104,20 +104,22 @@ generated operations and **map generated types → `Sendable` model structs**. G
 types must never leak into views.
 
 ```swift
-enum HomeAPI {
-    static func getHome() async throws -> HomeData {
-        let data = try await GraphQLHelpers.fetch(GraphQLClient.shared.apollo, query: ShuhariGraphQL.HomeQuery())
-        let home = data.home
-        return HomeData(
-            toTest: home.toTest.compactMap { recipe in
-                guard let version = recipe.toTest else { return nil }
-                return HomeTestItem(id: recipe.id, title: recipe.title,
-                                    type: RecipeType(graphql: recipe.type),
-                                    versionNumber: version.number, change: version.change,
-                                    why: version.why ?? version.originDetail)
+enum LibraryAPI {
+    static func list(sort: RecipeSortOption, limit: Int, after: String?) async throws -> RecipePage {
+        let query = ShuhariGraphQL.RecipeListQuery(/* sort, order, limit, after */)
+        let data = try await GraphQLHelpers.fetch(GraphQLClient.shared.apollo, query: query)
+        let recipes = data.recipes
+        return RecipePage(
+            items: recipes.items.map { recipe in
+                LibraryRecipe(id: recipe.id, title: recipe.title,
+                              type: RecipeType(graphql: recipe.type),
+                              category: DishCategory(graphql: recipe.category),
+                              versionCount: recipe.versionCount,
+                              bestNote: recipe.bestNote,   // derived server-side
+                              updatedAt: GraphQLHelpers.parseISO8601(recipe.updatedAt) ?? .distantPast)
             },
-            library: home.library.map { LibraryRecipe(id: $0.id, title: $0.title, /* … */) },
-            recentTrials: home.recentTrials.map { /* map to Trial */ })
+            hasMore: recipes.hasMore,
+            totalCount: recipes.totalCount)
     }
 }
 ```
@@ -130,29 +132,32 @@ For mutations, build inputs with the nullable helper; enum bridging (generated
 
 ### ViewModel — `@MainActor @Observable`, single-flight
 
-Use the Observation framework (`@Observable`), not `ObservableObject`. Guard against concurrent
-loads with an `@ObservationIgnored` in-flight task. **Every network call shows a loading state** —
-flip `isLoading` around the fetch, never a silent fetch that leaves the UI frozen.
+Use the Observation framework (`@Observable`), not `ObservableObject`. Guard against stale or
+concurrent loads (an in-flight task, or a generation token when the list paginates — see the real
+`LibraryStore`). **Every network call shows a loading state** — flip `isLoading` around the fetch,
+never a silent fetch that leaves the UI frozen.
 
 ```swift
 @MainActor @Observable
-final class HomeStore {
-    var data: HomeData?
-    var isLoading = false
+final class LibraryStore {
+    private(set) var items: [LibraryRecipe] = []
+    var isLoading = true
+    var hasMore = false
     var error: String?
-    @ObservationIgnored private var inFlight: Task<Void, Never>?
+    // Stale-response guard: each reload bumps the generation; a late response from a
+    // previous sort/filter fails its guard and is dropped.
+    private var generation = 0
 
     func load() async {
-        if let inFlight { return await inFlight.value }
-        let task = Task {
-            isLoading = true; error = nil
-            do { data = try await HomeAPI.getHome() }
-            catch { self.error = reportError(error) }   // captures to Sentry + returns the message
-            isLoading = false
-        }
-        inFlight = task
-        await task.value
-        inFlight = nil
+        generation += 1
+        let requested = generation
+        isLoading = true; error = nil
+        do {
+            let page = try await LibraryAPI.list(sort: sort, limit: 20, after: nil)
+            guard requested == generation else { return }   // response from a stale view
+            items = page.items; hasMore = page.hasMore
+        } catch { self.error = reportError(error) }         // captures to Sentry + returns the message
+        isLoading = false
     }
 }
 ```
@@ -164,30 +169,32 @@ store from the environment. The **page** is pure: data in, closures out — no n
 navigation state.
 
 ```swift
-struct HomeView: View {                       // coordinator
-    @Environment(HomeStore.self) private var store
+struct HomeView: View {                        // coordinator (the Carnet tab)
+    @Environment(LibraryStore.self) private var store
     @State private var path = NavigationPath()
     var body: some View {
         NavigationStack(path: $path) {
-            if let data = store.data {
-                HomePage(data: data, onExecute: { … }, onSettings: { … })
-            } else if let error = store.error { ContentUnavailableView(…) }
-            else { HomePage(data: .placeholder, …).redacted(reason: .placeholder) }
+            HomePage(library: store.items, libraryLoading: store.isLoading,
+                     libraryHasMore: store.hasMore, sort: /* binding */, onSettings: { … },
+                     onLoadMore: { await store.loadMore() })
+                .task { if store.items.isEmpty { await store.load() } }
+                .refreshable { await store.load() }
         }
-        .task { if store.data == nil { await store.load() } }
-        .refreshable { await store.load() }
     }
 }
 
-struct HomePage: View {                        // pure presentation
-    let data: HomeData
-    let onExecute: (HomeTestItem) -> Void
+struct HomePage: View {                         // pure presentation
+    let library: [LibraryRecipe]
+    let libraryLoading: Bool
+    let libraryHasMore: Bool
     let onSettings: () -> Void
+    var onLoadMore: () async -> Void = {}
     var body: some View {
         List {
-            ToTestSection(items: data.toTest, onExecute: onExecute)
-            LibrarySection(data: data)
-            RecentTrialsSection(trials: data.recentTrials, titleProvider: data.title(forRecipe:))
+            ForEach(LibraryMonthGroup.grouping(library)) { group in
+                LibrarySection(group: group)
+            }
+            if libraryHasMore { LoadMoreRow(onLoadMore: onLoadMore) }
         }
     }
 }
@@ -197,10 +204,10 @@ struct HomePage: View {                        // pure presentation
 
 | Layer | Location | Receives | Examples |
 |-------|----------|----------|----------|
-| **Atoms** | `Shared/Components/` | Primitives | `Chip`, `NoteBadge`, `ParamsGrid`, `StepsList` |
-| **Molecules** | `Features/{F}/components/molecules/` | Primitives | `TrialRow`, `LibraryRow`, `TestBanner` |
-| **Organisms** | `Features/{F}/components/organisms/` | Primitives or a domain struct (mapping boundary) | `RecentTrialsSection`, `LibrarySection` |
-| **Pages** | `Features/{F}/components/pages/` | Data + closures | `HomePage` |
+| **Atoms** | `Shared/Components/` | Primitives | `Chip`, `NoteBadge`, `NoteStars`, `StepsList` |
+| **Molecules** | `Features/{F}/components/molecules/` | Primitives | `LibraryRow`, `VersionTimelineItem` |
+| **Organisms** | `Features/{F}/components/organisms/` | Primitives or a domain struct (mapping boundary) | `LibrarySection`, `IngredientsSection` |
+| **Pages** | `Features/{F}/components/pages/` | Data + closures | `HomePage`, `RecipeDetailPage` |
 
 Atoms in `Shared/Components/` are cross-feature. Promote a molecule used in 2+ features up to
 `Shared/Components/`.
@@ -264,8 +271,9 @@ Every component below page level **must** preview without a running server, fed 
 `Shared/PreviewFixtures.swift` (`Fixtures`).
 
 ```swift
-#Preview("À tester") {
-    HomePage(data: Fixtures.home, onExecute: { _ in }, onSettings: {})
+#Preview("Cuisine") {
+    HomePage(library: Fixtures.libraryRecipes, libraryLoading: false,
+             libraryHasMore: false, onSettings: {})
 }
 ```
 
@@ -316,15 +324,19 @@ Model structs are `Sendable` (Swift 6). They are what ViewModels and views consu
 generated types.
 
 ```swift
-struct Trial: Identifiable, Sendable {
-    let id: String
+struct RecipeVersion: Identifiable, Sendable {
+    let number: Int
+    let change: String?          // what this iteration changed vs. the version it is based on
+    let ingredients: [Ingredient]
+    let steps: [String]
     let recipeId: String
-    let versionNumber: Int
-    let note: Int
-    let remarks: String
-    let realParams: [Param]
+    // The essai outcome, recorded directly on the version — nil while never cooked.
+    let note: Int?               // 1..5
+    let remarks: String?
+    let executedAt: Date?
     let photoUrl: String?
-    let executedAt: Date
+    var id: Int { number }
+    var tried: Bool { executedAt != nil }
 }
 ```
 

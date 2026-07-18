@@ -2,7 +2,7 @@
 
 Step-by-step guide to adding a backend domain. Each step maps to a DDD building block from
 Evans (*Domain-Driven Design*) or Wlaschin (*Domain Modeling Made Functional*). The examples
-come from the real `recipe` and `trial` domains.
+come from the real `recipe` (persisted) and `proposition` (ephemeral) domains.
 
 > The rules below are enforced by `server/architecture.unit.test.ts` — run `bun test` and it
 > will fail if a new domain breaks a convention.
@@ -293,21 +293,28 @@ Pure, **synchronous** functions extracted from complex commands. Names ARE the c
 From `recipe`:
 
 ```ts
-export const PROMOTION_NOTE = 8
-
-export const readyToPromote = (
-  note: Note,
-  testedVersion: VersionNumber,
-  toTest: VersionNumber | null,
-): boolean => toTest !== null && testedVersion === toTest && note >= PROMOTION_NOTE
-
 export const nextVersionNumber = (versionCount: VersionNumber) =>
   toVersionNumber(versionCount + 1)
+
+// The recipe's best essai across its cooked versions, or null when none was ever
+// tried. Highest note wins; a tie breaks toward the most recent version.
+export const bestNote = (versions: RecipeVersion[]): RecipeVersion | null =>
+  versions
+    .filter(isRated)
+    .reduce<RatedVersion | null>(
+      (best, version) =>
+        best === null ||
+        version.note > best.note ||
+        (version.note === best.note && version.number > best.number)
+          ? version
+          : best,
+      null,
+    )
 ```
 
 Rules: no `useStorage`, no `async` (both fail the arch test); 100% coverage; name the concept
-(`readyToPromote`, never `computeReadiness`); functional style — `map`/`filter`/`reduce`, no
-imperative `for`/`while` loops (see [code-style.md](./code-style.md)).
+(`bestNote`/`versionToOpen`, never `computeBestNote`); functional style — `map`/`filter`/`reduce`,
+no imperative `for`/`while` loops (see [code-style.md](./code-style.md)).
 
 ## Optional: Use Case (`use-case.ts`)
 
@@ -317,27 +324,35 @@ Use when a route orchestrates multiple domains. Goes through public `Command`/`Q
 namespaces only — **never a repository, never storage** (enforced).
 
 ```ts
-import { ProposalCommand } from '~/domain/proposal/command'
 import { RecipeCommand } from '~/domain/recipe/command'
-import { TrialCommand } from '~/domain/trial/command'
+import { RecipeQuery } from '~/domain/recipe/query'
+import { Ai } from '~/system/ai'
 
-export namespace RecipeUseCase {
-  export const removeCompletely = async (
+export namespace PropositionUseCase {
+  // Ask the AI for the next version after an essai. Reads the tried version through
+  // the recipe domain's public Query, feeds it to the AI engine and brands the
+  // result — a cross-boundary orchestration (recipe + ai) that persists nothing.
+  export const fromEssai = async (
     userId: UserId,
     recipeId: RecipeId,
-  ): Promise<undefined | 'not-found'> => {
-    const result = await RecipeCommand.remove(userId, recipeId)
-    if (result === 'not-found') return 'not-found'
-    await Promise.all([
-      TrialCommand.removeByRecipe(userId, recipeId),
-      ProposalCommand.removeByRecipe(userId, recipeId),
-    ])
-    return undefined
+    versionNumber: VersionNumber,
+  ) => {
+    const recipe = await RecipeQuery.byId(userId, recipeId)
+    if (recipe === 'not-found') return 'not-found'
+    const version = await RecipeQuery.versionBy(recipeId, versionNumber)
+    if (version === 'not-found') return 'not-found'
+    const proposition = await Ai.proposeNext(/* recipe + version + its essai outcome */)
+    return brandProposition(recipe.type, proposition)
   }
+
+  // Accepting a proposition threads `basedOn` back into the recipe domain's command.
+  export const accept = (userId: UserId, recipeId: RecipeId, proposition: AcceptedProposition) =>
+    RecipeCommand.addVersion(userId, recipeId, { basedOn: proposition.basedOn /* …content */ })
 }
 ```
 
-Names carry intent (`removeCompletely`, never `handleDelete`).
+Names carry intent (`fromEssai`, `accept`, never `handleProposal`). `proposition` is the only
+domain that imports `~/system/ai`, and it depends one-way on `recipe` (never the reverse).
 
 ## Checklist
 
