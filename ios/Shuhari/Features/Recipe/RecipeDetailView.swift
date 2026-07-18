@@ -49,16 +49,7 @@ struct RecipeDetailView: View {
                 .toolbar(.hidden, for: .tabBar)
                 .sheet(isPresented: $showToTest) {
                     NextTrialsSheet(
-                        trials: toTestItems(recipe),
-                        pastTrials: recipe.essais.map {
-                            NextTrialsSheet.PastItem(
-                                id: "\($0.number)",
-                                versionNumber: $0.number,
-                                note: $0.note ?? 0,
-                                remarks: $0.remarks ?? "",
-                                date: $0.executedAt ?? $0.createdAt
-                            )
-                        }
+                        trials: toTestItems(recipe)
                     ) { versionNumber in
                         showToTest = false
                         presentRecordTrial(versionNumber: versionNumber)
@@ -127,7 +118,7 @@ struct RecipeDetailView: View {
         // Floating glass action bar: record trial (left), then the two
         // sheet openers — prochains essais + history — glued in one glass
         // group (no spacer between them).
-        // Record targets the highest-numbered UNTRIED version (set-once: a tried
+        // Record targets the most recently created UNTRIED version (set-once: a tried
         // version can't be re-recorded). Hidden when every version is tried.
         if let next = toTestItems(recipe).first {
             ToolbarItem(placement: .bottomBar) {
@@ -172,7 +163,7 @@ struct RecipeDetailView: View {
     private func toTestItems(_ recipe: Recipe) -> [NextTrialsSheet.Item] {
         recipe.versions
             .filter { !$0.tried }
-            .sorted { $0.number > $1.number }
+            .sorted { $0.createdAt > $1.createdAt }
             .map {
                 NextTrialsSheet.Item(
                     versionNumber: $0.number,

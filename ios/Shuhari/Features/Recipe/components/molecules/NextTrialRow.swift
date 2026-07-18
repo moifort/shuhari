@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// One compact "prochain essai" row: the version tag and the change to apply,
-/// with a chevron affordance. Primitive-first — no domain struct.
+/// One compact "prochain essai" row: the change to apply as title, the reason with the version badge trailing the subtitle, and a chevron affordance. Primitive-first — no domain struct.
 struct NextTrialRow: View {
     let versionNumber: Int
     let change: String?
@@ -9,17 +8,20 @@ struct NextTrialRow: View {
 
     var body: some View {
         HStack(spacing: Theme.Spacing.m) {
-            StatusTag(kind: .version(versionNumber))
             VStack(alignment: .leading, spacing: 2) {
                 Text(change?.isEmpty == false ? change! : "Version d’origine")
                     .font(.subheadline.weight(.semibold))
                     .monospacedDigit()
                     .lineLimit(1)
-                if let why, !why.isEmpty {
-                    Text(why)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                HStack(spacing: Theme.Spacing.s) {
+                    if let why, !why.isEmpty {
+                        Text(why)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
+                    StatusTag(kind: .version(versionNumber))
                 }
             }
             Spacer(minLength: Theme.Spacing.s)
