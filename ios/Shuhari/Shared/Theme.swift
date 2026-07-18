@@ -5,12 +5,15 @@ import SwiftUI
 /// two different colours across screens.
 enum Theme {
     enum Status {
+        /// The essai domain accent — pending trials and the modifications they carry.
+        static let essai = Color.orange
         /// Pending "à tester" version and anything the AI proposes.
-        static let toTest = Color.orange
+        static let toTest = Self.essai
         /// Promoted current version — the reproducible reference.
         static let current = Color.green
-        /// A value that differs from the reference (diffs, deviations, highlights).
-        static let changed = Color.accentColor
+        /// A value that differs from the reference (diffs, deviations, highlights) —
+        /// shares the essai accent, since a modification is what an essai is about.
+        static let changed = Self.essai
         /// Thermomix machine settings.
         static let tmx = Color.teal
 
