@@ -6,9 +6,18 @@ import { ImportResultType } from './types'
 builder.mutationField('importData', (t) =>
   t.field({
     type: ImportResultType,
-    description:
+    description: [
       'Restore a backup. WARNING: this REPLACES everything you currently have with the contents ' +
-      'of the JSON text (as produced by exportData). Returns a count of what was loaded.',
+        'of the JSON text (as produced by exportData). Returns a count of what was loaded, e.g. ' +
+        '`12` recipes.',
+      '',
+      '```graphql',
+      'importData(payload: "{\\"recipes\\":[…],\\"versions\\":[…]}") {',
+      '  recipes',
+      '  versions',
+      '}',
+      '```',
+    ].join('\n'),
     args: {
       payload: t.arg.string({
         required: true,

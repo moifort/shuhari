@@ -6,32 +6,36 @@ import { builder } from '~/domain/shared/graphql/builder'
 // COMPLETE next version, never a partial edit.
 export const DraftInput = builder.inputType('DraftInput', {
   description:
-    'A complete next-version draft to accept as an iteration. Send the FULL next version (omitted ingredients/steps wipe those lists).',
+    'A complete next-version draft to accept as an iteration, e.g. the AI’s ' +
+    '`"Less sugar, longer resting time"` proposal. Send the FULL next version (omitted ' +
+    'ingredients/steps wipe those lists).',
   fields: (t) => ({
     changeSummary: t.field({
       type: 'String',
       required: true,
-      description: 'A short human summary of what the next version changes',
+      description: 'A short human summary of what the next version changes, e.g. `"Less sugar"`',
     }),
     rationale: t.field({
       type: 'String',
       required: true,
-      description: 'The reasoning behind the change',
+      description: 'The reasoning behind the change, e.g. `"You noted it was too sweet"`',
     }),
     ingredients: t.field({
       type: [IngredientInput],
       required: true,
-      description: 'The complete ingredient list of the next version',
+      description: 'The complete ingredient list of the next version, e.g. `"Sugar — 80 g"`',
     }),
     steps: t.field({
       type: ['StepText'],
       required: true,
-      description: 'The complete step list of the next version',
+      description: 'The complete step list of the next version, e.g. `"Rest the dough for 2 h"`',
     }),
     tmxSteps: t.field({
       type: [TmxSettingsInput],
       required: { list: false, items: false },
-      description: 'Per-step Thermomix settings, aligned with steps (null = plain step)',
+      description:
+        'Per-step Thermomix settings, aligned with steps, e.g. `"10 min / 100°C / speed 2"` ' +
+        '(`null` = plain step)',
     }),
   }),
 })

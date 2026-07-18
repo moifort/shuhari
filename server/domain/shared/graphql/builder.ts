@@ -27,8 +27,8 @@ export type GraphQLContext = {
 const DateTimeScalar = new GraphQLScalarType({
   name: 'DateTime',
   description:
-    'A date and time, given in the standard ISO 8601 format, e.g. "2026-07-18T14:30:00.000Z" ' +
-    '(the "Z" means UTC — the app shows it in your local time)',
+    'A date and time, given in the standard ISO 8601 format, e.g. `"2026-07-18T14:30:00.000Z"` ' +
+    '(the `"Z"` means UTC — the app shows it in your local time)',
   serialize: (value: unknown) => (value instanceof Date ? value.toISOString() : value),
   parseValue: (value: unknown) => new Date(value as string),
 })

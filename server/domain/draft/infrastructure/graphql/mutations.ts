@@ -15,17 +15,20 @@ type AcceptResult = {
 }
 
 const AcceptDraftResultType = builder.objectRef<AcceptResult>('AcceptDraftResult').implement({
-  description: 'What you get back after accepting an AI suggestion',
+  description:
+    'What you get back after accepting an AI suggestion, e.g. the new `v3` queued to try',
   fields: (t) => ({
     recipe: t.field({
       type: RecipeType,
-      description: 'The recipe, now with the accepted version added to its chain',
+      description:
+        'The recipe, now with the accepted version added to its chain, e.g. `"Grandma’s lasagna"` ' +
+        'now up to `v3`',
       resolve: (r) => r.recipe,
     }),
     createdVersion: t.expose('createdVersion', {
       type: 'VersionNumber',
       nullable: true,
-      description: 'The number of the version that was just created and queued up to try',
+      description: 'The number of the version that was just created and queued up to try, e.g. `3`',
     }),
   }),
 })
@@ -33,15 +36,24 @@ const AcceptDraftResultType = builder.objectRef<AcceptResult>('AcceptDraftResult
 builder.mutationField('requestDraft', (t) =>
   t.field({
     type: DraftType,
-    description:
-      'Ask the AI for a suggested next version. It looks at your most recent attempt (its rating ' +
-      'and notes) and proposes one improvement. Nothing is saved yet — you get a proposal to ' +
-      'review.',
+    description: [
+      'Ask the AI for a suggested next version. It looks at your most recent attempt (its ' +
+        'rating and notes) and proposes one improvement. Nothing is saved yet — you get a ' +
+        'proposal to review.',
+      '',
+      '```graphql',
+      'requestDraft(recipeId: "9f1c-a3b2") {',
+      '  versionNumber',
+      '  changeSummary',
+      '  rationale',
+      '}',
+      '```',
+    ].join('\n'),
     args: {
       recipeId: t.arg({
         type: 'RecipeId',
         required: true,
-        description: 'The recipe to get a suggestion for',
+        description: 'The recipe to get a suggestion for, e.g. the id of `"Grandma’s lasagna"`',
       }),
     },
     resolve: async (_root, { recipeId }, { userId }) => {
@@ -57,14 +69,26 @@ builder.mutationField('requestDraft', (t) =>
 builder.mutationField('acceptDraft', (t) =>
   t.field({
     type: AcceptDraftResultType,
-    description:
-      'Accept an AI suggestion (optionally after editing it). It becomes the next version in the ' +
-      'chain, added to your to-do list of attempts to cook.',
+    description: [
+      'Accept an AI suggestion (optionally after editing it). It becomes the next version in ' +
+        'the chain, added to your to-do list of attempts to cook.',
+      '',
+      '```graphql',
+      'acceptDraft(recipeId: "9f1c-a3b2", draft: {',
+      '  changeSummary: "Less sugar"',
+      '  rationale: "You noted it was too sweet"',
+      '  ingredients: [{ name: "Sugar", quantity: "80 g" }]',
+      '  steps: ["Rest the dough for 2 h", "Bake at 180°C"]',
+      '}) {',
+      '  createdVersion',
+      '}',
+      '```',
+    ].join('\n'),
     args: {
       recipeId: t.arg({
         type: 'RecipeId',
         required: true,
-        description: 'The recipe being iterated on',
+        description: 'The recipe being iterated on, e.g. the id of `"Grandma’s lasagna"`',
       }),
       draft: t.arg({
         type: DraftInput,

@@ -8,17 +8,18 @@ import { CreateRecipeInput, RecordEssaiInput, UpdateRecipeInput } from './inputs
 import { RecipeType, VersionType } from './types'
 
 const RecordEssaiResultType = builder.objectRef<RecordEssaiResult>('RecordEssaiResult').implement({
-  description: 'What you get back after saving the result of an attempt',
+  description: 'What you get back after saving the result of an attempt, e.g. `v2` rated `4`',
   fields: (t) => ({
     version: t.field({
       type: VersionType,
-      description: 'The version you just rated, now updated with its note and remarks',
+      description:
+        'The version you just rated, now updated with its note and remarks, e.g. `v2` with note `4`',
       resolve: (r) => r.version,
     }),
     promotionSuggested: t.boolean({
       description:
-        'True when this attempt — run on the pending version — scored 4 or more, so this version ' +
-        'can now become the recipe’s new reference; the app then offers to "promote" it',
+        '`true` when this attempt — run on the pending version — scored `4` or more, so this ' +
+        'version can now become the recipe’s new reference; the app then offers to "promote" it',
       resolve: (r) => r.promotionSuggested,
     }),
   }),
@@ -27,9 +28,23 @@ const RecordEssaiResultType = builder.objectRef<RecordEssaiResult>('RecordEssaiR
 builder.mutationField('createRecipe', (t) =>
   t.field({
     type: RecipeType,
-    description:
+    description: [
       'Save a new recipe. Turns a confirmed import preview into a real recipe with its first ' +
-      'version (v1). Returns the freshly created recipe.',
+        'version (`v1`). Returns the freshly created recipe.',
+      '',
+      '```graphql',
+      'createRecipe(input: {',
+      '  type: PLAT',
+      '  category: PLAT',
+      '  title: "Grandma\'s lasagna"',
+      '  ingredients: [{ name: "Flour", quantity: "250 g" }]',
+      '  steps: ["Layer the pasta", "Bake at 200°C"]',
+      '}) {',
+      '  id',
+      '  toTest { number }',
+      '}',
+      '```',
+    ].join('\n'),
     args: {
       input: t.arg({
         type: CreateRecipeInput,
@@ -57,8 +72,16 @@ builder.mutationField('createRecipe', (t) =>
 builder.mutationField('updateRecipe', (t) =>
   t.field({
     type: RecipeType,
-    description:
+    description: [
       'Rename a recipe — change its title and/or its subtitle. Returns the updated recipe.',
+      '',
+      '```graphql',
+      'updateRecipe(id: "9f1c-a3b2", input: { title: "Nonna\'s lasagna" }) {',
+      '  id',
+      '  title',
+      '}',
+      '```',
+    ].join('\n'),
     args: {
       id: t.arg({ type: 'RecipeId', required: true, description: 'Which recipe to rename' }),
       input: t.arg({
@@ -83,15 +106,22 @@ builder.mutationField('updateRecipe', (t) =>
 builder.mutationField('promoteVersion', (t) =>
   t.field({
     type: RecipeType,
-    description:
+    description: [
       'Crown a version as the recipe’s new reference (its "currentVersion") — do this after an ' +
-      'attempt scored high enough. Returns the updated recipe.',
+        'attempt scored `4` or more. Returns the updated recipe.',
+      '',
+      '```graphql',
+      'promoteVersion(recipeId: "9f1c-a3b2", versionNumber: 2) {',
+      '  currentVersion { number note }',
+      '}',
+      '```',
+    ].join('\n'),
     args: {
       recipeId: t.arg({ type: 'RecipeId', required: true, description: 'Which recipe' }),
       versionNumber: t.arg({
         type: 'VersionNumber',
         required: true,
-        description: 'Which version to make the reference',
+        description: 'Which version to make the reference, e.g. `2`',
       }),
     },
     resolve: async (_root, { recipeId, versionNumber }, { userId }) => {
@@ -108,15 +138,20 @@ builder.mutationField('promoteVersion', (t) =>
 builder.mutationField('discardPendingVersion', (t) =>
   t.field({
     type: 'Boolean',
-    description:
-      'Drop a planned-but-not-yet-cooked version from the to-do list and delete it. Returns true ' +
-      'on success. Won’t delete a recipe’s only version.',
+    description: [
+      'Drop a planned-but-not-yet-cooked version from the to-do list and delete it. Returns ' +
+        '`true` on success. Won’t delete a recipe’s only version.',
+      '',
+      '```graphql',
+      'discardPendingVersion(recipeId: "9f1c-a3b2", versionNumber: 3)',
+      '```',
+    ].join('\n'),
     args: {
       recipeId: t.arg({ type: 'RecipeId', required: true, description: 'Which recipe' }),
       versionNumber: t.arg({
         type: 'VersionNumber',
         required: true,
-        description: 'Which pending (untried) version to discard',
+        description: 'Which pending (untried) version to discard, e.g. `3`',
       }),
     },
     resolve: async (_root, { recipeId, versionNumber }, { userId }) => {
@@ -134,8 +169,14 @@ builder.mutationField('discardPendingVersion', (t) =>
 builder.mutationField('deleteRecipe', (t) =>
   t.field({
     type: 'Boolean',
-    description:
-      'Delete a recipe for good, along with every version and attempt on it. Returns true on success.',
+    description: [
+      'Delete a recipe for good, along with every version and attempt on it. Returns `true` on ' +
+        'success.',
+      '',
+      '```graphql',
+      'deleteRecipe(id: "9f1c-a3b2")',
+      '```',
+    ].join('\n'),
     args: {
       id: t.arg({ type: 'RecipeId', required: true, description: 'Which recipe to delete' }),
     },
@@ -152,10 +193,23 @@ builder.mutationField('deleteRecipe', (t) =>
 builder.mutationField('recordEssai', (t) =>
   t.field({
     type: RecordEssaiResultType,
-    description:
-      'Save what happened when you cooked a version: its rating and your notes. Fast and does not ' +
-      'call the AI. If the rating is low and you want a suggested improvement, ask for a draft ' +
-      'separately (see requestDraft).',
+    description: [
+      'Save what happened when you cooked a version: its rating and your notes. Fast and does ' +
+        'not call the AI. If the rating is low and you want a suggested improvement, ask for a ' +
+        'draft separately (see requestDraft).',
+      '',
+      '```graphql',
+      'recordEssai(input: {',
+      '  recipeId: "9f1c-a3b2"',
+      '  versionNumber: 2',
+      '  note: 4',
+      '  remarks: "Still a touch too sweet, but the texture is spot on"',
+      '}) {',
+      '  version { number note }',
+      '  promotionSuggested',
+      '}',
+      '```',
+    ].join('\n'),
     args: {
       input: t.arg({
         type: RecordEssaiInput,

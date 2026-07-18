@@ -5,10 +5,15 @@ export const RecipeTypeEnum = builder.enumType('RecipeType', {
     'The kind of culinary experiment. Fixed at import, it decides how a version is displayed ' +
     'and how the AI is allowed to iterate on it.',
   values: {
-    PLAT: { value: 'plat', description: 'A cooked dish — steps are plain text' },
+    PLAT: {
+      value: 'plat',
+      description: 'A cooked dish — steps are plain text, e.g. `"Grandma’s lasagna"`',
+    },
     TMX: {
       value: 'tmx',
-      description: 'A Thermomix recipe — each step also carries machine settings (time/temp/speed)',
+      description:
+        'A Thermomix recipe — each step also carries machine settings, e.g. ' +
+        '`"10 min / 100°C / speed 2"`',
     },
   } as const,
 })
@@ -18,47 +23,56 @@ export const DishCategoryEnum = builder.enumType('DishCategory', {
     'The course a dish belongs to. Detected once at import, shared by every version, and used ' +
     'to group and sort the library.',
   values: {
-    ENTREE: { value: 'entree', description: 'Starter' },
-    PLAT: { value: 'plat', description: 'Main course' },
-    DESSERT: { value: 'dessert', description: 'Dessert' },
-    SOUPE: { value: 'soupe', description: 'Soup' },
-    SAUCE: { value: 'sauce', description: 'Sauce or condiment' },
-    BOULANGERIE: { value: 'boulangerie', description: 'Bread and bakery' },
+    ENTREE: { value: 'entree', description: 'Starter, e.g. `"Goat cheese salad"`' },
+    PLAT: { value: 'plat', description: 'Main course, e.g. `"Grandma’s lasagna"`' },
+    DESSERT: { value: 'dessert', description: 'Dessert, e.g. `"Tarte tatin"`' },
+    SOUPE: { value: 'soupe', description: 'Soup, e.g. `"Pumpkin velouté"`' },
+    SAUCE: { value: 'sauce', description: 'Sauce or condiment, e.g. `"Béchamel"`' },
+    BOULANGERIE: { value: 'boulangerie', description: 'Bread and bakery, e.g. `"Sourdough loaf"`' },
   } as const,
 })
 
 export const RecipeSortEnum = builder.enumType('RecipeSort', {
-  description: 'Field the paginated recipe library is ordered by',
+  description: 'Field the paginated recipe library is ordered by, e.g. `UPDATED_AT`',
   values: {
-    UPDATED_AT: { value: 'updatedAt', description: 'Most recently modified first (honours order)' },
+    UPDATED_AT: {
+      value: 'updatedAt',
+      description: 'Most recently modified first (honours order), e.g. today’s lasagna edit on top',
+    },
     CATEGORY: {
       value: 'category',
       description:
-        'Dish course order (Entrée → Plat → Dessert → Soupe → Sauce → Boulangerie), ' +
+        'Dish course order (`ENTREE → PLAT → DESSERT → SOUPE → SAUCE → BOULANGERIE`), ' +
         'most recently modified first within a course',
     },
   } as const,
 })
 
 export const SortOrderEnum = builder.enumType('SortOrder', {
-  description: 'Sort direction',
+  description: 'Sort direction, e.g. `DESC`',
   values: {
-    ASC: { value: 'asc', description: 'Ascending (oldest / lowest first)' },
-    DESC: { value: 'desc', description: 'Descending (newest / highest first)' },
+    ASC: { value: 'asc', description: 'Ascending (oldest / lowest first), e.g. `v1` first' },
+    DESC: { value: 'desc', description: 'Descending (newest / highest first), e.g. `v3` first' },
   } as const,
 })
 
 export const VersionOriginKindEnum = builder.enumType('VersionOriginKind', {
-  description: 'Where a version came from — how this entry in the lineage was born',
+  description: 'Where a version came from — how this entry in the lineage was born, e.g. `IMPORT`',
   values: {
     IMPORT: {
       value: 'import',
-      description: 'The original v1, created when the recipe was imported',
+      description:
+        'The original `v1`, created when the recipe was imported, e.g. from `"Marmiton"`',
     },
     AI_PROPOSAL: {
       value: 'ai-proposal',
-      description: 'An iteration the AI drafted from the previous essai and the cook accepted',
+      description:
+        'An iteration the AI drafted from the previous essai and the cook accepted, e.g. ' +
+        '`"Less sugar, longer resting time"`',
     },
-    MANUAL: { value: 'manual', description: 'A version the cook wrote by hand, without the AI' },
+    MANUAL: {
+      value: 'manual',
+      description: 'A version the cook wrote by hand, without the AI, e.g. `"Swapped in honey"`',
+    },
   } as const,
 })
