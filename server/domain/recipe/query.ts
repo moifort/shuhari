@@ -67,7 +67,4 @@ export namespace RecipeQuery {
     if (!version) return 'not-found' as const
     return version
   }
-
-  export const versionsByRefs = async (refs: { recipeId: RecipeId; number: VersionNumber }[]) =>
-    repository.findVersionsByRefs(refs)
 }

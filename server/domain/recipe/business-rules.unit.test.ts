@@ -1,13 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 import {
   alignedTmxSteps,
+  bestNote,
   categoryRank,
-  highestNote,
   nextVersionNumber,
-  PROMOTION_NOTE,
-  pendingEssais,
-  readyToPromote,
   toTmxSettings,
+  versionToOpen,
 } from '~/domain/recipe/business-rules'
 import {
   DISH_CATEGORY_VALUES,
@@ -24,25 +22,14 @@ import {
 const v = (n: number) => n as VersionNumber
 const note = (n: number) => n as Note
 
-// Minimal RecipeVersion fixture: pendingEssais only reads `number` and `executedAt`.
-const version = (number: number, executedAt: Date | null): RecipeVersion =>
-  ({ number: v(number), executedAt }) as RecipeVersion
-
-describe('readyToPromote', () => {
-  test('promotes when a high note tests exactly the pending version', () => {
-    expect(readyToPromote(note(PROMOTION_NOTE), v(4), v(4))).toBe(true)
-    expect(readyToPromote(note(5), v(2), v(2))).toBe(true)
-  })
-  test('does not promote below the threshold', () => {
-    expect(readyToPromote(note(3), v(4), v(4))).toBe(false)
-  })
-  test('does not promote when the tested version is not the pending one', () => {
-    expect(readyToPromote(note(5), v(3), v(4))).toBe(false)
-  })
-  test('does not promote when nothing is pending', () => {
-    expect(readyToPromote(note(5), v(3), null)).toBe(false)
-  })
-})
+// Minimal RecipeVersion fixture: bestNote/versionToOpen only read `number`, `note`
+// and `basedOn`. An absent note means the version was never cooked (no rating).
+const version = (number: number, opts: { note?: number; basedOn?: number } = {}): RecipeVersion =>
+  ({
+    number: v(number),
+    note: opts.note === undefined ? null : note(opts.note),
+    basedOn: opts.basedOn === undefined ? null : v(opts.basedOn),
+  }) as RecipeVersion
 
 describe('categoryRank', () => {
   test('ranks the courses in business order, not alphabetically', () => {
@@ -69,35 +56,49 @@ describe('nextVersionNumber', () => {
   })
 })
 
-describe('highestNote', () => {
-  test('returns null when no version was ever tried', () => {
-    expect(highestNote([])).toBeNull()
+describe('bestNote', () => {
+  test('returns null when no version was ever cooked', () => {
+    expect(bestNote([])).toBeNull()
+    expect(bestNote([version(1), version(2)])).toBeNull()
   })
-  test('returns the best note across the executed versions', () => {
-    expect(highestNote([note(2), note(5), note(3)])).toBe(note(5))
+  test('returns the highest-noted version', () => {
+    const v2 = version(2, { note: 5 })
+    expect(bestNote([version(1, { note: 3 }), v2, version(3, { note: 4 })])).toBe(v2)
   })
-  test('handles a single note', () => {
-    expect(highestNote([note(4)])).toBe(note(4))
+  test('breaks a note tie toward the most recent version', () => {
+    const v3 = version(3, { note: 4 })
+    expect(bestNote([version(1, { note: 4 }), v3, version(2, { note: 4 })])).toBe(v3)
+  })
+  test('ignores never-cooked versions', () => {
+    const v1 = version(1, { note: 4 })
+    expect(bestNote([v1, version(2), version(3)])).toBe(v1)
   })
 })
 
-describe('pendingEssais', () => {
-  test('returns [] when the recipe has no version', () => {
-    expect(pendingEssais([])).toEqual([])
+describe('versionToOpen', () => {
+  test('opens the latest version when nothing was ever rated', () => {
+    const v3 = version(3)
+    expect(versionToOpen([version(1), version(2), v3])).toBe(v3)
   })
-  test('returns [] for a mono-version recipe, even an untried original', () => {
-    expect(pendingEssais([version(1, null)])).toEqual([])
+  test('opens the best-noted version when it has no version derived from it', () => {
+    const v1 = version(1, { note: 5 })
+    expect(versionToOpen([v1, version(2, { note: 3 })])).toBe(v1)
   })
-  test('returns only the untried versions, most recent first', () => {
-    const v1 = version(1, new Date('2026-01-01'))
-    const v2 = version(2, null)
-    const v3 = version(3, null)
-    expect(pendingEssais([v1, v2, v3])).toEqual([v3, v2])
+  test('opens the essai en cours: the version derived from the best-noted one', () => {
+    const v2 = version(2, { basedOn: 1 })
+    expect(versionToOpen([version(1, { note: 5 }), v2])).toBe(v2)
   })
-  test('excludes every executed version', () => {
-    const v1 = version(1, new Date('2026-01-01'))
-    const v2 = version(2, new Date('2026-02-01'))
-    expect(pendingEssais([v1, v2])).toEqual([])
+  test('opens the most recent version derived from the best-noted one', () => {
+    const v3 = version(3, { basedOn: 1 })
+    expect(versionToOpen([version(1, { note: 5 }), version(2, { basedOn: 1 }), v3])).toBe(v3)
+  })
+  test('ignores versions derived from a non-best version', () => {
+    const best = version(2, { note: 5 })
+    expect(versionToOpen([version(1, { note: 3 }), best, version(3, { basedOn: 1 })])).toBe(best)
+  })
+  test('propagates the best-noted tie-break to the essai en cours', () => {
+    const v3 = version(3, { basedOn: 2 })
+    expect(versionToOpen([version(1, { note: 4 }), version(2, { note: 4 }), v3])).toBe(v3)
   })
 })
 

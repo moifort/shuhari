@@ -2,6 +2,7 @@ import {
   alignedTmxSteps,
   type LooseTmxSettings,
   toTmxSettings,
+  versionToOpen,
 } from '~/domain/recipe/business-rules'
 import { RecipeCommand } from '~/domain/recipe/command'
 import {
@@ -58,17 +59,16 @@ const brandDraft = (type: RecipeType, draft: AiDraft): BrandedContent => {
 }
 
 export namespace DraftUseCase {
-  // Ask the AI for the next step after an essai. Reads the most relevant version —
-  // the pending one to test, else the current reference — with its own essai
-  // outcome (note/remarks), drafts the full next version, brands it into domain
-  // shapes, and returns it — nothing is persisted.
+  // Ask the AI for the next step after an essai. Reads the version the fiche would
+  // open on (`versionToOpen`) — the essai en cours, else the best-rated one, else
+  // the latest — with its own essai outcome (note/remarks), drafts the full next
+  // version, brands it into domain shapes, and returns it — nothing is persisted.
   export const forTrial = async (userId: UserId, recipeId: RecipeId) => {
     const recipe = await RecipeQuery.byId(userId, recipeId)
     if (recipe === 'not-found') return 'not-found'
-    const baseVersion = recipe.toTest ?? recipe.currentVersion
-    if (baseVersion === null) return 'not-found'
-    const version = await RecipeQuery.versionBy(recipeId, baseVersion)
-    if (version === 'not-found') return 'not-found'
+    const versions = await RecipeQuery.versionsOf(recipeId)
+    if (versions.length === 0) return 'not-found'
+    const version = versionToOpen(versions)
     // The version carries its own outcome; feed it to the AI as the sole essai (or
     // none when it has not been executed yet).
     const trials =
@@ -99,7 +99,7 @@ export namespace DraftUseCase {
 
     const { ingredients, steps, tmxSteps } = brandDraft(recipe.type, draft)
     const branded: Draft = {
-      versionNumber: baseVersion,
+      versionNumber: version.number,
       changeSummary: draft.changeSummary,
       rationale: draft.rationale,
       ingredients,
@@ -110,13 +110,19 @@ export namespace DraftUseCase {
   }
 
   // Accept a draft as an iteration: append version n+1 from the client-supplied
-  // draft and mark it "to test".
-  export const accept = async (userId: UserId, recipeId: RecipeId, draft: AcceptedDraft) =>
-    RecipeCommand.addVersion(userId, recipeId, {
+  // draft, stamping the version it was proposed from as `basedOn` (the fiche's
+  // `versionToOpen` — the essai en cours or best-rated one). A minimal patch:
+  // commit 2 threads the base version through the accept payload itself.
+  export const accept = async (userId: UserId, recipeId: RecipeId, draft: AcceptedDraft) => {
+    const versions = await RecipeQuery.versionsOf(recipeId)
+    const basedOn = versions.length === 0 ? null : versionToOpen(versions).number
+    return RecipeCommand.addVersion(userId, recipeId, {
       change: draft.changeSummary,
+      basedOn,
       ...(draft.rationale ? { why: draft.rationale } : {}),
       ingredients: draft.ingredients,
       steps: draft.steps,
       tmxSteps: draft.tmxSteps,
     })
+  }
 }

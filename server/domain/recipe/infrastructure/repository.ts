@@ -27,6 +27,7 @@ const versionDocId = (recipeId: RecipeId, number: VersionNumber) => `${recipeId}
 // executed, still an "essai à faire").
 const normalizeVersion = (version: RecipeVersion) => ({
   ...version,
+  basedOn: version.basedOn ?? null,
   ingredients: version.ingredients ?? [],
   tmxSteps: version.tmxSteps ?? [],
   executedAt: version.executedAt ?? null,
@@ -127,18 +128,6 @@ export const findAllVersionsByUser = (userId: UserId) =>
     return snap.docs.map((doc) => normalizeVersion(doc.data()))
   })
 
-// Batch-load specific versions by their deterministic ids (loaders: current/toTest
-// version for a page of recipes) — one getAll, one read per id.
-export const findVersionsByRefs = async (refs: { recipeId: RecipeId; number: VersionNumber }[]) => {
-  if (refs.length === 0) return []
-  const docs = refs.map(({ recipeId, number }) => versions().doc(versionDocId(recipeId, number)))
-  const snaps = await db().getAll(...docs)
-  return snaps
-    .map((snap) => snap.data())
-    .filter((v): v is RecipeVersion => v !== undefined)
-    .map(normalizeVersion)
-}
-
 // Single write point for a version: its immutable content on creation, and the
 // essai outcome once it is executed (the whole document is rewritten, `set` not
 // `update`, so the outcome fields land alongside the content).
@@ -147,13 +136,6 @@ export const saveVersion = async (version: RecipeVersion, batch?: WriteBatch) =>
   if (batch) batch.set(ref, version)
   else await ref.set(version)
   return version
-}
-
-// Delete a version satellite, enlisted into a batch alongside its recipe update
-// (discarding a pending essai clears the version and rolls the recipe back in
-// one atomic write).
-export const removeVersion = (recipeId: RecipeId, number: VersionNumber, batch: WriteBatch) => {
-  batch.delete(versions().doc(versionDocId(recipeId, number)))
 }
 
 export const remove = async (id: RecipeId) => {

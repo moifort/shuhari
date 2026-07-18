@@ -132,7 +132,7 @@ describe('architecture', () => {
     const targets = domainAndSystemHostedGlob('{query,command,business-rules}.ts')
     // Exported names must carry intent, never a getX/computeX/handleX scaffold.
     // Reads read as `all`, `byId`, `view`, `placements`; writes as the business
-    // action (`importRecipe`, `promote`). `findAll`/`findBy` stay (repository idiom).
+    // action (`create`, `addVersion`). `findAll`/`findBy` stay (repository idiom).
     const bannedPrefixes = /export const (get|compute|handle|process|manage|perform|fetch)[A-Z]/
 
     for (const file of targets) {

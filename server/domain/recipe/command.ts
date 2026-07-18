@@ -1,4 +1,4 @@
-import { alignedTmxSteps, nextVersionNumber, readyToPromote } from '~/domain/recipe/business-rules'
+import { alignedTmxSteps, nextVersionNumber } from '~/domain/recipe/business-rules'
 import * as repository from '~/domain/recipe/infrastructure/repository'
 import { randomRecipeId, VersionNumber } from '~/domain/recipe/primitives'
 import type {
@@ -34,6 +34,7 @@ export type NewRecipeInput = {
 
 export type NewVersionInput = {
   change: string
+  basedOn: VersionNumberT | null
   why?: string
   steps: StepText[]
   ingredients: Ingredient[]
@@ -48,17 +49,10 @@ export type RecordEssaiInput = {
   photoPath?: string | null
 }
 
-export type RecordEssaiResult = { version: RecipeVersion; promotionSuggested: boolean }
-
 export namespace RecipeCommand {
-  // Import → recipe + its v1, written atomically. v1 is the "essai à faire": there
-  // is no reproducible reference yet (`currentVersion` is null until a promotion),
-  // and v1 is what awaits its first execution.
-  export const importRecipe = async (
-    userId: UserId,
-    input: NewRecipeInput,
-    sourceLabel?: string,
-  ) => {
+  // Create → recipe + its v1, written atomically. v1 is the original "essai à faire"
+  // (`basedOn` is null, it iterates on nothing) and awaits its first cook.
+  export const create = async (userId: UserId, input: NewRecipeInput, sourceLabel?: string) => {
     const now = new Date()
     const recipe: Recipe = {
       id: randomRecipeId(),
@@ -67,8 +61,6 @@ export namespace RecipeCommand {
       category: input.category,
       title: input.title,
       ...(input.subtitle ? { subtitle: input.subtitle } : {}),
-      currentVersion: null,
-      toTest: FIRST_VERSION,
       versionCount: FIRST_VERSION,
       createdAt: now,
       updatedAt: now,
@@ -84,8 +76,9 @@ export namespace RecipeCommand {
     })
   }
 
-  // Accepted AI iteration → append version n+1 and mark it "to test". The current
-  // reference is untouched until a high-scoring essai promotes the new version.
+  // Accepted AI iteration → append version n+1 to the lineage, stamping the version
+  // it was proposed from (`basedOn`). No reference/pending pointer to maintain: the
+  // recipe just bumps its `versionCount` and `updatedAt`.
   export const addVersion = async (userId: UserId, recipeId: RecipeId, input: NewVersionInput) => {
     const recipe = await repository.findBy(userId, recipeId)
     if (!recipe) return 'not-found' as const
@@ -98,6 +91,7 @@ export namespace RecipeCommand {
       createdAt: new Date(),
       origin: { kind: 'ai-proposal' },
       change: input.change,
+      basedOn: input.basedOn,
       ...(input.why ? { why: input.why } : {}),
       steps: input.steps,
       ingredients: input.ingredients,
@@ -109,7 +103,6 @@ export namespace RecipeCommand {
     }
     const updated: Recipe = {
       ...recipe,
-      toTest: number,
       versionCount: number,
       updatedAt: new Date(),
     }
@@ -120,21 +113,17 @@ export namespace RecipeCommand {
     })
   }
 
-  // Record the essai outcome onto a version, written once. A version is an "essai
-  // à faire" until it carries a result — recording again is refused
-  // (`already-recorded`); to try again, append a new version. The outcome and the
-  // recipe's `updatedAt` bump land in one batch (all-or-nothing). The promotion
-  // suggestion is computed from the recipe's pending pointer — no AI, so this
-  // stays instant.
+  // Record the essai outcome onto a version — overwritable: re-cooking the same
+  // version simply rewrites its note/remarks/executedAt in place. The outcome and
+  // the recipe's `updatedAt` bump land in one batch (all-or-nothing).
   export const recordEssai = async (
     userId: UserId,
     input: RecordEssaiInput,
-  ): Promise<RecordEssaiResult | 'not-found' | 'already-recorded'> => {
+  ): Promise<RecipeVersion | 'not-found'> => {
     const recipe = await repository.findBy(userId, input.recipeId)
     if (!recipe) return 'not-found' as const
     const version = await repository.findVersion(input.recipeId, input.versionNumber)
     if (!version) return 'not-found' as const
-    if (version.executedAt !== null) return 'already-recorded' as const
     const executed: RecipeVersion = {
       ...version,
       executedAt: new Date(),
@@ -146,56 +135,7 @@ export namespace RecipeCommand {
     return atomically(async (batch) => {
       await repository.saveVersion(executed, batch)
       await repository.save(updatedRecipe, batch)
-      return {
-        version: executed,
-        promotionSuggested: readyToPromote(input.note, input.versionNumber, recipe.toTest),
-      }
-    })
-  }
-
-  // A high-scoring essai promotes the pending version to the new reference.
-  export const promote = async (
-    userId: UserId,
-    recipeId: RecipeId,
-    versionNumber: VersionNumberT,
-  ) => {
-    const recipe = await repository.findBy(userId, recipeId)
-    if (!recipe) return 'not-found' as const
-    if (recipe.toTest !== versionNumber) return 'nothing-to-test' as const
-    const updated: Recipe = {
-      ...recipe,
-      currentVersion: versionNumber,
-      toTest: null,
-      updatedAt: new Date(),
-    }
-    return repository.save(updated)
-  }
-
-  // Discard the pending essai: delete the untried `toTest` version and roll the
-  // recipe back to its previous state. The pending version is always the highest
-  // allocated (toTest === versionCount while pending), so discarding it clears the
-  // toTest pointer and steps versionCount down one. `currentVersion` is never the
-  // pending version, so it is untouched. A freshly imported v1 (no prior version,
-  // never promoted) can't be emptied this way — callers should delete the recipe.
-  export const discardPending = async (
-    userId: UserId,
-    recipeId: RecipeId,
-    versionNumber: VersionNumberT,
-  ): Promise<undefined | 'not-found' | 'nothing-to-discard' | 'only-version'> => {
-    const recipe = await repository.findBy(userId, recipeId)
-    if (!recipe) return 'not-found' as const
-    if (recipe.toTest !== versionNumber) return 'nothing-to-discard' as const
-    if (versionNumber <= 1) return 'only-version' as const
-    const updated: Recipe = {
-      ...recipe,
-      toTest: null,
-      versionCount: VersionNumber(versionNumber - 1),
-      updatedAt: new Date(),
-    }
-    return atomically(async (batch) => {
-      repository.removeVersion(recipeId, versionNumber, batch)
-      await repository.save(updated, batch)
-      return undefined
+      return executed
     })
   }
 
@@ -243,6 +183,7 @@ export namespace RecipeCommand {
       createdAt: recipe.createdAt,
       origin,
       change: null,
+      basedOn: null,
       steps: input.steps,
       ingredients: input.ingredients,
       tmxSteps,

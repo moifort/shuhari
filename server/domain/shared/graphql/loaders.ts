@@ -1,12 +1,12 @@
 import { RecipeQuery } from '~/domain/recipe/query'
-import type { RecipeId, RecipeVersion, VersionNumber } from '~/domain/recipe/types'
+import type { RecipeId, RecipeVersion } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
 
 // Per-request loaders for the satellite fields of RecipeType. One loader set
 // lives on each GraphQL context (built per request in routes/graphql.ts), so
 // nothing leaks across requests. Each loader memoizes per key and batches every
 // key requested in the same resolution tick into a single keyed read — a page of
-// recipes selecting `currentVersion` costs one getAll, never one read per recipe.
+// recipes selecting a satellite costs one scan, never one read per recipe.
 
 export type Loader<T, A> = { load: (arg: A) => Promise<T | undefined> }
 
@@ -41,22 +41,14 @@ const batchedBy = <T, A>(
   }
 }
 
-export type VersionRef = { recipeId: RecipeId; number: VersionNumber }
-
-const versionKey = (ref: VersionRef) => `${ref.recipeId}_${ref.number}`
-
 export type RecipeSatelliteLoaders = {
-  version: Loader<RecipeVersion, VersionRef>
   versionsByRecipe: Loader<RecipeVersion[], RecipeId>
 }
 
 export const recipeSatelliteLoaders = (userId: UserId): RecipeSatelliteLoaders => ({
-  version: batchedBy(versionKey, async (refs) => {
-    const versions = await RecipeQuery.versionsByRefs(refs)
-    return new Map(versions.map((v) => [versionKey({ recipeId: v.recipeId, number: v.number }), v]))
-  }),
   // The full lineage of each recipe, batched from a single recipe-versions scan —
-  // backs the recipe's best-note aggregate over its executed versions.
+  // backs the recipe's derived best note and the version to open (both read the
+  // whole lineage, so they share this one batch).
   versionsByRecipe: batchedBy(
     (recipeId) => recipeId,
     async (recipeIds) => {

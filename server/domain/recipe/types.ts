@@ -54,8 +54,9 @@ export type VersionOriginKind = 'import' | 'ai-proposal' | 'manual'
 export type VersionOrigin = { kind: VersionOriginKind; detail?: string }
 
 // The aggregate root. A light pointer document: the heavy version data lives in
-// the satellite `recipe-versions` collection keyed `${recipeId}_${number}` (a
-// version's content is immutable, but its essai outcome is written once in place).
+// the satellite `recipe-versions` collection keyed `${recipeId}_${number}`. The
+// recipe carries no reference/pending pointers: the best note and the version to
+// open are derived from the lineage (see `bestNote`/`versionToOpen`).
 export type Recipe = {
   id: RecipeId
   userId: UserId
@@ -65,18 +66,16 @@ export type Recipe = {
   category: DishCategory
   title: RecipeTitle
   subtitle?: RecipeSubtitle
-  currentVersion: VersionNumber | null // the reproducible reference, null until the first promotion
-  toTest: VersionNumber | null // the version awaiting an essai, if any
   versionCount: VersionNumber // highest version number allocated so far
   createdAt: Date
   updatedAt: Date
 }
 
 // One entry in a recipe's linear lineage (v1 → v2 → …). Its content and lineage
-// (steps/ingredients/tmxSteps/origin/change) are immutable, but a version *is* an
-// essai: it is an "essai à faire" while `executedAt === null`, then carries its
-// outcome (note/remarks/photo) once — written a single time, never overwritten.
-// To try again, append a new version rather than re-recording this one.
+// (steps/ingredients/tmxSteps/origin/change/basedOn) are immutable, but a version
+// *is* an essai: it is an "essai à faire" while `executedAt === null`, then carries
+// its outcome (note/remarks/photo). The outcome is overwritable — recording again
+// re-cooks the same version in place rather than forcing a new one.
 export type RecipeVersion = {
   userId: UserId
   recipeId: RecipeId
@@ -84,6 +83,10 @@ export type RecipeVersion = {
   createdAt: Date
   origin: VersionOrigin
   change: string | null // human summary of what changed ("Bouillon 700 → 650 ml"); null for v1
+  // The version this one iterates on — set to the essai it was proposed from
+  // (`versionToOpen` at draft time); `null` for the original v1, which iterates on
+  // nothing. Drives the "essai en cours" branch of `versionToOpen`.
+  basedOn: VersionNumber | null
   why?: string // AI rationale, for proposed versions
   steps: StepText[]
   // The recipe's components with quantities. `[]` when the recipe has nothing

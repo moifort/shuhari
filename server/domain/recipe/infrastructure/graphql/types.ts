@@ -1,4 +1,4 @@
-import { highestNote, pendingEssais } from '~/domain/recipe/business-rules'
+import { bestNote, versionToOpen } from '~/domain/recipe/business-rules'
 import { type RecipeLibraryPage, RecipeQuery } from '~/domain/recipe/query'
 import { builder } from '~/domain/shared/graphql/builder'
 import type { Ingredient, Recipe, RecipeVersion, TmxSettings } from '../../types'
@@ -98,6 +98,14 @@ export const VersionType = builder.objectRef<RecipeVersion>('Version').implement
         '180°C instead of 200°C"`. A dish or Thermomix recipe may change several things at once. ' +
         '`null` on the original `v1`, which changes nothing.',
     }),
+    basedOn: t.field({
+      type: 'VersionNumber',
+      nullable: true,
+      description:
+        'The version this one iterates on — the attempt it was built from, e.g. `2` for a `v3` ' +
+        'proposed after cooking `v2`. `null` on the original `v1`, which builds on nothing.',
+      resolve: (v) => v.basedOn ?? null,
+    }),
     why: t.string({
       nullable: true,
       description:
@@ -145,8 +153,8 @@ export const VersionType = builder.objectRef<RecipeVersion>('Version').implement
       nullable: true,
       description:
         'Your rating of this attempt, from `1` (bad) to `5` (excellent). `null` until you have ' +
-        'cooked it. A version needs `4` or more to become the recipe’s reference (see ' +
-        'currentVersion).',
+        'cooked it. The recipe’s best rating across its versions drives its display note (see ' +
+        'bestNote).',
       resolve: (v) => v.note ?? null,
     }),
     remarks: t.field({
@@ -172,9 +180,10 @@ export const RecipeType = builder.objectRef<Recipe>('Recipe')
 RecipeType.implement({
   description:
     'A dish you are perfecting over time. A recipe is the whole experiment, not a single ' +
-    'recipe card: it holds a chain of versions (v1, v2, v3 …), remembers which one is the ' +
-    'current best, and which one is queued up to try next. Think `"Grandma’s lasagna"` and ' +
-    'every attempt you have made to nail it.',
+    'recipe card: it holds a chain of versions (v1, v2, v3 …), each one an attempt in the ' +
+    'kitchen. Its state is derived from that chain — its best rating (bestNote) and the version ' +
+    'to open from the home (versionToOpen). Think `"Grandma’s lasagna"` and every attempt you ' +
+    'have made to nail it.',
   fields: (t) => ({
     id: t.expose('id', {
       type: 'RecipeId',
@@ -216,49 +225,27 @@ RecipeType.implement({
         'How many versions exist so far — also the number of the most recent one, e.g. `3` ' +
         'after `v1 → v2 → v3`',
     }),
-    currentVersion: t.field({
-      type: VersionType,
-      nullable: true,
-      description:
-        'The reference version — the one you consider "the recipe" today, the one to reproduce, ' +
-        'e.g. `v2` of `"Grandma’s lasagna"`. A version becomes eligible once its essai (run on ' +
-        'the pending version) scores `4` or more; you then confirm it with promoteVersion. ' +
-        '`null` until that first promotion, while the recipe is still being dialled in.',
-      resolve: (r, _a, { loaders }) =>
-        r.currentVersion === null
-          ? null
-          : loaders.version
-              .load({ recipeId: r.id, number: r.currentVersion })
-              .then((v) => v ?? null),
-    }),
-    toTest: t.field({
-      type: VersionType,
-      nullable: true,
-      description:
-        'The version queued up to cook next — created but not yet tried, e.g. `v3`. Right after ' +
-        'import this points to the original `v1`. It is `null` only once every version has been ' +
-        'tried (or the pending one was discarded or promoted).',
-      resolve: (r, _a, { loaders }) =>
-        r.toTest === null
-          ? null
-          : loaders.version.load({ recipeId: r.id, number: r.toTest }).then((v) => v ?? null),
-    }),
     versions: t.field({
       type: [VersionType],
       description: 'The whole history, oldest first, e.g. `v1 → v2 → v3`',
       resolve: (r) => RecipeQuery.versionsOf(r.id),
     }),
-    pendingEssais: t.field({
-      type: [VersionType],
+    // Satellite: the version the fiche opens on, derived from the full lineage via
+    // the batched loader (shares the scan with bestNote — no extra reads).
+    versionToOpen: t.field({
+      type: VersionType,
       description:
-        'Your to-do list of attempts: versions created but not yet cooked, newest first, e.g. ' +
-        '`v3` then `v2`. Empty for a brand-new recipe that only has its original `v1` (that one ' +
-        'is run straight from the recipe card, not offered here).',
-      resolve: (r) =>
-        r.versionCount <= 1 ? [] : RecipeQuery.versionsOf(r.id).then((vs) => pendingEssais(vs)),
+        'The version to show first when you open this recipe: the attempt in progress (the most ' +
+        'recent one built on your best-rated version), or that best-rated version itself, or — ' +
+        'if you have never cooked any — the latest version. Never `null`; a recipe always has at ' +
+        'least its `v1`.',
+      resolve: async (r, _a, { loaders }) => {
+        const versions = (await loaders.versionsByRecipe.load(r.id)) ?? []
+        return versionToOpen(versions)
+      },
     }),
-    // Satellite: the recipe's best essai note across its executed versions, from
-    // the batched loader that groups the full lineage by recipe (no extra reads).
+    // Satellite: the recipe's best essai note across its cooked versions, from the
+    // batched loader that groups the full lineage by recipe (no extra reads).
     bestNote: t.field({
       type: 'Note',
       nullable: true,
@@ -267,10 +254,7 @@ RecipeType.implement({
         '`5` (`1`–`5`). `null` if you have never tried any version yet.',
       resolve: async (r, _a, { loaders }) => {
         const versions = (await loaders.versionsByRecipe.load(r.id)) ?? []
-        const notes = versions
-          .map((v) => v.note)
-          .filter((note): note is NonNullable<typeof note> => note !== null)
-        return highestNote(notes)
+        return bestNote(versions)?.note ?? null
       },
     }),
   }),
