@@ -20,38 +20,43 @@ struct NextTrialsSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            Group {
                 if trials.isEmpty {
-                    Text("Aucune version en attente d'essai.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    ContentUnavailableView(
+                        "Aucun essai en attente",
+                        systemImage: "flask",
+                        description: Text("Note un essai depuis la fiche pour lancer la boucle.")
+                    )
+                    .accessibilityIdentifier("next-trials-empty")
                 } else {
-                    ForEach(trials) { item in
-                        Button {
-                            onSelect(item.versionNumber)
-                        } label: {
-                            NextTrialRow(
-                                versionNumber: item.versionNumber,
-                                change: item.change,
-                                why: item.why
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("next-trial-v\(item.versionNumber)")
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                pendingDeletion = item
+                    List {
+                        ForEach(trials) { item in
+                            Button {
+                                onSelect(item.versionNumber)
                             } label: {
-                                Label("Supprimer", systemImage: "trash")
+                                NextTrialRow(
+                                    versionNumber: item.versionNumber,
+                                    change: item.change,
+                                    why: item.why
+                                )
                             }
-                            .accessibilityIdentifier("delete-trial-v\(item.versionNumber)")
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("next-trial-v\(item.versionNumber)")
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    pendingDeletion = item
+                                } label: {
+                                    Label("Supprimer", systemImage: "trash")
+                                }
+                                .accessibilityIdentifier("delete-trial-v\(item.versionNumber)")
+                            }
                         }
                     }
+                    .contentMargins(.top, Theme.Spacing.s, for: .scrollContent)
                 }
             }
             .navigationTitle("Essais")
             .navigationBarTitleDisplayMode(.inline)
-            .contentMargins(.top, Theme.Spacing.s, for: .scrollContent)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button { dismiss() } label: {
