@@ -119,7 +119,9 @@ export namespace PropositionUseCase {
   // Analyze an import source (photos, a URL or raw text) into a structured recipe
   // preview. The proposition domain is the sole caller of the import AI; confirming
   // this preview persists a brand-new recipe via `RecipeCommand.create` (the recipe
-  // domain's `createRecipe` mutation) — nothing is saved here.
+  // domain's `createRecipe` mutation) — nothing is saved here. `_userId` is ignored on
+  // purpose: the analysis is globally SHA-cached (keyed on the source, not the caller)
+  // and stays user-scoped only from the confirmed `create` onward.
   export const fromPhoto = async (_userId: UserId, source: ImportSource) => Ai.analyzeImport(source)
 
   // Accept a proposition as an iteration: append version n+1 from the client-supplied

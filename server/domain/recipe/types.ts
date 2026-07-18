@@ -84,8 +84,8 @@ export type RecipeVersion = {
   origin: VersionOrigin
   change: string | null // human summary of what changed ("Bouillon 700 → 650 ml"); null for v1
   // The version this one iterates on — set to the essai it was proposed from
-  // (`versionToOpen` at draft time); `null` for the original v1, which iterates on
-  // nothing. Drives the "essai en cours" branch of `versionToOpen`.
+  // (`versionToOpen` at proposition time); `null` for the original v1, which iterates
+  // on nothing. Drives the "essai en cours" branch of `versionToOpen`.
   basedOn: VersionNumber | null
   why?: string // AI rationale, for proposed versions
   steps: StepText[]

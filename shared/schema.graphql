@@ -783,7 +783,7 @@ Where a version came from — how this entry in the lineage was born, e.g. `IMPO
 """
 enum VersionOriginKind {
   """
-  An iteration the AI drafted from the previous essai and the cook accepted, e.g. `"Less sugar, longer resting time"`
+  An iteration the AI proposed from the previous essai and the cook accepted, e.g. `"Less sugar, longer resting time"`
   """
   AI_PROPOSAL
 

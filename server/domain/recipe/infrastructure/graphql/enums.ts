@@ -67,7 +67,7 @@ export const VersionOriginKindEnum = builder.enumType('VersionOriginKind', {
     AI_PROPOSAL: {
       value: 'ai-proposal',
       description:
-        'An iteration the AI drafted from the previous essai and the cook accepted, e.g. ' +
+        'An iteration the AI proposed from the previous essai and the cook accepted, e.g. ' +
         '`"Less sugar, longer resting time"`',
     },
     MANUAL: {
