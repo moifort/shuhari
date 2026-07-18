@@ -16,6 +16,14 @@ export default defineEventHandler(async (event) => {
     return
   }
 
+  // Local dev only: let the GraphiQL/Sandbox web tool reach /graphql without a
+  // Firebase token. Stripped in production builds (import.meta.dev is false there).
+  // Compare the pathname only, so GET query execution (/graphql?query=…) matches too.
+  if (import.meta.dev && (path.split('?')[0] ?? path) === '/graphql') {
+    event.context.userId = UserId(process.env.NITRO_DEV_USER_ID || 'dev-user')
+    return
+  }
+
   // Everything else (incl. /graphql): require a valid Firebase ID token.
   const auth = getHeader(event, 'authorization')
   const token = auth?.startsWith('Bearer ') ? auth.slice(7) : null
