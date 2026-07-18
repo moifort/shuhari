@@ -12,24 +12,6 @@ struct DebugGallery: View {
         switch screen {
         case "root":
             ContentView()
-                .environment(HomeStore())
-        case "home":
-            NavigationStack {
-                HomePage(
-                    data: Fixtures.homeData,
-                    library: Fixtures.homeData.library,
-                    libraryGrouped: true,
-                    libraryLoading: false,
-                    libraryHasMore: false,
-                    libraryLoadMoreFailed: false,
-                    title: "Carnet",
-                    typeFilter: nil,
-                    sort: .constant(.lastModified),
-                    categoryFilter: .constant(nil),
-                    onExecute: { _ in },
-                    onSettings: {}
-                )
-            }
         case "cuisine":
             CuisineGalleryScreen()
         case "recipe":
@@ -45,25 +27,9 @@ struct DebugGallery: View {
                 HistoryPage(recipe: Fixtures.bourguignon)
             }
         case "trial":
-            NavigationStack {
-                EssaiDetailPage(
-                    recipeTitle: Fixtures.bourguignon.title,
-                    versionNumber: 3,
-                    date: Fixtures.date,
-                    change: "Vin rouge 50 → 75 cl",
-                    why: "La sauce manquait de corps.",
-                    ingredients: Fixtures.bourguignonV3.ingredients.map {
-                        .init(name: $0.name, quantity: $0.quantity, highlighted: $0.name == "Vin rouge")
-                    },
-                    steps: Fixtures.bourguignonV3.steps.enumerated().map { index, text in
-                        .init(index: index, text: text, time: nil, temperature: nil, speed: nil, reverse: false, highlighted: index == 3)
-                    },
-                    hasResult: true,
-                    note: 4,
-                    remarks: "Sauce nappante, viande fondante.",
-                    photoUrl: nil
-                )
-            }
+            RecipeDetailGalleryScreen(recipe: Fixtures.bourguignon, focusVersionNumber: 3)
+        case "trial-pending":
+            RecipeDetailGalleryScreen(recipe: Fixtures.bourguignon, focusVersionNumber: 4)
         case "execute":
             NavigationStack {
                 ExecutePage(
@@ -116,7 +82,7 @@ struct DebugGallery: View {
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : home, cuisine, recipe, recipe-tmx, recipe-fresh, next-trials, history, trial, execute, execute-tmx, capture, draft, import-preview, import-preview-tmx, ai-thinking, import-nothing-found")
+                description: Text("Écrans : cuisine, recipe, recipe-tmx, recipe-fresh, next-trials, history, trial, trial-pending, execute, execute-tmx, capture, draft, import-preview, import-preview-tmx, ai-thinking, import-nothing-found")
             )
         }
     }
@@ -127,11 +93,13 @@ struct DebugGallery: View {
 /// navigation path the coordinator writes into.
 private struct RecipeDetailGalleryScreen: View {
     let recipe: Recipe
+    /// When set, focuses that version (the essai view: orange banner + change dots).
+    var focusVersionNumber: Int? = nil
     @State private var path = NavigationPath()
 
     var body: some View {
         NavigationStack(path: $path) {
-            RecipeDetailView(previewRecipe: recipe, path: $path)
+            RecipeDetailView(previewRecipe: recipe, path: $path, focusVersionNumber: focusVersionNumber)
         }
     }
 }
@@ -167,24 +135,16 @@ private struct NextTrialsSheetGalleryScreen: View {
 private struct CuisineGalleryScreen: View {
     @State private var selected: RecipeType = .tmx
 
-    private let data = HomeData(
-        toTest: [
-            HomeTestItem(id: "boeuf", title: "Bœuf bourguignon", type: .plat, category: .plat, versionNumber: 5, change: "Cuisson 3 h → 3 h 30", why: "Viande encore ferme."),
-        ],
-        library: [
-            LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0, updatedAt: Date()),
-            LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 3, bestNote: 4, averageNote: 3.5, updatedAt: Date()),
-            LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestNote: nil, averageNote: nil, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
-        ],
-        recentEssais: []
-    )
+    private let library = [
+        LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0, updatedAt: Date()),
+        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 3, bestNote: 4, averageNote: 3.5, updatedAt: Date()),
+        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestNote: nil, averageNote: nil, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+    ]
 
     var body: some View {
         NavigationStack {
-            let filtered = data.filtered(to: [selected])
             HomePage(
-                data: filtered,
-                library: filtered.library,
+                library: library.filter { $0.type == selected },
                 libraryGrouped: true,
                 libraryLoading: false,
                 libraryHasMore: false,
@@ -193,7 +153,6 @@ private struct CuisineGalleryScreen: View {
                 typeFilter: .init(options: [.plat, .tmx], selection: $selected),
                 sort: .constant(.lastModified),
                 categoryFilter: .constant(nil),
-                onExecute: { _ in },
                 onSettings: {}
             )
         }

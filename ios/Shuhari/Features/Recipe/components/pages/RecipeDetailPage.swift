@@ -5,14 +5,32 @@ import SwiftUI
 /// history. Navigation and mutations are owned by `RecipeDetailView`.
 struct RecipeDetailPage: View {
     let recipe: Recipe
+    /// When set, the fiche renders THIS version instead of the best-rated one —
+    /// the essai view. Nil (the default) keeps the fiche strictly unchanged.
+    var focusVersion: RecipeVersion? = nil
+    /// Ingredient names changed vs the previous version → orange dot.
+    var modifiedIngredients: Set<String> = []
+    /// Step indices changed vs the previous version → orange dot.
+    var modifiedSteps: Set<Int> = []
+    /// The change summary and rationale of the focused version, shown in the
+    /// orange banner atop an essai fiche.
+    var change: String? = nil
+    var why: String? = nil
+
+    /// The version the fiche presents: the focused essai version when set,
+    /// otherwise the best-rated reference.
+    private var displayedVersion: RecipeVersion? {
+        focusVersion ?? recipe.bestRatedVersion
+    }
 
     var body: some View {
         List {
+            banner
             header
 
-            if let reference = recipe.bestRatedVersion {
-                IngredientsSection(ingredients: reference.ingredients)
-                ReferenceVersionSection(version: reference)
+            if let reference = displayedVersion {
+                IngredientsSection(ingredients: reference.ingredients, modified: modifiedIngredients)
+                ReferenceVersionSection(version: reference, modified: modifiedSteps)
             }
         }
         .listSectionSpacing(5)
@@ -44,6 +62,37 @@ struct RecipeDetailPage: View {
         recipe.createdAt.formatted(.dateTime.day().month(.abbreviated).year())
     }
 
+    // MARK: - Banner
+
+    // The orange essai banner: the change summary + rationale of the focused
+    // version, in an orange-bordered card whose edges align with the section
+    // cards below (default insets, only the fill/overlay are customised). Only
+    // shown in focus mode with content — nil focus renders nothing.
+    @ViewBuilder
+    private var banner: some View {
+        if focusVersion != nil, change?.isEmpty == false || why?.isEmpty == false {
+            Section {
+                VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                    if let change, !change.isEmpty {
+                        Text(change)
+                            .font(.title3.weight(.semibold))
+                    }
+                    if let why, !why.isEmpty {
+                        Text(why)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(Theme.Spacing.l)
+                .background(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous).fill(Theme.Status.toTest.opacity(0.12)))
+                .overlay(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous).strokeBorder(Theme.Status.toTest, lineWidth: 1))
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+            }
+        }
+    }
+
     // MARK: - Header
 
     // The badges + note line: a normal list row, so it scrolls with the page and
@@ -54,7 +103,7 @@ struct RecipeDetailPage: View {
                 HStack {
                     RecipeHeaderBadges(
                         type: recipe.type,
-                        versionNumber: recipe.bestRatedVersion?.number,
+                        versionNumber: displayedVersion?.number,
                         essaiCount: recipe.essais.count
                     )
                     Spacer(minLength: Theme.Spacing.s)
@@ -79,5 +128,18 @@ struct RecipeDetailPage: View {
 #Preview("Thermomix") {
     NavigationStack {
         RecipeDetailPage(recipe: Fixtures.risotto)
+    }
+}
+
+#Preview("Essai — v3 focalisée") {
+    NavigationStack {
+        RecipeDetailPage(
+            recipe: Fixtures.bourguignon,
+            focusVersion: Fixtures.bourguignonV3,
+            modifiedIngredients: ["Vin rouge"],
+            modifiedSteps: [],
+            change: Fixtures.bourguignonV3.change,
+            why: Fixtures.bourguignonV3.why
+        )
     }
 }

@@ -5,6 +5,9 @@ import SwiftUI
 struct StepsList: View {
     let steps: [String]
     var big: Bool = false
+    /// Step indices changed vs the previous version — flagged with a leading
+    /// orange dot. Empty (the default) renders exactly like the plain fiche.
+    var modified: Set<Int> = []
 
     var body: some View {
         if big {
@@ -22,6 +25,11 @@ struct StepsList: View {
 
     private func row(index: Int, step: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
+            if !modified.isEmpty {
+                Circle()
+                    .fill(modified.contains(index) ? Theme.Status.changed : .clear)
+                    .frame(width: 7, height: 7)
+            }
             Text("\(index + 1)")
                 .font((big ? Font.title2 : .subheadline).weight(.semibold))
                 .monospacedDigit()

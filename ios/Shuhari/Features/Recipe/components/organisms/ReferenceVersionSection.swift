@@ -5,14 +5,17 @@ import SwiftUI
 /// `IngredientsSection`. Composes as a `Section` directly inside a `List`.
 struct ReferenceVersionSection: View {
     let version: RecipeVersion
+    /// Step indices changed vs the previous version — flagged with an orange dot.
+    /// Empty (the default) renders exactly like the plain fiche.
+    var modified: Set<Int> = []
 
     var body: some View {
         if !version.steps.isEmpty {
             Section {
                 if let tmxItems = TmxStepsList.Item.zipped(steps: version.steps, tmxSteps: version.tmxSteps) {
-                    TmxStepsList(items: tmxItems)
+                    TmxStepsList(items: tmxItems, modified: modified)
                 } else {
-                    StepsList(steps: version.steps)
+                    StepsList(steps: version.steps, modified: modified)
                 }
             } header: {
                 Text("Description")

@@ -5,11 +5,14 @@ import SwiftUI
 /// an empty section). Composes as a `Section` directly inside a `List`.
 struct IngredientsSection: View {
     let ingredients: [Ingredient]
+    /// Names of ingredients changed vs the previous version — flagged with an
+    /// orange dot. Empty (the default) renders exactly like the plain fiche.
+    var modified: Set<String> = []
 
     var body: some View {
         if !ingredients.isEmpty {
             Section {
-                IngredientsGrid(items: ingredients.map { ($0.name, $0.quantity) })
+                IngredientsGrid(items: ingredients.map { ($0.name, $0.quantity) }, modified: modified)
             } header: {
                 // Trim the header's built-in top padding so the fiche stays compact.
                 Text("Ingrédients")
@@ -24,13 +27,29 @@ struct IngredientsSection: View {
 /// pairs, no domain struct.
 struct IngredientsGrid: View {
     let items: [(name: String, quantity: String)]
+    /// Names to flag as changed. Empty (the default) keeps the exact plain-fiche
+    /// `LabeledContent` layout — no leading dot, no shift.
+    var modified: Set<String> = []
 
     var body: some View {
         ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-            LabeledContent(item.name) {
-                Text(item.quantity)
-                    .monospacedDigit()
-                    .foregroundStyle(.primary)
+            if modified.isEmpty {
+                LabeledContent(item.name) {
+                    Text(item.quantity)
+                        .monospacedDigit()
+                        .foregroundStyle(.primary)
+                }
+            } else {
+                HStack(spacing: 10) {
+                    Circle()
+                        .fill(modified.contains(item.name) ? Theme.Status.changed : .clear)
+                        .frame(width: 7, height: 7)
+                    Text(item.name)
+                    Spacer(minLength: 8)
+                    Text(item.quantity)
+                        .monospacedDigit()
+                        .foregroundStyle(.primary)
+                }
             }
         }
     }

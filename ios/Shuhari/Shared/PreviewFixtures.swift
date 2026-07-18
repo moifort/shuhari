@@ -20,6 +20,12 @@ enum Fixtures {
         Ingredient(name: "Bouquet garni", quantity: "1"),
     ]
 
+    /// The wine before the v3 iteration (50 cl) — v1/v2 use this, so focusing v3
+    /// highlights "Vin rouge" as changed against its predecessor.
+    static let bourguignonIngredientsEarly = bourguignonIngredients.map {
+        $0.name == "Vin rouge" ? Ingredient(name: "Vin rouge", quantity: "50 cl") : $0
+    }
+
     static let bourguignonSteps = [
         "Saisir le bœuf sur toutes les faces, réserver.",
         "Faire revenir lardons, oignons et carottes.",
@@ -27,6 +33,10 @@ enum Fixtures {
         "Mouiller au vin et au bouillon, ajouter le bouquet garni.",
         "Cuire à couvert 3 h.",
     ]
+
+    /// The v4 steps: the cooking time stretched to 3 h 30 — so focusing v4
+    /// highlights that last step as changed against v3.
+    static let bourguignonStepsV4 = Array(bourguignonSteps.dropLast()) + ["Cuire à couvert 3 h 30."]
 
     static let risottoIngredients = [
         Ingredient(name: "Oignon", quantity: "1"),
@@ -43,7 +53,7 @@ enum Fixtures {
     static let bourguignonV1 = RecipeVersion(
         number: 1, change: nil, why: nil, originKind: .import,
         originDetail: "Importée par photo",
-        ingredients: bourguignonIngredients,
+        ingredients: bourguignonIngredientsEarly,
         steps: bourguignonSteps,
         tmxSteps: [],
         recipeId: "bourguignon", note: 3,
@@ -55,7 +65,7 @@ enum Fixtures {
     static let bourguignonV2 = RecipeVersion(
         number: 2, change: "Ajout d’un bouquet garni", why: "Manque d’arômes.",
         originKind: .aiProposal, originDetail: nil,
-        ingredients: bourguignonIngredients,
+        ingredients: bourguignonIngredientsEarly,
         steps: bourguignonSteps,
         tmxSteps: [],
         recipeId: "bourguignon", note: 3,
@@ -88,7 +98,7 @@ enum Fixtures {
         originKind: .aiProposal,
         originDetail: nil,
         ingredients: bourguignonIngredients,
-        steps: bourguignonSteps,
+        steps: bourguignonStepsV4,
         tmxSteps: [],
         recipeId: "bourguignon",
         note: nil,
@@ -254,29 +264,13 @@ enum Fixtures {
         sourceLabel: "Photo du livre Thermomix"
     )
 
-    static let homeData = HomeData(
-        toTest: [
-            HomeTestItem(
-                id: "bourguignon", title: "Bœuf bourguignon", type: .plat, category: .plat,
-                versionNumber: 4, change: "Cuisson 3 h → 3 h 30",
-                why: "Viande encore un peu ferme."
-            ),
-        ],
-        library: [
-            LibraryRecipe(id: "bourguignon", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0, updatedAt: Date()),
-            LibraryRecipe(id: "joues", title: "Joues de bœuf confites", type: .plat, category: .plat, versionCount: 1, bestNote: 4, averageNote: 3.5, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
-            LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 2, bestNote: 4, averageNote: 3.5, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
-            LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestNote: nil, averageNote: 3.0, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
-        ],
-        recentEssais: bourguignonEssais.map {
-            RecentEssai(
-                recipeId: $0.recipeId,
-                versionNumber: $0.number,
-                note: $0.note ?? 0,
-                remarks: $0.remarks ?? "",
-                executedAt: $0.executedAt ?? date
-            )
-        }
-    )
+    /// A page of library rows spanning both cuisine types and a couple of months —
+    /// backs the paginated Carnet list in previews and the debug gallery.
+    static let libraryRecipes = [
+        LibraryRecipe(id: "bourguignon", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0, updatedAt: Date()),
+        LibraryRecipe(id: "joues", title: "Joues de bœuf confites", type: .plat, category: .plat, versionCount: 1, bestNote: 4, averageNote: 3.5, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
+        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 2, bestNote: 4, averageNote: 3.5, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestNote: nil, averageNote: 3.0, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
+    ]
 }
 #endif

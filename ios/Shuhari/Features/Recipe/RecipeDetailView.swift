@@ -4,6 +4,9 @@ import SwiftUI
 /// (through the binding owned by `HomeView`), the rename sheet, and deletion.
 struct RecipeDetailView: View {
     let recipeId: String
+    /// When set, the fiche focuses this version (the essai view): orange banner +
+    /// per-row change dots. Nil renders the plain fiche.
+    let focusVersionNumber: Int?
     @Binding var path: NavigationPath
     let onReload: () -> Void
 
@@ -20,10 +23,12 @@ struct RecipeDetailView: View {
 
     init(
         recipeId: String,
+        focusVersionNumber: Int? = nil,
         path: Binding<NavigationPath>,
         onReload: @escaping () -> Void
     ) {
         self.recipeId = recipeId
+        self.focusVersionNumber = focusVersionNumber
         self._path = path
         self.onReload = onReload
         self._viewModel = State(initialValue: RecipeViewModel(recipeId: recipeId))
@@ -34,9 +39,11 @@ struct RecipeDetailView: View {
     init(
         previewRecipe: Recipe,
         path: Binding<NavigationPath>,
-        onReload: @escaping () -> Void = {}
+        onReload: @escaping () -> Void = {},
+        focusVersionNumber: Int? = nil
     ) {
         self.recipeId = previewRecipe.id
+        self.focusVersionNumber = focusVersionNumber
         self._path = path
         self.onReload = onReload
         self._viewModel = State(initialValue: RecipeViewModel(previewRecipe: previewRecipe))
@@ -45,7 +52,7 @@ struct RecipeDetailView: View {
     var body: some View {
         Group {
             if let recipe = viewModel.recipe {
-                RecipeDetailPage(recipe: recipe)
+                detailPage(recipe: recipe)
                 .toolbar { toolbar(recipe: recipe) }
                 // The fiche is a focused, Photos-style detail: hide the tab bar so the
                 // floating action bar owns the bottom edge.
@@ -120,6 +127,50 @@ struct RecipeDetailView: View {
         }
         .errorAlert(actionError)
         .task { if viewModel.recipe == nil { await viewModel.load() } }
+    }
+
+    /// The fiche, focused on a version when `focusVersionNumber` is set (essai
+    /// view: orange banner + per-row change dots vs the previous version), or the
+    /// plain best-rated fiche otherwise.
+    @ViewBuilder
+    private func detailPage(recipe: Recipe) -> some View {
+        if let number = focusVersionNumber, let focus = recipe.version(number) {
+            let previous = recipe.version(number - 1)
+            RecipeDetailPage(
+                recipe: recipe,
+                focusVersion: focus,
+                modifiedIngredients: modifiedIngredients(focus, previous: previous),
+                modifiedSteps: modifiedSteps(focus, previous: previous),
+                change: focus.change,
+                why: focus.why ?? focus.originDetail
+            )
+        } else {
+            RecipeDetailPage(recipe: recipe)
+        }
+    }
+
+    /// Ingredient names present in `version` but absent (by name + quantity) from
+    /// `previous` — the rows that changed. No previous version → nothing changed.
+    private func modifiedIngredients(_ version: RecipeVersion, previous: RecipeVersion?) -> Set<String> {
+        guard let previous else { return [] }
+        return Set(
+            version.ingredients
+                .filter { ingredient in
+                    !previous.ingredients.contains { $0.name == ingredient.name && $0.quantity == ingredient.quantity }
+                }
+                .map(\.name)
+        )
+    }
+
+    /// Step indices whose exact text is absent from `previous` — the rows that
+    /// changed. No previous version → nothing changed.
+    private func modifiedSteps(_ version: RecipeVersion, previous: RecipeVersion?) -> Set<Int> {
+        guard let previous else { return [] }
+        return Set(
+            version.steps.enumerated()
+                .filter { !previous.steps.contains($0.element) }
+                .map(\.offset)
+        )
     }
 
     @ToolbarContentBuilder
