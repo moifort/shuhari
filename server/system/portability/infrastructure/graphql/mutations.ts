@@ -1,6 +1,6 @@
 import { GraphQLError } from 'graphql'
-import { PortabilityUseCase } from '~/domain/portability/use-case'
 import { builder } from '~/domain/shared/graphql/builder'
+import { PortabilityUseCase } from '~/system/portability/use-case'
 import { ImportResultType } from './types'
 
 builder.mutationField('importData', (t) =>

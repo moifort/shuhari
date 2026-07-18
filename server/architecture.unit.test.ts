@@ -9,11 +9,22 @@ import { basename, dirname, join } from 'node:path'
 const SERVER_DIR = join(import.meta.dir)
 const DOMAIN_DIR = join(SERVER_DIR, 'domain')
 
+// Mini-domains that live under server/system/ but must still obey the domain rules
+// (folder shape, purity, naming, no-throw). They escape the server/domain/* globs,
+// so their files are folded back into the relevant checks below.
+const SYSTEM_HOSTED = ['changelog', 'portability'] as const
+
 const domains = readdirSync(DOMAIN_DIR).filter((d) => statSync(join(DOMAIN_DIR, d)).isDirectory())
 
 const readFile = (path: string) => readFileSync(path, 'utf-8')
 
 const glob = (pattern: string) => globSync(pattern, { cwd: join(SERVER_DIR, '..') })
+
+// Same relative pattern applied to server/domain/* and to each system-hosted mini-domain.
+const domainAndSystemHostedGlob = (suffix: string) => [
+  ...glob(`server/domain/*/${suffix}`),
+  ...SYSTEM_HOSTED.flatMap((d) => glob(`server/system/${d}/${suffix}`)),
+]
 
 describe('architecture', () => {
   describe('each domain has a types.ts', () => {
@@ -118,7 +129,7 @@ describe('architecture', () => {
   })
 
   describe('query.ts and command.ts name the business concept, not the technical pattern', () => {
-    const targets = glob('server/domain/*/{query,command,business-rules}.ts')
+    const targets = domainAndSystemHostedGlob('{query,command,business-rules}.ts')
     // Exported names must carry intent, never a getX/computeX/handleX scaffold.
     // Reads read as `all`, `byId`, `view`, `placements`; writes as the business
     // action (`importRecipe`, `promote`). `findAll`/`findBy` stay (repository idiom).
@@ -140,7 +151,7 @@ describe('architecture', () => {
   })
 
   describe('business-rules.ts is pure (no IO)', () => {
-    const businessRulesFiles = glob('server/domain/*/business-rules.ts')
+    const businessRulesFiles = domainAndSystemHostedGlob('business-rules.ts')
 
     for (const file of businessRulesFiles) {
       test(basename(dirname(file)), () => {
@@ -161,7 +172,7 @@ describe('architecture', () => {
   })
 
   describe('use-case.ts does not bypass domain boundaries', () => {
-    const useCaseFiles = glob('server/domain/*/use-case.ts')
+    const useCaseFiles = domainAndSystemHostedGlob('use-case.ts')
 
     for (const file of useCaseFiles) {
       test(basename(dirname(file)), () => {
@@ -187,7 +198,7 @@ describe('architecture', () => {
   })
 
   describe('no throw in domain query.ts and command.ts', () => {
-    const targets = glob('server/domain/*/{query,command}.ts')
+    const targets = domainAndSystemHostedGlob('{query,command}.ts')
 
     // Known exceptions: data integrity checks where referenced entity is missing
     const allowedThrowPatterns: Record<string, RegExp[]> = {}

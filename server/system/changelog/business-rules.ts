@@ -1,5 +1,5 @@
-import { ChangelogVersion } from '~/domain/changelog/primitives'
-import type { ChangelogEntry } from '~/domain/changelog/types'
+import { ChangelogVersion } from '~/system/changelog/primitives'
+import type { ChangelogEntry } from '~/system/changelog/types'
 
 const headingPattern = /^##\s+(.+?)\s*$/
 const bulletPattern = /^[-*]\s+(.+?)\s*$/

@@ -1,5 +1,5 @@
-import { PortabilityUseCase } from '~/domain/portability/use-case'
 import { builder } from '~/domain/shared/graphql/builder'
+import { PortabilityUseCase } from '~/system/portability/use-case'
 
 builder.queryField('exportData', (t) =>
   t.string({

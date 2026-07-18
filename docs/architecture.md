@@ -65,8 +65,10 @@ server/
 ├── plugins/
 │   ├── 01-sentry.ts             # error reporting (Sentry, DSN from NITRO_SENTRY_DSN)
 │   └── 02-graphql.ts            # boots ApolloServer once with the assembled schema
-├── system/                      # infrastructure concerns
+├── system/                      # infrastructure concerns + system-hosted mini-domains
 │   ├── ai/                      # Gemini import + proposal engine
+│   ├── changelog/               # release notes (parses the changelog asset — read-only)
+│   ├── portability/             # user-data export/import (orchestrates over recipe)
 │   ├── config/                  # runtime config (env)
 │   ├── migration/               # runner.ts, types.ts, primitives.ts, migrations/
 │   ├── firebase.ts              # firebase-admin init + db()
@@ -80,7 +82,9 @@ server/
 
 Not every domain has every file. The full-stack domains are `recipe`, `trial`, `proposal`.
 Read-only aggregations (`home`, `changelog`) have no `command.ts`/`repository.ts`;
-`portability` orchestrates through a `use-case.ts` and owns no repository.
+`portability` orchestrates through a `use-case.ts` and owns no repository. `changelog` and
+`portability` are system-hosted mini-domains: they live under `server/system/` (not
+`server/domain/`) but still obey the domain rules (folder shape, purity, naming, no-throw).
 
 ## Layers
 
@@ -134,8 +138,9 @@ cap); deletes use `deleteInBatches`. See the [domain guide](./domain-guide.md).
 
 There is **no** `read-model/` directory. Composite reads are served two ways:
 
-1. **Read-only domains** — `home` (the dashboard aggregation) and `changelog` expose a
-   `query.ts` that assembles data through other domains' public `Query` namespaces.
+1. **Read-only domains** — `home` (the dashboard aggregation) and `changelog` (system-hosted
+   under `server/system/`) expose a `query.ts` that assembles data through other domains'
+   public `Query` namespaces.
 2. **GraphQL satellite loaders** — nested fields on `Recipe`/`Version` (`currentVersion`,
    `trials`, `pendingProposal`, `variations`, …) resolve through per-request, micro-batched
    loaders in `server/domain/shared/graphql/loaders.ts`, so a page of recipes never triggers
@@ -182,7 +187,8 @@ sets `event.context.userId`.
 ### System Layer (`server/system/`)
 
 Infrastructure concerns: `ai` (Gemini), `config`, `migration`, `firebase` (`db()`),
-`request-cache`.
+`request-cache`. It also hosts two mini-domains that follow the domain rules:
+`changelog` (application release notes) and `portability` (user-data export/import).
 
 ## Cross-Domain Rules (enforced by `architecture.unit.test.ts`)
 

@@ -56,7 +56,7 @@ Everything versioned and technical is written in **English**: commit messages, c
 > examples.
 
 - **Stack**: Bun + Nitro 2.13 (`preset firebase`, gen 2, nodejs22, `europe-west3`) + Apollo Server 5 + Pothos 4 + firebase-admin (native Firestore) + Zod + ts-brand. DDD/CQRS strict.
-- **Domains** live in `server/domain/{recipe,trial,proposal,home,portability,changelog,shared}`; system concerns in `server/system/{ai,firebase,config,migration,request-cache}`.
+- **Domains** live in `server/domain/{recipe,trial,proposal,home,shared}`; system concerns in `server/system/{ai,changelog,portability,firebase,config,migration,request-cache}`.
 - Domain architecture: `server/domain/{domain}/types.ts`, `primitives.ts`, `command.ts`, `query.ts`, `infrastructure/repository.ts`, `infrastructure/graphql/{types,queries,mutations,inputs,enums}.ts`
 - **`business-rules.ts`** (optional): pure functions (no IO, no async) extracted from complex commands. Function names ARE the business concept (`readyToPromote`, `nextVersionNumber`, `applyProposalToParams` — never `computeX`, `getX`). 100% test coverage (`business-rules.unit.test.ts`)
 - **`use-case.ts`** (optional): multi-domain orchestrations when a route needs to coordinate several commands/queries. Names carry business intent (never `handleX`, `processX`). No direct storage access.

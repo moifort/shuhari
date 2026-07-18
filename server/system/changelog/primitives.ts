@@ -1,6 +1,6 @@
 import { make } from 'ts-brand'
 import { z } from 'zod'
-import type { ChangelogVersion as ChangelogVersionType } from '~/domain/changelog/types'
+import type { ChangelogVersion as ChangelogVersionType } from '~/system/changelog/types'
 
 const versionSchema = z
   .string()

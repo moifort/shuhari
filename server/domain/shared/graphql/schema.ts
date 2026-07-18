@@ -21,13 +21,13 @@ import '~/domain/home/infrastructure/graphql/types'
 import '~/domain/home/infrastructure/graphql/queries'
 
 // Changelog (application release notes)
-import '~/domain/changelog/infrastructure/graphql/types'
-import '~/domain/changelog/infrastructure/graphql/queries'
+import '~/system/changelog/infrastructure/graphql/types'
+import '~/system/changelog/infrastructure/graphql/queries'
 
 // Portability (export and import of user data)
-import '~/domain/portability/infrastructure/graphql/types'
-import '~/domain/portability/infrastructure/graphql/queries'
-import '~/domain/portability/infrastructure/graphql/mutations'
+import '~/system/portability/infrastructure/graphql/types'
+import '~/system/portability/infrastructure/graphql/queries'
+import '~/system/portability/infrastructure/graphql/mutations'
 
 // AI import (Gemini recipe extraction)
 import '~/system/ai/graphql/types'

@@ -1,5 +1,5 @@
-import type { ChangelogEntry } from '~/domain/changelog/types'
 import { builder } from '~/domain/shared/graphql/builder'
+import type { ChangelogEntry } from '~/system/changelog/types'
 
 export const ChangelogEntryType = builder.objectRef<ChangelogEntry>('ChangelogEntry').implement({
   description:

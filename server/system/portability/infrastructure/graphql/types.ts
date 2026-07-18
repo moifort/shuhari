@@ -1,5 +1,5 @@
-import type { ImportResult } from '~/domain/portability/types'
 import { builder } from '~/domain/shared/graphql/builder'
+import type { ImportResult } from '~/system/portability/types'
 
 export const ImportResultType = builder.objectRef<ImportResult>('ImportResult').implement({
   description:

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
-import { parseChangelog } from '~/domain/changelog/business-rules'
-import { ChangelogVersion } from '~/domain/changelog/primitives'
+import { parseChangelog } from '~/system/changelog/business-rules'
+import { ChangelogVersion } from '~/system/changelog/primitives'
 
 describe('parseChangelog', () => {
   test('returns an empty list for an empty document', () => {

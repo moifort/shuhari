@@ -1,5 +1,5 @@
-import { ChangelogQuery } from '~/domain/changelog/query'
 import { builder } from '~/domain/shared/graphql/builder'
+import { ChangelogQuery } from '~/system/changelog/query'
 import { ChangelogEntryType } from './types'
 
 builder.queryField('changelog', (t) =>
