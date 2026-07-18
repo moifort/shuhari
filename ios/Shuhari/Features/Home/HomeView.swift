@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The Carnet content tab (cuisine — plats & Thermomix). Owns the
 /// NavigationStack, the settings sheet and the recipe flow (fiche → historique →
-/// essai → draft + execution cover), and a `LibraryStore` for the paginated,
+/// essai → proposition + execution cover), and a `LibraryStore` for the paginated,
 /// server-sorted recipe library that fills the screen.
 struct HomeView: View {
     let title: String

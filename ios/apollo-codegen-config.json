@@ -6,7 +6,7 @@
       "Shuhari/Features/Home/GraphQL/*.graphql",
       "Shuhari/Features/Recipe/GraphQL/*.graphql",
       "Shuhari/Features/Execution/GraphQL/*.graphql",
-      "Shuhari/Features/Draft/GraphQL/*.graphql",
+      "Shuhari/Features/Proposition/GraphQL/*.graphql",
       "Shuhari/Features/Import/GraphQL/*.graphql",
       "Shuhari/Features/Settings/GraphQL/*.graphql"
     ]

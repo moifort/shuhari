@@ -12,17 +12,19 @@ struct HistoryPage: View {
         List {
             Section {
                 ForEach(orderedVersions, id: \.number) { version in
-                    VersionTimelineItem(
-                        number: version.number,
-                        change: version.change,
-                        originDetail: version.originDetail,
-                        note: version.note,
-                        tried: version.tried,
-                        date: version.createdAt,
-                        isCurrent: version.number == recipe.currentVersion?.number,
-                        isToTest: version.number == recipe.toTest?.number,
-                        isLast: version.number == orderedVersions.last?.number
-                    )
+                    // Any version is cookable — tapping a row opens its fiche.
+                    NavigationLink(value: RecipeRoute.essai(recipeId: recipe.id, versionNumber: version.number)) {
+                        VersionTimelineItem(
+                            number: version.number,
+                            change: version.change,
+                            originDetail: version.originDetail,
+                            note: version.note,
+                            tried: version.tried,
+                            date: version.createdAt,
+                            isFocus: version.number == recipe.versionToOpen.number,
+                            isLast: version.number == orderedVersions.last?.number
+                        )
+                    }
                 }
             } footer: {
                 Text("Chaque cran ne change que ce qui est écrit.")

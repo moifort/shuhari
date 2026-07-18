@@ -1,7 +1,7 @@
 import Foundation
 
-/// A library row: how many versions the recipe has, its best essai note ("the
-/// highest star") and the current reference's note.
+/// A library row: how many versions the recipe has and its best essai note ("the
+/// highest star" across every version it ever cooked).
 struct LibraryRecipe: Identifiable, Sendable {
     let id: String
     let title: String

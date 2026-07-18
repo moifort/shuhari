@@ -4,7 +4,7 @@ import Foundation
 /// Deterministic domain fixtures shared by `#Preview`s and the debug gallery.
 /// One realistic recipe per shape the UI must handle: a plated dish mid-iteration
 /// (Bœuf bourguignon), a Thermomix dish with per-step machine settings (Risotto),
-/// and the transient models (draft, trial, import analysis, home read model)
+/// and the transient models (AI proposition, import analysis, library rows)
 /// around them. Cuisine-only — no params, no café/cocktail.
 enum Fixtures {
     static let date = Date(timeIntervalSince1970: 1_752_300_000)
@@ -51,7 +51,7 @@ enum Fixtures {
     // MARK: - Bœuf bourguignon (plat, pending v4)
 
     static let bourguignonV1 = RecipeVersion(
-        number: 1, change: nil, why: nil, originKind: .import,
+        number: 1, basedOn: nil, change: nil, why: nil, originKind: .import,
         originDetail: "Importée par photo",
         ingredients: bourguignonIngredientsEarly,
         steps: bourguignonSteps,
@@ -63,7 +63,7 @@ enum Fixtures {
     )
 
     static let bourguignonV2 = RecipeVersion(
-        number: 2, change: "Ajout d’un bouquet garni", why: "Manque d’arômes.",
+        number: 2, basedOn: 1, change: "Ajout d’un bouquet garni", why: "Manque d’arômes.",
         originKind: .aiProposal, originDetail: nil,
         ingredients: bourguignonIngredientsEarly,
         steps: bourguignonSteps,
@@ -76,6 +76,7 @@ enum Fixtures {
 
     static let bourguignonV3 = RecipeVersion(
         number: 3,
+        basedOn: 2,
         change: "Vin rouge 50 → 75 cl",
         why: "La sauce manquait de corps.",
         originKind: .aiProposal,
@@ -93,6 +94,7 @@ enum Fixtures {
 
     static let bourguignonV4 = RecipeVersion(
         number: 4,
+        basedOn: 3,
         change: "Cuisson 3 h → 3 h 30",
         why: "Viande encore un peu ferme.",
         originKind: .aiProposal,
@@ -116,10 +118,10 @@ enum Fixtures {
         category: .plat,
         createdAt: date.addingTimeInterval(-86_400 * 30),
         updatedAt: date,
-        currentVersion: bourguignonV3,
-        toTest: bourguignonV4,
         versions: [bourguignonV1, bourguignonV2, bourguignonV3, bourguignonV4],
-        pendingEssais: [bourguignonV4]
+        bestNote: 4,
+        // The essai in progress: v4 is built on the best-rated v3.
+        versionToOpen: bourguignonV4
     )
 
     /// The tried versions of the bourguignon, most recent first — its essai journal.
@@ -129,6 +131,7 @@ enum Fixtures {
 
     static let risottoV2 = RecipeVersion(
         number: 2,
+        basedOn: 1,
         change: "Bouillon 700 → 650 ml",
         why: "Trop liquide en fin de cuisson.",
         originKind: .aiProposal,
@@ -164,19 +167,18 @@ enum Fixtures {
         category: .plat,
         createdAt: date.addingTimeInterval(-86_400 * 12),
         updatedAt: date,
-        currentVersion: risottoV2,
-        toTest: nil,
         versions: [risottoV2],
-        pendingEssais: []
+        bestNote: 4,
+        versionToOpen: risottoV2
     )
 
-    // MARK: - Fresh import (currentVersion == nil, v1 never tried)
+    // MARK: - Fresh import (nothing rated yet, v1 never tried)
 
-    /// A just-imported recipe: a single untried v1, no promotion yet. Exercises the
-    /// headline nullable-`currentVersion` risk — the fiche must still render (via the
-    /// `bestRatedVersion` fallback) and keep its record CTA.
+    /// A just-imported recipe: a single untried v1, nothing rated yet. The fiche
+    /// must still render (via `versionToOpen`, which falls back to the latest
+    /// version) and keep its record CTA.
     static let freshImportV1 = RecipeVersion(
-        number: 1, change: nil, why: nil, originKind: .import,
+        number: 1, basedOn: nil, change: nil, why: nil, originKind: .import,
         originDetail: "Importée par photo",
         ingredients: bourguignonIngredients,
         steps: bourguignonSteps,
@@ -197,18 +199,17 @@ enum Fixtures {
         category: .plat,
         createdAt: date,
         updatedAt: date,
-        currentVersion: nil,
-        toTest: freshImportV1,
         versions: [freshImportV1],
-        pendingEssais: []
+        bestNote: nil,
+        versionToOpen: freshImportV1
     )
 
     // MARK: - Transient models
 
-    /// The full draft of v5: the base v4 lists with a longer cooking time and a
-    /// touch less bouillon — a couple of rows differ from the base for the diff.
-    static let draft = Draft(
-        versionNumber: 4,
+    /// The full proposition of v5: the base v4 lists with a longer cooking time and
+    /// a touch less bouillon — a couple of rows differ from the base for the diff.
+    static let proposition = Proposition(
+        basedOn: 4,
         changeSummary: "Bouillon 50 → 40 cl, cuisson 3 h 30 → 4 h",
         rationale: "La sauce reste un peu liquide et la viande gagnerait à confire plus longtemps ; réduire le bouillon et allonger la cuisson devrait concentrer les arômes.",
         ingredients: [

@@ -12,14 +12,10 @@ struct RecipeDetailView: View {
 
     @State private var viewModel: RecipeViewModel
     @State private var showEdit = false
-    @State private var showToTest = false
     @State private var showHistory = false
     @State private var recordRequest: ExecutionRequest?
     @State private var showDeleteConfirm = false
     @State private var actionError = ErrorPresenter()
-    /// The version a "prochain essai" row picked: consumed on the sheet's dismiss
-    /// so the navigation push isn't swallowed by the sheet teardown.
-    @State private var previewVersion: Int?
 
     init(
         recipeId: String,
@@ -57,34 +53,8 @@ struct RecipeDetailView: View {
                 // The fiche is a focused, Photos-style detail: hide the tab bar so the
                 // floating action bar owns the bottom edge.
                 .toolbar(.hidden, for: .tabBar)
-                .sheet(isPresented: $showToTest, onDismiss: {
-                    // Sequence the push after the sheet is fully gone, so the
-                    // path mutation isn't eaten by the dismissal.
-                    if let version = previewVersion {
-                        previewVersion = nil
-                        path.append(RecipeRoute.essai(recipeId: recipeId, versionNumber: version))
-                    }
-                }) {
-                    NextTrialsSheet(
-                        trials: pendingEssaiItems(recipe),
-                        onDelete: { versionNumber in
-                            Task {
-                                await actionError.run {
-                                    try await RecipeAPI.discardPendingVersion(recipeId: recipeId, versionNumber: versionNumber)
-                                } onSuccess: {
-                                    onReload()
-                                    Task { await viewModel.load() }
-                                }
-                            }
-                        }
-                    ) { versionNumber in
-                        // Tapping a row closes the sheet, then navigates to the version.
-                        previewVersion = versionNumber
-                        showToTest = false
-                    }
-                }
                 // The record-trial flow as a half-screen sheet: capture at .medium,
-                // grows to .large for the AI draft.
+                // grows to .large for the AI proposition.
                 .sheet(item: $recordRequest) { request in
                     ExecuteFlowView(request: request, presentation: .sheet) {
                         onReload()
@@ -135,7 +105,9 @@ struct RecipeDetailView: View {
     @ViewBuilder
     private func detailPage(recipe: Recipe) -> some View {
         if let number = focusVersionNumber, let focus = recipe.version(number) {
-            let previous = recipe.version(number - 1)
+            // The essai-diff base is the version this one was built on (`basedOn`),
+            // not simply the previous number — a version can iterate on any ancestor.
+            let previous = focus.basedOn.flatMap { recipe.version($0) }
             RecipeDetailPage(
                 recipe: recipe,
                 focusVersion: focus,
@@ -187,40 +159,19 @@ struct RecipeDetailView: View {
             .accessibilityIdentifier("recipe-menu")
         }
 
-        // Floating glass action bar: record trial (left), then the two
-        // sheet openers — prochains essais + history — glued in one glass
-        // group (no spacer between them).
-        // Record targets the most recently created UNTRIED version (set-once: a tried
-        // version can't be re-recorded). Hidden when every version is tried.
-        if let next = nextRunnableVersion(recipe) {
-            ToolbarItem(placement: .bottomBar) {
-                Button {
-                    presentRecordTrial(versionNumber: next.number)
-                } label: {
-                    Image(systemName: "pencil.and.ruler")
-                }
-                .accessibilityIdentifier("record-trial-button")
-                .accessibilityLabel("Noter un essai")
-            }
-        }
-        ToolbarSpacer(.flexible, placement: .bottomBar)
+        // Floating glass action bar: record trial (left) then the history opener
+        // (right). Any version is cookable and an essai is overwritable, so the
+        // record CTA is always available and targets the displayed version.
         ToolbarItem(placement: .bottomBar) {
             Button {
-                showToTest = true
+                presentRecordTrial(versionNumber: displayedVersion(recipe).number)
             } label: {
-                Image(systemName: "flask")
-                    .overlay(alignment: .topTrailing) {
-                        if !recipe.pendingEssais.isEmpty {
-                            Circle()
-                                .fill(Theme.Status.toTest)
-                                .frame(width: 7, height: 7)
-                                .offset(x: 3, y: -2)
-                        }
-                    }
+                Image(systemName: "pencil.and.ruler")
             }
-            .accessibilityIdentifier("to-test-button")
-            .accessibilityLabel("Prochains essais")
+            .accessibilityIdentifier("record-trial-button")
+            .accessibilityLabel("Noter un essai")
         }
+        ToolbarSpacer(.flexible, placement: .bottomBar)
         ToolbarItem(placement: .bottomBar) {
             Button {
                 showHistory = true
@@ -232,26 +183,10 @@ struct RecipeDetailView: View {
         }
     }
 
-    /// The pending-essai list for the sheet and the fiole badge, driven by the
-    /// server field (already sorted, descending number; empty for an original-only
-    /// recipe).
-    private func pendingEssaiItems(_ recipe: Recipe) -> [NextTrialsSheet.Item] {
-        recipe.pendingEssais.map {
-            NextTrialsSheet.Item(
-                versionNumber: $0.number,
-                change: $0.change,
-                why: $0.why ?? $0.originDetail
-            )
-        }
-    }
-
-    /// The version the record CTA targets: the most recently created untried
-    /// version (client-side filter, so a lone v1 stays recordable).
-    private func nextRunnableVersion(_ recipe: Recipe) -> RecipeVersion? {
-        recipe.versions
-            .filter { !$0.tried }
-            .sorted { $0.createdAt > $1.createdAt }
-            .first
+    /// The version the fiche presents (and the record CTA targets): the focused
+    /// essai version when set, otherwise the recipe's `versionToOpen`.
+    private func displayedVersion(_ recipe: Recipe) -> RecipeVersion {
+        focusVersionNumber.flatMap { recipe.version($0) } ?? recipe.versionToOpen
     }
 
     private func presentRecordTrial(versionNumber: Int) {

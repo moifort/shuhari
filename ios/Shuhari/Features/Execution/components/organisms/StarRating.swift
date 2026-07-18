@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// A 5-star rating on the app's native 1–5 note scale: tapping star `i` sets the
-/// note to `i`. The note stays an `Int?` so the domain (promotion ≥ 4, colour
+/// note to `i`. The note stays an `Int?` so the domain (best-note, colour
 /// thresholds, "/5") reads it directly.
 struct StarRating: View {
     @Binding var selection: Int?

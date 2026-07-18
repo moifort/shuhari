@@ -11,8 +11,8 @@ struct VersionTimelineItem: View {
     let note: Int?
     let tried: Bool
     let date: Date
-    let isCurrent: Bool
-    let isToTest: Bool
+    /// The version to open — "celle sur laquelle je travaille" — highlighted.
+    let isFocus: Bool
     var isLast: Bool = false
 
     var body: some View {
@@ -36,11 +36,8 @@ struct VersionTimelineItem: View {
                     Text("v\(number)")
                         .font(.subheadline.weight(.bold))
                         .monospacedDigit()
-                    if isCurrent {
-                        StatusTag(kind: .current)
-                    }
-                    if isToTest {
-                        StatusTag(kind: .toTest)
+                    if isFocus {
+                        StatusTag(kind: .working)
                     }
                     Spacer()
                     Text(date.formatted(.dateTime.day().month(.abbreviated)))
@@ -71,22 +68,20 @@ struct VersionTimelineItem: View {
     }
 
     private var statusIcon: String {
-        if isCurrent { return "checkmark.seal.fill" }
-        if isToTest { return "flask.fill" }
+        if isFocus { return "wrench.and.screwdriver.fill" }
         return "circle.fill"
     }
 
     private var statusColor: Color {
-        if isCurrent { return Theme.Status.current }
-        if isToTest { return Theme.Status.toTest }
+        if isFocus { return Theme.Status.essai }
         return Color(.tertiaryLabel)
     }
 }
 
 #Preview {
     List {
-        VersionTimelineItem(number: 4, change: "Température 93 → 92 °C", originDetail: "Extraction trop chaude.", note: nil, tried: false, date: Date(), isCurrent: false, isToTest: true)
-        VersionTimelineItem(number: 3, change: "Mouture plus fine", originDetail: nil, note: 4, tried: true, date: Date(), isCurrent: true, isToTest: false)
-        VersionTimelineItem(number: 1, change: nil, originDetail: nil, note: 3, tried: true, date: Date(), isCurrent: false, isToTest: false, isLast: true)
+        VersionTimelineItem(number: 4, change: "Température 93 → 92 °C", originDetail: "Extraction trop chaude.", note: nil, tried: false, date: Date(), isFocus: true)
+        VersionTimelineItem(number: 3, change: "Mouture plus fine", originDetail: nil, note: 4, tried: true, date: Date(), isFocus: false)
+        VersionTimelineItem(number: 1, change: nil, originDetail: nil, note: 3, tried: true, date: Date(), isFocus: false, isLast: true)
     }
 }

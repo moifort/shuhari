@@ -2,18 +2,16 @@ import Apollo
 import Foundation
 
 enum ExecutionAPI {
-    struct EssaiResult: Sendable {
-        let promotionSuggested: Bool
-    }
-
-    /// Record an essai onto a version (fast, no AI).
+    /// Record an essai onto a version (fast, no AI). Overwritable — recording again
+    /// on the same version updates it. Returns the version with its outcome.
+    @discardableResult
     static func recordEssai(
         recipeId: String,
         versionNumber: Int,
         note: Int,
         remarks: String,
         photoBase64: String?
-    ) async throws -> EssaiResult {
+    ) async throws -> RecipeVersion {
         let input = ShuhariGraphQL.RecordEssaiInput(
             note: note,
             photo: GraphQLHelpers.graphQLNullable(photoBase64),
@@ -25,16 +23,16 @@ enum ExecutionAPI {
             GraphQLClient.shared.apollo,
             mutation: ShuhariGraphQL.RecordEssaiMutation(input: input)
         )
-        return EssaiResult(promotionSuggested: data.recordEssai.promotionSuggested)
+        return mapVersion(data.recordEssai.fragments.versionFields)
     }
 
-    /// Ask the AI to analyze the latest essai and draft the next version.
+    /// Ask the AI to analyze the cooked version and propose the next one.
     @discardableResult
-    static func requestDraft(recipeId: String) async throws -> Draft {
+    static func requestProposition(recipeId: String, versionNumber: Int) async throws -> Proposition {
         let data = try await GraphQLHelpers.perform(
             GraphQLClient.shared.apollo,
-            mutation: ShuhariGraphQL.RequestDraftMutation(recipeId: recipeId)
+            mutation: ShuhariGraphQL.RequestPropositionMutation(recipeId: recipeId, versionNumber: versionNumber)
         )
-        return mapDraft(data.requestDraft.fragments.draftFields)
+        return mapProposition(data.requestProposition.fragments.propositionFields)
     }
 }

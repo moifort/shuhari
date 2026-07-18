@@ -1,20 +1,17 @@
 mutation RecordEssai($input: RecordEssaiInput!) {
   recordEssai(input: $input) {
-    promotionSuggested
-    version {
-      ...VersionFields
-    }
+    ...VersionFields
   }
 }
 
-mutation RequestDraft($recipeId: RecipeId!) {
-  requestDraft(recipeId: $recipeId) {
-    ...DraftFields
+mutation RequestProposition($recipeId: RecipeId!, $versionNumber: VersionNumber!) {
+  requestProposition(recipeId: $recipeId, versionNumber: $versionNumber) {
+    ...PropositionFields
   }
 }
 
-fragment DraftFields on Draft {
-  versionNumber
+fragment PropositionFields on Proposition {
+  basedOn
   changeSummary
   rationale
   ingredients {

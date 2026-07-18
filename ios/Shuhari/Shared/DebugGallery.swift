@@ -20,8 +20,6 @@ struct DebugGallery: View {
             RecipeDetailGalleryScreen(recipe: Fixtures.risotto)
         case "recipe-fresh":
             RecipeDetailGalleryScreen(recipe: Fixtures.freshImport)
-        case "next-trials":
-            NextTrialsSheetGalleryScreen()
         case "history":
             NavigationStack {
                 HistoryPage(recipe: Fixtures.bourguignon)
@@ -53,11 +51,11 @@ struct DebugGallery: View {
                     onSave: { _, _, _ in }
                 )
             }
-        case "draft":
+        case "proposition":
             NavigationStack {
-                DraftPage(
+                PropositionPage(
                     type: .plat,
-                    draft: Fixtures.draft,
+                    proposition: Fixtures.proposition,
                     nextVersionNumber: 5,
                     baseIngredients: Fixtures.bourguignonV4.ingredients,
                     baseSteps: Fixtures.bourguignonV4.steps,
@@ -82,7 +80,7 @@ struct DebugGallery: View {
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : cuisine, recipe, recipe-tmx, recipe-fresh, next-trials, history, trial, trial-pending, execute, execute-tmx, capture, draft, import-preview, import-preview-tmx, ai-thinking, import-nothing-found")
+                description: Text("Écrans : cuisine, recipe, recipe-tmx, recipe-fresh, history, trial, trial-pending, execute, execute-tmx, capture, proposition, import-preview, import-preview-tmx, ai-thinking, import-nothing-found")
             )
         }
     }
@@ -101,31 +99,6 @@ private struct RecipeDetailGalleryScreen: View {
         NavigationStack(path: $path) {
             RecipeDetailView(previewRecipe: recipe, path: $path, focusVersionNumber: focusVersionNumber)
         }
-    }
-}
-
-/// The beaker CTA's sheet (`NextTrialsSheet`) presented over the fiche, so the
-/// gallery can capture the versions awaiting a first run offline. Bœuf
-/// bourguignon has several versions awaiting a first run (v1–v6).
-private struct NextTrialsSheetGalleryScreen: View {
-    var body: some View {
-        Text("Fiche recette")
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(.systemGroupedBackground))
-            .sheet(isPresented: .constant(true)) {
-                NextTrialsSheet(
-                    trials: [
-                        .init(versionNumber: 6, change: "Sel 8 → 10 g", why: "Assaisonnement en retrait."),
-                        .init(versionNumber: 5, change: "Cuisson 3 h → 3 h 30", why: "La viande était encore un peu ferme."),
-                        .init(versionNumber: 4, change: "Température 93 → 92 °C", why: "Extraction trop amère."),
-                        .init(versionNumber: 3, change: "Repos 10 → 20 min", why: nil),
-                        .init(versionNumber: 2, change: "Oignons +50 g", why: "Manque de fond."),
-                        .init(versionNumber: 1, change: nil, why: "Version d'origine importée."),
-                    ],
-                    onDelete: { _ in },
-                    onSelect: { _ in }
-                )
-            }
     }
 }
 

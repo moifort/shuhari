@@ -18,9 +18,9 @@ struct RecipeDetailPage: View {
     var why: String? = nil
 
     /// The version the fiche presents: the focused essai version when set,
-    /// otherwise the best-rated reference.
-    private var displayedVersion: RecipeVersion? {
-        focusVersion ?? recipe.bestRatedVersion
+    /// otherwise the recipe's `versionToOpen`.
+    private var displayedVersion: RecipeVersion {
+        focusVersion ?? recipe.versionToOpen
     }
 
     var body: some View {
@@ -28,10 +28,8 @@ struct RecipeDetailPage: View {
             banner
             header
 
-            if let reference = displayedVersion {
-                IngredientsSection(ingredients: reference.ingredients, modified: modifiedIngredients)
-                ReferenceVersionSection(version: reference, modified: modifiedSteps)
-            }
+            IngredientsSection(ingredients: displayedVersion.ingredients, modified: modifiedIngredients)
+            ReferenceVersionSection(version: displayedVersion, modified: modifiedSteps)
         }
         .listSectionSpacing(5)
         .contentMargins(.top, 0, for: .scrollContent)
@@ -85,8 +83,8 @@ struct RecipeDetailPage: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(Theme.Spacing.l)
-                .background(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous).fill(Theme.Status.toTest.opacity(0.12)))
-                .overlay(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous).strokeBorder(Theme.Status.toTest, lineWidth: 1))
+                .background(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous).fill(Theme.Status.essai.opacity(0.12)))
+                .overlay(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous).strokeBorder(Theme.Status.essai, lineWidth: 1))
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
             }
@@ -103,7 +101,7 @@ struct RecipeDetailPage: View {
                 HStack {
                     RecipeHeaderBadges(
                         type: recipe.type,
-                        versionNumber: displayedVersion?.number,
+                        versionNumber: displayedVersion.number,
                         essaiCount: recipe.essais.count
                     )
                     Spacer(minLength: Theme.Spacing.s)

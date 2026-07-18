@@ -1,28 +1,29 @@
 import SwiftUI
 
-/// The AI draft screen: a short summary of what changes and why, then the FULL
-/// draft of the next version — ingredients and steps, each row editable inline and
-/// tinted when it differs from the base version. Finally Valider/Fermer.
+/// The AI proposition screen: a short summary of what changes and why, then the
+/// FULL proposed next version — ingredients and steps, each row editable inline
+/// and tinted when it differs from the base version. Finally Valider/Fermer.
 ///
 /// Diff highlighting: rows are always editable `TextField`s, so a from→to
 /// `DiffValue` doesn't fit; instead a row carries the `Theme.Status.changed` tint
 /// whenever its current value differs from the base version (new or modified). It
 /// updates live as the user types.
 ///
-/// The draft is ephemeral (never persisted): Fermer discards it, Valider accepts it.
-/// On accept the page emits the COMPLETE draft (full-replacement semantics) — the
-/// `changeSummary` and `rationale` carried through from the in-memory AI draft, the
-/// ingredient and step lists taken from the form's current (possibly edited) state.
-struct DraftPage: View {
+/// The proposition is ephemeral (never persisted): Fermer discards it, Valider
+/// accepts it. On accept the page emits the COMPLETE proposition (full-replacement
+/// semantics) — the `basedOn`, `changeSummary` and `rationale` carried through from
+/// the in-memory AI proposition, the ingredient and step lists taken from the
+/// form's current (possibly edited) state.
+struct PropositionPage: View {
     let type: RecipeType
-    let draft: Draft
+    let proposition: Proposition
     let nextVersionNumber: Int
-    /// The base version's content, to highlight what the draft changes.
+    /// The base version's content, to highlight what the proposition changes.
     let baseIngredients: [Ingredient]
     let baseSteps: [String]
     let isWorking: Bool
     let onClose: () -> Void
-    let onValidate: (_ edited: DraftEdit) -> Void
+    let onValidate: (_ edited: PropositionEdit) -> Void
 
     private struct EditableIngredient: Identifiable {
         let id = UUID()
@@ -42,27 +43,27 @@ struct DraftPage: View {
 
     init(
         type: RecipeType,
-        draft: Draft,
+        proposition: Proposition,
         nextVersionNumber: Int,
         baseIngredients: [Ingredient],
         baseSteps: [String],
         isWorking: Bool,
         onClose: @escaping () -> Void,
-        onValidate: @escaping (_ edited: DraftEdit) -> Void
+        onValidate: @escaping (_ edited: PropositionEdit) -> Void
     ) {
         self.type = type
-        self.draft = draft
+        self.proposition = proposition
         self.nextVersionNumber = nextVersionNumber
         self.baseIngredients = baseIngredients
         self.baseSteps = baseSteps
         self.isWorking = isWorking
         self.onClose = onClose
         self.onValidate = onValidate
-        self._ingredients = State(initialValue: draft.ingredients.map {
+        self._ingredients = State(initialValue: proposition.ingredients.map {
             EditableIngredient(name: $0.name, quantity: $0.quantity)
         })
-        self._steps = State(initialValue: draft.steps.enumerated().map { index, text in
-            EditableStep(text: text, tmx: draft.tmxSteps[safe: index] ?? nil)
+        self._steps = State(initialValue: proposition.steps.enumerated().map { index, text in
+            EditableStep(text: text, tmx: proposition.tmxSteps[safe: index] ?? nil)
         })
     }
 
@@ -77,8 +78,8 @@ struct DraftPage: View {
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Proposition")
         .navigationBarTitleDisplayMode(.inline)
-        // Fermer = discard the draft (nothing is persisted); Valider = accept. Hiding
-        // the back button makes Fermer own the leading slot and disables the
+        // Fermer = discard the proposition (nothing is persisted); Valider = accept.
+        // Hiding the back button makes Fermer own the leading slot and disables the
         // back-swipe, so the only exits are an explicit decision.
         .navigationBarBackButtonHidden(true)
         .toolbar {
@@ -87,17 +88,17 @@ struct DraftPage: View {
                     Image(systemName: "xmark")
                 }
                 .disabled(isWorking)
-                .accessibilityIdentifier("close-draft-button")
+                .accessibilityIdentifier("close-proposition-button")
                 .accessibilityLabel("Fermer")
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    onValidate(currentDraft)
+                    onValidate(currentProposition)
                 } label: {
                     if isWorking { ProgressView() } else { Image(systemName: "checkmark") }
                 }
                 .disabled(isWorking)
-                .accessibilityIdentifier("validate-draft-button")
+                .accessibilityIdentifier("validate-proposition-button")
                 .accessibilityLabel("Valider")
             }
         }
@@ -108,9 +109,9 @@ struct DraftPage: View {
     private var summarySection: some View {
         Section {
             VStack(alignment: .leading, spacing: 6) {
-                Text(draft.changeSummary)
+                Text(proposition.changeSummary)
                     .font(.headline)
-                Text(draft.rationale)
+                Text(proposition.rationale)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -181,7 +182,7 @@ struct DraftPage: View {
         !baseSteps.contains(text)
     }
 
-    // MARK: - Accepted draft
+    // MARK: - Accepted proposition
 
     private var currentIngredients: [Ingredient] {
         ingredients.compactMap { row in
@@ -192,11 +193,11 @@ struct DraftPage: View {
         }
     }
 
-    /// The COMPLETE draft to accept: the AI summary and rationale carried through
-    /// unchanged, the ingredient and step lists from the form's current state. The
-    /// draft always carries the COMPLETE lists, and steps stay aligned with their
-    /// per-step Thermomix settings.
-    private var currentDraft: DraftEdit {
+    /// The COMPLETE proposition to accept: the AI summary, rationale and `basedOn`
+    /// carried through unchanged, the ingredient and step lists from the form's
+    /// current state. The proposition always carries the COMPLETE lists, and steps
+    /// stay aligned with their per-step Thermomix settings.
+    private var currentProposition: PropositionEdit {
         // Drop emptied steps, carrying each surviving row's tmx settings so `steps`
         // and `tmxSteps` keep the same length — a cleared step must not desync them
         // (a length mismatch makes the backend drop ALL Thermomix settings).
@@ -206,13 +207,14 @@ struct DraftPage: View {
             return (text, row.tmx)
         }
         let editedSteps = survivingSteps.map(\.text)
-        // Empty for a non-Thermomix recipe (the draft had no tmxSteps); otherwise
-        // aligned 1:1 with the surviving steps.
-        let editedTmxSteps: [TmxSettings?] = draft.tmxSteps.isEmpty ? [] : survivingSteps.map(\.tmx)
+        // Empty for a non-Thermomix recipe (the proposition had no tmxSteps);
+        // otherwise aligned 1:1 with the surviving steps.
+        let editedTmxSteps: [TmxSettings?] = proposition.tmxSteps.isEmpty ? [] : survivingSteps.map(\.tmx)
 
-        return DraftEdit(
-            changeSummary: draft.changeSummary,
-            rationale: draft.rationale,
+        return PropositionEdit(
+            basedOn: proposition.basedOn,
+            changeSummary: proposition.changeSummary,
+            rationale: proposition.rationale,
             ingredients: currentIngredients,
             steps: editedSteps,
             tmxSteps: editedTmxSteps
@@ -228,9 +230,9 @@ private extension Array {
 
 #Preview {
     NavigationStack {
-        DraftPage(
+        PropositionPage(
             type: .plat,
-            draft: Fixtures.draft,
+            proposition: Fixtures.proposition,
             nextVersionNumber: 5,
             baseIngredients: Fixtures.bourguignonV4.ingredients,
             baseSteps: Fixtures.bourguignonV4.steps,

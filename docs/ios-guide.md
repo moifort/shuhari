@@ -24,10 +24,10 @@ ios/
     ├── GoogleService-Info.plist        # Firebase config
     ├── Generated/GraphQL/              # Apollo codegen output (do not edit)
     │   ├── Operations/{Queries,Mutations}/
-    │   ├── Fragments/                  # VersionFields, DraftFields
+    │   ├── Fragments/                  # VersionFields, PropositionFields
     │   └── Schema/                     # CustomScalars (RecipeId, Note, …), Enums, Objects, InputObjects
     ├── Features/
-    │   ├── Auth/  Home/  Recipe/  Draft/  Execution/  Import/  Settings/
+    │   ├── Auth/  Home/  Recipe/  Proposition/  Execution/  Import/  Settings/
     │   └── {Feature}/
     │       ├── {Feature}Store.swift    # ViewModel (@MainActor @Observable) — or {Feature}ViewModel
     │       ├── {Feature}API.swift      # maps generated types → model structs
@@ -359,7 +359,7 @@ cd ios && apollo-ios-cli generate   # iOS: regenerate Generated/GraphQL
 ## UI Testing — Page Object pattern
 
 `ShuhariUITests/` holds `Tests/` (`ScreenshotTest`, `TrialLoopFlowTest`, `ImportFlowTest`,
-`PromotionFlowTest`), `Pages/` (page objects), and `Support/`.
+`PropositionFlowTest`), `Pages/` (page objects), and `Support/`.
 
 `BaseUITest` resets the DB before/after and launches with
 `-serverURLDev http://localhost:3000 -serverMode dev -UITestPhoto`, adding

@@ -1,0 +1,8 @@
+mutation AcceptProposition($recipeId: RecipeId!, $proposition: PropositionInput!) {
+  acceptProposition(recipeId: $recipeId, proposition: $proposition) {
+    recipe {
+      id
+    }
+    createdVersion
+  }
+}

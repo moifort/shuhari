@@ -43,6 +43,9 @@ enum VersionOriginKind: Sendable {
 /// A version is an "essai à faire" until `executedAt != nil`.
 struct RecipeVersion: Identifiable, Sendable {
     let number: Int
+    /// The version this one iterates on — the attempt it was built from. nil on the
+    /// original v1, which builds on nothing. Drives the essai-diff base.
+    let basedOn: Int?
     let change: String?
     let why: String?
     let originKind: VersionOriginKind
@@ -71,29 +74,33 @@ struct RecipeVersion: Identifiable, Sendable {
     var tried: Bool { executedAt != nil }
 }
 
-// MARK: - Draft
+// MARK: - Proposition
 
-/// An ephemeral AI draft of the next version of a recipe. Generated on demand,
-/// held in memory and never persisted: it carries the COMPLETE next version
-/// (ingredients + steps + tmxSteps) plus a short human summary of what changed.
-struct Draft: Sendable {
-    let versionNumber: Int
+/// An ephemeral AI proposition for the next version of a recipe. Generated on
+/// demand, held in memory and never persisted: it carries the COMPLETE next
+/// version (ingredients + steps + tmxSteps) plus a short human summary of what
+/// changed. `basedOn` is the version it iterates on (the one just cooked).
+struct Proposition: Sendable {
+    /// The version this proposition iterates on — echoed back on accept.
+    let basedOn: Int
     /// A short human summary of what the next version changes.
     let changeSummary: String
     let rationale: String
-    /// The full ingredient list of the drafted next version.
+    /// The full ingredient list of the proposed next version.
     let ingredients: [Ingredient]
-    /// The full step list of the drafted next version.
+    /// The full step list of the proposed next version.
     let steps: [String]
     /// Per-step Thermomix settings aligned with `steps` (nil = plain step; empty
     /// when not a Thermomix recipe).
     let tmxSteps: [TmxSettings?]
 }
 
-/// The complete next-version draft handed back from the draft screen and sent to
-/// `acceptDraft`. Full-replacement semantics — the lists are complete, not partial;
-/// `changeSummary` and `rationale` carry through from the AI draft unchanged.
-struct DraftEdit: Sendable {
+/// The complete next-version proposition handed back from the proposition screen
+/// and sent to `acceptProposition`. Full-replacement semantics — the lists are
+/// complete, not partial; `basedOn`, `changeSummary` and `rationale` carry through
+/// from the AI proposition unchanged.
+struct PropositionEdit: Sendable {
+    let basedOn: Int
     let changeSummary: String
     let rationale: String
     let ingredients: [Ingredient]
@@ -113,15 +120,15 @@ struct Recipe: Identifiable, Sendable {
     let category: DishCategory
     let createdAt: Date
     let updatedAt: Date
-    /// The current reproducible reference version.
-    let currentVersion: RecipeVersion?
-    /// The pending version awaiting a trial, if any.
-    let toTest: RecipeVersion?
     /// The full lineage, oldest first.
     let versions: [RecipeVersion]
-    /// The versions awaiting an essai (server-ordered, descending number). Empty
-    /// when the recipe has only its original version.
-    let pendingEssais: [RecipeVersion]
+    /// The best rating across every executed version, computed server-side. nil
+    /// when no version has been cooked yet. Drives the recipe's display note.
+    let bestNote: Int?
+    /// The version to show first when the fiche opens: the essai in progress (the
+    /// most recent version built on the best-rated one), else that best-rated
+    /// version, else the latest. Never nil — a recipe always has at least its v1.
+    let versionToOpen: RecipeVersion
 
     /// The version number the next iteration would take.
     var nextVersionNumber: Int { (versions.map(\.number).max() ?? 0) + 1 }
@@ -131,21 +138,6 @@ struct Recipe: Identifiable, Sendable {
         versions
             .filter(\.tried)
             .sorted { ($0.executedAt ?? .distantPast) > ($1.executedAt ?? .distantPast) }
-    }
-
-    /// The version the fiche presents as its reference — "la mieux notée": the
-    /// tried version with the highest note. Falls back to the current reference,
-    /// then the pending version, then the highest-numbered version, so a
-    /// never-tried recipe (currentVersion == nil) still renders a fiche and keeps
-    /// its record CTA.
-    var bestRatedVersion: RecipeVersion? {
-        versions
-            .filter { $0.note != nil }
-            // On a tie, favour the more recent version (higher number).
-            .max { ($0.note ?? 0, $0.number) < ($1.note ?? 0, $1.number) }
-            ?? currentVersion
-            ?? toTest
-            ?? versions.max { $0.number < $1.number }
     }
 
     /// Mean note over every essai of the recipe, all versions combined.

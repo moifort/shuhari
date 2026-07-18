@@ -22,9 +22,6 @@ query RecipeList(
       updatedAt
       versionCount
       bestNote
-      currentVersion {
-        note
-      }
     }
     hasMore
     totalCount

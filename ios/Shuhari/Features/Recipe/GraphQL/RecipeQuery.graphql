@@ -1,5 +1,6 @@
 fragment VersionFields on Version {
   number
+  basedOn
   change
   why
   originKind
@@ -33,16 +34,11 @@ query Recipe($id: RecipeId!) {
     category
     createdAt
     updatedAt
-    currentVersion {
-      ...VersionFields
-    }
-    toTest {
+    bestNote
+    versionToOpen {
       ...VersionFields
     }
     versions {
-      ...VersionFields
-    }
-    pendingEssais {
       ...VersionFields
     }
   }

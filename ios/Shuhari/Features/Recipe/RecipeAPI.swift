@@ -15,20 +15,6 @@ enum RecipeAPI {
 
     // MARK: - Mutations
 
-    static func promoteVersion(recipeId: String, versionNumber: Int) async throws {
-        _ = try await GraphQLHelpers.perform(
-            GraphQLClient.shared.apollo,
-            mutation: ShuhariGraphQL.PromoteVersionMutation(recipeId: recipeId, versionNumber: versionNumber)
-        )
-    }
-
-    static func discardPendingVersion(recipeId: String, versionNumber: Int) async throws {
-        _ = try await GraphQLHelpers.perform(
-            GraphQLClient.shared.apollo,
-            mutation: ShuhariGraphQL.DiscardPendingVersionMutation(recipeId: recipeId, versionNumber: versionNumber)
-        )
-    }
-
     static func deleteRecipe(id: String) async throws {
         _ = try await GraphQLHelpers.perform(
             GraphQLClient.shared.apollo,
@@ -59,16 +45,16 @@ func mapRecipe(_ r: ShuhariGraphQL.RecipeQuery.Data.Recipe) -> Recipe {
         category: DishCategory(graphql: r.category),
         createdAt: GraphQLHelpers.parseISO8601(r.createdAt) ?? Date(),
         updatedAt: GraphQLHelpers.parseISO8601(r.updatedAt) ?? Date(),
-        currentVersion: r.currentVersion.map { mapVersion($0.fragments.versionFields) },
-        toTest: r.toTest.map { mapVersion($0.fragments.versionFields) },
         versions: r.versions.map { mapVersion($0.fragments.versionFields) },
-        pendingEssais: r.pendingEssais.map { mapVersion($0.fragments.versionFields) }
+        bestNote: r.bestNote,
+        versionToOpen: mapVersion(r.versionToOpen.fragments.versionFields)
     )
 }
 
 func mapVersion(_ v: ShuhariGraphQL.VersionFields) -> RecipeVersion {
     RecipeVersion(
         number: v.number,
+        basedOn: v.basedOn,
         change: v.change,
         why: v.why,
         originKind: VersionOriginKind(graphql: v.originKind),
@@ -87,9 +73,9 @@ func mapVersion(_ v: ShuhariGraphQL.VersionFields) -> RecipeVersion {
     )
 }
 
-func mapDraft(_ d: ShuhariGraphQL.DraftFields) -> Draft {
-    Draft(
-        versionNumber: d.versionNumber,
+func mapProposition(_ d: ShuhariGraphQL.PropositionFields) -> Proposition {
+    Proposition(
+        basedOn: d.basedOn,
         changeSummary: d.changeSummary,
         rationale: d.rationale,
         ingredients: d.ingredients.map { Ingredient(name: $0.name, quantity: $0.quantity) },
