@@ -1,4 +1,4 @@
-import { highestNote } from '~/domain/recipe/business-rules'
+import { highestNote, pendingEssais } from '~/domain/recipe/business-rules'
 import { type RecipeLibraryPage, RecipeQuery } from '~/domain/recipe/query'
 import { builder } from '~/domain/shared/graphql/builder'
 import type { Ingredient, Recipe, RecipeVersion, TmxSettings } from '../../types'
@@ -125,6 +125,13 @@ RecipeType.implement({
       type: [VersionType],
       description: 'The full lineage, oldest first',
       resolve: (r) => RecipeQuery.versionsOf(r.id),
+    }),
+    pendingEssais: t.field({
+      type: [VersionType],
+      description:
+        'Versions still awaiting their first run, most recent first — empty for a recipe that only holds its original version',
+      resolve: (r) =>
+        r.versionCount <= 1 ? [] : RecipeQuery.versionsOf(r.id).then((vs) => pendingEssais(vs)),
     }),
     // Satellite: the recipe's best essai note across its executed versions, from
     // the batched loader that groups the full lineage by recipe (no extra reads).

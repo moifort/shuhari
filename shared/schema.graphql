@@ -260,6 +260,11 @@ type Recipe {
   """
   currentVersion: Version
   id: RecipeId!
+
+  """
+  Versions still awaiting their first run, most recent first — empty for a recipe that only holds its original version
+  """
+  pendingEssais: [Version!]!
   subtitle: String
   title: RecipeTitle!
 

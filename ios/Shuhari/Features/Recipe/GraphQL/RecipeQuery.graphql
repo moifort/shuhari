@@ -42,5 +42,8 @@ query Recipe($id: RecipeId!) {
     versions {
       ...VersionFields
     }
+    pendingEssais {
+      ...VersionFields
+    }
   }
 }

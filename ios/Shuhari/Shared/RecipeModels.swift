@@ -119,6 +119,9 @@ struct Recipe: Identifiable, Sendable {
     let toTest: RecipeVersion?
     /// The full lineage, oldest first.
     let versions: [RecipeVersion]
+    /// The versions awaiting an essai (server-ordered, descending number). Empty
+    /// when the recipe has only its original version.
+    let pendingEssais: [RecipeVersion]
 
     /// The version number the next iteration would take.
     var nextVersionNumber: Int { (versions.map(\.number).max() ?? 0) + 1 }

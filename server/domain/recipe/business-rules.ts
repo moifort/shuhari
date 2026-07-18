@@ -3,6 +3,7 @@ import {
   DISH_CATEGORY_VALUES,
   type DishCategory,
   type Note,
+  type RecipeVersion,
   type StepText,
   type TmxSettings,
   type TmxSpeed,
@@ -31,6 +32,14 @@ export const readyToPromote = (
 ) => toTest !== null && testedVersion === toTest && note >= PROMOTION_NOTE
 
 export const nextVersionNumber = (versionCount: VersionNumber) => toVersionNumber(versionCount + 1)
+
+// Versions still awaiting their first run, most recent first. A recipe that only
+// holds its original version exposes none: the lone original is run straight from
+// the fiche's record CTA, never offered as a pickable/discardable essai.
+export const pendingEssais = (versions: RecipeVersion[]): RecipeVersion[] =>
+  versions.length <= 1
+    ? []
+    : versions.filter((v) => v.executedAt === null).sort((a, b) => b.number - a.number)
 
 // The best note a recipe ever scored across its executed versions, or null when
 // none was ever tried. Returns an actual element so the `Note` brand is preserved.

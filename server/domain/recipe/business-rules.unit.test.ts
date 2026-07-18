@@ -5,12 +5,14 @@ import {
   highestNote,
   nextVersionNumber,
   PROMOTION_NOTE,
+  pendingEssais,
   readyToPromote,
   toTmxSettings,
 } from '~/domain/recipe/business-rules'
 import {
   DISH_CATEGORY_VALUES,
   type Note,
+  type RecipeVersion,
   type StepText,
   type TmxSettings,
   type TmxSpeed,
@@ -21,6 +23,10 @@ import {
 
 const v = (n: number) => n as VersionNumber
 const note = (n: number) => n as Note
+
+// Minimal RecipeVersion fixture: pendingEssais only reads `number` and `executedAt`.
+const version = (number: number, executedAt: Date | null): RecipeVersion =>
+  ({ number: v(number), executedAt }) as RecipeVersion
 
 describe('readyToPromote', () => {
   test('promotes when a high note tests exactly the pending version', () => {
@@ -72,6 +78,26 @@ describe('highestNote', () => {
   })
   test('handles a single note', () => {
     expect(highestNote([note(4)])).toBe(note(4))
+  })
+})
+
+describe('pendingEssais', () => {
+  test('returns [] when the recipe has no version', () => {
+    expect(pendingEssais([])).toEqual([])
+  })
+  test('returns [] for a mono-version recipe, even an untried original', () => {
+    expect(pendingEssais([version(1, null)])).toEqual([])
+  })
+  test('returns only the untried versions, most recent first', () => {
+    const v1 = version(1, new Date('2026-01-01'))
+    const v2 = version(2, null)
+    const v3 = version(3, null)
+    expect(pendingEssais([v1, v2, v3])).toEqual([v3, v2])
+  })
+  test('excludes every executed version', () => {
+    const v1 = version(1, new Date('2026-01-01'))
+    const v2 = version(2, new Date('2026-02-01'))
+    expect(pendingEssais([v1, v2])).toEqual([])
   })
 })
 

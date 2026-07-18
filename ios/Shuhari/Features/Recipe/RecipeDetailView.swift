@@ -49,7 +49,7 @@ struct RecipeDetailView: View {
                 .toolbar(.hidden, for: .tabBar)
                 .sheet(isPresented: $showToTest) {
                     NextTrialsSheet(
-                        trials: toTestItems(recipe),
+                        trials: pendingEssaiItems(recipe),
                         onDelete: { versionNumber in
                             Task {
                                 await actionError.run {
@@ -130,10 +130,10 @@ struct RecipeDetailView: View {
         // group (no spacer between them).
         // Record targets the most recently created UNTRIED version (set-once: a tried
         // version can't be re-recorded). Hidden when every version is tried.
-        if let next = toTestItems(recipe).first {
+        if let next = nextRunnableVersion(recipe) {
             ToolbarItem(placement: .bottomBar) {
                 Button {
-                    presentRecordTrial(versionNumber: next.versionNumber)
+                    presentRecordTrial(versionNumber: next.number)
                 } label: {
                     Image(systemName: "pencil.and.ruler")
                 }
@@ -148,7 +148,7 @@ struct RecipeDetailView: View {
             } label: {
                 Image(systemName: "flask")
                     .overlay(alignment: .topTrailing) {
-                        if !toTestItems(recipe).isEmpty {
+                        if !recipe.pendingEssais.isEmpty {
                             Circle()
                                 .fill(Theme.Status.toTest)
                                 .frame(width: 7, height: 7)
@@ -170,17 +170,26 @@ struct RecipeDetailView: View {
         }
     }
 
-    private func toTestItems(_ recipe: Recipe) -> [NextTrialsSheet.Item] {
+    /// The pending-essai list for the sheet and the fiole badge, driven by the
+    /// server field (already sorted, descending number; empty for an original-only
+    /// recipe).
+    private func pendingEssaiItems(_ recipe: Recipe) -> [NextTrialsSheet.Item] {
+        recipe.pendingEssais.map {
+            NextTrialsSheet.Item(
+                versionNumber: $0.number,
+                change: $0.change,
+                why: $0.why ?? $0.originDetail
+            )
+        }
+    }
+
+    /// The version the record CTA targets: the most recently created untried
+    /// version (client-side filter, so a lone v1 stays recordable).
+    private func nextRunnableVersion(_ recipe: Recipe) -> RecipeVersion? {
         recipe.versions
             .filter { !$0.tried }
             .sorted { $0.createdAt > $1.createdAt }
-            .map {
-                NextTrialsSheet.Item(
-                    versionNumber: $0.number,
-                    change: $0.change,
-                    why: $0.why ?? $0.originDetail
-                )
-            }
+            .first
     }
 
     private func presentRecordTrial(versionNumber: Int) {

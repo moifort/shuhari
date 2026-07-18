@@ -108,7 +108,8 @@ enum Fixtures {
         updatedAt: date,
         currentVersion: bourguignonV3,
         toTest: bourguignonV4,
-        versions: [bourguignonV1, bourguignonV2, bourguignonV3, bourguignonV4]
+        versions: [bourguignonV1, bourguignonV2, bourguignonV3, bourguignonV4],
+        pendingEssais: [bourguignonV4]
     )
 
     /// The tried versions of the bourguignon, most recent first — its essai journal.
@@ -155,7 +156,8 @@ enum Fixtures {
         updatedAt: date,
         currentVersion: risottoV2,
         toTest: nil,
-        versions: [risottoV2]
+        versions: [risottoV2],
+        pendingEssais: []
     )
 
     // MARK: - Fresh import (currentVersion == nil, v1 never tried)
@@ -187,7 +189,8 @@ enum Fixtures {
         updatedAt: date,
         currentVersion: nil,
         toTest: freshImportV1,
-        versions: [freshImportV1]
+        versions: [freshImportV1],
+        pendingEssais: []
     )
 
     // MARK: - Transient models

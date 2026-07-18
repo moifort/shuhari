@@ -61,7 +61,8 @@ func mapRecipe(_ r: ShuhariGraphQL.RecipeQuery.Data.Recipe) -> Recipe {
         updatedAt: GraphQLHelpers.parseISO8601(r.updatedAt) ?? Date(),
         currentVersion: r.currentVersion.map { mapVersion($0.fragments.versionFields) },
         toTest: r.toTest.map { mapVersion($0.fragments.versionFields) },
-        versions: r.versions.map { mapVersion($0.fragments.versionFields) }
+        versions: r.versions.map { mapVersion($0.fragments.versionFields) },
+        pendingEssais: r.pendingEssais.map { mapVersion($0.fragments.versionFields) }
     )
 }
 
