@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct SettingsHomeView: View {
+    /// Forwarded to the import/export screen so a "replace all data" import can
+    /// refresh the caller's recipe list.
+    var onDataReplaced: () async -> Void = {}
     @Environment(AuthSession.self) private var authSession
     @Environment(\.dismiss) private var dismiss
     @State private var signOutError: String?
@@ -27,7 +30,7 @@ struct SettingsHomeView: View {
 
                 Section("Données") {
                     NavigationLink {
-                        ImportExportSettingsView()
+                        ImportExportSettingsView(onDataReplaced: onDataReplaced)
                     } label: {
                         Label("Importer / Exporter", systemImage: "square.and.arrow.up.fill")
                     }

@@ -1,10 +1,9 @@
 import SwiftUI
 
-/// The Carnet home screen: "À tester" banners, the paginated library, and recent
-/// activity. Pure presentation — navigation, pagination and API calls are owned by
-/// `HomeView`. The "À tester" and recent-activity sections come from the `home`
-/// read model (`data`); the library is a separate, server-sorted, infinitely
-/// scrolling page (`library` + the `library*` flags and callbacks).
+/// The Carnet home screen: the paginated recipe library. Pure presentation —
+/// navigation, pagination and API calls are owned by `HomeView`. The library is a
+/// server-sorted, infinitely scrolling page (`library` + the `library*` flags and
+/// callbacks).
 struct HomePage: View {
     /// The type filter offered on a multi-type tab (Carnet), rendered as round
     /// glass toolbar buttons — one per type (Plat / Thermomix). `nil` on a
@@ -14,7 +13,6 @@ struct HomePage: View {
         let selection: Binding<RecipeType>
     }
 
-    let data: HomeData
     let library: [LibraryRecipe]
     /// `true` when the library is sorted by last modification (month sections);
     /// `false` for the dish-course sort (flat list).
@@ -28,7 +26,6 @@ struct HomePage: View {
     /// Server-side dish-category facet, driven from the filter+sort menu. `nil` =
     /// every category.
     let categoryFilter: Binding<DishCategory?>
-    let onExecute: (HomeTestItem) -> Void
     let onSettings: () -> Void
     var onPrefetch: (String) -> Void = { _ in }
     var onLoadMore: () async -> Void = {}
@@ -106,7 +103,7 @@ struct HomePage: View {
 
     @ViewBuilder
     private var content: some View {
-        if data.toTest.isEmpty && library.isEmpty {
+        if library.isEmpty {
             if libraryLoading {
                 ProgressView()
             } else {
@@ -118,7 +115,6 @@ struct HomePage: View {
             }
         } else {
             List {
-                ToTestSection(items: data.toTest, onExecute: onExecute)
                 LibrarySection(
                     recipes: library,
                     grouped: libraryGrouped,
@@ -127,7 +123,6 @@ struct HomePage: View {
                     onPrefetch: onPrefetch,
                     onLoadMore: onLoadMore
                 )
-                RecentEssaisSection(essais: data.recentEssais, titleProvider: data.title(forRecipe:))
             }
             .scrollEdgeEffectStyle(.soft, for: .top)
         }
@@ -140,22 +135,10 @@ private struct HomePagePreview: View {
     @State private var category: DishCategory?
 
     var body: some View {
-        let data = HomeData(
-            toTest: [
-                .init(id: "1", title: "Bœuf bourguignon", type: .plat, category: .plat, versionNumber: 4, change: "Cuisson 3 h → 3 h 30", why: "Viande trop ferme."),
-            ],
-            library: [
-                .init(id: "1", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestNote: 5, averageNote: 4.0, updatedAt: Date()),
-                .init(id: "2", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestNote: 4, averageNote: 3.5, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
-            ],
-            recentEssais: [
-                .init(recipeId: "1", versionNumber: 3, note: 4, remarks: "Équilibré, fondant.", executedAt: Date()),
-            ]
-        ).filtered(to: [selectedType])
+        let library = Fixtures.libraryRecipes.filter { $0.type == selectedType }
         NavigationStack {
             HomePage(
-                data: data,
-                library: data.library,
+                library: library,
                 libraryGrouped: sort == .lastModified,
                 libraryLoading: false,
                 libraryHasMore: false,
@@ -164,7 +147,6 @@ private struct HomePagePreview: View {
                 typeFilter: .init(options: [.plat, .tmx], selection: $selectedType),
                 sort: $sort,
                 categoryFilter: $category,
-                onExecute: { _ in },
                 onSettings: {}
             )
         }
@@ -178,8 +160,7 @@ private struct HomePagePreview: View {
 #Preview("Chargement de plus") {
     NavigationStack {
         HomePage(
-            data: Fixtures.homeData,
-            library: Fixtures.homeData.library,
+            library: Fixtures.libraryRecipes,
             libraryGrouped: true,
             libraryLoading: false,
             libraryHasMore: true,
@@ -188,7 +169,6 @@ private struct HomePagePreview: View {
             typeFilter: nil,
             sort: .constant(.lastModified),
             categoryFilter: .constant(nil),
-            onExecute: { _ in },
             onSettings: {}
         )
     }

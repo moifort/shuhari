@@ -2,19 +2,16 @@ import SwiftUI
 
 /// The Carnet content tab (cuisine — plats & Thermomix). Owns the
 /// NavigationStack, the settings sheet and the recipe flow (fiche → historique →
-/// essai → draft + execution cover). Reads the shared `HomeStore` (the
-/// `home` read model behind the "À tester" and recent-activity sections) from the
-/// environment, and owns a `LibraryStore` for the paginated, server-sorted library.
+/// essai → draft + execution cover), and a `LibraryStore` for the paginated,
+/// server-sorted recipe library that fills the screen.
 struct HomeView: View {
     let title: String
     let categoryTypes: Set<RecipeType>
     @Binding var importedRecipe: ImportedRecipe?
 
-    @Environment(HomeStore.self) private var store
     @State private var library = LibraryStore()
     @State private var path = NavigationPath()
     @State private var showSettings = false
-    @State private var execution: ExecutionRequest?
     @State private var selectedType: RecipeType = .plat
 
     /// Multi-type tabs (Cuisine) offer a segmented type filter; single-type tabs don't.
@@ -25,20 +22,17 @@ struct HomeView: View {
         RecipeType.allCases.filter { categoryTypes.contains($0) }
     }
 
-    /// On a multi-type tab, narrow the home read model to the selected segment;
-    /// otherwise show every type the tab owns. (The library is filtered server-side
-    /// via `library.type`.)
-    private var effectiveTypes: Set<RecipeType> {
-        isMultiType ? [selectedType] : categoryTypes
-    }
-
     var body: some View {
         @Bindable var library = library
         NavigationStack(path: $path) {
             Group {
-                if let data = store.data {
+                // Full-screen error only on an empty first load — a transient
+                // load-more failure keeps the populated list and surfaces through
+                // the in-list "Réessayer" row (libraryLoadMoreFailed) instead.
+                if let error = library.error, library.items.isEmpty {
+                    ContentUnavailableView("Erreur", systemImage: "exclamationmark.triangle", description: Text(error))
+                } else {
                     HomePage(
-                        data: data.filtered(to: effectiveTypes),
                         library: library.items,
                         // Month sections apply whenever the effective order is
                         // chronological — that includes an active category filter,
@@ -54,25 +48,17 @@ struct HomeView: View {
                             : nil,
                         sort: $library.sort,
                         categoryFilter: $library.category,
-                        onExecute: { item in
-                            execution = ExecutionRequest(recipeId: item.id, versionNumber: item.versionNumber)
-                        },
                         onSettings: { showSettings = true },
                         onPrefetch: { library.prefetchIfNeeded(for: $0) },
                         onLoadMore: { await library.loadMore() }
                     )
-                } else if let error = store.error {
-                    ContentUnavailableView("Erreur", systemImage: "exclamationmark.triangle", description: Text(error))
-                } else {
-                    ProgressView()
                 }
             }
-            .recipeFlow(path: $path, execution: $execution) {
+            .recipeFlow(path: $path) {
                 Task { await reloadAll() }
             }
         }
         .task {
-            if store.data == nil { await store.load() }
             await loadLibraryIfNeeded()
         }
         .refreshable { await reloadAll() }
@@ -82,7 +68,7 @@ struct HomeView: View {
             library.type = isMultiType ? newValue : nil
         }
         .sheet(isPresented: $showSettings) {
-            SettingsHomeView()
+            SettingsHomeView(onDataReplaced: { await reloadAll() })
         }
         .onChange(of: importedRecipe) { _, _ in navigateToImportedIfNeeded() }
         .onAppear { navigateToImportedIfNeeded() }
@@ -99,12 +85,9 @@ struct HomeView: View {
         }
     }
 
-    /// Reload both read models after a mutation, pull-to-refresh, or a new import —
-    /// the library is paginated and separate, so it must be reloaded alongside `home`.
+    /// Reload the library after a mutation, pull-to-refresh, or a new import.
     private func reloadAll() async {
-        async let home: Void = store.load()
-        async let lib: Void = library.load()
-        _ = await (home, lib)
+        await library.load()
     }
 
     /// Push the freshly imported recipe's fiche — but only in the tab that owns
@@ -121,5 +104,4 @@ struct HomeView: View {
 
 #Preview {
     HomeView(title: "Cuisine", categoryTypes: [.plat, .tmx], importedRecipe: .constant(nil))
-        .environment(HomeStore())
 }

@@ -3,7 +3,9 @@ import UniformTypeIdentifiers
 
 /// Export the whole carnet to a JSON file, or replace it with an imported one.
 struct ImportExportSettingsView: View {
-    @Environment(HomeStore.self) private var store
+    /// Called after a successful "replace all data" import so the caller can refresh
+    /// its recipe list — the whole carnet was just overwritten.
+    var onDataReplaced: () async -> Void = {}
     @State private var isExporting = false
     @State private var isImporting = false
     @State private var pendingExport: ExportDocument?
@@ -126,7 +128,7 @@ struct ImportExportSettingsView: View {
             }
             let summary = try await SettingsAPI.importData(payload: payload)
             status = "Import terminé : \(summary.totalRecords) éléments restaurés."
-            await store.load()
+            await onDataReplaced()
         } catch {
             self.error = reportError(error)
         }
@@ -156,7 +158,6 @@ private struct ExportDocument: FileDocument {
 
 #Preview {
     NavigationStack {
-        ImportExportSettingsView()
+        ImportExportSettingsView(onDataReplaced: {})
     }
-    .environment(HomeStore())
 }

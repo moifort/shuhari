@@ -20,7 +20,6 @@ struct ContentView: View {
     @State private var pendingImport: ImportInput?
     @State private var reviewJob: ImportJob?
     @State private var importedRecipe: ImportedRecipe?
-    @State private var store = HomeStore()
 
     /// The trailing "Importer" entry must stay detached from the content tabs.
     /// iOS 26 separates the `.search` role; iOS 27 folded `.search` back into the
@@ -52,7 +51,6 @@ struct ContentView: View {
             .accessibilityIdentifier("tab-import")
         }
         .tabBarMinimizeBehavior(.onScrollDown)
-        .environment(store)
         .onChange(of: selectedTab) { _, newValue in
             if newValue == .importer {
                 showImport = true

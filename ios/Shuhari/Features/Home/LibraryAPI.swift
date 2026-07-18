@@ -9,9 +9,8 @@ struct RecipePage: Sendable {
     let totalCount: Int
 }
 
-/// The paginated recipe library — the `recipes(...)` query. Separate from
-/// `HomeAPI` (the `home` read model that still backs the "À tester" and recent
-/// activity sections): the library scrolls infinitely and sorts server-side.
+/// The paginated recipe library — the `recipes(...)` query: it scrolls infinitely
+/// and sorts server-side, and is the Carnet's sole read model.
 enum LibraryAPI {
     static func list(
         type: RecipeType?,

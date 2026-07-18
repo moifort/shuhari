@@ -1,28 +1,5 @@
 import Foundation
 
-/// A recipe with a pending version awaiting an essai — rendered as a "À tester" banner.
-struct HomeTestItem: Identifiable, Sendable {
-    let id: String
-    let title: String
-    let type: RecipeType
-    let category: DishCategory
-    let versionNumber: Int
-    let change: String?
-    let why: String?
-}
-
-/// A recent essai across all recipes — a lightweight activity row for the home
-/// screen, derived from a tried version.
-struct RecentEssai: Identifiable, Sendable {
-    let recipeId: String
-    let versionNumber: Int
-    let note: Int
-    let remarks: String
-    let executedAt: Date
-
-    var id: String { "\(recipeId)#\(versionNumber)" }
-}
-
 /// A library row: how many versions the recipe has, its best essai note ("the
 /// highest star") and the current reference's note.
 struct LibraryRecipe: Identifiable, Sendable {
@@ -61,28 +38,6 @@ struct LibraryMonthGroup: Identifiable, Sendable {
                 )
             }
             .sorted { $0.id > $1.id }
-    }
-}
-
-/// The read model behind the home screen.
-struct HomeData: Sendable {
-    let toTest: [HomeTestItem]
-    let library: [LibraryRecipe]
-    let recentEssais: [RecentEssai]
-
-    /// Restrict every section to the given recipe types — backs the per-category tabs.
-    func filtered(to types: Set<RecipeType>) -> HomeData {
-        let lib = library.filter { types.contains($0.type) }
-        let ids = Set(lib.map(\.id))
-        return HomeData(
-            toTest: toTest.filter { types.contains($0.type) },
-            library: lib,
-            recentEssais: recentEssais.filter { ids.contains($0.recipeId) }
-        )
-    }
-
-    func title(forRecipe id: String) -> String {
-        library.first { $0.id == id }?.title ?? "Recette"
     }
 }
 

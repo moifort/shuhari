@@ -63,7 +63,7 @@ struct LibrarySection: View {
 #Preview("Par mois") {
     NavigationStack {
         List {
-            LibrarySection(recipes: Fixtures.homeData.library, grouped: true, hasMore: true)
+            LibrarySection(recipes: Fixtures.libraryRecipes, grouped: true, hasMore: true)
         }
     }
 }
@@ -71,7 +71,7 @@ struct LibrarySection: View {
 #Preview("Par type de plat") {
     NavigationStack {
         List {
-            LibrarySection(recipes: Fixtures.homeData.library, grouped: false)
+            LibrarySection(recipes: Fixtures.libraryRecipes, grouped: false)
         }
     }
 }
