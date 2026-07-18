@@ -1,27 +1,15 @@
 import Foundation
 
-struct TestRecipe: Decodable {
-    let id: String
-    let title: String
-    let type: String
-    let category: String?
-}
-
-struct TestAPIResponse<T: Decodable>: Decodable {
-    let status: Int
-    let data: T
-}
-
-/// Thin REST client against the local test server's helper endpoints (reset +
-/// seeding). Mirrors Vinarium's TestAPIClient; the exact seed routes depend on
-/// the server test harness.
+/// Thin REST client against the local test server's helper endpoints (DB reset).
+/// The derived recipe model has no promotion/toTest seeding: the trial-loop test
+/// builds its own state through the app's import + essai flow, so the client only
+/// needs to reset the database between tests.
 final class TestAPIClient: @unchecked Sendable {
     static let shared = TestAPIClient()
 
     private let baseURL: URL
     private let token = TestSecrets.apiToken
     private let session = URLSession.shared
-    private let decoder = JSONDecoder()
 
     init() {
         let envURL = ProcessInfo.processInfo.environment["TEST_SERVER_URL"]
@@ -32,27 +20,6 @@ final class TestAPIClient: @unchecked Sendable {
 
     func resetDatabase() throws {
         _ = try performRequest("POST", path: "/test/reset")
-    }
-
-    // MARK: - Seeding
-
-    /// Seed a recipe with a pending (toTest) version so the trial-loop and
-    /// promotion tests have something to execute. Returns the created recipe.
-    /// The cuisine-only model requires a dish `category` on every recipe and no
-    /// longer carries params; the payload mirrors the current server shape.
-    @discardableResult
-    func seedRecipeWithPendingVersion(
-        title: String,
-        type: String = "plat",
-        category: String = "plat"
-    ) throws -> TestRecipe {
-        let data = try performRequest("POST", path: "/test/seed-recipe", jsonBody: [
-            "title": title,
-            "type": type,
-            "category": category,
-            "withPendingVersion": true,
-        ])
-        return try decoder.decode(TestAPIResponse<TestRecipe>.self, from: data).data
     }
 
     // MARK: - HTTP

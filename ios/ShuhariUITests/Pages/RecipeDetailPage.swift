@@ -15,24 +15,20 @@ struct RecipeDetailPage {
         try app.staticTexts.matching(predicate).firstMatch.waitOrFail(timeout: 4, "recipe title '\(title)' not shown")
     }
 
-    /// A pending version surfaces the "À tester" CTA in the bottom bar.
-    func verifyPendingVersion(_ number: Int) throws {
-        try app.buttons["to-test-button"].waitOrFail(timeout: 6, "pending v\(number) CTA not shown")
+    /// The fiche opens on a server-derived version; its header badge carries a
+    /// "Version N" accessibility label. Any version is cookable and there is no
+    /// promotion — a freshly appended version simply becomes the one the fiche shows.
+    func verifyVersion(_ number: Int) throws {
+        let predicate = NSPredicate(format: "label CONTAINS %@", "Version \(number)")
+        try app.descendants(matching: .any).matching(predicate).firstMatch
+            .waitOrFail(timeout: 6, "version v\(number) badge not shown")
     }
 
-    /// Record a trial for the displayed version via the round centre CTA — the
-    /// way to run a first trial on a freshly imported recipe.
+    /// Record an essai on the displayed version via the round centre CTA. Every
+    /// version is cookable and an essai is overwritable, so this is always available.
     @discardableResult
     func recordTrial() throws -> CapturePage {
         try app.buttons["record-trial-button"].tapOrFail()
-        return CapturePage(app: app)
-    }
-
-    /// Open the "à tester" sheet and start the trial capture for the pending version.
-    @discardableResult
-    func openToTest(_ number: Int) throws -> CapturePage {
-        try app.buttons["to-test-button"].tapOrFail()
-        try app.buttons["execute-v\(number)-button"].tapOrFail()
         return CapturePage(app: app)
     }
 }

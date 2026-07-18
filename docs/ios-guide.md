@@ -358,8 +358,8 @@ cd ios && apollo-ios-cli generate   # iOS: regenerate Generated/GraphQL
 
 ## UI Testing — Page Object pattern
 
-`ShuhariUITests/` holds `Tests/` (`ScreenshotTest`, `TrialLoopFlowTest`, `ImportFlowTest`,
-`PropositionFlowTest`), `Pages/` (page objects), and `Support/`.
+`ShuhariUITests/` holds `Tests/` (`ScreenshotTest`, `TrialLoopFlowTest`, `ImportFlowTest`),
+`Pages/` (page objects), and `Support/`.
 
 `BaseUITest` resets the DB before/after and launches with
 `-serverURLDev http://localhost:3000 -serverMode dev -UITestPhoto`, adding

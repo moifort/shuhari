@@ -1,11 +1,12 @@
 import XCTest
 
-/// Experimentation loop: import a recipe, execute its current version, record a
-/// low-scoring trial, receive an AI draft, validate it as an iteration, and
-/// see the new pending version surface as "à tester".
+/// Experimentation loop under the derived recipe model: import a recipe, record an
+/// essai on the version the fiche opens on, add a written remark to trigger the AI
+/// proposition, accept it, and see the freshly appended version become the one the
+/// fiche shows. No promotion, no "à tester" banner — the new version is derived.
 final class TrialLoopFlowTest: BaseUITest {
 
-    func testTrialToDraftToPendingVersion() async throws {
+    func testEssaiToPropositionToNewVersion() async throws {
         let tabBar = TabBarPage(app: app)
         try tabBar.verify()
 
@@ -15,22 +16,22 @@ final class TrialLoopFlowTest: BaseUITest {
         let recipe = try importPage.analyze().verify().save()
         try recipe.verify()
 
-        // 2. Record a trial for the fresh recipe via the round centre CTA
-        //    (no pending "à tester" version yet).
+        // 2. The fresh recipe opens on v1; record an essai on the displayed version
+        //    via the round centre CTA.
         let capture = try recipe.recordTrial().verify()
 
-        // 3. Record a trial with a remark → triggers an AI draft (the note itself
-        //    no longer matters; the written remark is what asks for a draft).
+        // 3. A written remark asks the AI for the next version to try (the note
+        //    itself no longer matters; the remark is what requests a proposition).
         _ = try capture.pickStars(3)
         _ = try capture.typeRemarks("Coule trop vite, amertume sèche en finale.")
         try capture.save()
 
-        // 4. Draft → validate the iteration.
-        let draft = DraftPage(app: app)
-        try draft.verify()
-        try draft.validate()
+        // 4. The proposition appears — accept it as the next iteration.
+        let proposition = PropositionPage(app: app)
+        try proposition.verify()
+        try proposition.validate()
 
-        // 5. Back on the fiche, the pending v2 banner is now present.
-        try recipe.verifyPendingVersion(2)
+        // 5. Back on the fiche, the appended v2 (basedOn v1) is now the version shown.
+        try recipe.verifyVersion(2)
     }
 }
