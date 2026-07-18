@@ -115,8 +115,8 @@ builder.mutationField('recordEssai', (t) =>
     description: [
       'Save what happened when you cooked a version: its rating and your notes. Overwritable — ' +
         'recording again on the same version simply updates it. Fast and does not call the AI. If ' +
-        'the rating is low and you want a suggested improvement, ask for a draft separately (see ' +
-        'requestDraft). Returns the version, now updated with its outcome.',
+        'the rating is low and you want a suggested improvement, ask for a proposition separately ' +
+        '(see requestProposition). Returns the version, now updated with its outcome.',
       '',
       '```graphql',
       'recordEssai(input: {',

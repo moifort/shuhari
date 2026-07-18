@@ -1,10 +1,8 @@
 """
-What you get back after accepting an AI suggestion, e.g. the new `v3` queued to try
+What you get back after accepting an AI suggestion, e.g. the new `v3` added to the chain
 """
-type AcceptDraftResult {
-  """
-  The number of the version that was just created and queued up to try, e.g. `3`
-  """
+type AcceptPropositionResult {
+  """The number of the version that was just created, e.g. `3`"""
   createdVersion: VersionNumber
 
   """
@@ -94,69 +92,6 @@ enum DishCategory {
   SOUPE
 }
 
-"""
-The AI’s suggestion for your next attempt, e.g. `"Less sugar, longer resting time"`. After a low-scoring essai, the AI reads your rating and notes and proposes a tweaked version. It is just a proposal shown on screen — nothing is saved until you accept it (see acceptDraft).
-"""
-type Draft {
-  """
-  A one-line summary of what it changes, e.g. `"Less sugar, longer resting time"`
-  """
-  changeSummary: String!
-
-  """
-  The complete ingredient list of the suggested version, e.g. `"Sugar — 80 g"` (not just what changed)
-  """
-  ingredients: [Ingredient!]!
-
-  """
-  The AI’s reasoning — why it thinks this change will help, based on your last notes, e.g. `"You noted it was too sweet, so cutting the sugar should balance it"`
-  """
-  rationale: String!
-
-  """
-  The complete method of the suggested version, e.g. `"Rest the dough for 2 h"` (not just what changed)
-  """
-  steps: [StepText!]!
-
-  """
-  Per-step Thermomix settings aligned with steps, e.g. `"10 min / 100°C / speed 2"` (`null` = plain step; `[]` if not tmx)
-  """
-  tmxSteps: [TmxSettings]!
-
-  """
-  The number this version would get if you accept it (the next one in the chain), e.g. `3`
-  """
-  versionNumber: VersionNumber!
-}
-
-"""
-A complete next-version draft to accept as an iteration, e.g. the AI’s `"Less sugar, longer resting time"` proposal. Send the FULL next version (omitted ingredients/steps wipe those lists).
-"""
-input DraftInput {
-  """
-  A short human summary of what the next version changes, e.g. `"Less sugar"`
-  """
-  changeSummary: String!
-
-  """
-  The complete ingredient list of the next version, e.g. `"Sugar — 80 g"`
-  """
-  ingredients: [IngredientInput!]!
-
-  """The reasoning behind the change, e.g. `"You noted it was too sweet"`"""
-  rationale: String!
-
-  """
-  The complete step list of the next version, e.g. `"Rest the dough for 2 h"`
-  """
-  steps: [StepText!]!
-
-  """
-  Per-step Thermomix settings, aligned with steps, e.g. `"10 min / 100°C / speed 2"` (`null` = plain step)
-  """
-  tmxSteps: [TmxSettingsInput]
-}
-
 """Structured recipe extracted from an import source (editable preview)"""
 type ImportAnalysis {
   """The dish category detected by the AI"""
@@ -233,10 +168,11 @@ scalar IngredientQuantity
 
 type Mutation {
   """
-  Accept an AI suggestion (optionally after editing it). It becomes the next version in the chain, added to your to-do list of attempts to cook.
+  Accept an AI suggestion (optionally after editing it). It becomes the next version in the chain, ready to cook.
   
   ```graphql
-  acceptDraft(recipeId: "9f1c-a3b2", draft: {
+  acceptProposition(recipeId: "9f1c-a3b2", proposition: {
+    basedOn: 2
     changeSummary: "Less sugar"
     rationale: "You noted it was too sweet"
     ingredients: [{ name: "Sugar", quantity: "80 g" }]
@@ -246,13 +182,13 @@ type Mutation {
   }
   ```
   """
-  acceptDraft(
+  acceptProposition(
     """The full suggested version to save (with any edits you made)"""
-    draft: DraftInput!
+    proposition: PropositionInput!
 
     """The recipe being iterated on, e.g. the id of `"Grandma’s lasagna"`"""
     recipeId: RecipeId!
-  ): AcceptDraftResult!
+  ): AcceptPropositionResult!
 
   """
   Analyze an import source (photos, a URL or raw text) into a structured recipe preview. Exactly one source must be provided. Results are cached server-side by SHA-256.
@@ -280,7 +216,7 @@ type Mutation {
     steps: ["Layer the pasta", "Bake at 200°C"]
   }) {
     id
-    toTest { number }
+    versionToOpen { number }
   }
   ```
   """
@@ -302,21 +238,6 @@ type Mutation {
   ): Boolean!
 
   """
-  Drop a planned-but-not-yet-cooked version from the to-do list and delete it. Returns `true` on success. Won’t delete a recipe’s only version.
-  
-  ```graphql
-  discardPendingVersion(recipeId: "9f1c-a3b2", versionNumber: 3)
-  ```
-  """
-  discardPendingVersion(
-    """Which recipe"""
-    recipeId: RecipeId!
-
-    """Which pending (untried) version to discard, e.g. `3`"""
-    versionNumber: VersionNumber!
-  ): Boolean!
-
-  """
   Restore a backup. WARNING: this REPLACES everything you currently have with the contents of the JSON text (as produced by exportData). Returns a count of what was loaded, e.g. `12` recipes.
   
   ```graphql
@@ -332,24 +253,7 @@ type Mutation {
   ): ImportResult!
 
   """
-  Crown a version as the recipe’s new reference (its "currentVersion") — do this after an attempt scored `4` or more. Returns the updated recipe.
-  
-  ```graphql
-  promoteVersion(recipeId: "9f1c-a3b2", versionNumber: 2) {
-    currentVersion { number note }
-  }
-  ```
-  """
-  promoteVersion(
-    """Which recipe"""
-    recipeId: RecipeId!
-
-    """Which version to make the reference, e.g. `2`"""
-    versionNumber: VersionNumber!
-  ): Recipe!
-
-  """
-  Save what happened when you cooked a version: its rating and your notes. Fast and does not call the AI. If the rating is low and you want a suggested improvement, ask for a draft separately (see requestDraft).
+  Save what happened when you cooked a version: its rating and your notes. Overwritable — recording again on the same version simply updates it. Fast and does not call the AI. If the rating is low and you want a suggested improvement, ask for a proposition separately (see requestProposition). Returns the version, now updated with its outcome.
   
   ```graphql
   recordEssai(input: {
@@ -358,33 +262,36 @@ type Mutation {
     note: 4
     remarks: "Still a touch too sweet, but the texture is spot on"
   }) {
-    version { number note }
-    promotionSuggested
+    number
+    note
   }
   ```
   """
   recordEssai(
     """The attempt to record — which version, the rating, the notes"""
     input: RecordEssaiInput!
-  ): RecordEssaiResult!
+  ): Version!
 
   """
-  Ask the AI for a suggested next version. It looks at your most recent attempt (its rating and notes) and proposes one improvement. Nothing is saved yet — you get a proposal to review.
+  Ask the AI for a suggested next version. It looks at the version you just cooked (its rating and notes) and proposes one improvement. Nothing is saved yet — you get a proposal to review.
   
   ```graphql
-  requestDraft(recipeId: "9f1c-a3b2") {
-    versionNumber
+  requestProposition(recipeId: "9f1c-a3b2", versionNumber: 2) {
+    basedOn
     changeSummary
     rationale
   }
   ```
   """
-  requestDraft(
+  requestProposition(
     """
     The recipe to get a suggestion for, e.g. the id of `"Grandma’s lasagna"`
     """
     recipeId: RecipeId!
-  ): Draft!
+
+    """The version you just cooked and want to iterate on, e.g. `2`"""
+    versionNumber: VersionNumber!
+  ): Proposition!
 
   """
   Rename a recipe — change its title and/or its subtitle. Returns the updated recipe.
@@ -409,6 +316,74 @@ type Mutation {
 A rating out of 5, as a whole number from `1` (bad) to `5` (excellent), e.g. `4`. A version rated `4` or more can become the recipe’s reference.
 """
 scalar Note
+
+"""
+The AI’s suggestion for your next attempt, e.g. `"Less sugar, longer resting time"`. After an essai, the AI reads your rating and notes and proposes a tweaked version. It is just a proposal shown on screen — nothing is saved until you accept it (see acceptProposition).
+"""
+type Proposition {
+  """
+  The version this proposal iterates on (the one you just cooked), e.g. `2`. Sent straight back on accept so the new version records what it was based on.
+  """
+  basedOn: VersionNumber!
+
+  """
+  A one-line summary of what it changes, e.g. `"Less sugar, longer resting time"`
+  """
+  changeSummary: String!
+
+  """
+  The complete ingredient list of the suggested version, e.g. `"Sugar — 80 g"` (not just what changed)
+  """
+  ingredients: [Ingredient!]!
+
+  """
+  The AI’s reasoning — why it thinks this change will help, based on your last notes, e.g. `"You noted it was too sweet, so cutting the sugar should balance it"`
+  """
+  rationale: String!
+
+  """
+  The complete method of the suggested version, e.g. `"Rest the dough for 2 h"` (not just what changed)
+  """
+  steps: [StepText!]!
+
+  """
+  Per-step Thermomix settings aligned with steps, e.g. `"10 min / 100°C / speed 2"` (`null` = plain step; `[]` if not tmx)
+  """
+  tmxSteps: [TmxSettings]!
+}
+
+"""
+A complete next-version proposition to accept as an iteration, e.g. the AI’s `"Less sugar, longer resting time"` proposal. Send the FULL next version (omitted ingredients/steps wipe those lists).
+"""
+input PropositionInput {
+  """
+  The version this iterates on — echo back the `basedOn` from the proposal, e.g. `2`
+  """
+  basedOn: VersionNumber!
+
+  """
+  A short human summary of what the next version changes, e.g. `"Less sugar"`
+  """
+  changeSummary: String!
+
+  """
+  The complete ingredient list of the next version, e.g. `"Sugar — 80 g"`
+  """
+  ingredients: [IngredientInput!]!
+
+  """The reasoning behind the change, e.g. `"You noted it was too sweet"`"""
+  rationale: String!
+
+  """
+  The complete step list of the next version, e.g. `"Rest the dough for 2 h"`
+  """
+  steps: [StepText!]!
+
+  """
+  Per-step Thermomix settings, aligned with steps, e.g. `"10 min / 100°C / speed 2"` (`null` = plain step)
+  """
+  tmxSteps: [TmxSettingsInput]
+}
 
 type Query {
   """
@@ -441,8 +416,8 @@ type Query {
   ```graphql
   recipe(id: "9f1c-a3b2") {
     title
-    currentVersion { number note }
-    pendingEssais { number change }
+    versionToOpen { number note }
+    versions { number change }
   }
   ```
   """
@@ -456,7 +431,7 @@ type Query {
   
   ```graphql
   recipes(type: TMX, sort: UPDATED_AT, order: DESC, limit: 20) {
-    items { id title currentVersion { note } }
+    items { id title bestNote }
     hasMore
   }
   ```
@@ -487,7 +462,7 @@ type Query {
 }
 
 """
-A dish you are perfecting over time. A recipe is the whole experiment, not a single recipe card: it holds a chain of versions (v1, v2, v3 …), remembers which one is the current best, and which one is queued up to try next. Think `"Grandma’s lasagna"` and every attempt you have made to nail it.
+A dish you are perfecting over time. A recipe is the whole experiment, not a single recipe card: it holds a chain of versions (v1, v2, v3 …), each one an attempt in the kitchen. Its state is derived from that chain — its best rating (bestNote) and the version to open from the home (versionToOpen). Think `"Grandma’s lasagna"` and every attempt you have made to nail it.
 """
 type Recipe {
   """
@@ -503,18 +478,8 @@ type Recipe {
   """When the recipe was first imported, e.g. `"2026-07-18T14:30:00.000Z"`"""
   createdAt: DateTime!
 
-  """
-  The reference version — the one you consider "the recipe" today, the one to reproduce, e.g. `v2` of `"Grandma’s lasagna"`. A version becomes eligible once its essai (run on the pending version) scores `4` or more; you then confirm it with promoteVersion. `null` until that first promotion, while the recipe is still being dialled in.
-  """
-  currentVersion: Version
-
   """Its unique identifier, e.g. `"9f1c…-a3b2"`"""
   id: RecipeId!
-
-  """
-  Your to-do list of attempts: versions created but not yet cooked, newest first, e.g. `v3` then `v2`. Empty for a brand-new recipe that only has its original `v1` (that one is run straight from the recipe card, not offered here).
-  """
-  pendingEssais: [Version!]!
 
   """
   An optional one-liner under the title, e.g. `"with fresh basil"`. `null` if none.
@@ -523,11 +488,6 @@ type Recipe {
 
   """Its name, e.g. `"Grandma’s lasagna"`"""
   title: RecipeTitle!
-
-  """
-  The version queued up to cook next — created but not yet tried, e.g. `v3`. Right after import this points to the original `v1`. It is `null` only once every version has been tried (or the pending one was discarded or promoted).
-  """
-  toTest: Version
 
   """Whether it is a cooked dish (`PLAT`) or a Thermomix recipe (`TMX`)"""
   type: RecipeType!
@@ -541,6 +501,11 @@ type Recipe {
   How many versions exist so far — also the number of the most recent one, e.g. `3` after `v1 → v2 → v3`
   """
   versionCount: VersionNumber!
+
+  """
+  The version to show first when you open this recipe: the attempt in progress (the most recent one built on your best-rated version), or that best-rated version itself, or — if you have never cooked any — the latest version. Never `null`; a recipe always has at least its `v1`.
+  """
+  versionToOpen: Version!
 
   """The whole history, oldest first, e.g. `v1 → v2 → v3`"""
   versions: [Version!]!
@@ -625,21 +590,6 @@ input RecordEssaiInput {
 
   """Which version of it you tried, e.g. `2`"""
   versionNumber: VersionNumber!
-}
-
-"""
-What you get back after saving the result of an attempt, e.g. `v2` rated `4`
-"""
-type RecordEssaiResult {
-  """
-  `true` when this attempt — run on the pending version — scored `4` or more, so this version can now become the recipe’s new reference; the app then offers to "promote" it
-  """
-  promotionSuggested: Boolean!
-
-  """
-  The version you just rated, now updated with its note and remarks, e.g. `v2` with note `4`
-  """
-  version: Version!
 }
 
 """
@@ -743,6 +693,11 @@ One version of a recipe — and, at the same time, one "essai" (a real attempt i
 """
 type Version {
   """
+  The version this one iterates on — the attempt it was built from, e.g. `2` for a `v3` proposed after cooking `v2`. `null` on the original `v1`, which builds on nothing.
+  """
+  basedOn: VersionNumber
+
+  """
   A short summary of what this version changes versus the previous one, e.g. `"Baked at 180°C instead of 200°C"`. A dish or Thermomix recipe may change several things at once. `null` on the original `v1`, which changes nothing.
   """
   change: String
@@ -763,7 +718,7 @@ type Version {
   ingredients: [Ingredient!]!
 
   """
-  Your rating of this attempt, from `1` (bad) to `5` (excellent). `null` until you have cooked it. A version needs `4` or more to become the recipe’s reference (see currentVersion).
+  Your rating of this attempt, from `1` (bad) to `5` (excellent). `null` until you have cooked it. The recipe’s best rating across its versions drives its display note (see bestNote).
   """
   note: Note
 

@@ -7,7 +7,7 @@ import {
   StepText,
   TmxTime,
 } from '~/domain/recipe/primitives'
-import { parseDraftResponse, parseImportResponse } from '~/system/ai/primitives'
+import { parseImportResponse, parsePropositionResponse } from '~/system/ai/primitives'
 import type { ImportAnalysis } from '~/system/ai/types'
 
 const base = { type: 'tmx', title: 'Risotto' }
@@ -232,9 +232,9 @@ describe('parseImportResponse — no recipe found', () => {
   })
 })
 
-describe('parseDraftResponse — full next-version draft', () => {
+describe('parsePropositionResponse — full next-version proposition', () => {
   test('parses the change summary, full ingredient/step lists and aligned tmxSteps', () => {
-    const result = parseDraftResponse(
+    const result = parsePropositionResponse(
       JSON.stringify({
         changeSummary: 'Bouillon 700 → 650 ml',
         rationale: 'Trop liquide',
@@ -263,7 +263,7 @@ describe('parseDraftResponse — full next-version draft', () => {
   })
 
   test('clamps the change summary to the domain limit', () => {
-    const result = parseDraftResponse(
+    const result = parsePropositionResponse(
       JSON.stringify({
         changeSummary: 'C'.repeat(500),
         rationale: 'ok',
@@ -276,7 +276,7 @@ describe('parseDraftResponse — full next-version draft', () => {
   })
 
   test('drops blank ingredients/steps', () => {
-    const result = parseDraftResponse(
+    const result = parsePropositionResponse(
       JSON.stringify({
         changeSummary: 'Ajustement',
         rationale: 'ok',

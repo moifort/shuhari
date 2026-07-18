@@ -3,10 +3,10 @@ import { z } from 'zod'
 import { RECIPE_MAX } from '~/domain/recipe/limits'
 import { DISH_CATEGORY_VALUES, RECIPE_TYPE_VALUES } from '~/domain/recipe/types'
 import type {
-  Draft,
   ImportAnalysis,
   ImportHash as ImportHashType,
   ImportTmxSettings,
+  Proposition,
 } from '~/system/ai/types'
 
 export const ImportHash = (value: unknown) => {
@@ -51,7 +51,7 @@ const SOURCE_LABEL_MAX = 200
 const RATIONALE_MAX = 2000
 
 // Cap array element counts so a runaway response can't produce thousands of rows.
-// Generous — real recipes/drafts stay well under this.
+// Generous — real recipes/propositions stay well under this.
 const MAX_ITEMS = 100
 
 const ingredientSchema = z.object({
@@ -83,13 +83,13 @@ const stepSchema = z.union([
     })),
 ])
 
-// Drop blank ingredients and cap the count. Shared by import and draft.
+// Drop blank ingredients and cap the count. Shared by import and proposition.
 const foldIngredients = (raw: { name: string; quantity: string }[]) =>
   raw.filter((i) => i.name && i.quantity).slice(0, MAX_ITEMS)
 
 // Drop blank steps, cap the count, and split into aligned steps/tmxSteps arrays.
 // tmxSteps collapses to null when no surviving step carries a setting. Shared by
-// import and draft.
+// import and proposition.
 const foldSteps = (
   raw: { text: string; tmx: ImportTmxSettings | null }[],
 ): { steps: string[]; tmxSteps: (ImportTmxSettings | null)[] | null } => {
@@ -130,14 +130,14 @@ export const ImportAnalysisSchema = z
     }
   })
 
-export const DraftSchema = z
+export const PropositionSchema = z
   .object({
     changeSummary: clampedField(RECIPE_MAX.changeSummary),
     rationale: clampedField(RATIONALE_MAX),
     ingredients: z.array(ingredientSchema).default([]),
     steps: z.array(stepSchema).default([]),
   })
-  .transform((raw): Draft => {
+  .transform((raw): Proposition => {
     const { steps, tmxSteps } = foldSteps(raw.steps)
     return {
       changeSummary: raw.changeSummary,
@@ -164,4 +164,5 @@ export const parseImportResponse = (text: string): ImportAnalysis | 'no-recipe-f
     : analysis
 }
 
-export const parseDraftResponse = (text: string): Draft => DraftSchema.parse(JSON.parse(text))
+export const parsePropositionResponse = (text: string): Proposition =>
+  PropositionSchema.parse(JSON.parse(text))

@@ -11,10 +11,11 @@ import '~/domain/recipe/infrastructure/graphql/inputs'
 import '~/domain/recipe/infrastructure/graphql/queries'
 import '~/domain/recipe/infrastructure/graphql/mutations'
 
-// Draft domain (ephemeral AI next-version drafts — request/accept mutations)
-import '~/domain/draft/infrastructure/graphql/types'
-import '~/domain/draft/infrastructure/graphql/inputs'
-import '~/domain/draft/infrastructure/graphql/mutations'
+// Proposition domain (ephemeral AI propositions — import preview + next-version
+// suggestions; request/accept + analyzeImport mutations)
+import '~/domain/proposition/infrastructure/graphql/types'
+import '~/domain/proposition/infrastructure/graphql/inputs'
+import '~/domain/proposition/infrastructure/graphql/mutations'
 
 // Changelog (application release notes)
 import '~/system/changelog/infrastructure/graphql/types'
@@ -24,9 +25,5 @@ import '~/system/changelog/infrastructure/graphql/queries'
 import '~/system/portability/infrastructure/graphql/types'
 import '~/system/portability/infrastructure/graphql/queries'
 import '~/system/portability/infrastructure/graphql/mutations'
-
-// AI import (Gemini recipe extraction)
-import '~/system/ai/graphql/types'
-import '~/system/ai/graphql/mutations'
 
 export const schema = builder.toSchema()

@@ -1,0 +1,19 @@
+import type { Ingredient, StepText, TmxSettings, VersionNumber } from '~/domain/recipe/types'
+
+// An ephemeral next-version proposition, already validated into branded domain
+// shapes — either freshly branded from the AI (`fromEssai`) or the user's inline
+// edits from iOS. Never persisted: it is generated, returned, and handed straight
+// back on accept, which appends it as version n+1 based on `basedOn`.
+export type Proposition = {
+  basedOn: VersionNumber
+  changeSummary: string
+  rationale: string
+  ingredients: Ingredient[]
+  steps: StepText[]
+  tmxSteps: (TmxSettings | null)[]
+}
+
+// The client-supplied proposition to accept: everything that becomes version n+1,
+// including the `basedOn` it iterates on (threaded back so accept never rescans
+// the lineage to recover it).
+export type AcceptedProposition = Proposition

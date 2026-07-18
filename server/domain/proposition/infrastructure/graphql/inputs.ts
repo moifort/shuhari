@@ -1,15 +1,21 @@
 import { IngredientInput, TmxSettingsInput } from '~/domain/recipe/infrastructure/graphql/inputs'
 import { builder } from '~/domain/shared/graphql/builder'
 
-// The full next-version draft the client sends back on accept. It carries the
-// AI's (possibly user-edited) content plus its summary and rationale — send the
-// COMPLETE next version, never a partial edit.
-export const DraftInput = builder.inputType('DraftInput', {
+// The full next-version proposition the client sends back on accept. It carries the
+// AI's (possibly user-edited) content plus its summary, rationale and the version it
+// iterates on — send the COMPLETE next version, never a partial edit.
+export const PropositionInput = builder.inputType('PropositionInput', {
   description:
-    'A complete next-version draft to accept as an iteration, e.g. the AI’s ' +
+    'A complete next-version proposition to accept as an iteration, e.g. the AI’s ' +
     '`"Less sugar, longer resting time"` proposal. Send the FULL next version (omitted ' +
     'ingredients/steps wipe those lists).',
   fields: (t) => ({
+    basedOn: t.field({
+      type: 'VersionNumber',
+      required: true,
+      description:
+        'The version this iterates on — echo back the `basedOn` from the proposal, e.g. `2`',
+    }),
     changeSummary: t.field({
       type: 'String',
       required: true,

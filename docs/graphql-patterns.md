@@ -266,10 +266,10 @@ reader, not a type annotation. Concretely:
 - **Explain nullability in plain words**: what does `null` *mean* here? ("Null until you have
   cooked it", "Null while the recipe is still being dialled in").
 - **Cross-reference sibling fields by name** so the reader can navigate the graph: "see
-  `currentVersion`", "ask for a draft separately (see `requestDraft`)".
+  `versionToOpen`", "ask for a proposition separately (see `requestProposition`)".
 - **Flag destructive actions** in the mutation description ("WARNING: this REPLACES everything…").
 - Keep the domain vocabulary consistent across the schema (an *essai* is an attempt, a *version* is
-  one entry in the chain, an *iteration* is an accepted AI draft).
+  one entry in the chain, an *iteration* is an accepted AI proposition).
 
 ```typescript
 note: t.field({
