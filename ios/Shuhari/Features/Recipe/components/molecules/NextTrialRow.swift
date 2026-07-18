@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// One compact "prochain essai" row: the change to apply as title, the reason with the version badge trailing the subtitle, and a chevron affordance. Primitive-first — no domain struct.
+/// One compact "prochain essai" row: the change to apply as title, the reason with the version badge leading the subtitle, and a chevron affordance. Primitive-first — no domain struct.
 struct NextTrialRow: View {
     let versionNumber: Int
     let change: String?
@@ -14,6 +14,7 @@ struct NextTrialRow: View {
                     .monospacedDigit()
                     .lineLimit(1)
                 HStack(spacing: Theme.Spacing.s) {
+                    StatusTag(kind: .version(versionNumber))
                     if let why, !why.isEmpty {
                         Text(why)
                             .font(.footnote)
@@ -21,7 +22,6 @@ struct NextTrialRow: View {
                             .lineLimit(1)
                     }
                     Spacer(minLength: 0)
-                    StatusTag(kind: .version(versionNumber))
                 }
             }
             Spacer(minLength: Theme.Spacing.s)

@@ -14,6 +14,7 @@ struct NextTrialsSheet: View {
 
     let trials: [Item]
     let onSelect: (Int) -> Void
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
@@ -40,6 +41,13 @@ struct NextTrialsSheet: View {
             }
             .navigationTitle("Essais")
             .navigationBarTitleDisplayMode(.inline)
+            .contentMargins(.top, Theme.Spacing.s, for: .scrollContent)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Fermer") { dismiss() }
+                        .accessibilityIdentifier("close-next-trials")
+                }
+            }
         }
         .accessibilityIdentifier("next-trials-sheet")
         .presentationDetents([.medium, .large])
@@ -52,8 +60,12 @@ struct NextTrialsSheet: View {
         .sheet(isPresented: .constant(true)) {
             NextTrialsSheet(
                 trials: [
-                    .init(versionNumber: 4, change: "Cuisson 3 h → 3 h 30", why: "La viande était encore un peu ferme."),
-                    .init(versionNumber: 2, change: "Température 93 → 92 °C", why: nil),
+                    .init(versionNumber: 6, change: "Sel 8 → 10 g", why: "Assaisonnement en retrait."),
+                    .init(versionNumber: 5, change: "Cuisson 3 h → 3 h 30", why: "La viande était encore un peu ferme."),
+                    .init(versionNumber: 4, change: "Température 93 → 92 °C", why: "Extraction trop amère."),
+                    .init(versionNumber: 3, change: "Repos 10 → 20 min", why: nil),
+                    .init(versionNumber: 2, change: "Oignons +50 g", why: "Manque de fond."),
+                    .init(versionNumber: 1, change: nil, why: "Version d'origine importée."),
                 ],
                 onSelect: { _ in }
             )

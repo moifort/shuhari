@@ -125,7 +125,7 @@ private struct RecipeDetailGalleryScreen: View {
 
 /// The beaker CTA's sheet (`NextTrialsSheet`) presented over the fiche, so the
 /// gallery can capture the versions awaiting a first run offline. Bœuf
-/// bourguignon has one version awaiting a first run (v4).
+/// bourguignon has several versions awaiting a first run (v1–v6).
 private struct NextTrialsSheetGalleryScreen: View {
     var body: some View {
         Text("Fiche recette")
@@ -134,7 +134,12 @@ private struct NextTrialsSheetGalleryScreen: View {
             .sheet(isPresented: .constant(true)) {
                 NextTrialsSheet(
                     trials: [
-                        .init(versionNumber: 4, change: "Cuisson 3 h → 3 h 30", why: "La viande était encore un peu ferme."),
+                        .init(versionNumber: 6, change: "Sel 8 → 10 g", why: "Assaisonnement en retrait."),
+                        .init(versionNumber: 5, change: "Cuisson 3 h → 3 h 30", why: "La viande était encore un peu ferme."),
+                        .init(versionNumber: 4, change: "Température 93 → 92 °C", why: "Extraction trop amère."),
+                        .init(versionNumber: 3, change: "Repos 10 → 20 min", why: nil),
+                        .init(versionNumber: 2, change: "Oignons +50 g", why: "Manque de fond."),
+                        .init(versionNumber: 1, change: nil, why: "Version d'origine importée."),
                     ],
                     onSelect: { _ in }
                 )
