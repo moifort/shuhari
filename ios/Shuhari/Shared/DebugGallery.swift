@@ -48,7 +48,20 @@ struct DebugGallery: View {
             NavigationStack {
                 EssaiDetailPage(
                     recipeTitle: Fixtures.bourguignon.title,
-                    version: Fixtures.bourguignonV3
+                    versionNumber: 3,
+                    date: Fixtures.date,
+                    change: "Vin rouge 50 → 75 cl",
+                    why: "La sauce manquait de corps.",
+                    ingredients: Fixtures.bourguignonV3.ingredients.map {
+                        .init(name: $0.name, quantity: $0.quantity, highlighted: $0.name == "Vin rouge")
+                    },
+                    steps: Fixtures.bourguignonV3.steps.enumerated().map { index, text in
+                        .init(index: index, text: text, time: nil, temperature: nil, speed: nil, reverse: false, highlighted: index == 3)
+                    },
+                    hasResult: true,
+                    note: 4,
+                    remarks: "Sauce nappante, viande fondante.",
+                    photoUrl: nil
                 )
             }
         case "execute":

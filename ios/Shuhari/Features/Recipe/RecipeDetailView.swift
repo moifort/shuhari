@@ -14,6 +14,9 @@ struct RecipeDetailView: View {
     @State private var recordRequest: ExecutionRequest?
     @State private var showDeleteConfirm = false
     @State private var actionError = ErrorPresenter()
+    /// The version a "prochain essai" row picked: consumed on the sheet's dismiss
+    /// so the navigation push isn't swallowed by the sheet teardown.
+    @State private var previewVersion: Int?
 
     init(
         recipeId: String,
@@ -47,7 +50,14 @@ struct RecipeDetailView: View {
                 // The fiche is a focused, Photos-style detail: hide the tab bar so the
                 // floating action bar owns the bottom edge.
                 .toolbar(.hidden, for: .tabBar)
-                .sheet(isPresented: $showToTest) {
+                .sheet(isPresented: $showToTest, onDismiss: {
+                    // Sequence the push after the sheet is fully gone, so the
+                    // path mutation isn't eaten by the dismissal.
+                    if let version = previewVersion {
+                        previewVersion = nil
+                        path.append(RecipeRoute.essai(recipeId: recipeId, versionNumber: version))
+                    }
+                }) {
                     NextTrialsSheet(
                         trials: pendingEssaiItems(recipe),
                         onDelete: { versionNumber in
@@ -61,8 +71,9 @@ struct RecipeDetailView: View {
                             }
                         }
                     ) { versionNumber in
+                        // Tapping a row closes the sheet, then navigates to the version.
+                        previewVersion = versionNumber
                         showToTest = false
-                        presentRecordTrial(versionNumber: versionNumber)
                     }
                 }
                 // The record-trial flow as a half-screen sheet: capture at .medium,

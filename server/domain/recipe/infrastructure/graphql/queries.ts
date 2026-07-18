@@ -8,7 +8,9 @@ builder.queryField('recipes', (t) =>
   t.field({
     type: RecipesType,
     description:
-      'A page of the current user’s recipe library, filtered by type and sorted per view',
+      'One page of your recipe library, loaded a few at a time for infinite scroll. You can ' +
+      'narrow it (e.g. only TMX recipes, or only desserts) and choose the order. For example: ' +
+      'the 20 most recently updated dishes, then pass the last id as "after" to load the next 20.',
     args: {
       type: t.arg({ type: RecipeTypeEnum, description: 'Facet: keep only this recipe type' }),
       category: t.arg({

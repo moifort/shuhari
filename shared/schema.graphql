@@ -339,7 +339,9 @@ A rating out of 5, as a whole number from 1 (bad) to 5 (excellent). A version ra
 scalar Note
 
 type Query {
-  """Application changelog, most recent versions first"""
+  """
+  The app’s "What’s new" list — one entry per release, newest first. Feeds the changelog screen. For example: { version: "1.2", date: "2026-07-18…", notes: ["Faster recipe imports", "Fixed a crash when exporting"] }, then the 1.1 entry, and so on.
+  """
   changelog: [ChangelogEntry!]!
 
   """
@@ -347,7 +349,9 @@ type Query {
   """
   exportData: String!
 
-  """The home screen read model for the current user"""
+  """
+  Everything the home screen needs in one shot: the attempts waiting to be cooked (toTest), your whole library, and your latest cooked essais. For example, toTest might hold "Grandma’s lasagna v3" while recentEssais shows the risotto you rated yesterday.
+  """
   home: Home!
 
   """
@@ -359,7 +363,7 @@ type Query {
   ): Recipe
 
   """
-  A page of the current user’s recipe library, filtered by type and sorted per view
+  One page of your recipe library, loaded a few at a time for infinite scroll. You can narrow it (e.g. only TMX recipes, or only desserts) and choose the order. For example: the 20 most recently updated dishes, then pass the last id as "after" to load the next 20.
   """
   recipes(
     """Cursor: return the page following this recipe id"""
