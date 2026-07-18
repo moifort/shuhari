@@ -157,26 +157,6 @@ input DraftInput {
   tmxSteps: [TmxSettingsInput]
 }
 
-"""
-The read model behind the home screen, e.g. `"Grandma’s lasagna v3"` waiting to be cooked plus yesterday’s risotto essai
-"""
-type Home {
-  """
-  Every recipe (the app groups them by type), e.g. `"Grandma’s lasagna"` and `"Tarte tatin"`
-  """
-  library: [Recipe!]!
-
-  """
-  Latest executed versions across all recipes, newest first, e.g. the risotto `v2` you rated `4` yesterday
-  """
-  recentEssais: [Version!]!
-
-  """
-  Recipes with a pending version awaiting an essai, e.g. `"Grandma’s lasagna"` whose `v3` is queued up
-  """
-  toTest: [Recipe!]!
-}
-
 """Structured recipe extracted from an import source (editable preview)"""
 type ImportAnalysis {
   """The dish category detected by the AI"""
@@ -454,18 +434,6 @@ type Query {
   ```
   """
   exportData: String!
-
-  """
-  Everything the home screen needs in one shot: the attempts waiting to be cooked (toTest), your whole library, and your latest cooked essais. For example, toTest might hold `"Grandma’s lasagna v3"` while recentEssais shows the risotto you rated yesterday.
-  
-  ```graphql
-  home {
-    toTest { id title toTest { number } }
-    recentEssais { number note remarks }
-  }
-  ```
-  """
-  home: Home!
 
   """
   Fetch one recipe by its id, with everything on it. Returns `null` if no such recipe exists.

@@ -16,10 +16,6 @@ import '~/domain/draft/infrastructure/graphql/types'
 import '~/domain/draft/infrastructure/graphql/inputs'
 import '~/domain/draft/infrastructure/graphql/mutations'
 
-// Home domain (read-only aggregation)
-import '~/domain/home/infrastructure/graphql/types'
-import '~/domain/home/infrastructure/graphql/queries'
-
 // Changelog (application release notes)
 import '~/system/changelog/infrastructure/graphql/types'
 import '~/system/changelog/infrastructure/graphql/queries'

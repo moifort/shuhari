@@ -81,7 +81,7 @@ server/
 ```
 
 Not every domain has every file. The full-stack domains are `recipe`, `trial`, `proposal`.
-Read-only aggregations (`home`, `changelog`) have no `command.ts`/`repository.ts`;
+The read-only `changelog` aggregation has no `command.ts`/`repository.ts`;
 `portability` orchestrates through a `use-case.ts` and owns no repository. `changelog` and
 `portability` are system-hosted mini-domains: they live under `server/system/` (not
 `server/domain/`) but still obey the domain rules (folder shape, purity, naming, no-throw).
@@ -138,9 +138,8 @@ cap); deletes use `deleteInBatches`. See the [domain guide](./domain-guide.md).
 
 There is **no** `read-model/` directory. Composite reads are served two ways:
 
-1. **Read-only domains** — `home` (the dashboard aggregation) and `changelog` (system-hosted
-   under `server/system/`) expose a `query.ts` that assembles data through other domains'
-   public `Query` namespaces.
+1. **Read-only domains** — `changelog` (system-hosted under `server/system/`) exposes a
+   `query.ts` that assembles data through other domains' public `Query` namespaces.
 2. **GraphQL satellite loaders** — nested fields on `Recipe`/`Version` (`currentVersion`,
    `trials`, `pendingProposal`, `variations`, …) resolve through per-request, micro-batched
    loaders in `server/domain/shared/graphql/loaders.ts`, so a page of recipes never triggers
