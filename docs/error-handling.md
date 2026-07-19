@@ -16,12 +16,12 @@ domain entity itself; a miss is a bare string literal with `as const`:
 
 ```ts
 // Return type inferred: Promise<RecipeVersion | 'not-found'>
-export const recordEssai = async (userId: UserId, input: RecordEssaiInput) => {
+export const recordAttempt = async (userId: UserId, input: RecordAttemptInput) => {
   const recipe = await repository.findBy(userId, input.recipeId)
   if (!recipe) return 'not-found' as const
   const version = await repository.findVersion(input.recipeId, input.versionNumber)
   if (!version) return 'not-found' as const
-  const executed: RecipeVersion = { ...version, executedAt: new Date(), note: input.note, remarks: input.remarks }
+  const executed: RecipeVersion = { ...version, executedAt: new Date(), rating: input.rating, remarks: input.remarks }
   return atomically(async (batch) => {
     await repository.saveVersion(executed, batch)
     await repository.save({ ...recipe, updatedAt: new Date() }, batch)
@@ -48,7 +48,7 @@ branch with `match().exhaustive()` from `ts-pattern`; the success arm matches "n
 import { match, P } from 'ts-pattern'
 import { domainError } from '~/domain/shared/graphql/errors'
 
-const result = await RecipeCommand.recordEssai(userId, input)
+const result = await RecipeCommand.recordAttempt(userId, input)
 return match(result)
   .with('not-found', domainError)
   .with(P.not(P.string), (version) => version)

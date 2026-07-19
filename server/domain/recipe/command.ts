@@ -4,7 +4,7 @@ import { randomRecipeId, VersionNumber } from '~/domain/recipe/primitives'
 import type {
   DishCategory,
   Ingredient,
-  Note,
+  Rating,
   Recipe,
   RecipeId,
   RecipeTitle,
@@ -39,16 +39,16 @@ export type NewVersionInput = {
   tmxSteps: (TmxSettings | null)[]
 }
 
-export type RecordEssaiInput = {
+export type RecordAttemptInput = {
   recipeId: RecipeId
   versionNumber: VersionNumberT
-  note: Note
+  rating: Rating
   remarks: Remarks
   photoPath?: string | null
 }
 
 export namespace RecipeCommand {
-  // Create → recipe + its v1, written atomically. v1 is the original "essai à faire"
+  // Create → recipe + its v1, written atomically. v1 is the original planned attempt
   // (`basedOn` is null, it iterates on nothing) and awaits its first cook.
   export const create = async (userId: UserId, input: NewRecipeInput, sourceLabel?: string) => {
     const now = new Date()
@@ -94,7 +94,7 @@ export namespace RecipeCommand {
       ingredients: input.ingredients,
       tmxSteps,
       executedAt: null,
-      note: null,
+      rating: null,
       remarks: null,
       photoPath: null,
     }
@@ -110,12 +110,12 @@ export namespace RecipeCommand {
     })
   }
 
-  // Record the essai outcome onto a version — overwritable: re-cooking the same
-  // version simply rewrites its note/remarks/executedAt in place. The outcome and
+  // Record the attempt outcome onto a version — overwritable: re-cooking the same
+  // version simply rewrites its rating/remarks/executedAt in place. The outcome and
   // the recipe's `updatedAt` bump land in one batch (all-or-nothing).
-  export const recordEssai = async (
+  export const recordAttempt = async (
     userId: UserId,
-    input: RecordEssaiInput,
+    input: RecordAttemptInput,
   ): Promise<RecipeVersion | 'not-found'> => {
     const recipe = await repository.findBy(userId, input.recipeId)
     if (!recipe) return 'not-found' as const
@@ -124,7 +124,7 @@ export namespace RecipeCommand {
     const executed: RecipeVersion = {
       ...version,
       executedAt: new Date(),
-      note: input.note,
+      rating: input.rating,
       remarks: input.remarks,
       photoPath: input.photoPath ?? null,
     }
@@ -180,7 +180,7 @@ export namespace RecipeCommand {
       ingredients: input.ingredients,
       tmxSteps,
       executedAt: null,
-      note: null,
+      rating: null,
       remarks: null,
       photoPath: null,
     }

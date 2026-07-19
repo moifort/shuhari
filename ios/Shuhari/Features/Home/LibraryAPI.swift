@@ -37,7 +37,7 @@ enum LibraryAPI {
                     type: RecipeType(graphql: recipe.type),
                     category: DishCategory(graphql: recipe.category),
                     versionCount: recipe.versionCount,
-                    bestNote: recipe.bestNote,
+                    bestRating: recipe.bestRating,
                     updatedAt: GraphQLHelpers.parseISO8601(recipe.updatedAt) ?? Date.distantPast
                 )
             },

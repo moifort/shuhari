@@ -3,8 +3,8 @@ import { builder } from './builder'
 // Custom scalars must be registered before any type that references them.
 import './scalars'
 
-// Recipe domain (the aggregate root: Recipe + Version types, incl. the essai
-// outcome folded onto each version and the recordEssai mutation)
+// Recipe domain (the aggregate root: Recipe + Version types, incl. the attempt
+// outcome folded onto each version and the recordAttempt mutation)
 import '~/domain/recipe/infrastructure/graphql/enums'
 import '~/domain/recipe/infrastructure/graphql/types'
 import '~/domain/recipe/infrastructure/graphql/inputs'

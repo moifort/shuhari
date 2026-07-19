@@ -249,27 +249,27 @@ type Mutation {
   ): ImportResult!
 
   """
-  Save what happened when you cooked a version: its rating and your notes. Overwritable — recording again on the same version simply updates it. Fast and does not call the AI. If the rating is low and you want a suggested improvement, ask for a proposal separately (see requestProposal). Returns the version, now updated with its outcome.
+  Save what happened when you cooked a version: its rating and your remarks. Overwritable — recording again on the same version simply updates it. Fast and does not call the AI. If the rating is low and you want a suggested improvement, ask for a proposal separately (see requestProposal). Returns the version, now updated with its outcome.
   
   ```graphql
-  recordEssai(input: {
+  recordAttempt(input: {
     recipeId: "9f1c-a3b2"
     versionNumber: 2
-    note: 4
+    rating: 4
     remarks: "Still a touch too sweet, but the texture is spot on"
   }) {
     number
-    note
+    rating
   }
   ```
   """
-  recordEssai(
-    """The attempt to record — which version, the rating, the notes"""
-    input: RecordEssaiInput!
+  recordAttempt(
+    """The attempt to record — which version, the rating, the remarks"""
+    input: RecordAttemptInput!
   ): Version!
 
   """
-  Ask the AI for a suggested next version. It looks at the version you just cooked (its rating and notes) and proposes one improvement. Nothing is saved yet — you get a proposal to review.
+  Ask the AI for a suggested next version. It looks at the version you just cooked (its rating and remarks) and proposes one improvement. Nothing is saved yet — you get a proposal to review.
   
   ```graphql
   requestProposal(recipeId: "9f1c-a3b2", versionNumber: 2) {
@@ -309,12 +309,7 @@ type Mutation {
 }
 
 """
-A rating out of 5, as a whole number from `1` (bad) to `5` (excellent), e.g. `4`. A version rated `4` or more can become the recipe’s reference.
-"""
-scalar Note
-
-"""
-The AI’s suggestion for your next attempt, e.g. `"Less sugar, longer resting time"`. After an essai, the AI reads your rating and notes and proposes a tweaked version. It is just a proposal shown on screen — nothing is saved until you accept it (see acceptProposal).
+The AI’s suggestion for your next attempt, e.g. `"Less sugar, longer resting time"`. After an attempt, the AI reads your rating and remarks and proposes a tweaked version. It is just a proposal shown on screen — nothing is saved until you accept it (see acceptProposal).
 """
 type Proposal {
   """
@@ -333,7 +328,7 @@ type Proposal {
   ingredients: [Ingredient!]!
 
   """
-  The AI’s reasoning — why it thinks this change will help, based on your last notes, e.g. `"You noted it was too sweet, so cutting the sugar should balance it"`
+  The AI’s reasoning — why it thinks this change will help, based on your last remarks, e.g. `"You noted it was too sweet, so cutting the sugar should balance it"`
   """
   rationale: String!
 
@@ -396,7 +391,7 @@ type Query {
   changelog: [ChangelogEntry!]!
 
   """
-  Download all your data as one JSON text — a full backup of every recipe and version you own (e.g. your `"Grandma’s lasagna"` and all its essais). Pair it with importData to move or restore your library.
+  Download all your data as one JSON text — a full backup of every recipe and version you own (e.g. your `"Grandma’s lasagna"` and all its attempts). Pair it with importData to move or restore your library.
   
   ```graphql
   query {
@@ -412,7 +407,7 @@ type Query {
   ```graphql
   recipe(id: "9f1c-a3b2") {
     title
-    versionToOpen { number note }
+    versionToOpen { number rating }
     versions { number change }
   }
   ```
@@ -427,7 +422,7 @@ type Query {
   
   ```graphql
   recipes(type: TMX, sort: UPDATED_AT, order: DESC, limit: 20) {
-    items { id title bestNote }
+    items { id title bestRating }
     hasMore
   }
   ```
@@ -458,13 +453,18 @@ type Query {
 }
 
 """
-A dish you are perfecting over time. A recipe is the whole experiment, not a single recipe card: it holds a chain of versions (v1, v2, v3 …), each one an attempt in the kitchen. Its state is derived from that chain — its best rating (bestNote) and the version to open from the home (versionToOpen). Think `"Grandma’s lasagna"` and every attempt you have made to nail it.
+A rating out of 5, as a whole number from `1` (bad) to `5` (excellent), e.g. `4`. The best rating across a recipe’s attempts drives the version its fiche opens on.
+"""
+scalar Rating
+
+"""
+A dish you are perfecting over time. A recipe is the whole experiment, not a single recipe card: it holds a chain of versions (v1, v2, v3 …), each one an attempt in the kitchen. Its state is derived from that chain — its best rating (bestRating) and the version to open from the home (versionToOpen). Think `"Grandma’s lasagna"` and every attempt you have made to nail it.
 """
 type Recipe {
   """
   The best rating this recipe ever got, across all the attempts you have cooked, e.g. `5` (`1`–`5`). `null` if you have never tried any version yet.
   """
-  bestNote: Note
+  bestRating: Rating
 
   """
   Which course it is, e.g. `DESSERT` for a tarte tatin. Set once at import and shared by every version; used to group the library.
@@ -557,21 +557,21 @@ type Recipes {
 }
 
 """
-The result of cooking one version: which version you tried, how you rate it, and your notes, e.g. `v2` rated `4`. Recorded once — a version’s outcome cannot be edited afterwards.
+The result of cooking one version: which version you tried, how you rate it, and your remarks, e.g. `v2` rated `4`. Recorded once — a version’s outcome cannot be edited afterwards.
 """
-input RecordEssaiInput {
-  """Your rating, `1` to `5`, e.g. `4`"""
-  note: Note!
-
+input RecordAttemptInput {
   """
   Base64 JPEG of the result, e.g. `"/9j/4AAQSkZJRg…"` (optional; not yet stored)
   """
   photo: String
 
+  """Your rating, `1` to `5`, e.g. `4`"""
+  rating: Rating!
+
   """Which recipe you cooked, e.g. the id of `"Grandma’s lasagna"`"""
   recipeId: RecipeId!
 
-  """Your notes on how it turned out, e.g. `"Still a touch too sweet"`"""
+  """Your remarks on how it turned out, e.g. `"Still a touch too sweet"`"""
   remarks: Remarks!
 
   """Which version of it you tried, e.g. `2`"""
@@ -670,7 +670,7 @@ Identifies one signed-in cook, e.g. `"user-7f3a"`. Every recipe belongs to exact
 scalar UserId
 
 """
-One version of a recipe — and, at the same time, one "essai" (a real attempt in the kitchen). Two sides to it: the CONTENT (its ingredients and steps, frozen the moment the version is created) and the OUTCOME (its rating and remarks, filled in once you have actually cooked it). Versions form a chain: `v1 → v2 → v3` … Each new version builds on the one before, so you can see what changed and whether it made the dish better.
+One version of a recipe — and, at the same time, one attempt (a real cook in the kitchen). Two sides to it: the CONTENT (its ingredients and steps, frozen the moment the version is created) and the OUTCOME (its rating and remarks, filled in once you have actually cooked it). Versions form a chain: `v1 → v2 → v3` … Each new version builds on the one before, so you can see what changed and whether it made the dish better.
 """
 type Version {
   """
@@ -689,7 +689,7 @@ type Version {
   createdAt: DateTime!
 
   """
-  The day you actually cooked this version, e.g. `"2026-07-18T14:30:00.000Z"`. `null` means it is still an "essai à faire" (a to-do you have planned but not tried yet).
+  The day you actually cooked this version, e.g. `"2026-07-18T14:30:00.000Z"`. `null` means it is still a planned attempt (a to-do you have lined up but not tried yet).
   """
   executedAt: DateTime
 
@@ -699,17 +699,12 @@ type Version {
   ingredients: [Ingredient!]!
 
   """
-  Your rating of this attempt, from `1` (bad) to `5` (excellent). `null` until you have cooked it. The recipe’s best rating across its versions drives its display note (see bestNote).
-  """
-  note: Note
-
-  """
   Its rank in the chain — `1` is the original import, `2` the first tweak, and so on
   """
   number: VersionNumber!
 
   """
-  A short note about its origin, e.g. `"Marmiton"` (the site it was imported from), or `null` if none
+  A short label about its origin, e.g. `"Marmiton"` (the site it was imported from), or `null` if none
   """
   originDetail: String
 
@@ -722,6 +717,11 @@ type Version {
   A link to the photo of the result, e.g. `"https://…/lasagna.jpg"` (always `null` for now — photos aren’t stored yet)
   """
   photoUrl: String
+
+  """
+  Your rating of this attempt, from `1` (bad) to `5` (excellent). `null` until you have cooked it. The recipe’s best rating across its versions drives what it displays (see bestRating).
+  """
+  rating: Rating
 
   """
   Which recipe this version belongs to, e.g. the id of `"Grandma’s lasagna"`
@@ -764,7 +764,7 @@ Where a version came from — how this entry in the lineage was born, e.g. `IMPO
 """
 enum VersionOriginKind {
   """
-  An iteration the AI proposed from the previous essai and the cook accepted, e.g. `"Less sugar, longer resting time"`
+  An iteration the AI proposed from the previous attempt and the cook accepted, e.g. `"Less sugar, longer resting time"`
   """
   AI_PROPOSAL
 

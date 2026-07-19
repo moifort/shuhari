@@ -47,7 +47,7 @@ export type RecipeSatelliteLoaders = {
 
 export const recipeSatelliteLoaders = (userId: UserId): RecipeSatelliteLoaders => ({
   // The full lineage of each recipe, batched from a single recipe-versions scan —
-  // backs the recipe's derived best note and the version to open (both read the
+  // backs the recipe's derived best rating and the version to open (both read the
   // whole lineage, so they share this one batch).
   versionsByRecipe: batchedBy(
     (recipeId) => recipeId,

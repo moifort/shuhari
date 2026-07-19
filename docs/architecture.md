@@ -105,7 +105,7 @@ Each domain is a self-contained bounded context:
 - **query.ts** — Public read operations (e.g. `RecipeQuery`). Thin pass-through to the
   repository; single-item lookups return `'not-found' as const` on absence.
 - **business-rules.ts** — (optional) Pure, **synchronous** functions. Names ARE the business
-  concept (`bestNote`, `versionToOpen`, `nextVersionNumber` — never `computeX`).
+  concept (`bestRating`, `versionToOpen`, `nextVersionNumber` — never `computeX`).
   100% test coverage (`business-rules.unit.test.ts`).
 - **use-case.ts** — (optional) Multi-domain orchestration. Goes through commands/queries
   only — **may not import any repository or touch storage** (enforced). Names carry intent
@@ -130,7 +130,7 @@ const recipes = () => db().collection('recipes').withConverter(genericDataConver
 append-only collection keyed by a deterministic id:
 
 - `recipes` — the aggregate root (a small pointer: `versionCount`, `updatedAt`, …); the recipe's
-  state (best note, version to open) is *derived* from its versions, not stored on it
+  state (best rating, version to open) is *derived* from its versions, not stored on it
 - `recipe-versions` — one immutable doc per version, keyed `${recipeId}_${number}`
 
 Multi-document writes are made atomic with `atomically` (a single committed `WriteBatch`);
@@ -144,7 +144,7 @@ There is **no** `read-model/` directory. Composite reads are served two ways:
 1. **Read-only domains** — `changelog` (system-hosted under `server/system/`) exposes a
    `query.ts` that assembles data through other domains' public `Query` namespaces.
 2. **GraphQL satellite loaders** — derived fields on `Recipe` (`versions`, `versionToOpen`,
-   `bestNote`) resolve through the per-request, micro-batched `versionsByRecipe` loader in
+   `bestRating`) resolve through the per-request, micro-batched `versionsByRecipe` loader in
    `server/domain/shared/graphql/loaders.ts`, so a page of recipes never triggers N+1 reads. See
    [graphql-patterns.md](./graphql-patterns.md).
 

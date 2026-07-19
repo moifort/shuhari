@@ -56,7 +56,7 @@ enum Fixtures {
         ingredients: bourguignonIngredientsEarly,
         steps: bourguignonSteps,
         tmxSteps: [],
-        recipeId: "bourguignon", note: 3,
+        recipeId: "bourguignon", rating: 3,
         remarks: "Bon mais la sauce manque de corps.",
         executedAt: date.addingTimeInterval(-86_400 * 28), photoUrl: nil,
         createdAt: date.addingTimeInterval(-86_400 * 30)
@@ -68,7 +68,7 @@ enum Fixtures {
         ingredients: bourguignonIngredientsEarly,
         steps: bourguignonSteps,
         tmxSteps: [],
-        recipeId: "bourguignon", note: 3,
+        recipeId: "bourguignon", rating: 3,
         remarks: "Plus parfumé, encore un peu ferme.",
         executedAt: date.addingTimeInterval(-86_400 * 18), photoUrl: nil,
         createdAt: date.addingTimeInterval(-86_400 * 20)
@@ -85,7 +85,7 @@ enum Fixtures {
         steps: bourguignonSteps,
         tmxSteps: [],
         recipeId: "bourguignon",
-        note: 4,
+        rating: 4,
         remarks: "Sauce nappante, viande fondante.",
         executedAt: date.addingTimeInterval(-86_400 * 2),
         photoUrl: nil,
@@ -103,7 +103,7 @@ enum Fixtures {
         steps: bourguignonStepsV4,
         tmxSteps: [],
         recipeId: "bourguignon",
-        note: nil,
+        rating: nil,
         remarks: nil,
         executedAt: nil,
         photoUrl: nil,
@@ -118,13 +118,13 @@ enum Fixtures {
         createdAt: date.addingTimeInterval(-86_400 * 30),
         updatedAt: date,
         versions: [bourguignonV1, bourguignonV2, bourguignonV3, bourguignonV4],
-        bestNote: 4,
-        // The essai in progress: v4 is built on the best-rated v3.
+        bestRating: 4,
+        // The attempt in progress: v4 is built on the best-rated v3.
         versionToOpen: bourguignonV4
     )
 
-    /// The tried versions of the bourguignon, most recent first — its essai journal.
-    static let bourguignonEssais = bourguignon.essais
+    /// The tried versions of the bourguignon, most recent first — its attempt journal.
+    static let bourguignonAttempts = bourguignon.attempts
 
     // MARK: - Risotto (tmx, per-step machine settings)
 
@@ -151,7 +151,7 @@ enum Fixtures {
             nil,
         ],
         recipeId: "risotto",
-        note: 4,
+        rating: 4,
         remarks: "Bonne texture, manque un peu de sel.",
         executedAt: date.addingTimeInterval(-86_400 * 2),
         photoUrl: nil,
@@ -166,7 +166,7 @@ enum Fixtures {
         createdAt: date.addingTimeInterval(-86_400 * 12),
         updatedAt: date,
         versions: [risottoV2],
-        bestNote: 4,
+        bestRating: 4,
         versionToOpen: risottoV2
     )
 
@@ -182,7 +182,7 @@ enum Fixtures {
         steps: bourguignonSteps,
         tmxSteps: [],
         recipeId: "fresh-import",
-        note: nil,
+        rating: nil,
         remarks: nil,
         executedAt: nil,
         photoUrl: nil,
@@ -197,7 +197,7 @@ enum Fixtures {
         createdAt: date,
         updatedAt: date,
         versions: [freshImportV1],
-        bestNote: nil,
+        bestRating: nil,
         versionToOpen: freshImportV1
     )
 
@@ -263,10 +263,10 @@ enum Fixtures {
     /// A page of library rows spanning both cuisine types and a couple of months —
     /// backs the paginated Carnet list in previews and the debug gallery.
     static let libraryRecipes = [
-        LibraryRecipe(id: "bourguignon", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestNote: 5, updatedAt: Date()),
-        LibraryRecipe(id: "joues", title: "Joues de bœuf confites", type: .plat, category: .plat, versionCount: 1, bestNote: 4, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
-        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 2, bestNote: 4, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
-        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestNote: nil, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
+        LibraryRecipe(id: "bourguignon", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestRating: 5, updatedAt: Date()),
+        LibraryRecipe(id: "joues", title: "Joues de bœuf confites", type: .plat, category: .plat, versionCount: 1, bestRating: 4, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
+        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 2, bestRating: 4, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestRating: nil, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
     ]
 }
 #endif

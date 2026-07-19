@@ -2,7 +2,7 @@ import { VersionNumber as toVersionNumber } from '~/domain/recipe/primitives'
 import {
   DISH_CATEGORY_VALUES,
   type DishCategory,
-  type Note,
+  type Rating,
   type RecipeVersion,
   type StepText,
   type TmxSettings,
@@ -12,10 +12,10 @@ import {
   type VersionNumber,
 } from '~/domain/recipe/types'
 
-// A version that has been cooked and rated (a `note` is present) — the subset
-// bestNote ranks over.
-type RatedVersion = RecipeVersion & { note: Note }
-const isRated = (version: RecipeVersion): version is RatedVersion => version.note !== null
+// A version that has been cooked and rated (a `rating` is present) — the subset
+// bestRating ranks over.
+type RatedVersion = RecipeVersion & { rating: Rating }
+const isRated = (version: RecipeVersion): version is RatedVersion => version.rating !== null
 
 // The library's category sort follows the course order (Entrée → Plat → Dessert →
 // Soupe → Sauce → Boulangerie), not the alphabetical order of the enum values. We
@@ -26,37 +26,37 @@ export const categoryRank = (category: DishCategory): number =>
 
 export const nextVersionNumber = (versionCount: VersionNumber) => toVersionNumber(versionCount + 1)
 
-// The recipe's best essai across its cooked versions, or null when none was ever
-// tried. Highest note wins; a tie breaks toward the most recent version (highest
+// The recipe's best attempt across its cooked versions, or null when none was ever
+// tried. Highest rating wins; a tie breaks toward the most recent version (highest
 // number), so the freshest high score is the reference. Returns the version itself
-// so callers keep both the note and its lineage position.
-export const bestNote = (versions: RecipeVersion[]): RecipeVersion | null =>
+// so callers keep both the rating and its lineage position.
+export const bestRating = (versions: RecipeVersion[]): RecipeVersion | null =>
   versions
     .filter(isRated)
     .reduce<RatedVersion | null>(
       (best, version) =>
         best === null ||
-        version.note > best.note ||
-        (version.note === best.note && version.number > best.number)
+        version.rating > best.rating ||
+        (version.rating === best.rating && version.number > best.number)
           ? version
           : best,
       null,
     )
 
 // Which version the fiche opens on when entered from the home. Priority:
-//   1. the "essai en cours" — the most recent version based on the best-noted one
+//   1. the attempt in progress — the most recent version based on the best-rated one
 //      (an iteration cooked or awaiting a cook off the current reference);
-//   2. failing that, the best-noted version itself;
+//   2. failing that, the best-rated version itself;
 //   3. failing any rating at all, the latest version (a brand-new, untried recipe).
 // Assumes a non-empty lineage (a recipe always owns at least its v1).
 export const versionToOpen = (versions: RecipeVersion[]): RecipeVersion => {
   const latest = versions.reduce((a, b) => (b.number > a.number ? b : a))
-  const best = bestNote(versions)
+  const best = bestRating(versions)
   if (best === null) return latest
-  const essaiEnCours = versions
+  const attemptInProgress = versions
     .filter((version) => version.basedOn === best.number)
     .reduce<RecipeVersion | null>((a, b) => (a === null || b.number > a.number ? b : a), null)
-  return essaiEnCours ?? best
+  return attemptInProgress ?? best
 }
 
 // Thermomix settings are only usable when they mirror the steps one-to-one and

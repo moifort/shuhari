@@ -81,14 +81,16 @@ beforeEach(() => {
   analysis = baseAnalysis()
 })
 
-describe('ProposalUseCase.fromEssai', () => {
+describe('ProposalUseCase.fromAttempt', () => {
   test('returns not-found for an unknown recipe', async () => {
-    expect(await ProposalUseCase.fromEssai(userId, 'nope' as RecipeId, V1)).toBe('not-found')
+    expect(await ProposalUseCase.fromAttempt(userId, 'nope' as RecipeId, V1)).toBe('not-found')
   })
 
   test('returns not-found for an unknown version', async () => {
     const recipe = await RecipeCommand.create(userId, recipeInput())
-    expect(await ProposalUseCase.fromEssai(userId, recipe.id, 9 as VersionNumber)).toBe('not-found')
+    expect(await ProposalUseCase.fromAttempt(userId, recipe.id, 9 as VersionNumber)).toBe(
+      'not-found',
+    )
   })
 
   test('returns the branded proposal based on the tried version, persisting nothing', async () => {
@@ -96,7 +98,7 @@ describe('ProposalUseCase.fromEssai', () => {
     const docReadsBefore = fake.docReads
     const queryReadsBefore = fake.queryReads
     const batchesBefore = fake.batches.length
-    const result = await ProposalUseCase.fromEssai(userId, recipe.id, V1)
+    const result = await ProposalUseCase.fromAttempt(userId, recipe.id, V1)
     if (result === 'not-found') throw new Error('expected a proposal')
 
     expect(result.basedOn).toBe(V1)
@@ -118,7 +120,7 @@ describe('ProposalUseCase.fromEssai', () => {
       tmxSteps: [{ time: '5 min', temperature: '120°C', speed: '1', reverse: null }, null],
     }
     const tmx = await RecipeCommand.create(userId, recipeInput({ type: 'tmx' }))
-    const tmxProposal = await ProposalUseCase.fromEssai(userId, tmx.id, V1)
+    const tmxProposal = await ProposalUseCase.fromAttempt(userId, tmx.id, V1)
     if (tmxProposal === 'not-found') throw new Error('expected a proposal')
     expect(tmxProposal.tmxSteps).toEqual([
       { time: '5 min' as TmxTime, temperature: '120°C' as TmxTemperature, speed: '1' as TmxSpeed },
@@ -127,7 +129,7 @@ describe('ProposalUseCase.fromEssai', () => {
 
     // Same proposal on a plat recipe: Thermomix settings are dropped entirely.
     const plat = await RecipeCommand.create(userId, recipeInput())
-    const platProposal = await ProposalUseCase.fromEssai(userId, plat.id, V1)
+    const platProposal = await ProposalUseCase.fromAttempt(userId, plat.id, V1)
     if (platProposal === 'not-found') throw new Error('expected a proposal')
     expect(platProposal.tmxSteps).toEqual([])
   })

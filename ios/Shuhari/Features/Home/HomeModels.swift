@@ -1,14 +1,14 @@
 import Foundation
 
-/// A library row: how many versions the recipe has and its best essai note ("the
-/// highest star" across every version it ever cooked).
+/// A library row: how many versions the recipe has and its best attempt rating
+/// ("the highest star" across every version it ever cooked).
 struct LibraryRecipe: Identifiable, Sendable {
     let id: String
     let title: String
     let type: RecipeType
     let category: DishCategory
     let versionCount: Int
-    let bestNote: Int?
+    let bestRating: Int?
     let updatedAt: Date
 }
 

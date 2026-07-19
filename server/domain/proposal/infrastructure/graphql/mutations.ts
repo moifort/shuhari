@@ -41,7 +41,7 @@ builder.mutationField('requestProposal', (t) =>
     type: ProposalType,
     description: [
       'Ask the AI for a suggested next version. It looks at the version you just cooked (its ' +
-        'rating and notes) and proposes one improvement. Nothing is saved yet — you get a ' +
+        'rating and remarks) and proposes one improvement. Nothing is saved yet — you get a ' +
         'proposal to review.',
       '',
       '```graphql',
@@ -65,7 +65,7 @@ builder.mutationField('requestProposal', (t) =>
       }),
     },
     resolve: async (_root, { recipeId, versionNumber }, { userId }) => {
-      const result = await ProposalUseCase.fromEssai(userId, recipeId, versionNumber)
+      const result = await ProposalUseCase.fromAttempt(userId, recipeId, versionNumber)
       return match(result)
         .with('not-found', domainError)
         .with(P.not(P.string), (proposal) => proposal)

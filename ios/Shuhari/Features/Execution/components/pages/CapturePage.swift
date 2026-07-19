@@ -1,12 +1,12 @@
 import PhotosUI
 import SwiftUI
 
-/// Capture the trial's feedback: a 5-star note, then remarks and photos of the
+/// Capture the attempt's feedback: a 5-star rating, then remarks and photos of the
 /// result. Validation lives in the top-right toolbar; the flow provides the close
 /// button.
 struct CapturePage: View {
     let isSaving: Bool
-    let onSave: (_ note: Int, _ remarks: String, _ photoBase64: String?) -> Void
+    let onSave: (_ rating: Int, _ remarks: String, _ photoBase64: String?) -> Void
 
     /// A picked photo kept both decoded (for the thumbnail) and encoded (payload).
     private struct LoadedPhoto: Identifiable {
@@ -15,7 +15,7 @@ struct CapturePage: View {
         let base64: String
     }
 
-    @State private var note: Int?
+    @State private var rating: Int?
     @State private var remarks: String = ""
     @State private var photoItems: [PhotosPickerItem] = []
     @State private var photos: [LoadedPhoto] = []
@@ -23,7 +23,7 @@ struct CapturePage: View {
     var body: some View {
         Form {
             Section {
-                StarRating(selection: $note)
+                StarRating(selection: $rating)
                     .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
             }
             .listRowBackground(Color.clear)
@@ -46,13 +46,13 @@ struct CapturePage: View {
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button {
-                    guard let note else { return }
-                    onSave(note, remarks.trimmingCharacters(in: .whitespacesAndNewlines), photos.first?.base64)
+                    guard let rating else { return }
+                    onSave(rating, remarks.trimmingCharacters(in: .whitespacesAndNewlines), photos.first?.base64)
                 } label: {
                     if isSaving { ProgressView() } else { Image(systemName: "checkmark") }
                 }
-                .disabled(note == nil || isSaving)
-                .accessibilityIdentifier("save-trial-button")
+                .disabled(rating == nil || isSaving)
+                .accessibilityIdentifier("save-attempt-button")
                 .accessibilityLabel("Enregistrer l’essai")
             }
         }

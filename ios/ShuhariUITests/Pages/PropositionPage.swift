@@ -1,6 +1,6 @@
 import XCTest
 
-/// The AI proposition screen shown after an essai with written remarks: the
+/// The AI proposition screen shown after an attempt with written remarks: the
 /// proposed next version, editable inline, with Fermer (discard) / Valider (accept).
 @MainActor
 struct PropositionPage {

@@ -1,11 +1,11 @@
 import SwiftUI
 
-/// Read-only 5-star display of a note on the native 1–5 scale.
-/// The mirror of the `StarRating` input, for showing a recipe's average note.
-struct NoteStars: View {
-    let note: Double
+/// Read-only 5-star display of a rating on the native 1–5 scale.
+/// The mirror of the `StarRating` input, for showing a recipe's average rating.
+struct RatingStars: View {
+    let rating: Double
 
-    private var filled: Int { Int(note.rounded()) }
+    private var filled: Int { Int(rating.rounded()) }
 
     var body: some View {
         HStack(spacing: 2) {
@@ -16,16 +16,16 @@ struct NoteStars: View {
         }
         .font(.footnote)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Note moyenne \(NoteFormat.average(note))")
+        .accessibilityLabel("Note moyenne \(RatingFormat.average(rating))")
     }
 }
 
 #Preview {
     VStack(alignment: .leading, spacing: 8) {
-        NoteStars(note: 5)
-        NoteStars(note: 3.5)
-        NoteStars(note: 2)
-        NoteStars(note: 1)
+        RatingStars(rating: 5)
+        RatingStars(rating: 3.5)
+        RatingStars(rating: 2)
+        RatingStars(rating: 1)
     }
     .padding()
 }

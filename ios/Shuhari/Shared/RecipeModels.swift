@@ -38,13 +38,13 @@ enum VersionOriginKind: Sendable {
 }
 
 /// An entry in a recipe's linear lineage (v1 → v2 → …). Its content (ingredients +
-/// steps + per-step Thermomix settings) is immutable; its essai outcome (`note`,
+/// steps + per-step Thermomix settings) is immutable; its attempt outcome (`rating`,
 /// `remarks`, `executedAt`, `photoUrl`) is written once, when the version is tried.
-/// A version is an "essai à faire" until `executedAt != nil`.
+/// A version is a planned attempt until `executedAt != nil`.
 struct RecipeVersion: Identifiable, Sendable {
     let number: Int
     /// The version this one iterates on — the attempt it was built from. nil on the
-    /// original v1, which builds on nothing. Drives the essai-diff base.
+    /// original v1, which builds on nothing. Drives the attempt-diff base.
     let basedOn: Int?
     let change: String?
     let why: String?
@@ -58,19 +58,19 @@ struct RecipeVersion: Identifiable, Sendable {
     let tmxSteps: [TmxSettings?]
     /// The recipe this version belongs to.
     let recipeId: String
-    /// The essai rating (1..5), or nil while the version hasn't been executed yet.
-    let note: Int?
-    /// The essai remarks, or nil while not yet executed.
+    /// The attempt rating (1..5), or nil while the version hasn't been executed yet.
+    let rating: Int?
+    /// The attempt remarks, or nil while not yet executed.
     let remarks: String?
-    /// When the essai was executed, or nil while still an "essai à faire".
+    /// When the attempt was executed, or nil while still a planned attempt.
     let executedAt: Date?
-    /// Signed URL of the essai photo (nil until photo storage is provisioned).
+    /// Signed URL of the attempt photo (nil until photo storage is provisioned).
     let photoUrl: String?
     let createdAt: Date
 
     var id: Int { number }
 
-    /// Whether this version has been executed (its essai recorded).
+    /// Whether this version has been executed (its attempt recorded).
     var tried: Bool { executedAt != nil }
 }
 
@@ -122,9 +122,9 @@ struct Recipe: Identifiable, Sendable {
     /// The full lineage, oldest first.
     let versions: [RecipeVersion]
     /// The best rating across every executed version, computed server-side. nil
-    /// when no version has been cooked yet. Drives the recipe's display note.
-    let bestNote: Int?
-    /// The version to show first when the fiche opens: the essai in progress (the
+    /// when no version has been cooked yet. Drives the recipe's display rating.
+    let bestRating: Int?
+    /// The version to show first when the fiche opens: the attempt in progress (the
     /// most recent version built on the best-rated one), else that best-rated
     /// version, else the latest. Never nil — a recipe always has at least its v1.
     let versionToOpen: RecipeVersion
@@ -132,18 +132,18 @@ struct Recipe: Identifiable, Sendable {
     /// The version number the next iteration would take.
     var nextVersionNumber: Int { (versions.map(\.number).max() ?? 0) + 1 }
 
-    /// The essai journal: every tried version, most recent first.
-    var essais: [RecipeVersion] {
+    /// The attempt journal: every tried version, most recent first.
+    var attempts: [RecipeVersion] {
         versions
             .filter(\.tried)
             .sorted { ($0.executedAt ?? .distantPast) > ($1.executedAt ?? .distantPast) }
     }
 
-    /// Mean note over every essai of the recipe, all versions combined.
-    var overallAverageNote: Double? {
-        let notes = essais.compactMap(\.note)
-        guard !notes.isEmpty else { return nil }
-        return Double(notes.reduce(0, +)) / Double(notes.count)
+    /// Mean rating over every attempt of the recipe, all versions combined.
+    var overallAverageRating: Double? {
+        let ratings = attempts.compactMap(\.rating)
+        guard !ratings.isEmpty else { return nil }
+        return Double(ratings.reduce(0, +)) / Double(ratings.count)
     }
 
     func version(_ number: Int) -> RecipeVersion? {

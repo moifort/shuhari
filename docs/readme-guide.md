@@ -27,7 +27,7 @@ The name of the project and one sentence that says what it does for the user.
 ```md
 # Shuhari
 
-A culinary experimentation notebook — import a recipe, run it, rate the trial, and let the AI
+A culinary experimentation notebook — import a recipe, run it, rate the attempt, and let the AI
 propose the next iteration.
 ```
 
@@ -41,9 +41,9 @@ one capability.
 ```md
 ## What's in the box
 
-- A **backend server** that stores your recipes and their version lineage, each version carrying its own essai
+- A **backend server** that stores your recipes and their version lineage, each version carrying its own attempt
 - **AI import & iteration** — paste a recipe to import it, get a suggested next version to try
-- An **iOS app** to browse recipes, cook a version, rate the essai, and open the best-rated one
+- An **iOS app** to browse recipes, cook a version, rate the attempt, and open the best-rated one
 - **Error monitoring** with Sentry so you know when something breaks (optional)
 ```
 

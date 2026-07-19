@@ -6,11 +6,11 @@ struct CapturePage {
 
     @discardableResult
     func verify() throws -> Self {
-        try app.buttons["save-trial-button"].waitOrFail()
+        try app.buttons["save-attempt-button"].waitOrFail()
         return self
     }
 
-    /// Tap the `count`-th star — the note becomes `count` (1..5).
+    /// Tap the `count`-th star — the rating becomes `count` (1..5).
     @discardableResult
     func pickStars(_ count: Int) throws -> Self {
         try app.buttons["star-\(count)"].tapOrFail()
@@ -26,6 +26,6 @@ struct CapturePage {
     }
 
     func save() throws {
-        try app.buttons["save-trial-button"].tapOrFail()
+        try app.buttons["save-attempt-button"].tapOrFail()
     }
 }

@@ -4,7 +4,7 @@ import SwiftUI
 /// (through the binding owned by `HomeView`), the rename sheet, and deletion.
 struct RecipeDetailView: View {
     let recipeId: String
-    /// When set, the fiche focuses this version (the essai view): orange banner +
+    /// When set, the fiche focuses this version (the attempt view): orange banner +
     /// per-row change dots. Nil renders the plain fiche.
     let focusVersionNumber: Int?
     @Binding var path: NavigationPath
@@ -53,7 +53,7 @@ struct RecipeDetailView: View {
                 // The fiche is a focused, Photos-style detail: hide the tab bar so the
                 // floating action bar owns the bottom edge.
                 .toolbar(.hidden, for: .tabBar)
-                // The record-trial flow as a half-screen sheet: capture at .medium,
+                // The record-attempt flow as a half-screen sheet: capture at .medium,
                 // grows to .large for the AI proposition.
                 .sheet(item: $recordRequest) { request in
                     ExecuteFlowView(request: request, presentation: .sheet) {
@@ -96,13 +96,13 @@ struct RecipeDetailView: View {
         .task { if viewModel.recipe == nil { await viewModel.load() } }
     }
 
-    /// The fiche, focused on a version when `focusVersionNumber` is set (essai
+    /// The fiche, focused on a version when `focusVersionNumber` is set (attempt
     /// view: orange banner + per-row change dots vs the previous version), or the
     /// plain best-rated fiche otherwise.
     @ViewBuilder
     private func detailPage(recipe: Recipe) -> some View {
         if let number = focusVersionNumber, let focus = recipe.version(number) {
-            // The essai-diff base is the version this one was built on (`basedOn`),
+            // The attempt-diff base is the version this one was built on (`basedOn`),
             // not simply the previous number — a version can iterate on any ancestor.
             let previous = focus.basedOn.flatMap { recipe.version($0) }
             RecipeDetailPage(
@@ -156,16 +156,16 @@ struct RecipeDetailView: View {
             .accessibilityIdentifier("recipe-menu")
         }
 
-        // Floating glass action bar: record trial (left) then the history opener
-        // (right). Any version is cookable and an essai is overwritable, so the
+        // Floating glass action bar: record attempt (left) then the history opener
+        // (right). Any version is cookable and an attempt is overwritable, so the
         // record CTA is always available and targets the displayed version.
         ToolbarItem(placement: .bottomBar) {
             Button {
-                presentRecordTrial(versionNumber: displayedVersion(recipe).number)
+                presentRecordAttempt(versionNumber: displayedVersion(recipe).number)
             } label: {
                 Image(systemName: "pencil.and.ruler")
             }
-            .accessibilityIdentifier("record-trial-button")
+            .accessibilityIdentifier("record-attempt-button")
             .accessibilityLabel("Noter un essai")
         }
         ToolbarSpacer(.flexible, placement: .bottomBar)
@@ -181,12 +181,12 @@ struct RecipeDetailView: View {
     }
 
     /// The version the fiche presents (and the record CTA targets): the focused
-    /// essai version when set, otherwise the recipe's `versionToOpen`.
+    /// attempt version when set, otherwise the recipe's `versionToOpen`.
     private func displayedVersion(_ recipe: Recipe) -> RecipeVersion {
         focusVersionNumber.flatMap { recipe.version($0) } ?? recipe.versionToOpen
     }
 
-    private func presentRecordTrial(versionNumber: Int) {
+    private func presentRecordAttempt(versionNumber: Int) {
         recordRequest = ExecutionRequest(
             recipeId: recipeId,
             versionNumber: versionNumber,

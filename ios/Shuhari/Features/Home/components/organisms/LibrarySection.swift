@@ -51,7 +51,7 @@ struct LibrarySection: View {
                 title: recipe.title,
                 type: recipe.type,
                 versionCount: recipe.versionCount,
-                bestNote: recipe.bestNote
+                bestRating: recipe.bestRating
             )
         }
         .accessibilityIdentifier("recipe-row-\(recipe.id)")

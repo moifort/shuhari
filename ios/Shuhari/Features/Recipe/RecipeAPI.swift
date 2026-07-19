@@ -44,7 +44,7 @@ func mapRecipe(_ r: ShuhariGraphQL.RecipeQuery.Data.Recipe) -> Recipe {
         createdAt: GraphQLHelpers.parseISO8601(r.createdAt) ?? Date(),
         updatedAt: GraphQLHelpers.parseISO8601(r.updatedAt) ?? Date(),
         versions: r.versions.map { mapVersion($0.fragments.versionFields) },
-        bestNote: r.bestNote,
+        bestRating: r.bestRating,
         versionToOpen: mapVersion(r.versionToOpen.fragments.versionFields)
     )
 }
@@ -63,7 +63,7 @@ func mapVersion(_ v: ShuhariGraphQL.VersionFields) -> RecipeVersion {
             step.map { TmxSettings(time: $0.time, temperature: $0.temperature, speed: $0.speed, reverse: $0.reverse ?? false) }
         },
         recipeId: v.recipeId,
-        note: v.note,
+        rating: v.rating,
         remarks: v.remarks,
         executedAt: v.executedAt.flatMap { GraphQLHelpers.parseISO8601($0) },
         photoUrl: v.photoUrl,

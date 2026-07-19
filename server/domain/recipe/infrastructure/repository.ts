@@ -22,16 +22,16 @@ const versions = () =>
 const versionDocId = (recipeId: RecipeId, number: VersionNumber) => `${recipeId}_${number}`
 
 // Legacy versions written before ingredients/tmxSteps became always-present
-// arrays, or before the essai outcome was folded onto the version, may lack the
+// arrays, or before the attempt outcome was folded onto the version, may lack the
 // fields; default them so the invariant holds on read (outcome null = not yet
-// executed, still an "essai à faire").
+// executed, still a planned attempt).
 const normalizeVersion = (version: RecipeVersion) => ({
   ...version,
   basedOn: version.basedOn ?? null,
   ingredients: version.ingredients ?? [],
   tmxSteps: version.tmxSteps ?? [],
   executedAt: version.executedAt ?? null,
-  note: version.note ?? null,
+  rating: version.rating ?? null,
   remarks: version.remarks ?? null,
   photoPath: version.photoPath ?? null,
 })
@@ -120,7 +120,7 @@ export const findVersionsOf = async (recipeId: RecipeId) => {
 }
 
 // One memoized full scan per request backs every full-lineage read (the home
-// journal, the per-recipe best-note loader) — the request pays a single query,
+// journal, the per-recipe best-rating loader) — the request pays a single query,
 // mirroring `findAllByUser` for recipes.
 export const findAllVersionsByUser = (userId: UserId) =>
   memoizedPerRequest(allVersionsCacheKey(userId), async () => {
@@ -129,7 +129,7 @@ export const findAllVersionsByUser = (userId: UserId) =>
   })
 
 // Single write point for a version: its immutable content on creation, and the
-// essai outcome once it is executed (the whole document is rewritten, `set` not
+// attempt outcome once it is executed (the whole document is rewritten, `set` not
 // `update`, so the outcome fields land alongside the content).
 export const saveVersion = async (version: RecipeVersion, batch?: WriteBatch) => {
   const ref = versions().doc(versionDocId(version.recipeId, version.number))

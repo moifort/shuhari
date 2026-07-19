@@ -1,17 +1,17 @@
 import SwiftUI
 
-/// A journal / recent-activity row: coloured note badge, recipe name + version,
+/// A journal / recent-activity row: coloured rating badge, recipe name + version,
 /// and a truncated remarks excerpt with the date. Designed as a List row.
-struct EssaiRow: View {
+struct AttemptRow: View {
     let recipeTitle: String?
     let versionNumber: Int
-    let note: Int
+    let rating: Int
     let remarks: String
     let date: Date
 
     var body: some View {
         HStack(spacing: 12) {
-            NoteBadge(note: note)
+            RatingBadge(rating: rating)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
@@ -39,10 +39,10 @@ struct EssaiRow: View {
 
 #Preview {
     List {
-        EssaiRow(
+        AttemptRow(
             recipeTitle: "Espresso — Brésil",
             versionNumber: 3,
-            note: 4,
+            rating: 4,
             remarks: "Équilibré, chocolat noir en finale.",
             date: Date()
         )

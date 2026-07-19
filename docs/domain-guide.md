@@ -296,16 +296,16 @@ From `recipe`:
 export const nextVersionNumber = (versionCount: VersionNumber) =>
   toVersionNumber(versionCount + 1)
 
-// The recipe's best essai across its cooked versions, or null when none was ever
-// tried. Highest note wins; a tie breaks toward the most recent version.
-export const bestNote = (versions: RecipeVersion[]): RecipeVersion | null =>
+// The recipe's best attempt across its cooked versions, or null when none was ever
+// tried. Highest rating wins; a tie breaks toward the most recent version.
+export const bestRating = (versions: RecipeVersion[]): RecipeVersion | null =>
   versions
     .filter(isRated)
     .reduce<RatedVersion | null>(
       (best, version) =>
         best === null ||
-        version.note > best.note ||
-        (version.note === best.note && version.number > best.number)
+        version.rating > best.rating ||
+        (version.rating === best.rating && version.number > best.number)
           ? version
           : best,
       null,
@@ -313,7 +313,7 @@ export const bestNote = (versions: RecipeVersion[]): RecipeVersion | null =>
 ```
 
 Rules: no `useStorage`, no `async` (both fail the arch test); 100% coverage; name the concept
-(`bestNote`/`versionToOpen`, never `computeBestNote`); functional style — `map`/`filter`/`reduce`,
+(`bestRating`/`versionToOpen`, never `computeBestRating`); functional style — `map`/`filter`/`reduce`,
 no imperative `for`/`while` loops (see [code-style.md](./code-style.md)).
 
 ## Optional: Use Case (`use-case.ts`)
@@ -329,10 +329,10 @@ import { RecipeQuery } from '~/domain/recipe/query'
 import { Ai } from '~/system/ai'
 
 export namespace ProposalUseCase {
-  // Ask the AI for the next version after an essai. Reads the tried version through
+  // Ask the AI for the next version after an attempt. Reads the tried version through
   // the recipe domain's public Query, feeds it to the AI engine and brands the
   // result — a cross-boundary orchestration (recipe + ai) that persists nothing.
-  export const fromEssai = async (
+  export const fromAttempt = async (
     userId: UserId,
     recipeId: RecipeId,
     versionNumber: VersionNumber,
@@ -341,7 +341,7 @@ export namespace ProposalUseCase {
     if (recipe === 'not-found') return 'not-found'
     const version = await RecipeQuery.versionBy(recipeId, versionNumber)
     if (version === 'not-found') return 'not-found'
-    const proposal = await Ai.proposeNext(/* recipe + version + its essai outcome */)
+    const proposal = await Ai.proposeNext(/* recipe + version + its attempt outcome */)
     return brandProposal(recipe.type, proposal)
   }
 
@@ -351,7 +351,7 @@ export namespace ProposalUseCase {
 }
 ```
 
-Names carry intent (`fromEssai`, `accept`, never `handleProposal`). `proposal` is the only
+Names carry intent (`fromAttempt`, `accept`, never `handleProposal`). `proposal` is the only
 domain that imports `~/system/ai`, and it depends one-way on `recipe` (never the reverse).
 
 ## Checklist

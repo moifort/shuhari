@@ -5,7 +5,7 @@ builder.queryField('exportData', (t) =>
   t.string({
     description: [
       'Download all your data as one JSON text — a full backup of every recipe and version you ' +
-        'own (e.g. your `"Grandma’s lasagna"` and all its essais). Pair it with importData to ' +
+        'own (e.g. your `"Grandma’s lasagna"` and all its attempts). Pair it with importData to ' +
         'move or restore your library.',
       '',
       '```graphql',

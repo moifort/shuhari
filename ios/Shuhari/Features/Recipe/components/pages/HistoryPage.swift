@@ -13,12 +13,12 @@ struct HistoryPage: View {
             Section {
                 ForEach(orderedVersions, id: \.number) { version in
                     // Any version is cookable — tapping a row opens its fiche.
-                    NavigationLink(value: RecipeRoute.essai(recipeId: recipe.id, versionNumber: version.number)) {
+                    NavigationLink(value: RecipeRoute.attempt(recipeId: recipe.id, versionNumber: version.number)) {
                         VersionTimelineItem(
                             number: version.number,
                             change: version.change,
                             originDetail: version.originDetail,
-                            note: version.note,
+                            rating: version.rating,
                             tried: version.tried,
                             date: version.createdAt,
                             isFocus: version.number == recipe.versionToOpen.number,
@@ -30,7 +30,7 @@ struct HistoryPage: View {
                 Text("Chaque cran ne change que ce qui est écrit.")
             }
 
-            EssaiJournalSection(recipeTitle: recipe.title, essais: recipe.essais)
+            AttemptJournalSection(recipeTitle: recipe.title, attempts: recipe.attempts)
         }
         .navigationTitle("Historique")
         .navigationSubtitle(recipe.title)

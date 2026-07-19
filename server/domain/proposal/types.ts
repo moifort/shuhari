@@ -1,7 +1,7 @@
 import type { Ingredient, StepText, TmxSettings, VersionNumber } from '~/domain/recipe/types'
 
 // An ephemeral next-version proposal, already validated into branded domain
-// shapes — either freshly branded from the AI (`fromEssai`) or the user's inline
+// shapes — either freshly branded from the AI (`fromAttempt`) or the user's inline
 // edits from iOS. Never persisted: it is generated, returned, and handed straight
 // back on accept, which appends it as version n+1 based on `basedOn`.
 export type Proposal = {

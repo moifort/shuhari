@@ -1,9 +1,9 @@
 import Foundation
 
-/// Formats trial notes the way the app speaks them: French decimal, "3,5/5".
+/// Formats attempt ratings the way the app speaks them: French decimal, "3,5/5".
 /// The UI copy is French by design, so the locale is pinned rather than
 /// inherited from the device.
-enum NoteFormat {
+enum RatingFormat {
     private static let locale = Locale(identifier: "fr_FR")
 
     /// "3,5" — the bare figure, for layouts that style the "/5" separately.

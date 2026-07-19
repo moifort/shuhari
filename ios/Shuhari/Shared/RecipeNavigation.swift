@@ -4,11 +4,11 @@ import Foundation
 enum RecipeRoute: Hashable {
     case recipe(id: String)
     case history(id: String)
-    case essai(recipeId: String, versionNumber: Int)
+    case attempt(recipeId: String, versionNumber: Int)
 }
 
 /// A request to run the execution flow (presented as a full-screen cover).
-/// `startAtCapture` skips the step-by-step `ExecutePage` and opens the trial
+/// `startAtCapture` skips the step-by-step `ExecutePage` and opens the attempt
 /// capture directly — the fiche already shows the recipe, so re-displaying it
 /// would be redundant.
 struct ExecutionRequest: Identifiable, Hashable {

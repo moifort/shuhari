@@ -25,7 +25,7 @@ ios/
     ├── Generated/GraphQL/              # Apollo codegen output (do not edit)
     │   ├── Operations/{Queries,Mutations}/
     │   ├── Fragments/                  # VersionFields, ProposalFields
-    │   └── Schema/                     # CustomScalars (RecipeId, Note, …), Enums, Objects, InputObjects
+    │   └── Schema/                     # CustomScalars (RecipeId, Rating, …), Enums, Objects, InputObjects
     ├── Features/
     │   ├── Auth/  Home/  Recipe/  Proposition/  Execution/  Import/  Settings/
     │   └── {Feature}/
@@ -36,7 +36,7 @@ ios/
     │       ├── GraphQL/*.graphql       # hand-written operations for this feature
     │       └── components/{pages,organisms,molecules}/
     └── Shared/
-        ├── Components/                 # shared atoms (Chip, NoteBadge, ParamsGrid, …)
+        ├── Components/                 # shared atoms (Chip, RatingBadge, ParamsGrid, …)
         ├── GraphQLClient.swift         # singleton ApolloClient
         ├── GraphQLHelpers.swift        # async fetch/perform bridges + nullable helpers
         ├── APIClient.swift             # base-URL resolver only
@@ -115,7 +115,7 @@ enum LibraryAPI {
                               type: RecipeType(graphql: recipe.type),
                               category: DishCategory(graphql: recipe.category),
                               versionCount: recipe.versionCount,
-                              bestNote: recipe.bestNote,   // derived server-side
+                              bestRating: recipe.bestRating,   // derived server-side
                               updatedAt: GraphQLHelpers.parseISO8601(recipe.updatedAt) ?? .distantPast)
             },
             hasMore: recipes.hasMore,
@@ -204,7 +204,7 @@ struct HomePage: View {                         // pure presentation
 
 | Layer | Location | Receives | Examples |
 |-------|----------|----------|----------|
-| **Atoms** | `Shared/Components/` | Primitives | `Chip`, `NoteBadge`, `NoteStars`, `StepsList` |
+| **Atoms** | `Shared/Components/` | Primitives | `Chip`, `RatingBadge`, `RatingStars`, `StepsList` |
 | **Molecules** | `Features/{F}/components/molecules/` | Primitives | `LibraryRow`, `VersionTimelineItem` |
 | **Organisms** | `Features/{F}/components/organisms/` | Primitives or a domain struct (mapping boundary) | `LibrarySection`, `IngredientsSection` |
 | **Pages** | `Features/{F}/components/pages/` | Data + closures | `HomePage`, `RecipeDetailPage` |
@@ -279,7 +279,7 @@ Every component below page level **must** preview without a running server, fed 
 
 `Shared/DebugGallery.swift` (wrapped in `#if DEBUG`) renders any page with fixtures and no
 server/auth. `ShuhariApp` branches into it when the `gallery` UserDefault / `-gallery <screen>`
-launch argument is set (screens: `home`, `cuisine`, `recipe`, `recipe-tmx`, `history`, `trial`,
+launch argument is set (screens: `home`, `cuisine`, `recipe`, `recipe-tmx`, `history`, `attempt`,
 `execute`, `execute-tmx`, `capture`, `proposal`, `import-preview`, `import-preview-tmx`,
 `ai-thinking`, `root`).
 
@@ -330,8 +330,8 @@ struct RecipeVersion: Identifiable, Sendable {
     let ingredients: [Ingredient]
     let steps: [String]
     let recipeId: String
-    // The essai outcome, recorded directly on the version — nil while never cooked.
-    let note: Int?               // 1..5
+    // The attempt outcome, recorded directly on the version — nil while never cooked.
+    let rating: Int?             // 1..5
     let remarks: String?
     let executedAt: Date?
     let photoUrl: String?
@@ -358,7 +358,7 @@ cd ios && apollo-ios-cli generate   # iOS: regenerate Generated/GraphQL
 
 ## UI Testing — Page Object pattern
 
-`ShuhariUITests/` holds `Tests/` (`ScreenshotTest`, `TrialLoopFlowTest`, `ImportFlowTest`),
+`ShuhariUITests/` holds `Tests/` (`ScreenshotTest`, `AttemptLoopFlowTest`, `ImportFlowTest`),
 `Pages/` (page objects), and `Support/`.
 
 `BaseUITest` resets the DB before/after and launches with

@@ -1,7 +1,7 @@
 # Shuhari - Project Directives
 
 守破離 — *Shu* (follow the rule), *Ha* (break it), *Ri* (transcend it). A culinary
-experimentation notebook: import a recipe, cook a version, rate the essai, let the AI
+experimentation notebook: import a recipe, cook a version, rate the attempt, let the AI
 propose the next iteration, and open the best-rated version by default.
 
 ## Language
@@ -58,9 +58,9 @@ Everything versioned and technical is written in **English**: commit messages, c
 - **Stack**: Bun + Nitro 2.13 (`preset firebase`, gen 2, nodejs22, `europe-west3`) + Apollo Server 5 + Pothos 4 + firebase-admin (native Firestore) + Zod + ts-brand. DDD/CQRS strict.
 - **Domains** live in `server/domain/{recipe,proposal,shared}` (`recipe` is the only persisted domain; `proposal` is ephemeral — never stored — and the sole caller of `~/system/ai`); system concerns in `server/system/{ai,changelog,portability,firebase,config,migration,request-cache}`.
 - Domain architecture: `server/domain/{domain}/types.ts`, `primitives.ts`, `command.ts`, `query.ts`, `infrastructure/repository.ts`, `infrastructure/graphql/{types,queries,mutations,inputs,enums}.ts`
-- **`business-rules.ts`** (optional): pure functions (no IO, no async) extracted from complex commands. Function names ARE the business concept (`bestNote`, `versionToOpen`, `nextVersionNumber` — never `computeX`, `getX`). 100% test coverage (`business-rules.unit.test.ts`)
+- **`business-rules.ts`** (optional): pure functions (no IO, no async) extracted from complex commands. Function names ARE the business concept (`bestRating`, `versionToOpen`, `nextVersionNumber` — never `computeX`, `getX`). 100% test coverage (`business-rules.unit.test.ts`)
 - **`use-case.ts`** (optional): multi-domain orchestrations when a route needs to coordinate several commands/queries. Names carry business intent (never `handleX`, `processX`). No direct storage access.
-- Branded types with `ts-brand` + Zod validation constructors in `primitives.ts` (e.g. `RecipeId`, `VersionNumber`, `Note`). Discriminated results for absence/errors (`'not-found' as const`) — no exceptions for control flow.
+- Branded types with `ts-brand` + Zod validation constructors in `primitives.ts` (e.g. `RecipeId`, `VersionNumber`, `Rating`). Discriminated results for absence/errors (`'not-found' as const`) — no exceptions for control flow.
 - **Storage: native Firestore** (`firebase-admin`) via `db()` from `server/system/firebase.ts`, only inside `infrastructure/repository.ts`. Helpers in `server/utils/firestore.ts`:
   - `genericDataConverter<T>()` — typed reads, recursively turns `Timestamp` → `Date`. Always `.withConverter(genericDataConverter<T>())` on a collection ref.
   - `atomically(batch => …)` — enlist a handful of writes into one `WriteBatch`, committed once (all-or-nothing). Reads inside see pre-batch state.
@@ -68,7 +68,7 @@ Everything versioned and technical is written in **English**: commit messages, c
   - `deleteInBatches(refs)` — chunked batch deletes.
   - Aggregate root + append-only satellite: a `recipes` pointer doc + heavy `recipe-versions` keyed `${recipeId}_${number}`.
 - **Request cache** (`server/system/request-cache.ts`): `memoizedPerRequest(key, fn)` / `isInRequestCache(key)` — collapse repeated reads within a single request (e.g. reuse the memoized full scan instead of a `getAll`).
-- **GraphQL** (Apollo Server + Pothos, single endpoint `POST /graphql`): satellite `RecipeType` fields (versions, versionToOpen, bestNote) must never scan a collection or read one doc per parent row (N+1). They resolve through the per-request `versionsByRecipe` loader in `server/domain/shared/graphql/loaders.ts` (memoized + micro-batched by key, built per request on the GraphQL context) — a page of recipes selecting `versionToOpen`/`bestNote` costs one `getAll`, an unselected satellite costs nothing. Read budgets are asserted in tests via `fake.reads`/`fake.docReads`/`fake.queryReads`.
+- **GraphQL** (Apollo Server + Pothos, single endpoint `POST /graphql`): satellite `RecipeType` fields (versions, versionToOpen, bestRating) must never scan a collection or read one doc per parent row (N+1). They resolve through the per-request `versionsByRecipe` loader in `server/domain/shared/graphql/loaders.ts` (memoized + micro-batched by key, built per request on the GraphQL context) — a page of recipes selecting `versionToOpen`/`bestRating` costs one `getAll`, an unselected satellite costs nothing. Read budgets are asserted in tests via `fake.reads`/`fake.docReads`/`fake.queryReads`.
 - **Naming**: function names carry the business concept, not the technical pattern. The name IS the rule or action.
 - **Tests**: `*.unit.test.ts` with `bun:test`. Firestore is mocked via `server/test/fake-firestore.ts` (`mock.module('~/system/firebase', () => ({ db: fakeDb }))`) — records batches, direct writes and read counts (`fake.reads`) to assert atomicity and read budgets.
 - Formatter: Biome (spaces width 2, single quotes, no semicolons, line width 100).
@@ -77,9 +77,9 @@ Everything versioned and technical is written in **English**: commit messages, c
 
 - **Two recipe types** (`RECIPE_TYPE_VALUES`): `plat`, `tmx` (Thermomix). Notes are `1..5`.
 - **Linear lineage**: a recipe owns a chain of `RecipeVersion`s (`v1 → v2 → v3 …`). `RecipeVersion.basedOn` is the `VersionNumber` a version was iterated from (`null` for v1). No forks, no variations, no `derivedFrom`.
-- **Essai = one overwritable outcome per version**: `RecipeCommand.recordEssai` records `note` (1..5), `remarks`, `executedAt`, `photoPath` onto *any* version and rewrites them in place on a re-cook. An essai is not an entity — it lives on the version. A never-cooked version has no note (`note: null`).
-- **No promotion — everything derived** (`recipe/business-rules.ts`): `bestNote` = the recipe's best essai note across its cooked versions (highest note; tie → most recent version), driving the display note. `versionToOpen` = the version the fiche opens on: the most recent one `basedOn` the best-noted version (the essai in progress), else the best-noted version, else the latest.
-- **Iteration**: an essai with remarks feeds the AI (`ProposalUseCase.fromEssai`); accepting the proposal appends version `n+1` via `RecipeCommand.addVersion`, threading `basedOn = the tried version`. An essai without remarks is a note only — no AI. Import confirmation persists a fresh recipe + v1 via `RecipeCommand.create` (the `createRecipe` mutation).
+- **Attempt = one overwritable outcome per version**: `RecipeCommand.recordAttempt` records `rating` (1..5), `remarks`, `executedAt`, `photoPath` onto *any* version and rewrites them in place on a re-cook. An attempt is not an entity — it lives on the version. A never-cooked version has no rating (`rating: null`).
+- **No promotion — everything derived** (`recipe/business-rules.ts`): `bestRating` = the recipe's best attempt rating across its cooked versions (highest rating; tie → most recent version), driving the displayed rating. `versionToOpen` = the version the fiche opens on: the most recent one `basedOn` the best-rated version (the attempt in progress), else the best-rated version, else the latest.
+- **Iteration**: an attempt with remarks feeds the AI (`ProposalUseCase.fromAttempt`); accepting the proposal appends version `n+1` via `RecipeCommand.addVersion`, threading `basedOn = the tried version`. An attempt without remarks is a rating only — no AI. Import confirmation persists a fresh recipe + v1 via `RecipeCommand.create` (the `createRecipe` mutation).
 
 ## Database Migrations
 

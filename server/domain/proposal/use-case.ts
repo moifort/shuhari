@@ -59,11 +59,11 @@ const brandProposal = (type: RecipeType, proposal: AiProposal): BrandedContent =
 }
 
 export namespace ProposalUseCase {
-  // Ask the AI for the next version after an essai. Loads the tried version (and
-  // its own note/remarks outcome) by key — recipe + version, two keyed doc reads,
+  // Ask the AI for the next version after an attempt. Loads the tried version (and
+  // its own rating/remarks outcome) by key — recipe + version, two keyed doc reads,
   // no lineage scan — feeds them to the AI, brands the result into domain shapes
   // and returns it stamped with `basedOn = versionNumber`. Nothing is persisted.
-  export const fromEssai = async (
+  export const fromAttempt = async (
     userId: UserId,
     recipeId: RecipeId,
     versionNumber: VersionNumber,
@@ -72,11 +72,11 @@ export namespace ProposalUseCase {
     if (recipe === 'not-found') return 'not-found'
     const version = await RecipeQuery.versionBy(recipeId, versionNumber)
     if (version === 'not-found') return 'not-found'
-    // The version carries its own outcome; feed it to the AI as the sole essai (or
+    // The version carries its own outcome; feed it to the AI as the sole attempt (or
     // none when it has not been executed yet).
-    const trials =
-      version.executedAt !== null && version.note !== null && version.remarks !== null
-        ? [{ note: version.note, remarks: version.remarks }]
+    const attempts =
+      version.executedAt !== null && version.rating !== null && version.remarks !== null
+        ? [{ rating: version.rating, remarks: version.remarks }]
         : []
 
     const proposal = await Ai.proposeNext({
@@ -97,7 +97,7 @@ export namespace ProposalUseCase {
             }
           : null,
       ),
-      trials,
+      attempts,
     })
 
     const { ingredients, steps, tmxSteps } = brandProposal(recipe.type, proposal)

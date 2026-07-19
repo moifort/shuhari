@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The execution flow: execute → capture → record → next step. A written remark
-/// asks the AI for the next version to try; a blank remark just records the note
+/// asks the AI for the next version to try; a blank remark just records the rating
 /// and finishes. Presented as a `fullScreenCover` (`.cover`) from Home/replay, or
 /// as a half-screen `.sheet` from the fiche's record CTA; on completion it
 /// dismisses and asks the caller to refresh.
@@ -47,7 +47,7 @@ struct ExecuteFlowView: View {
                     Group {
                         if request.startAtCapture {
                             // The fiche already shows the recipe: go straight to the
-                            // trial capture instead of re-displaying the version.
+                            // attempt capture instead of re-displaying the version.
                             captureScreen(recipe: recipe, version: version)
                         } else {
                             ExecutePage(
@@ -106,8 +106,8 @@ struct ExecuteFlowView: View {
     }
 
     private func captureScreen(recipe: Recipe, version: RecipeVersion) -> some View {
-        CapturePage(isSaving: isSaving) { note, remarks, photo in
-            Task { await save(note: note, remarks: remarks, photo: photo) }
+        CapturePage(isSaving: isSaving) { rating, remarks, photo in
+            Task { await save(rating: rating, remarks: remarks, photo: photo) }
         }
     }
 
@@ -122,23 +122,23 @@ struct ExecuteFlowView: View {
         }
     }
 
-    private func save(note: Int, remarks: String, photo: String?) async {
+    private func save(rating: Int, remarks: String, photo: String?) async {
         isSaving = true
         // A written remark is the request to iterate; blank input stays a dash
         // in the journal but skips the AI.
         let hasRemarks = !remarks.isEmpty
         do {
-            try await ExecutionAPI.recordEssai(
+            try await ExecutionAPI.recordAttempt(
                 recipeId: request.recipeId,
                 versionNumber: request.versionNumber,
-                note: note,
+                rating: rating,
                 remarks: hasRemarks ? remarks : "—",
                 photoBase64: photo
             )
             isSaving = false
             if hasRemarks {
                 // Remarks written → let the AI propose the next version to try, built
-                // on the version just cooked, whatever the note. Grow first so the
+                // on the version just cooked, whatever the rating. Grow first so the
                 // Siri loader fills the sheet.
                 detent = .large
                 analyzing = true

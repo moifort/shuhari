@@ -1,8 +1,8 @@
 import Foundation
 
 /// Thin REST client against the local test server's helper endpoints (DB reset).
-/// The derived recipe model has no promotion/toTest seeding: the trial-loop test
-/// builds its own state through the app's import + essai flow, so the client only
+/// The derived recipe model has no promotion/toTest seeding: the attempt-loop test
+/// builds its own state through the app's import + attempt flow, so the client only
 /// needs to reset the database between tests.
 final class TestAPIClient: @unchecked Sendable {
     static let shared = TestAPIClient()

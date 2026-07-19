@@ -24,9 +24,9 @@ struct DebugGallery: View {
             NavigationStack {
                 HistoryPage(recipe: Fixtures.bourguignon)
             }
-        case "trial":
+        case "attempt":
             RecipeDetailGalleryScreen(recipe: Fixtures.bourguignon, focusVersionNumber: 3)
-        case "trial-pending":
+        case "attempt-pending":
             RecipeDetailGalleryScreen(recipe: Fixtures.bourguignon, focusVersionNumber: 4)
         case "execute":
             NavigationStack {
@@ -80,7 +80,7 @@ struct DebugGallery: View {
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : cuisine, recipe, recipe-tmx, recipe-fresh, history, trial, trial-pending, execute, execute-tmx, capture, proposition, import-preview, import-preview-tmx, ai-thinking, import-nothing-found")
+                description: Text("Écrans : cuisine, recipe, recipe-tmx, recipe-fresh, history, attempt, attempt-pending, execute, execute-tmx, capture, proposition, import-preview, import-preview-tmx, ai-thinking, import-nothing-found")
             )
         }
     }
@@ -91,7 +91,7 @@ struct DebugGallery: View {
 /// navigation path the coordinator writes into.
 private struct RecipeDetailGalleryScreen: View {
     let recipe: Recipe
-    /// When set, focuses that version (the essai view: orange banner + change dots).
+    /// When set, focuses that version (the attempt view: orange banner + change dots).
     var focusVersionNumber: Int? = nil
     @State private var path = NavigationPath()
 
@@ -109,9 +109,9 @@ private struct CuisineGalleryScreen: View {
     @State private var selected: RecipeType = .tmx
 
     private let library = [
-        LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestNote: 5, updatedAt: Date()),
-        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 3, bestNote: 4, updatedAt: Date()),
-        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestNote: nil, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+        LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestRating: 5, updatedAt: Date()),
+        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 3, bestRating: 4, updatedAt: Date()),
+        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestRating: nil, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
     ]
 
     var body: some View {

@@ -27,7 +27,7 @@ export type SortOrder = 'asc' | 'desc'
 export type RecipeId = Brand<string, 'RecipeId'>
 export type RecipeTitle = Brand<string, 'RecipeTitle'>
 export type VersionNumber = Brand<number, 'VersionNumber'>
-export type Note = Brand<number, 'Note'> // integer 1..5
+export type Rating = Brand<number, 'Rating'> // integer 1..5
 export type Remarks = Brand<string, 'Remarks'>
 export type IngredientName = Brand<string, 'IngredientName'>
 export type IngredientQuantity = Brand<string, 'IngredientQuantity'>
@@ -54,8 +54,8 @@ export type VersionOrigin = { kind: VersionOriginKind; detail?: string }
 
 // The aggregate root. A light pointer document: the heavy version data lives in
 // the satellite `recipe-versions` collection keyed `${recipeId}_${number}`. The
-// recipe carries no reference/pending pointers: the best note and the version to
-// open are derived from the lineage (see `bestNote`/`versionToOpen`).
+// recipe carries no reference/pending pointers: the best rating and the version
+// to open are derived from the lineage (see `bestRating`/`versionToOpen`).
 export type Recipe = {
   id: RecipeId
   userId: UserId
@@ -71,8 +71,8 @@ export type Recipe = {
 
 // One entry in a recipe's linear lineage (v1 → v2 → …). Its content and lineage
 // (steps/ingredients/tmxSteps/origin/change/basedOn) are immutable, but a version
-// *is* an essai: it is an "essai à faire" while `executedAt === null`, then carries
-// its outcome (note/remarks/photo). The outcome is overwritable — recording again
+// *is* an attempt: it is a planned attempt while `executedAt === null`, then carries
+// its outcome (rating/remarks/photo). The outcome is overwritable — recording again
 // re-cooks the same version in place rather than forcing a new one.
 export type RecipeVersion = {
   userId: UserId
@@ -81,9 +81,9 @@ export type RecipeVersion = {
   createdAt: Date
   origin: VersionOrigin
   change: string | null // human summary of what changed ("Bouillon 700 → 650 ml"); null for v1
-  // The version this one iterates on — set to the essai it was proposed from
+  // The version this one iterates on — set to the attempt it was proposed from
   // (`versionToOpen` at proposal time); `null` for the original v1, which iterates
-  // on nothing. Drives the "essai en cours" branch of `versionToOpen`.
+  // on nothing. Drives the "attempt in progress" branch of `versionToOpen`.
   basedOn: VersionNumber | null
   why?: string // AI rationale, for proposed versions
   steps: StepText[]
@@ -94,10 +94,10 @@ export type RecipeVersion = {
   // for non-tmx recipes — "is Thermomix" is derived from `type === 'tmx'`, never
   // from the presence of this array.
   tmxSteps: (TmxSettings | null)[]
-  // The essai outcome, written once when the version is executed. All null while
-  // the version is still an "essai à faire" (`executedAt === null`).
+  // The attempt outcome, written once when the version is executed. All null while
+  // the version is still a planned attempt (`executedAt === null`).
   executedAt: Date | null
-  note: Note | null
+  rating: Rating | null
   remarks: Remarks | null
   photoPath: string | null // GCS object path; never exposed raw (see photoUrl)
 }

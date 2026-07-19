@@ -1,12 +1,12 @@
 import XCTest
 
 /// Experimentation loop under the derived recipe model: import a recipe, record an
-/// essai on the version the fiche opens on, add a written remark to trigger the AI
+/// attempt on the version the fiche opens on, add a written remark to trigger the AI
 /// proposition, accept it, and see the freshly appended version become the one the
 /// fiche shows. No promotion, no "à tester" banner — the new version is derived.
-final class TrialLoopFlowTest: BaseUITest {
+final class AttemptLoopFlowTest: BaseUITest {
 
-    func testEssaiToPropositionToNewVersion() async throws {
+    func testAttemptToPropositionToNewVersion() async throws {
         let tabBar = TabBarPage(app: app)
         try tabBar.verify()
 
@@ -16,11 +16,11 @@ final class TrialLoopFlowTest: BaseUITest {
         let recipe = try importPage.analyze().verify().save()
         try recipe.verify()
 
-        // 2. The fresh recipe opens on v1; record an essai on the displayed version
+        // 2. The fresh recipe opens on v1; record an attempt on the displayed version
         //    via the round centre CTA.
-        let capture = try recipe.recordTrial().verify()
+        let capture = try recipe.recordAttempt().verify()
 
-        // 3. A written remark asks the AI for the next version to try (the note
+        // 3. A written remark asks the AI for the next version to try (the rating
         //    itself no longer matters; the remark is what requests a proposition).
         _ = try capture.pickStars(3)
         _ = try capture.typeRemarks("Coule trop vite, amertume sèche en finale.")

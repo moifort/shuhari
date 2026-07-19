@@ -3,7 +3,7 @@ import type {
   Ingredient,
   IngredientName,
   IngredientQuantity,
-  Note,
+  Rating,
   Recipe,
   RecipeId,
   RecipeTitle,
@@ -48,10 +48,10 @@ describe('RecipeCommand.create', () => {
     expect(fake.snapshot('recipes').get(recipe.id as string)?.type).toBe('plat')
     const v1 = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)
     expect(v1?.origin).toEqual({ kind: 'import', detail: 'Un site' })
-    // v1 iterates on nothing and starts as an "essai à faire": no outcome yet.
+    // v1 iterates on nothing and starts as a planned attempt: no outcome yet.
     expect(v1?.basedOn).toBeNull()
     expect(v1?.executedAt).toBeNull()
-    expect(v1?.note).toBeNull()
+    expect(v1?.rating).toBeNull()
     expect(v1?.remarks).toBeNull()
     // Both docs land in a single batch (all-or-nothing).
     expect(fake.directWrites).toEqual([])
@@ -133,69 +133,69 @@ describe('RecipeCommand.addVersion', () => {
   })
 })
 
-describe('RecipeCommand.recordEssai', () => {
+describe('RecipeCommand.recordAttempt', () => {
   test('folds the outcome onto v1 and returns the executed version', async () => {
     const recipe = await RecipeCommand.create(userId, newInput())
     const batchesBefore = fake.batches.length
 
-    const result = await RecipeCommand.recordEssai(userId, {
+    const result = await RecipeCommand.recordAttempt(userId, {
       recipeId: recipe.id,
       versionNumber: 1 as VersionNumber,
-      note: 5 as Note,
+      rating: 5 as Rating,
       remarks: 'Parfait' as Remarks,
     })
     if (typeof result === 'string') throw new Error(`expected a result, got ${result}`)
 
-    expect(result.note).toBe(5 as Note)
+    expect(result.rating).toBe(5 as Rating)
     expect(result.remarks).toBe('Parfait' as Remarks)
     expect(result.executedAt).toBeInstanceOf(Date)
 
     const stored = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)
-    expect(stored?.note).toBe(5 as Note)
+    expect(stored?.rating).toBe(5 as Rating)
     expect(stored?.executedAt).toBeInstanceOf(Date)
     // Outcome + recipe bump land in a single batch (all-or-nothing).
     expect(fake.directWrites).toEqual([])
     expect(fake.batches.length).toBe(batchesBefore + 1)
   })
 
-  test('overwrites a previously recorded essai on the same version', async () => {
+  test('overwrites a previously recorded attempt on the same version', async () => {
     const recipe = await RecipeCommand.create(userId, newInput())
-    await RecipeCommand.recordEssai(userId, {
+    await RecipeCommand.recordAttempt(userId, {
       recipeId: recipe.id,
       versionNumber: 1 as VersionNumber,
-      note: 3 as Note,
+      rating: 3 as Rating,
       remarks: 'Bof' as Remarks,
     })
 
-    const again = await RecipeCommand.recordEssai(userId, {
+    const again = await RecipeCommand.recordAttempt(userId, {
       recipeId: recipe.id,
       versionNumber: 1 as VersionNumber,
-      note: 4 as Note,
+      rating: 4 as Rating,
       remarks: 'Mieux' as Remarks,
     })
     if (typeof again === 'string') throw new Error(`expected a result, got ${again}`)
-    expect(again.note).toBe(4 as Note)
+    expect(again.rating).toBe(4 as Rating)
     expect(again.remarks).toBe('Mieux' as Remarks)
 
     const stored = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)
-    expect(stored?.note).toBe(4 as Note)
+    expect(stored?.rating).toBe(4 as Rating)
     expect(stored?.remarks).toBe('Mieux' as Remarks)
   })
 
   test('returns not-found for an unknown recipe or version', async () => {
-    const unknownRecipe = await RecipeCommand.recordEssai(userId, {
+    const unknownRecipe = await RecipeCommand.recordAttempt(userId, {
       recipeId: 'nope' as RecipeId,
       versionNumber: 1 as VersionNumber,
-      note: 4 as Note,
+      rating: 4 as Rating,
       remarks: '' as Remarks,
     })
     expect(unknownRecipe).toBe('not-found')
 
     const recipe = await RecipeCommand.create(userId, newInput())
-    const unknownVersion = await RecipeCommand.recordEssai(userId, {
+    const unknownVersion = await RecipeCommand.recordAttempt(userId, {
       recipeId: recipe.id,
       versionNumber: 9 as VersionNumber,
-      note: 4 as Note,
+      rating: 4 as Rating,
       remarks: '' as Remarks,
     })
     expect(unknownVersion).toBe('not-found')

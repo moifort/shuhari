@@ -1,14 +1,14 @@
 import SwiftUI
 
 /// A library row: type icon tile, title, a subtitle with the version count, and
-/// the recipe's best note ("the highest star" across every version it ever cooked)
+/// the recipe's best rating ("the highest star" across every version it ever cooked)
 /// as the trailing value. Designed as a List row — the List provides insets,
 /// separators and the navigation chevron.
 struct LibraryRow: View {
     let title: String
     let type: RecipeType
     let versionCount: Int
-    let bestNote: Int?
+    let bestRating: Int?
 
     @ScaledMetric(relativeTo: .body) private var tileSize: CGFloat = 34
 
@@ -32,17 +32,17 @@ struct LibraryRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            if let bestNote {
+            if let bestRating {
                 HStack(alignment: .firstTextBaseline, spacing: 1) {
-                    Text("\(bestNote)")
+                    Text("\(bestRating)")
                         .font(.title3.weight(.semibold))
                         .monospacedDigit()
-                        .foregroundStyle(Theme.Status.note(bestNote))
+                        .foregroundStyle(Theme.Status.rating(bestRating))
                     Text("/5")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
-                .accessibilityLabel("Meilleure note \(bestNote) sur 5")
+                .accessibilityLabel("Meilleure note \(bestRating) sur 5")
             }
         }
         .accessibilityElement(children: .combine)
@@ -55,8 +55,8 @@ struct LibraryRow: View {
 
 #Preview {
     List {
-        LibraryRow(title: "Bœuf bourguignon", type: .plat, versionCount: 4, bestNote: 5)
-        LibraryRow(title: "Joues de bœuf confites", type: .plat, versionCount: 1, bestNote: 3)
-        LibraryRow(title: "Risotto au parmesan", type: .tmx, versionCount: 2, bestNote: nil)
+        LibraryRow(title: "Bœuf bourguignon", type: .plat, versionCount: 4, bestRating: 5)
+        LibraryRow(title: "Joues de bœuf confites", type: .plat, versionCount: 1, bestRating: 3)
+        LibraryRow(title: "Risotto au parmesan", type: .tmx, versionCount: 2, bestRating: nil)
     }
 }

@@ -24,11 +24,11 @@ struct RecipeDetailPage {
             .waitOrFail(timeout: 6, "version v\(number) badge not shown")
     }
 
-    /// Record an essai on the displayed version via the round centre CTA. Every
-    /// version is cookable and an essai is overwritable, so this is always available.
+    /// Record an attempt on the displayed version via the round centre CTA. Every
+    /// version is cookable and an attempt is overwritable, so this is always available.
     @discardableResult
-    func recordTrial() throws -> CapturePage {
-        try app.buttons["record-trial-button"].tapOrFail()
+    func recordAttempt() throws -> CapturePage {
+        try app.buttons["record-attempt-button"].tapOrFail()
         return CapturePage(app: app)
     }
 }

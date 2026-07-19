@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import {
   alignedTmxSteps,
-  bestNote,
+  bestRating,
   categoryRank,
   nextVersionNumber,
   toTmxSettings,
@@ -9,7 +9,7 @@ import {
 } from '~/domain/recipe/business-rules'
 import {
   DISH_CATEGORY_VALUES,
-  type Note,
+  type Rating,
   type RecipeVersion,
   type StepText,
   type TmxSettings,
@@ -20,14 +20,14 @@ import {
 } from '~/domain/recipe/types'
 
 const v = (n: number) => n as VersionNumber
-const note = (n: number) => n as Note
+const rating = (n: number) => n as Rating
 
-// Minimal RecipeVersion fixture: bestNote/versionToOpen only read `number`, `note`
-// and `basedOn`. An absent note means the version was never cooked (no rating).
-const version = (number: number, opts: { note?: number; basedOn?: number } = {}): RecipeVersion =>
+// Minimal RecipeVersion fixture: bestRating/versionToOpen only read `number`,
+// `rating` and `basedOn`. An absent rating means the version was never cooked.
+const version = (number: number, opts: { rating?: number; basedOn?: number } = {}): RecipeVersion =>
   ({
     number: v(number),
-    note: opts.note === undefined ? null : note(opts.note),
+    rating: opts.rating === undefined ? null : rating(opts.rating),
     basedOn: opts.basedOn === undefined ? null : v(opts.basedOn),
   }) as RecipeVersion
 
@@ -56,22 +56,22 @@ describe('nextVersionNumber', () => {
   })
 })
 
-describe('bestNote', () => {
+describe('bestRating', () => {
   test('returns null when no version was ever cooked', () => {
-    expect(bestNote([])).toBeNull()
-    expect(bestNote([version(1), version(2)])).toBeNull()
+    expect(bestRating([])).toBeNull()
+    expect(bestRating([version(1), version(2)])).toBeNull()
   })
-  test('returns the highest-noted version', () => {
-    const v2 = version(2, { note: 5 })
-    expect(bestNote([version(1, { note: 3 }), v2, version(3, { note: 4 })])).toBe(v2)
+  test('returns the highest-rated version', () => {
+    const v2 = version(2, { rating: 5 })
+    expect(bestRating([version(1, { rating: 3 }), v2, version(3, { rating: 4 })])).toBe(v2)
   })
-  test('breaks a note tie toward the most recent version', () => {
-    const v3 = version(3, { note: 4 })
-    expect(bestNote([version(1, { note: 4 }), v3, version(2, { note: 4 })])).toBe(v3)
+  test('breaks a rating tie toward the most recent version', () => {
+    const v3 = version(3, { rating: 4 })
+    expect(bestRating([version(1, { rating: 4 }), v3, version(2, { rating: 4 })])).toBe(v3)
   })
   test('ignores never-cooked versions', () => {
-    const v1 = version(1, { note: 4 })
-    expect(bestNote([v1, version(2), version(3)])).toBe(v1)
+    const v1 = version(1, { rating: 4 })
+    expect(bestRating([v1, version(2), version(3)])).toBe(v1)
   })
 })
 
@@ -80,25 +80,25 @@ describe('versionToOpen', () => {
     const v3 = version(3)
     expect(versionToOpen([version(1), version(2), v3])).toBe(v3)
   })
-  test('opens the best-noted version when it has no version derived from it', () => {
-    const v1 = version(1, { note: 5 })
-    expect(versionToOpen([v1, version(2, { note: 3 })])).toBe(v1)
+  test('opens the best-rated version when it has no version derived from it', () => {
+    const v1 = version(1, { rating: 5 })
+    expect(versionToOpen([v1, version(2, { rating: 3 })])).toBe(v1)
   })
-  test('opens the essai en cours: the version derived from the best-noted one', () => {
+  test('opens the attempt in progress: the version derived from the best-rated one', () => {
     const v2 = version(2, { basedOn: 1 })
-    expect(versionToOpen([version(1, { note: 5 }), v2])).toBe(v2)
+    expect(versionToOpen([version(1, { rating: 5 }), v2])).toBe(v2)
   })
-  test('opens the most recent version derived from the best-noted one', () => {
+  test('opens the most recent version derived from the best-rated one', () => {
     const v3 = version(3, { basedOn: 1 })
-    expect(versionToOpen([version(1, { note: 5 }), version(2, { basedOn: 1 }), v3])).toBe(v3)
+    expect(versionToOpen([version(1, { rating: 5 }), version(2, { basedOn: 1 }), v3])).toBe(v3)
   })
   test('ignores versions derived from a non-best version', () => {
-    const best = version(2, { note: 5 })
-    expect(versionToOpen([version(1, { note: 3 }), best, version(3, { basedOn: 1 })])).toBe(best)
+    const best = version(2, { rating: 5 })
+    expect(versionToOpen([version(1, { rating: 3 }), best, version(3, { basedOn: 1 })])).toBe(best)
   })
-  test('propagates the best-noted tie-break to the essai en cours', () => {
+  test('propagates the best-rated tie-break to the attempt in progress', () => {
     const v3 = version(3, { basedOn: 2 })
-    expect(versionToOpen([version(1, { note: 4 }), version(2, { note: 4 }), v3])).toBe(v3)
+    expect(versionToOpen([version(1, { rating: 4 }), version(2, { rating: 4 }), v3])).toBe(v3)
   })
 })
 

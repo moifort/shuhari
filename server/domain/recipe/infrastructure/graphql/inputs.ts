@@ -88,10 +88,11 @@ export const UpdateRecipeInput = builder.inputType('UpdateRecipeInput', {
   }),
 })
 
-export const RecordEssaiInput = builder.inputType('RecordEssaiInput', {
+export const RecordAttemptInput = builder.inputType('RecordAttemptInput', {
   description:
     'The result of cooking one version: which version you tried, how you rate it, and your ' +
-    'notes, e.g. `v2` rated `4`. Recorded once — a version’s outcome cannot be edited afterwards.',
+    'remarks, e.g. `v2` rated `4`. Recorded once — a version’s outcome cannot be edited ' +
+    'afterwards.',
   fields: (t) => ({
     recipeId: t.field({
       type: 'RecipeId',
@@ -103,17 +104,17 @@ export const RecordEssaiInput = builder.inputType('RecordEssaiInput', {
       required: true,
       description: 'Which version of it you tried, e.g. `2`',
     }),
-    note: t.field({
-      type: 'Note',
+    rating: t.field({
+      type: 'Rating',
       required: true,
       description: 'Your rating, `1` to `5`, e.g. `4`',
     }),
     remarks: t.field({
       type: 'Remarks',
       required: true,
-      description: 'Your notes on how it turned out, e.g. `"Still a touch too sweet"`',
+      description: 'Your remarks on how it turned out, e.g. `"Still a touch too sweet"`',
     }),
-    // Placeholder: accepted but not yet persisted — recordEssai always stores
+    // Placeholder: accepted but not yet persisted — recordAttempt always stores
     // photoPath: null and photoUrl resolves null until GCS photo storage is
     // provisioned. Kept on the contract so the app can send it without a schema change.
     photo: t.string({

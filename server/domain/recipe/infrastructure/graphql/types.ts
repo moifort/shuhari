@@ -1,4 +1,4 @@
-import { bestNote, versionToOpen } from '~/domain/recipe/business-rules'
+import { bestRating, versionToOpen } from '~/domain/recipe/business-rules'
 import { type RecipeLibraryPage, RecipeQuery } from '~/domain/recipe/query'
 import { builder } from '~/domain/shared/graphql/builder'
 import type { Ingredient, Recipe, RecipeVersion, TmxSettings } from '../../types'
@@ -53,12 +53,12 @@ export const TmxSettingsType = builder.objectRef<TmxSettings>('TmxSettings').imp
   }),
 })
 
-// A version is also an essai: immutable content/lineage, plus its outcome fields
-// (note/remarks/executedAt) written once when executed. `tried` derives from
+// A version is also an attempt: immutable content/lineage, plus its outcome fields
+// (rating/remarks/executedAt) written once when executed. `tried` derives from
 // `executedAt`.
 export const VersionType = builder.objectRef<RecipeVersion>('Version').implement({
   description:
-    'One version of a recipe — and, at the same time, one "essai" (a real attempt in the ' +
+    'One version of a recipe — and, at the same time, one attempt (a real cook in the ' +
     'kitchen). Two sides to it: the CONTENT (its ingredients and steps, frozen the moment the ' +
     'version is created) and the OUTCOME (its rating and remarks, filled in once you have ' +
     'actually cooked it). Versions form a chain: `v1 → v2 → v3` … Each new version builds on ' +
@@ -87,7 +87,7 @@ export const VersionType = builder.objectRef<RecipeVersion>('Version').implement
     originDetail: t.string({
       nullable: true,
       description:
-        'A short note about its origin, e.g. `"Marmiton"` (the site it was imported from), or ' +
+        'A short label about its origin, e.g. `"Marmiton"` (the site it was imported from), or ' +
         '`null` if none',
       resolve: (v) => v.origin.detail ?? null,
     }),
@@ -139,7 +139,7 @@ export const VersionType = builder.objectRef<RecipeVersion>('Version').implement
       nullable: true,
       description:
         'The day you actually cooked this version, e.g. `"2026-07-18T14:30:00.000Z"`. `null` ' +
-        'means it is still an "essai à faire" (a to-do you have planned but not tried yet).',
+        'means it is still a planned attempt (a to-do you have lined up but not tried yet).',
       resolve: (v) => v.executedAt ?? null,
     }),
     tried: t.boolean({
@@ -148,14 +148,14 @@ export const VersionType = builder.objectRef<RecipeVersion>('Version').implement
         'while it is still waiting to be tried',
       resolve: (v) => v.executedAt !== null,
     }),
-    note: t.field({
-      type: 'Note',
+    rating: t.field({
+      type: 'Rating',
       nullable: true,
       description:
         'Your rating of this attempt, from `1` (bad) to `5` (excellent). `null` until you have ' +
-        'cooked it. The recipe’s best rating across its versions drives its display note (see ' +
-        'bestNote).',
-      resolve: (v) => v.note ?? null,
+        'cooked it. The recipe’s best rating across its versions drives what it displays (see ' +
+        'bestRating).',
+      resolve: (v) => v.rating ?? null,
     }),
     remarks: t.field({
       type: 'Remarks',
@@ -181,7 +181,7 @@ RecipeType.implement({
   description:
     'A dish you are perfecting over time. A recipe is the whole experiment, not a single ' +
     'recipe card: it holds a chain of versions (v1, v2, v3 …), each one an attempt in the ' +
-    'kitchen. Its state is derived from that chain — its best rating (bestNote) and the version ' +
+    'kitchen. Its state is derived from that chain — its best rating (bestRating) and the version ' +
     'to open from the home (versionToOpen). Think `"Grandma’s lasagna"` and every attempt you ' +
     'have made to nail it.',
   fields: (t) => ({
@@ -225,7 +225,7 @@ RecipeType.implement({
       resolve: (r) => RecipeQuery.versionsOf(r.id),
     }),
     // Satellite: the version the fiche opens on, derived from the full lineage via
-    // the batched loader (shares the scan with bestNote — no extra reads).
+    // the batched loader (shares the scan with bestRating — no extra reads).
     versionToOpen: t.field({
       type: VersionType,
       description:
@@ -238,17 +238,17 @@ RecipeType.implement({
         return versionToOpen(versions)
       },
     }),
-    // Satellite: the recipe's best essai note across its cooked versions, from the
-    // batched loader that groups the full lineage by recipe (no extra reads).
-    bestNote: t.field({
-      type: 'Note',
+    // Satellite: the recipe's best attempt rating across its cooked versions, from
+    // the batched loader that groups the full lineage by recipe (no extra reads).
+    bestRating: t.field({
+      type: 'Rating',
       nullable: true,
       description:
         'The best rating this recipe ever got, across all the attempts you have cooked, e.g. ' +
         '`5` (`1`–`5`). `null` if you have never tried any version yet.',
       resolve: async (r, _a, { loaders }) => {
         const versions = (await loaders.versionsByRecipe.load(r.id)) ?? []
-        return bestNote(versions)?.note ?? null
+        return bestRating(versions)?.rating ?? null
       },
     }),
   }),

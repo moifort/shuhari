@@ -223,9 +223,9 @@ export namespace Ai {
           return `${i + 1}. ${s}${tmx ? formatTmx(tmx) : ''}`
         })
         .join('\n') || '—'
-    const trials =
-      context.trials
-        .map((t) => `- Note ${t.note}/5. Remarques : ${t.remarks || '—'}.`)
+    const attempts =
+      context.attempts
+        .map((t) => `- Note ${t.rating}/5. Remarques : ${t.remarks || '—'}.`)
         .join('\n') || '—'
 
     return `Tu es l'assistant d'un carnet d'expérimentation culinaire. Analyse les essais et propose la PROCHAINE version de la recette.
@@ -239,7 +239,7 @@ ${ingredients}
 ${steps}
 
 Essais réalisés :
-${trials}
+${attempts}
 
 Propose une itération : une amélioration de cette recette. Renseigne changeSummary (résumé court de ce qui change), rationale (pourquoi), ingredients et steps (la liste COMPLÈTE de la prochaine version). Toutes les valeurs textuelles en français.`
   }

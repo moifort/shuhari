@@ -8,7 +8,7 @@
 import ApolloAPI
 
 extension ShuhariGraphQL {
-  /// Free-form trial remarks (up to 2000 chars)
+  /// Free notes you jot down about an attempt (up to 2000 chars)
   typealias Remarks = String
 
 }

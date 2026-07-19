@@ -46,14 +46,14 @@ struct StatusTag: View {
 
     private var color: Color {
         switch kind {
-        case .working: Theme.Status.essai
+        case .working: Theme.Status.attempt
         case .version: Color.secondary
         }
     }
 
     private var background: Color {
         switch kind {
-        case .working: Theme.Status.essai.opacity(0.14)
+        case .working: Theme.Status.attempt.opacity(0.14)
         case .version: Color(.systemFill)
         }
     }

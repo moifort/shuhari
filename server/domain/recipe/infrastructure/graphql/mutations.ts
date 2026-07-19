@@ -4,7 +4,7 @@ import { RecipeCommand } from '~/domain/recipe/command'
 import { RecipeUseCase } from '~/domain/recipe/use-case'
 import { builder } from '~/domain/shared/graphql/builder'
 import { domainError } from '~/domain/shared/graphql/errors'
-import { CreateRecipeInput, RecordEssaiInput, UpdateRecipeInput } from './inputs'
+import { CreateRecipeInput, RecordAttemptInput, UpdateRecipeInput } from './inputs'
 import { RecipeType, VersionType } from './types'
 
 builder.mutationField('createRecipe', (t) =>
@@ -105,39 +105,39 @@ builder.mutationField('deleteRecipe', (t) =>
   }),
 )
 
-builder.mutationField('recordEssai', (t) =>
+builder.mutationField('recordAttempt', (t) =>
   t.field({
     type: VersionType,
     description: [
-      'Save what happened when you cooked a version: its rating and your notes. Overwritable — ' +
-        'recording again on the same version simply updates it. Fast and does not call the AI. If ' +
-        'the rating is low and you want a suggested improvement, ask for a proposal separately ' +
-        '(see requestProposal). Returns the version, now updated with its outcome.',
+      'Save what happened when you cooked a version: its rating and your remarks. Overwritable ' +
+        '— recording again on the same version simply updates it. Fast and does not call the AI. ' +
+        'If the rating is low and you want a suggested improvement, ask for a proposal ' +
+        'separately (see requestProposal). Returns the version, now updated with its outcome.',
       '',
       '```graphql',
-      'recordEssai(input: {',
+      'recordAttempt(input: {',
       '  recipeId: "9f1c-a3b2"',
       '  versionNumber: 2',
-      '  note: 4',
+      '  rating: 4',
       '  remarks: "Still a touch too sweet, but the texture is spot on"',
       '}) {',
       '  number',
-      '  note',
+      '  rating',
       '}',
       '```',
     ].join('\n'),
     args: {
       input: t.arg({
-        type: RecordEssaiInput,
+        type: RecordAttemptInput,
         required: true,
-        description: 'The attempt to record — which version, the rating, the notes',
+        description: 'The attempt to record — which version, the rating, the remarks',
       }),
     },
     resolve: async (_root, { input }, { userId }) => {
-      const result = await RecipeCommand.recordEssai(userId, {
+      const result = await RecipeCommand.recordAttempt(userId, {
         recipeId: input.recipeId,
         versionNumber: input.versionNumber,
-        note: input.note,
+        rating: input.rating,
         remarks: input.remarks,
         photoPath: null,
       })

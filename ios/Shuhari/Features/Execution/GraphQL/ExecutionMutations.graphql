@@ -1,5 +1,5 @@
-mutation RecordEssai($input: RecordEssaiInput!) {
-  recordEssai(input: $input) {
+mutation RecordAttempt($input: RecordAttemptInput!) {
+  recordAttempt(input: $input) {
     ...VersionFields
   }
 }

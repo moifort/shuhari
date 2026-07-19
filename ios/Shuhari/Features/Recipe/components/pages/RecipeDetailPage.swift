@@ -1,23 +1,23 @@
 import SwiftUI
 
 /// The recipe fiche, iOS Photos style: header badges (type + version), the
-/// ingredients and the best-rated version step by step. Trials live in the
+/// ingredients and the best-rated version step by step. Attempts live in the
 /// history. Navigation and mutations are owned by `RecipeDetailView`.
 struct RecipeDetailPage: View {
     let recipe: Recipe
     /// When set, the fiche renders THIS version instead of the best-rated one —
-    /// the essai view. Nil (the default) keeps the fiche strictly unchanged.
+    /// the attempt view. Nil (the default) keeps the fiche strictly unchanged.
     var focusVersion: RecipeVersion? = nil
     /// Ingredient names changed vs the previous version → orange dot.
     var modifiedIngredients: Set<String> = []
     /// Step indices changed vs the previous version → orange dot.
     var modifiedSteps: Set<Int> = []
     /// The change summary and rationale of the focused version, shown in the
-    /// orange banner atop an essai fiche.
+    /// orange banner atop an attempt fiche.
     var change: String? = nil
     var why: String? = nil
 
-    /// The version the fiche presents: the focused essai version when set,
+    /// The version the fiche presents: the focused attempt version when set,
     /// otherwise the recipe's `versionToOpen`.
     private var displayedVersion: RecipeVersion {
         focusVersion ?? recipe.versionToOpen
@@ -62,7 +62,7 @@ struct RecipeDetailPage: View {
 
     // MARK: - Banner
 
-    // The orange essai banner: the change summary + rationale of the focused
+    // The orange attempt banner: the change summary + rationale of the focused
     // version, in an orange-bordered card whose edges align with the section
     // cards below (default insets, only the fill/overlay are customised). Only
     // shown in focus mode with content — nil focus renders nothing.
@@ -83,8 +83,8 @@ struct RecipeDetailPage: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(Theme.Spacing.l)
-                .background(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous).fill(Theme.Status.essai.opacity(0.12)))
-                .overlay(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous).strokeBorder(Theme.Status.essai, lineWidth: 1))
+                .background(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous).fill(Theme.Status.attempt.opacity(0.12)))
+                .overlay(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous).strokeBorder(Theme.Status.attempt, lineWidth: 1))
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
             }
@@ -93,7 +93,7 @@ struct RecipeDetailPage: View {
 
     // MARK: - Header
 
-    // The badges + note line: a normal list row, so it scrolls with the page and
+    // The badges + rating line: a normal list row, so it scrolls with the page and
     // fades under the soft scroll edge.
     private var header: some View {
         Section {
@@ -102,11 +102,11 @@ struct RecipeDetailPage: View {
                     RecipeHeaderBadges(
                         type: recipe.type,
                         versionNumber: displayedVersion.number,
-                        essaiCount: recipe.essais.count
+                        attemptCount: recipe.attempts.count
                     )
                     Spacer(minLength: Theme.Spacing.s)
-                    if let average = recipe.overallAverageNote {
-                        NoteStars(note: average)
+                    if let average = recipe.overallAverageRating {
+                        RatingStars(rating: average)
                     }
                 }
             }

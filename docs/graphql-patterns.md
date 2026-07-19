@@ -46,7 +46,7 @@ export const builder = new SchemaBuilder<{
   Scalars: {
     DateTime: { Input: Date; Output: Date }
     RecipeId: { Input: RecipeId; Output: RecipeId }
-    Note: { Input: Note; Output: Note }
+    Rating: { Input: Rating; Output: Rating }
     // …one entry per branded scalar
   }
 }>({ defaultFieldNullability: false })
@@ -127,15 +127,15 @@ RecipeType.implement({
       resolve: (r) => RecipeQuery.versionsOf(r.id),
     }),
     // Derived satellite: the version the fiche opens on, computed from the whole
-    // lineage via the batched loader (shares the scan with bestNote — no extra reads).
+    // lineage via the batched loader (shares the scan with bestRating — no extra reads).
     versionToOpen: t.field({
       type: VersionType,
       resolve: async (r, _a, { loaders }) => versionToOpen((await loaders.versionsByRecipe.load(r.id)) ?? []),
     }),
-    bestNote: t.field({
-      type: 'Note',
+    bestRating: t.field({
+      type: 'Rating',
       nullable: true,
-      resolve: async (r, _a, { loaders }) => bestNote((await loaders.versionsByRecipe.load(r.id)) ?? [])?.note ?? null,
+      resolve: async (r, _a, { loaders }) => bestRating((await loaders.versionsByRecipe.load(r.id)) ?? [])?.rating ?? null,
     }),
   }),
 })
@@ -147,7 +147,7 @@ per-request loaders — the forward declaration is what makes that cross-domain 
 
 ## Satellite Loaders — the N+1 budget
 
-Derived satellite fields (`versions`, `versionToOpen`, `bestNote`) must **never** scan a
+Derived satellite fields (`versions`, `versionToOpen`, `bestRating`) must **never** scan a
 collection or read one doc per parent row. They resolve through per-request loaders
 (`server/domain/shared/graphql/loaders.ts`), built once per request in
 `recipeSatelliteLoaders(userId)`.
@@ -170,7 +170,7 @@ versionsByRecipe: batchedBy(
 ```
 
 So a page of recipes selecting `versionToOpen` costs **one** scan; an unselected satellite costs
-**nothing**. `versionToOpen` and `bestNote` both derive from the full lineage, so they reuse the
+**nothing**. `versionToOpen` and `bestRating` both derive from the full lineage, so they reuse the
 same `versionsByRecipe` batch — still one read. These budgets are asserted in `.int.test.ts` via
 `fake.queryReads` / `fake.docReads` — keep them green.
 
@@ -205,17 +205,17 @@ stable `extensions.code` using `match().exhaustive()` from `ts-pattern` and the 
 import { match, P } from 'ts-pattern'
 import { domainError } from '~/domain/shared/graphql/errors'
 
-builder.mutationField('recordEssai', (t) =>
+builder.mutationField('recordAttempt', (t) =>
   t.field({
     type: VersionType,
     args: {
       recipeId: t.arg({ type: 'RecipeId', required: true }),
       versionNumber: t.arg({ type: 'VersionNumber', required: true }),
-      note: t.arg({ type: 'Note', required: true }),
+      rating: t.arg({ type: 'Rating', required: true }),
       remarks: t.arg({ type: 'Remarks', required: true }),
     },
-    resolve: async (_root, { recipeId, versionNumber, note, remarks }, { userId }) => {
-      const result = await RecipeCommand.recordEssai(userId, { recipeId, versionNumber, note, remarks })
+    resolve: async (_root, { recipeId, versionNumber, rating, remarks }, { userId }) => {
+      const result = await RecipeCommand.recordAttempt(userId, { recipeId, versionNumber, rating, remarks })
       return match(result)
         .with('not-found', domainError)
         .with(P.not(P.string), (recorded) => recorded)
@@ -265,7 +265,7 @@ reader, not a type annotation. Concretely:
 
 - **Say what it means in the domain, not what it is technically.** Prefer "The version to open
   first when you enter the recipe" over "The versionToOpen resolver". Name the Shu-Ha-Ri concept
-  (recipe, version = essai, iteration, best note) rather than the storage or GraphQL mechanics.
+  (recipe, version = attempt, iteration, best rating) rather than the storage or GraphQL mechanics.
 - **Give a concrete example** wherever it sharpens understanding — real values in the culinary
   domain: `e.g. "Grandma’s lasagna"`, `e.g. "250 g"`, `e.g. "Baked at 180°C instead of 200°C"`,
   `1 (bad) to 5 (excellent)`. Examples beat abstract prose for a non-tech reader.
@@ -274,18 +274,18 @@ reader, not a type annotation. Concretely:
 - **Cross-reference sibling fields by name** so the reader can navigate the graph: "see
   `versionToOpen`", "ask for a proposal separately (see `requestProposal`)".
 - **Flag destructive actions** in the mutation description ("WARNING: this REPLACES everything…").
-- Keep the domain vocabulary consistent across the schema (an *essai* is an attempt, a *version* is
+- Keep the domain vocabulary consistent across the schema (an *attempt* is a cook, a *version* is
   one entry in the chain, an *iteration* is an accepted AI proposal).
 
 ```typescript
-note: t.field({
-  type: 'Note',
+rating: t.field({
+  type: 'Rating',
   nullable: true,
   description:
     'Your rating of this attempt, from `1` (bad) to `5` (excellent). `null` until you have ' +
-    'cooked it. The recipe’s best rating across its versions drives its display note (see ' +
-    'bestNote).',
-  resolve: (v) => v.note ?? null,
+    'cooked it. The recipe’s best rating across its versions drives what it displays (see ' +
+    'bestRating).',
+  resolve: (v) => v.rating ?? null,
 }),
 ```
 

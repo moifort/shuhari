@@ -35,7 +35,7 @@ ui-debug.log
 # iOS Firebase + Apollo
 ios/Shuhari/GoogleService-Info.plist
 # Ignore generated Apollo output, but KEEP the custom-scalar overrides
-# (Note/VersionNumber → Int). Apollo never overwrites an existing custom-scalar
+# (Rating/VersionNumber → Int). Apollo never overwrites an existing custom-scalar
 # file, so these hand-typed aliases must be committed or a clean regen would
 # default them back to String. Contents are excluded with /* (not the dir) so the
 # negations below can re-include the CustomScalars subtree.

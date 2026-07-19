@@ -4,7 +4,7 @@ import type { H3Event } from 'h3'
 import type {
   IngredientName,
   IngredientQuantity,
-  Note,
+  Rating,
   RecipeId,
   RecipeTitle,
   Remarks,
@@ -41,7 +41,7 @@ export const builder = new SchemaBuilder<{
     RecipeId: { Input: RecipeId; Output: RecipeId }
     RecipeTitle: { Input: RecipeTitle; Output: RecipeTitle }
     VersionNumber: { Input: VersionNumber; Output: VersionNumber }
-    Note: { Input: Note; Output: Note }
+    Rating: { Input: Rating; Output: Rating }
     IngredientName: { Input: IngredientName; Output: IngredientName }
     IngredientQuantity: { Input: IngredientQuantity; Output: IngredientQuantity }
     StepText: { Input: StepText; Output: StepText }

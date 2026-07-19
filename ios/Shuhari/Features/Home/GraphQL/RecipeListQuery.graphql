@@ -21,7 +21,7 @@ query RecipeList(
       category
       updatedAt
       versionCount
-      bestNote
+      bestRating
     }
     hasMore
     totalCount

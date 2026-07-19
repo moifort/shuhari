@@ -129,5 +129,5 @@ Cross-domain primitives live in `server/domain/shared/`:
 - `Count` — a branded number (constructed from an already-numeric value: `make<CountType>()(value)`)
 
 Domain-specific brands stay in their own domain — the persisted `recipe` domain owns them all:
-`RecipeId`, `VersionNumber`, `Note`, `Remarks`, `IngredientName`/`IngredientQuantity`, `StepText`,
+`RecipeId`, `VersionNumber`, `Rating`, `Remarks`, `IngredientName`/`IngredientQuantity`, `StepText`,
 `Tmx*`.

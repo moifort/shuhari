@@ -37,7 +37,7 @@ export type CachedImport = {
   cachedAt: Date
 }
 
-// Context handed to the proposal model: the full current version and the trials
+// Context handed to the proposal model: the full current version and the attempts
 // run against it, so the AI can propose the next version.
 export type ProposalContext = {
   type: RecipeType
@@ -46,8 +46,8 @@ export type ProposalContext = {
   currentSteps: string[]
   // Aligned with `currentSteps` by index; null when a step carries no setting.
   currentTmxSteps: (ImportTmxSettings | null)[]
-  trials: {
-    note: number
+  attempts: {
+    rating: number
     remarks: string
   }[]
 }

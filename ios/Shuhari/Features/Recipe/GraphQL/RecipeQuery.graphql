@@ -17,7 +17,7 @@ fragment VersionFields on Version {
     reverse
   }
   recipeId
-  note
+  rating
   remarks
   executedAt
   tried
@@ -33,7 +33,7 @@ query Recipe($id: RecipeId!) {
     category
     createdAt
     updatedAt
-    bestNote
+    bestRating
     versionToOpen {
       ...VersionFields
     }

@@ -1,12 +1,12 @@
 import SwiftUI
 
-/// A 5-star rating on the app's native 1–5 note scale: tapping star `i` sets the
-/// note to `i`. The note stays an `Int?` so the domain (best-note, colour
+/// A 5-star rating on the app's native 1–5 scale: tapping star `i` sets the rating
+/// to `i`. The rating stays an `Int?` so the domain (best rating, colour
 /// thresholds, "/5") reads it directly.
 struct StarRating: View {
     @Binding var selection: Int?
 
-    /// Number of filled stars for the current note (0 until one is picked).
+    /// Number of filled stars for the current rating (0 until one is picked).
     private var filledStars: Int { selection ?? 0 }
 
     var body: some View {
@@ -34,14 +34,14 @@ struct StarRating: View {
 
 #Preview {
     struct Demo: View {
-        @State private var note: Int? = 3
+        @State private var rating: Int? = 3
         var body: some View {
             Form {
                 Section {
-                    StarRating(selection: $note)
+                    StarRating(selection: $rating)
                         .listRowBackground(Color.clear)
                 }
-                Text(note.map { "Note : \($0)/5" } ?? "Pas de note")
+                Text(rating.map { "Note : \($0)/5" } ?? "Pas de note")
             }
         }
     }

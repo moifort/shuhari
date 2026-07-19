@@ -3,7 +3,7 @@ import { ZodError } from 'zod'
 import {
   IngredientName,
   IngredientQuantity,
-  Note,
+  Rating,
   RecipeId,
   RecipeTitle,
   Remarks,
@@ -62,12 +62,12 @@ builder.scalarType('VersionNumber', {
   parseValue: validatedParse('VersionNumber', VersionNumber),
 })
 
-builder.scalarType('Note', {
+builder.scalarType('Rating', {
   description:
-    'A rating out of 5, as a whole number from `1` (bad) to `5` (excellent), e.g. `4`. A version ' +
-    'rated `4` or more can become the recipe’s reference.',
+    'A rating out of 5, as a whole number from `1` (bad) to `5` (excellent), e.g. `4`. The best ' +
+    'rating across a recipe’s attempts drives the version its fiche opens on.',
   serialize: (value) => value as number,
-  parseValue: validatedParse('Note', Note),
+  parseValue: validatedParse('Rating', Rating),
 })
 
 builder.scalarType('IngredientName', {

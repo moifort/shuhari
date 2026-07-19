@@ -13,8 +13,8 @@ struct RecipeRouteView: View {
             RecipeDetailView(recipeId: id, path: $path, onReload: onReload)
         case .history(let id):
             HistoryView(recipeId: id)
-        case .essai(let recipeId, let versionNumber):
-            // The essai reuses the recipe fiche, focused on the version: same
+        case .attempt(let recipeId, let versionNumber):
+            // The attempt reuses the recipe fiche, focused on the version: same
             // title, sections and CTAs, plus an orange banner and change dots.
             RecipeDetailView(recipeId: recipeId, focusVersionNumber: versionNumber, path: $path, onReload: onReload)
         }
