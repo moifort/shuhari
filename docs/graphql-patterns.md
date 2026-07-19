@@ -238,17 +238,71 @@ return match(result)
 > 'not-found'`, then continue with the narrowed value) stay as `if` — they unwrap a query result
 > mid-flow rather than mapping a final outcome. See [error-handling.md](./error-handling.md).
 
+## Discriminated unions and `@oneOf` inputs
+
+A field whose shape depends on a discriminant is a Pothos `unionType`, with `resolveType` reading the
+backing model's tag. A version's body (`VersionContent`) is a union over the recipe type, tagged by
+`kind`:
+
+```ts
+export const VersionContentUnion = builder.unionType('VersionContent', {
+  types: [DishContentType, ThermomixContentType],
+  resolveType: (content: VersionContent) =>
+    content.kind === 'dish' ? 'DishContent' : 'ThermomixContent',
+})
+```
+
+The members are ordinary object types. Nested value objects — like a Thermomix step, which pairs an
+instruction with its (total) machine settings — get their own object ref:
+
+```ts
+export const ThermomixStepType = builder.objectRef<ThermomixStep>('ThermomixStep').implement({
+  fields: (t) => ({
+    text: t.expose('text', { type: 'StepText' }),
+    settings: t.field({ type: ThermomixSettingsType, resolve: (s) => s.settings }), // {} = a plain step
+  }),
+})
+```
+
+On the **input** side, the mirror of a union is a `@oneOf` input — exactly one arm must be set.
+Pothos writes it with `isOneOf: true` and each arm not `required`:
+
+```ts
+export const VersionContentInput = builder.inputType('VersionContentInput', {
+  isOneOf: true,
+  fields: (t) => ({
+    dish: t.field({ type: DishContentInput, required: false }),
+    thermomix: t.field({ type: ThermomixContentInput, required: false }),
+  }),
+})
+```
+
+A small brancher turns the `@oneOf` arms into the domain's discriminated `VersionContent` (the
+server also enforces `content.kind === recipe.type` in the command, rejecting a mismatch with the
+`content-type-mismatch` sentinel):
+
+```ts
+export const versionContentInput = (input: { dish?: …; thermomix?: … }): VersionContent => {
+  if (input.dish) return brandVersionContent({ kind: 'dish', ...input.dish })
+  if (input.thermomix) return brandVersionContent({ kind: 'thermomix', ...input.thermomix })
+  return domainError('invalid-content')
+}
+```
+
+Adding a recipe type adds one arm to each of the three (union `types`/`resolveType`, `@oneOf` field,
+brancher) — see the [domain guide](./domain-guide.md#adding-a-recipe-type).
+
 ## Inputs
 
 `builder.inputType(...)`, backed by branded scalars. Optional fields are simply not `required`;
 Pothos hands them back as `null | undefined`, so drop absent keys when mapping to the command.
 
 ```ts
-export const TmxSettingsInput = builder.inputType('TmxSettingsInput', {
+export const ThermomixSettingsInput = builder.inputType('ThermomixSettingsInput', {
   fields: (t) => ({
-    time: t.field({ type: 'TmxTime' }),
-    temperature: t.field({ type: 'TmxTemperature' }),
-    speed: t.field({ type: 'TmxSpeed' }),
+    time: t.field({ type: 'ThermomixTime' }),
+    temperature: t.field({ type: 'ThermomixTemperature' }),
+    speed: t.field({ type: 'ThermomixSpeed' }),
   }),
 })
 ```

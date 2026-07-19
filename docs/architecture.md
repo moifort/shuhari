@@ -55,6 +55,8 @@ server/
 │       ├── query.ts             # read operations (public namespace)
 │       ├── business-rules.ts    # (optional) pure functions, no IO
 │       ├── use-case.ts          # (optional) multi-domain orchestrations
+│       ├── version.ts           # (recipe) the versioning envelope
+│       ├── content/             # (recipe) VersionContent union: types.ts, dish.ts, thermomix.ts
 │       └── infrastructure/
 │           ├── repository.ts    # Firestore access (private to the domain)
 │           └── graphql/         # enums, types, inputs, queries, mutations (Pothos)
@@ -112,6 +114,15 @@ Each domain is a self-contained bounded context:
   (`removeCompletely`, never `handleX`).
 - **infrastructure/repository.ts** — The **only** place `db()` is used. Private to the domain.
 - **infrastructure/graphql/** — The domain's slice of the Pothos schema.
+
+The `recipe` domain adds a **version content variant** split (a "make illegal states unrepresentable"
+application). A version is a type-agnostic *versioning envelope* (`version.ts` — `number`, `basedOn`,
+`change`, `origin`, `why`, `createdAt`, attempt outcome) plus a `content` **discriminated union**
+under `content/` (`VersionContent = DishContent | ThermomixContent`, tagged by `kind`). The invariant
+`content.kind === recipe.type` is enforced in `RecipeCommand.create`/`addVersion`. Lineage rules
+(`bestRating`/`versionToOpen`/`nextVersionNumber`) live in `business-rules.ts` and never read
+`content`, so adding a recipe type is one new file in `content/` — see the
+[domain guide](./domain-guide.md#adding-a-recipe-type).
 
 ### Storage — native Firestore
 

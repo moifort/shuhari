@@ -78,7 +78,7 @@ String-literal unions live as a `const` tuple in `types.ts` and are parsed (not 
 
 ```ts
 // types.ts
-export const RECIPE_TYPE_VALUES = ['dish', 'tmx'] as const
+export const RECIPE_TYPE_VALUES = ['dish', 'thermomix'] as const
 export type RecipeType = (typeof RECIPE_TYPE_VALUES)[number]
 
 // primitives.ts
@@ -130,4 +130,4 @@ Cross-domain primitives live in `server/domain/shared/`:
 
 Domain-specific brands stay in their own domain — the persisted `recipe` domain owns them all:
 `RecipeId`, `VersionNumber`, `Rating`, `Remarks`, `IngredientName`/`IngredientQuantity`, `StepText`,
-`Tmx*`.
+`Thermomix*`.
