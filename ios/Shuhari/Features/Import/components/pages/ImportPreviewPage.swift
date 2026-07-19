@@ -205,7 +205,6 @@ struct ImportPreviewPage: View {
         }
         return ImportAnalysis(
             title: title.trimmingCharacters(in: .whitespacesAndNewlines),
-            subtitle: analysis.subtitle,
             type: type,
             category: category,
             ingredients: ingredients.compactMap { row in

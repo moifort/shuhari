@@ -3,7 +3,6 @@
  *  untrusted Gemini output to the same numbers so the two can never drift. */
 export const RECIPE_MAX = {
   title: 200,
-  subtitle: 200,
   changeSummary: 200,
   ingredientName: 120,
   ingredientQuantity: 60,

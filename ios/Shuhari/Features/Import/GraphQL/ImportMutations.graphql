@@ -1,7 +1,6 @@
 mutation AnalyzeImport($photos: [String!], $url: String, $text: String) {
   analyzeImport(photos: $photos, url: $url, text: $text) {
     title
-    subtitle
     type
     category
     sourceLabel

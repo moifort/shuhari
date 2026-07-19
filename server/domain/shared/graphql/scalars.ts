@@ -5,7 +5,6 @@ import {
   IngredientQuantity,
   Note,
   RecipeId,
-  RecipeSubtitle,
   RecipeTitle,
   Remarks,
   StepText,
@@ -53,14 +52,6 @@ builder.scalarType('RecipeTitle', {
   description: 'A recipe’s name, e.g. `"Grandma’s lasagna"` (1 to 200 characters)',
   serialize: (value) => value as string,
   parseValue: validatedParse('RecipeTitle', RecipeTitle),
-})
-
-builder.scalarType('RecipeSubtitle', {
-  description:
-    'The optional one-line subtitle under the name, e.g. `"with fresh basil"` (1 to 200 ' +
-    'characters)',
-  serialize: (value) => value as string,
-  parseValue: validatedParse('RecipeSubtitle', RecipeSubtitle),
 })
 
 builder.scalarType('VersionNumber', {

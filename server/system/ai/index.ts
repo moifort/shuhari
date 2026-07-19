@@ -95,11 +95,6 @@ const importResponseSchema = {
       description: 'Catégorie du plat : entree, plat, dessert, soupe, sauce ou boulangerie',
     },
     title: { type: 'string', description: 'Nom de la recette (concis, ≤200 caractères)' },
-    subtitle: {
-      type: 'string',
-      nullable: true,
-      description: 'Sous-titre court (origine, style), ≤200 caractères',
-    },
     sourceLabel: {
       type: 'string',
       nullable: true,
@@ -114,7 +109,6 @@ const importResponseSchema = {
     'type',
     'category',
     'title',
-    'subtitle',
     'sourceLabel',
     'ingredients',
     'steps',

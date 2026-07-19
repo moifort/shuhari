@@ -41,7 +41,6 @@ builder.mutationField('createRecipe', (t) =>
           type: input.type,
           category: input.category,
           title: input.title,
-          ...(input.subtitle ? { subtitle: input.subtitle } : {}),
           steps: input.steps,
           ingredients: input.ingredients ?? [],
           tmxSteps: input.tmxSteps ? toTmxSettings(input.tmxSteps) : [],
@@ -55,7 +54,7 @@ builder.mutationField('updateRecipe', (t) =>
   t.field({
     type: RecipeType,
     description: [
-      'Rename a recipe — change its title and/or its subtitle. Returns the updated recipe.',
+      'Rename a recipe — change its title. Returns the updated recipe.',
       '',
       '```graphql',
       'updateRecipe(id: "9f1c-a3b2", input: { title: "Nonna\'s lasagna" }) {',
@@ -69,14 +68,11 @@ builder.mutationField('updateRecipe', (t) =>
       input: t.arg({
         type: UpdateRecipeInput,
         required: true,
-        description: 'The new title/subtitle (send only what changes)',
+        description: 'The new title (leave it out to change nothing)',
       }),
     },
     resolve: async (_root, { id, input }, { userId }) => {
-      const result = await RecipeCommand.rename(userId, id, {
-        ...(input.title ? { title: input.title } : {}),
-        ...(input.subtitle ? { subtitle: input.subtitle } : {}),
-      })
+      const result = await RecipeCommand.rename(userId, id, input.title ?? undefined)
       return match(result)
         .with('not-found', domainError)
         .with(P.not(P.string), (recipe) => recipe)

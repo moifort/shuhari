@@ -203,12 +203,6 @@ RecipeType.implement({
       type: 'RecipeTitle',
       description: 'Its name, e.g. `"Grandma’s lasagna"`',
     }),
-    subtitle: t.string({
-      nullable: true,
-      description:
-        'An optional one-liner under the title, e.g. `"with fresh basil"`. `null` if none.',
-      resolve: (r) => r.subtitle ?? null,
-    }),
     createdAt: t.expose('createdAt', {
       type: 'DateTime',
       description: 'When the recipe was first imported, e.g. `"2026-07-18T14:30:00.000Z"`',

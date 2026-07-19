@@ -38,7 +38,6 @@ enum ImportAPI {
         let analysis = data.analyzeImport
         return ImportAnalysis(
             title: normalizedTitle(analysis.title),
-            subtitle: analysis.subtitle,
             type: RecipeType(graphql: analysis.type),
             category: DishCategory(graphql: analysis.category),
             ingredients: analysis.ingredients.map { Ingredient(name: $0.name, quantity: $0.quantity) },
@@ -73,7 +72,6 @@ enum ImportAPI {
             ingredients: ingredients,
             sourceLabel: GraphQLHelpers.graphQLNullable(analysis.sourceLabel),
             steps: analysis.steps,
-            subtitle: GraphQLHelpers.graphQLNullable(analysis.subtitle),
             title: analysis.title,
             tmxSteps: tmxSteps,
             type: analysis.type.graphQLValue

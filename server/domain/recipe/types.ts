@@ -26,7 +26,6 @@ export type SortOrder = 'asc' | 'desc'
 
 export type RecipeId = Brand<string, 'RecipeId'>
 export type RecipeTitle = Brand<string, 'RecipeTitle'>
-export type RecipeSubtitle = Brand<string, 'RecipeSubtitle'>
 export type VersionNumber = Brand<number, 'VersionNumber'>
 export type Note = Brand<number, 'Note'> // integer 1..5
 export type Remarks = Brand<string, 'Remarks'>
@@ -65,7 +64,6 @@ export type Recipe = {
   // changes across versions (unlike the versioned recipe content).
   category: DishCategory
   title: RecipeTitle
-  subtitle?: RecipeSubtitle
   versionCount: VersionNumber // highest version number allocated so far
   createdAt: Date
   updatedAt: Date

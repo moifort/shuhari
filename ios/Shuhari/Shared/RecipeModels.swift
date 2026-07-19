@@ -114,7 +114,6 @@ struct PropositionEdit: Sendable {
 struct Recipe: Identifiable, Sendable {
     let id: String
     let title: String
-    let subtitle: String?
     let type: RecipeType
     /// The dish course — fixed at import, shared across all versions.
     let category: DishCategory
@@ -157,7 +156,6 @@ struct Recipe: Identifiable, Sendable {
 /// Structured recipe extracted from an import source (editable preview).
 struct ImportAnalysis: Sendable, Hashable {
     var title: String
-    var subtitle: String?
     var type: RecipeType
     /// The dish course detected by the AI (editable before create).
     var category: DishCategory

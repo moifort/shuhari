@@ -24,7 +24,6 @@ export type ImportAnalysis = {
   type: RecipeType
   category: DishCategory
   title: string
-  subtitle: string | null
   sourceLabel: string | null
   ingredients: { name: string; quantity: string }[]
   steps: string[]

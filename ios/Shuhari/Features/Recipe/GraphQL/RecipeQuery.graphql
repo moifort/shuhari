@@ -29,7 +29,6 @@ query Recipe($id: RecipeId!) {
   recipe(id: $id) {
     id
     title
-    subtitle
     type
     category
     createdAt

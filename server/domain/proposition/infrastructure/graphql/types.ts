@@ -80,7 +80,6 @@ export const ImportAnalysisType = builder.objectRef<ImportAnalysis>('ImportAnaly
       description: 'The dish category detected by the AI',
     }),
     title: t.exposeString('title'),
-    subtitle: t.exposeString('subtitle', { nullable: true }),
     sourceLabel: t.exposeString('sourceLabel', { nullable: true }),
     ingredients: t.field({ type: [ImportIngredientType], resolve: (a) => a.ingredients }),
     steps: t.exposeStringList('steps'),

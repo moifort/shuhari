@@ -110,7 +110,6 @@ export const ImportAnalysisSchema = z
     // Best-effort detection: an unknown/missing category defaults to 'plat'.
     category: z.enum(DISH_CATEGORY_VALUES).catch('plat'),
     title: clampedField(RECIPE_MAX.title),
-    subtitle: optionalClamped(RECIPE_MAX.subtitle),
     sourceLabel: optionalClamped(SOURCE_LABEL_MAX),
     ingredients: z.array(ingredientSchema).default([]),
     steps: z.array(stepSchema).default([]),
@@ -122,7 +121,6 @@ export const ImportAnalysisSchema = z
       category: raw.category,
       // Title is required downstream; never let a blank one through.
       title: raw.title || 'Recette importée',
-      subtitle: raw.subtitle,
       sourceLabel: raw.sourceLabel,
       ingredients: foldIngredients(raw.ingredients),
       steps,

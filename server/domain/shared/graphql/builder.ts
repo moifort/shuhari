@@ -6,7 +6,6 @@ import type {
   IngredientQuantity,
   Note,
   RecipeId,
-  RecipeSubtitle,
   RecipeTitle,
   Remarks,
   StepText,
@@ -41,7 +40,6 @@ export const builder = new SchemaBuilder<{
     UserId: { Input: UserId; Output: UserId }
     RecipeId: { Input: RecipeId; Output: RecipeId }
     RecipeTitle: { Input: RecipeTitle; Output: RecipeTitle }
-    RecipeSubtitle: { Input: RecipeSubtitle; Output: RecipeSubtitle }
     VersionNumber: { Input: VersionNumber; Output: VersionNumber }
     Note: { Input: Note; Output: Note }
     IngredientName: { Input: IngredientName; Output: IngredientName }

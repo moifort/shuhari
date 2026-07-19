@@ -244,10 +244,11 @@ return match(result)
 Pothos hands them back as `null | undefined`, so drop absent keys when mapping to the command.
 
 ```ts
-export const UpdateRecipeInput = builder.inputType('UpdateRecipeInput', {
+export const TmxSettingsInput = builder.inputType('TmxSettingsInput', {
   fields: (t) => ({
-    title: t.field({ type: 'RecipeTitle' }),
-    subtitle: t.field({ type: 'RecipeSubtitle' }),
+    time: t.field({ type: 'TmxTime' }),
+    temperature: t.field({ type: 'TmxTemperature' }),
+    speed: t.field({ type: 'TmxSpeed' }),
   }),
 })
 ```

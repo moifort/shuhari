@@ -5,7 +5,6 @@ import type {
   IngredientQuantity,
   Recipe,
   RecipeId,
-  RecipeSubtitle,
   RecipeTitle,
   StepText,
   TmxSettings,
@@ -45,11 +44,10 @@ const ing = (name: string, quantity: string): Ingredient => ({
 const stepList = (...s: string[]) => s.map((x) => x as StepText)
 const PROPOSITION_INGREDIENTS = [ing('Veau', '800 g'), ing('Bouillon', '650 ml')]
 
-const recipeInput = (opts: { type?: 'plat' | 'tmx'; subtitle?: RecipeSubtitle } = {}) => ({
+const recipeInput = (opts: { type?: 'plat' | 'tmx' } = {}) => ({
   type: opts.type ?? ('plat' as const),
   category: 'plat' as const,
   title: 'Blanquette' as RecipeTitle,
-  ...(opts.subtitle ? { subtitle: opts.subtitle } : {}),
   steps: ['Saisir', 'Mijoter'] as StepText[],
   ingredients: [],
   tmxSteps: [] as (TmxSettings | null)[],
@@ -70,7 +68,6 @@ const baseAnalysis = (): ImportAnalysis => ({
   type: 'plat',
   category: 'plat',
   title: 'Blanquette',
-  subtitle: null,
   sourceLabel: 'Grand-mère',
   ingredients: [{ name: 'Veau', quantity: '800 g' }],
   steps: ['Saisir', 'Mijoter'],

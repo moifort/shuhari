@@ -113,7 +113,6 @@ enum Fixtures {
     static let bourguignon = Recipe(
         id: "bourguignon",
         title: "Bœuf bourguignon",
-        subtitle: "Mijoté au vin rouge",
         type: .plat,
         category: .plat,
         createdAt: date.addingTimeInterval(-86_400 * 30),
@@ -162,7 +161,6 @@ enum Fixtures {
     static let risotto = Recipe(
         id: "risotto",
         title: "Risotto au parmesan",
-        subtitle: "Thermomix TM6",
         type: .tmx,
         category: .plat,
         createdAt: date.addingTimeInterval(-86_400 * 12),
@@ -194,7 +192,6 @@ enum Fixtures {
     static let freshImport = Recipe(
         id: "fresh-import",
         title: "Daube provençale",
-        subtitle: "Fraîchement importée",
         type: .plat,
         category: .plat,
         createdAt: date,
@@ -234,7 +231,6 @@ enum Fixtures {
 
     static let importAnalysis = ImportAnalysis(
         title: "Cookies aux noix de pécan",
-        subtitle: nil,
         type: .plat,
         category: .dessert,
         ingredients: [
@@ -256,7 +252,6 @@ enum Fixtures {
 
     static let importAnalysisTmx = ImportAnalysis(
         title: "Risotto au parmesan",
-        subtitle: "Thermomix TM6",
         type: .tmx,
         category: .plat,
         ingredients: risottoIngredients,

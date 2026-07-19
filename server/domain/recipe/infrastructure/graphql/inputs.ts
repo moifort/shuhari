@@ -53,10 +53,6 @@ export const CreateRecipeInput = builder.inputType('CreateRecipeInput', {
       required: true,
       description: 'The recipe’s name, e.g. `"Grandma’s lasagna"`',
     }),
-    subtitle: t.field({
-      type: 'RecipeSubtitle',
-      description: 'Optional one-line subtitle, e.g. `"with fresh basil"`',
-    }),
     sourceLabel: t.string({ description: 'Where it came from, e.g. `"Marmiton"` or `"Mum"`' }),
     ingredients: t.field({
       type: [IngredientInput],
@@ -88,11 +84,6 @@ export const UpdateRecipeInput = builder.inputType('UpdateRecipeInput', {
     title: t.field({
       type: 'RecipeTitle',
       description: 'The new name, e.g. `"Nonna’s lasagna"` (leave out to keep the current one)',
-    }),
-    subtitle: t.field({
-      type: 'RecipeSubtitle',
-      description:
-        'The new subtitle, e.g. `"with fresh basil"` (leave out to keep the current one)',
     }),
   }),
 })

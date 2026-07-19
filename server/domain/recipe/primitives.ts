@@ -9,7 +9,6 @@ import {
   type Note as NoteType,
   RECIPE_TYPE_VALUES,
   type RecipeId as RecipeIdType,
-  type RecipeSubtitle as RecipeSubtitleType,
   type RecipeTitle as RecipeTitleType,
   type RecipeType as RecipeTypeType,
   type Remarks as RemarksType,
@@ -37,11 +36,6 @@ export const DishCategory = (value: unknown) =>
 export const RecipeTitle = (value: unknown) => {
   const v = z.string().trim().min(1).max(RECIPE_MAX.title).parse(value)
   return make<RecipeTitleType>()(v)
-}
-
-export const RecipeSubtitle = (value: unknown) => {
-  const v = z.string().trim().min(1).max(RECIPE_MAX.subtitle).parse(value)
-  return make<RecipeSubtitleType>()(v)
 }
 
 export const VersionNumber = (value: unknown) => {

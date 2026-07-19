@@ -126,13 +126,11 @@ describe('parseImportResponse — clamps oversized AI strings to domain limits',
     const result = parsedImport({
       type: 'tmx',
       title: 'T'.repeat(500),
-      subtitle: 'S'.repeat(500),
       ingredients: [{ name: 'N'.repeat(200), quantity: 'Q'.repeat(200) }],
       steps: [{ text: 'E'.repeat(500), tmxTime: 't'.repeat(50) }],
     })
 
     expect(result.title.length).toBe(RECIPE_MAX.title)
-    expect(result.subtitle?.length).toBe(RECIPE_MAX.subtitle)
     expect(result.ingredients[0].name.length).toBe(RECIPE_MAX.ingredientName)
     expect(result.ingredients[0].quantity.length).toBe(RECIPE_MAX.ingredientQuantity)
     expect(result.steps[0].length).toBe(RECIPE_MAX.stepText)

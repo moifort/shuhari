@@ -65,11 +65,8 @@ struct RecipeDetailView: View {
                     HistorySheet(recipeId: recipeId) { onReload() }
                 }
                 .sheet(isPresented: $showEdit) {
-                    RecipeEditSheet(
-                        initialTitle: recipe.title,
-                        initialSubtitle: recipe.subtitle ?? ""
-                    ) { title, subtitle in
-                        try await RecipeAPI.updateRecipe(id: recipeId, title: title, subtitle: subtitle)
+                    RecipeEditSheet(initialTitle: recipe.title) { title in
+                        try await RecipeAPI.updateRecipe(id: recipeId, title: title)
                         await viewModel.load()
                     }
                 }

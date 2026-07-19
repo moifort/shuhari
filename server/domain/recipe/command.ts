@@ -7,7 +7,6 @@ import type {
   Note,
   Recipe,
   RecipeId,
-  RecipeSubtitle,
   RecipeTitle,
   RecipeType,
   RecipeVersion,
@@ -26,7 +25,6 @@ export type NewRecipeInput = {
   type: RecipeType
   category: DishCategory
   title: RecipeTitle
-  subtitle?: RecipeSubtitle
   steps: StepText[]
   ingredients: Ingredient[]
   tmxSteps: (TmxSettings | null)[]
@@ -60,7 +58,6 @@ export namespace RecipeCommand {
       type: input.type,
       category: input.category,
       title: input.title,
-      ...(input.subtitle ? { subtitle: input.subtitle } : {}),
       versionCount: FIRST_VERSION,
       createdAt: now,
       updatedAt: now,
@@ -139,17 +136,12 @@ export namespace RecipeCommand {
     })
   }
 
-  export const rename = async (
-    userId: UserId,
-    recipeId: RecipeId,
-    fields: { title?: RecipeTitle; subtitle?: RecipeSubtitle },
-  ) => {
+  export const rename = async (userId: UserId, recipeId: RecipeId, title?: RecipeTitle) => {
     const recipe = await repository.findBy(userId, recipeId)
     if (!recipe) return 'not-found' as const
     const updated: Recipe = {
       ...recipe,
-      ...(fields.title ? { title: fields.title } : {}),
-      ...(fields.subtitle ? { subtitle: fields.subtitle } : {}),
+      ...(title ? { title } : {}),
       updatedAt: new Date(),
     }
     return repository.save(updated)

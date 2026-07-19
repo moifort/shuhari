@@ -49,9 +49,6 @@ input CreateRecipeInput {
   """
   steps: [StepText!]!
 
-  """Optional one-line subtitle, e.g. `"with fresh basil"`"""
-  subtitle: RecipeSubtitle
-
   """The recipe’s name, e.g. `"Grandma’s lasagna"`"""
   title: RecipeTitle!
 
@@ -99,7 +96,6 @@ type ImportAnalysis {
   ingredients: [ImportIngredient!]!
   sourceLabel: String
   steps: [String!]!
-  subtitle: String
   title: String!
 
   """Per-step Thermomix settings, aligned with steps (null = plain step)"""
@@ -294,7 +290,7 @@ type Mutation {
   ): Proposition!
 
   """
-  Rename a recipe — change its title and/or its subtitle. Returns the updated recipe.
+  Rename a recipe — change its title. Returns the updated recipe.
   
   ```graphql
   updateRecipe(id: "9f1c-a3b2", input: { title: "Nonna's lasagna" }) {
@@ -307,7 +303,7 @@ type Mutation {
     """Which recipe to rename"""
     id: RecipeId!
 
-    """The new title/subtitle (send only what changes)"""
+    """The new title (leave it out to change nothing)"""
     input: UpdateRecipeInput!
   ): Recipe!
 }
@@ -481,11 +477,6 @@ type Recipe {
   """Its unique identifier, e.g. `"9f1c…-a3b2"`"""
   id: RecipeId!
 
-  """
-  An optional one-liner under the title, e.g. `"with fresh basil"`. `null` if none.
-  """
-  subtitle: String
-
   """Its name, e.g. `"Grandma’s lasagna"`"""
   title: RecipeTitle!
 
@@ -528,11 +519,6 @@ enum RecipeSort {
   """
   UPDATED_AT
 }
-
-"""
-The optional one-line subtitle under the name, e.g. `"with fresh basil"` (1 to 200 characters)
-"""
-scalar RecipeSubtitle
 
 """A recipe’s name, e.g. `"Grandma’s lasagna"` (1 to 200 characters)"""
 scalar RecipeTitle
@@ -672,11 +658,6 @@ scalar TmxTime
 Fields to rename a recipe, e.g. set title to `"Nonna’s lasagna"`. Send only what you want to change — anything you leave out stays as it was.
 """
 input UpdateRecipeInput {
-  """
-  The new subtitle, e.g. `"with fresh basil"` (leave out to keep the current one)
-  """
-  subtitle: RecipeSubtitle
-
   """
   The new name, e.g. `"Nonna’s lasagna"` (leave out to keep the current one)
   """

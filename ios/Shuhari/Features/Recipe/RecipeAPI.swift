@@ -22,9 +22,8 @@ enum RecipeAPI {
         )
     }
 
-    static func updateRecipe(id: String, title: String?, subtitle: String?) async throws {
+    static func updateRecipe(id: String, title: String?) async throws {
         let input = ShuhariGraphQL.UpdateRecipeInput(
-            subtitle: GraphQLHelpers.graphQLNullable(subtitle),
             title: GraphQLHelpers.graphQLNullable(title)
         )
         _ = try await GraphQLHelpers.perform(
@@ -40,7 +39,6 @@ func mapRecipe(_ r: ShuhariGraphQL.RecipeQuery.Data.Recipe) -> Recipe {
     Recipe(
         id: r.id,
         title: r.title,
-        subtitle: r.subtitle,
         type: RecipeType(graphql: r.type),
         category: DishCategory(graphql: r.category),
         createdAt: GraphQLHelpers.parseISO8601(r.createdAt) ?? Date(),
