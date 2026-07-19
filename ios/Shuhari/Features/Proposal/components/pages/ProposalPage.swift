@@ -2,12 +2,13 @@ import SwiftUI
 
 /// The AI proposal screen: a short summary of what changes and why, then the
 /// FULL proposed next version — ingredients and steps, each row editable inline
-/// and tinted when it differs from the base version. Finally Valider/Fermer.
+/// and marked with a dot when it differs from the base version. Finally
+/// Valider/Fermer.
 ///
-/// Diff highlighting: rows are always editable `TextField`s, so a from→to
-/// `DiffValue` doesn't fit; instead a row carries the `Theme.Status.changed` tint
-/// whenever its current value differs from the base version (new or modified). It
-/// updates live as the user types.
+/// Diff marking: rows are always editable `TextField`s, so a from→to
+/// `DiffValue` doesn't fit; instead a row carries a leading `Theme.Status.changed`
+/// dot whenever its current value differs from the base version (new or modified).
+/// It updates live as the user types.
 ///
 /// The proposal is ephemeral (never persisted): "Fermer" discards it, "Valider"
 /// accepts it. On accept the page emits the COMPLETE proposal (full-replacement
@@ -17,7 +18,7 @@ import SwiftUI
 struct ProposalPage: View {
     let proposal: Proposal
     let nextVersionNumber: Int
-    /// The base version's content, to highlight what the proposal changes.
+    /// The base version's content, to mark what the proposal changes.
     let baseIngredients: [Ingredient]
     let baseSteps: [String]
     let isWorking: Bool
@@ -132,6 +133,7 @@ struct ProposalPage: View {
         Section("Ingrédients") {
             ForEach($ingredients) { $ingredient in
                 HStack {
+                    changeDot(ingredientDiffers(ingredient))
                     TextField("Ingrédient", text: $ingredient.name)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityIdentifier("edit-ingredient-name")
@@ -141,7 +143,6 @@ struct ProposalPage: View {
                         .foregroundStyle(.secondary)
                         .accessibilityIdentifier("edit-ingredient-quantity")
                 }
-                .listRowBackground(ingredientDiffers(ingredient) ? Theme.Status.changed.opacity(0.08) : nil)
             }
         }
     }
@@ -151,12 +152,12 @@ struct ProposalPage: View {
     private var stepsSection: some View {
         Section("Étapes") {
             ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
-                HStack(alignment: .top, spacing: 12) {
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    changeDot(stepDiffers(step.text))
                     Text("\(index + 1)")
                         .font(.subheadline.weight(.semibold))
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
-                        .frame(minWidth: 20, alignment: .trailing)
                     VStack(alignment: .leading, spacing: 6) {
                         TextField("Étape", text: $steps[index].text, axis: .vertical)
                             .lineLimit(1...6)
@@ -171,12 +172,21 @@ struct ProposalPage: View {
                         }
                     }
                 }
-                .listRowBackground(stepDiffers(step.text) ? Theme.Status.changed.opacity(0.08) : nil)
             }
         }
     }
 
     // MARK: - Diff
+
+    /// The orange dot marking a changed row — same 7 pt token as `StepsList`.
+    /// Filled clear (not removed) on an unchanged row so every row keeps the same
+    /// leading alignment.
+    private func changeDot(_ changed: Bool) -> some View {
+        Circle()
+            .fill(changed ? Theme.Status.changed : .clear)
+            .frame(width: 7, height: 7)
+            .accessibilityHidden(true)
+    }
 
     /// An ingredient row differs from the base version when the base has no
     /// ingredient with the exact same name and quantity (new or modified).
