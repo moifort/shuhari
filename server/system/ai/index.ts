@@ -22,18 +22,19 @@ const RECIPE_TYPE_ENUM = [...RECIPE_TYPE_VALUES]
 // Shared ingredient/step item shapes so the import and proposal schemas can't drift.
 const ingredientsSchemaProperty = {
   type: 'array',
-  description: 'Ingrédients de la recette avec leur quantité',
+  description: 'Recipe ingredients with their quantity, written in French',
   items: {
     type: 'object',
     properties: {
       name: {
         type: 'string',
         description:
-          "Nom court de l'ingrédient SEUL, sans préparation (ex : Gin, Beurre, Pommes de terre). La préparation (épluché, coupé en rondelles…) va dans les étapes, PAS dans le nom. ≤120 caractères.",
+          'Short name of the ingredient ALONE, in French, without any preparation (e.g. "Gin", "Beurre", "Pommes de terre"). The preparation (peeled, sliced…) belongs in the steps, NOT in the name. ≤120 characters.',
       },
       quantity: {
         type: 'string',
-        description: 'Quantité avec unité (ex : 50 ml, 170 g, 3 pièces), ≤60 caractères',
+        description:
+          'Quantity with its unit, in French (e.g. "50 ml", "170 g", "3 pièces"), ≤60 characters',
       },
     },
     required: ['name', 'quantity'],
@@ -42,34 +43,34 @@ const ingredientsSchemaProperty = {
 
 const stepsSchemaProperty = {
   type: 'array',
-  description: 'Étapes courtes et actionnables, dans l’ordre',
+  description: 'Short, actionable steps in order, written in French',
   items: {
     type: 'object',
     properties: {
       text: {
         type: 'string',
-        description: "Texte court de l'étape, à l'impératif, ≤300 caractères",
+        description: 'Short step text, in French, imperative mood, ≤300 characters',
       },
       tmxTime: {
         type: 'string',
         nullable: true,
-        description: 'Durée Thermomix (ex : « 3 min », « 30 s ») ; null sinon',
+        description: 'Thermomix time (e.g. "3 min", "30 s"); null otherwise',
       },
       tmxTemperature: {
         type: 'string',
         nullable: true,
-        description: 'Température Thermomix (ex : « 100°C », « Varoma ») ; null sinon',
+        description: 'Thermomix temperature (e.g. "100°C", "Varoma"); null otherwise',
       },
       tmxSpeed: {
         type: 'string',
         nullable: true,
         description:
-          'Vitesse Thermomix (ex : « 5 », « 3,5 », « pétrin », « mijotage », « turbo ») ; null sinon',
+          'Thermomix speed (e.g. "5", "3,5", "pétrin", "mijotage", "turbo"); null otherwise',
       },
       tmxReverse: {
         type: 'boolean',
         nullable: true,
-        description: 'Sens inverse activé ; null sinon',
+        description: 'Reverse rotation enabled; null otherwise',
       },
     },
     required: ['text'],
@@ -82,23 +83,26 @@ const importResponseSchema = {
   properties: {
     recipeFound: {
       type: 'boolean',
-      description: 'true si la source contient une recette exploitable, false sinon',
+      description: 'true if the source contains a usable recipe, false otherwise',
     },
     type: {
       type: 'string',
       enum: RECIPE_TYPE_ENUM,
-      description: "Type d'expérimentation : dish (recette cuisinée) ou tmx (Thermomix)",
+      description: 'Experiment type: dish (cooked recipe) or tmx (Thermomix)',
     },
     category: {
       type: 'string',
       enum: DISH_CATEGORY_VALUES,
-      description: 'Catégorie du plat : starter, main, dessert, soup, sauce ou baking',
+      description: 'Dish category: starter, main, dessert, soup, sauce or baking',
     },
-    title: { type: 'string', description: 'Nom de la recette (concis, ≤200 caractères)' },
+    title: {
+      type: 'string',
+      description: 'Recipe name, in French (concise, ≤200 characters)',
+    },
     sourceLabel: {
       type: 'string',
       nullable: true,
-      description: 'Source de la recette (auteur, site, livre) si identifiable',
+      description: 'Recipe source (author, website, book) if identifiable',
     },
     ingredients: ingredientsSchemaProperty,
     steps: stepsSchemaProperty,
@@ -121,9 +125,9 @@ const proposalResponseSchema = {
     changeSummary: {
       type: 'string',
       description:
-        'Résumé court de ce qui change (ex : « Bouillon 700 → 650 ml »), ≤200 caractères',
+        'Short summary of what changes, written in French (e.g. "Bouillon 700 → 650 ml"), ≤200 characters',
     },
-    rationale: { type: 'string', description: 'Explication du raisonnement, en français' },
+    rationale: { type: 'string', description: 'Explanation of the reasoning, written in French' },
     ingredients: ingredientsSchemaProperty,
     steps: stepsSchemaProperty,
   },
@@ -131,17 +135,20 @@ const proposalResponseSchema = {
   propertyOrdering: ['changeSummary', 'rationale', 'ingredients', 'steps'],
 }
 
-const IMPORT_INSTRUCTIONS = `Tu es l'assistant d'un carnet d'expérimentation culinaire. À partir de la source fournie (photos, page web ou texte d'une recette), extrais une recette STRUCTURÉE et REPRODUCTIBLE.
+const IMPORT_INSTRUCTIONS = `You are the assistant of a culinary experimentation notebook. From the provided source (photos, web page or recipe text), extract a STRUCTURED and REPRODUCIBLE recipe.
 
-Règles :
-- Détermine le type : dish (recette cuisinée) ou tmx (recette Thermomix).
-- Détermine la catégorie du plat : starter, main, dessert, soup, sauce ou baking (pâtisserie, pain, viennoiserie). En cas de doute, choisis main.
-- ingredients : liste ORDONNÉE des composants de la recette avec leur quantité (ex : Gin → 50 ml, Beurre → 170 g, Fraise → 3 pièces). Mets TOUS les ingrédients visibles sur la source, chacun avec sa quantité et son unité. C'est la « liste de courses » de la recette. Le NOM reste court : l'ingrédient seul, jamais sa préparation (« Pommes de terre », pas « Pommes de terre épluchées et coupées en rondelles » — la préparation va dans les étapes).
-- steps : étapes courtes, à l'impératif, dans l'ordre. Les réglages précis (température du four, durée, ratio…) restent dans le texte de l'étape.
-- Pour une recette Thermomix (type tmx) : pour chaque étape exécutée au Thermomix, renseigne tmxTime, tmxTemperature, tmxSpeed et tmxReverse tels qu'indiqués dans la recette (durée « 3 min » / « 30 s » / « 1 h 10 min » ; température « 100°C » ou « Varoma » ; vitesse « 0,5 » à « 10 », « pétrin », « mijotage » ou « turbo »). Mets null pour chaque réglage absent, et pour TOUS ces champs quand l'étape ne se fait pas au Thermomix ou que la recette n'est pas de type tmx.
-- Sois concis : chaque valeur reste courte (nom d'ingrédient ≤120, quantité ≤60, étape ≤300, titre ≤200, réglage Thermomix ≤20 caractères).
-- Si la source ne contient aucune recette exploitable (image illisible ou sans recette, page ou texte hors sujet), mets recipeFound à false et laisse tous les autres champs vides ou null. Sinon mets recipeFound à true.
-- Toutes les valeurs textuelles en français. Mets null pour toute information absente.`
+Rules:
+- MANDATORY: write every generated value — title, ingredient names and quantities, step text — in French. The reader is a French speaker; never answer in English.
+- Determine the type: dish (cooked recipe) or tmx (Thermomix recipe).
+- Determine the dish category: starter, main, dessert, soup, sauce or baking (pastry, bread, viennoiserie). When in doubt, pick main.
+- ingredients: the ORDERED list of the recipe's components with their quantity (e.g. Gin → 50 ml, Beurre → 170 g, Fraise → 3 pièces). Include EVERY ingredient visible in the source, each with its quantity and unit. This is the recipe's "shopping list". The NAME stays short: the ingredient alone, never its preparation ("Pommes de terre", not "Pommes de terre épluchées et coupées en rondelles" — the preparation belongs in the steps).
+- steps: short steps, imperative mood, in order. Precise settings (oven temperature, duration, ratio…) stay in the step text.
+- For a Thermomix recipe (type tmx): for every step performed on the Thermomix, fill tmxTime, tmxTemperature, tmxSpeed and tmxReverse exactly as stated in the recipe (time "3 min" / "30 s" / "1 h 10 min"; temperature "100°C" or "Varoma"; speed "0,5" to "10", "pétrin", "mijotage" or "turbo"). Use null for every missing setting, and for ALL of these fields when the step is not done on the Thermomix or when the recipe is not of type tmx.
+- Be concise: every value stays short (ingredient name ≤120, quantity ≤60, step ≤300, title ≤200, Thermomix setting ≤20 characters).
+- If the source contains no usable recipe (unreadable image or one without a recipe, off-topic page or text), set recipeFound to false and leave every other field empty or null. Otherwise set recipeFound to true.
+- Use null for any missing information.
+
+Reminder: all text values you produce must be written in French.`
 
 export namespace Ai {
   export const analyzeImport = async (source: ImportSource) => {
@@ -193,24 +200,24 @@ export namespace Ai {
       ]
     }
     if (source.kind === 'url') {
-      return [{ text: `${IMPORT_INSTRUCTIONS}\n\nSource à lire : ${source.url}` }]
+      return [{ text: `${IMPORT_INSTRUCTIONS}\n\nSource to read: ${source.url}` }]
     }
-    return [{ text: `${IMPORT_INSTRUCTIONS}\n\nTexte de la recette :\n${source.text}` }]
+    return [{ text: `${IMPORT_INSTRUCTIONS}\n\nRecipe text:\n${source.text}` }]
   }
 
-  // Cuisine-scoped iteration rule (dish + tmx). Café/cocktail will get their own
-  // rules later — no speculative abstraction here.
+  // Cuisine-scoped iteration rule (dish + tmx). Coffee and cocktail will get
+  // their own rules later — no speculative abstraction here.
   const cuisineIterationRule = (_type: ProposalContext['type']) =>
-    'Pour un plat ou une recette Thermomix, tu peux ajuster plusieurs éléments cohérents à la fois. Renvoie la liste COMPLÈTE des ingrédients et des étapes de la prochaine version (pas seulement ce qui change), plus un résumé court des changements.'
+    'For a dish or a Thermomix recipe, you may adjust several coherent elements at once. Return the COMPLETE ingredient and step list of the next version (not only what changes), plus a short summary of the changes.'
 
   const formatTmx = (tmx: NonNullable<ProposalContext['currentTmxSteps'][number]>): string => {
     const parts = [
-      tmx.time && `durée ${tmx.time}`,
-      tmx.temperature && `température ${tmx.temperature}`,
-      tmx.speed && `vitesse ${tmx.speed}`,
-      tmx.reverse && 'sens inverse',
+      tmx.time && `time ${tmx.time}`,
+      tmx.temperature && `temperature ${tmx.temperature}`,
+      tmx.speed && `speed ${tmx.speed}`,
+      tmx.reverse && 'reverse rotation',
     ].filter(Boolean)
-    return parts.length ? ` [Thermomix : ${parts.join(', ')}]` : ''
+    return parts.length ? ` [Thermomix: ${parts.join(', ')}]` : ''
   }
 
   const proposalPrompt = (context: ProposalContext): string => {
@@ -225,23 +232,27 @@ export namespace Ai {
         .join('\n') || '—'
     const attempts =
       context.attempts
-        .map((t) => `- Note ${t.rating}/5. Remarques : ${t.remarks || '—'}.`)
+        .map((t) => `- Note ${t.rating}/5. Remarks: ${t.remarks || '—'}.`)
         .join('\n') || '—'
 
-    return `Tu es l'assistant d'un carnet d'expérimentation culinaire. Analyse les essais et propose la PROCHAINE version de la recette.
+    return `You are the assistant of a culinary experimentation notebook. Analyse the attempts and propose the NEXT version of the recipe.
+
+MANDATORY: write every generated value — change summary, rationale, ingredient names and quantities, step text — in French. The reader is a French speaker; never answer in English.
 
 ${cuisineIterationRule(context.type)}
 
-Ingrédients actuels :
+Current ingredients:
 ${ingredients}
 
-Étapes actuelles :
+Current steps:
 ${steps}
 
-Essais réalisés :
+Attempts made:
 ${attempts}
 
-Propose une itération : une amélioration de cette recette. Renseigne changeSummary (résumé court de ce qui change), rationale (pourquoi), ingredients et steps (la liste COMPLÈTE de la prochaine version). Toutes les valeurs textuelles en français.`
+Propose an iteration: an improvement of this recipe. Fill changeSummary (a short summary of what changes), rationale (why), ingredients and steps (the COMPLETE list of the next version).
+
+Reminder: all text values you produce must be written in French.`
   }
 
   const callGemini = async (body: Record<string, unknown>): Promise<string | undefined> => {
@@ -255,15 +266,15 @@ Propose une itération : une amélioration de cette recette. Renseigne changeSum
   }
 
   const hashSource = (source: ImportSource): ImportHashType => {
-    // 'v6' salts the cache: bumped from 'v5' because the import prompt/schema
-    // gained the explicit recipeFound signal, so previously-analysed sources —
-    // including empty ones — re-run instead of serving a stale result.
+    // 'v7' salts the cache: bumped from 'v6' because the import prompt was
+    // rewritten in English and the category enum values changed, so
+    // previously-analysed sources re-run instead of serving a stale result.
     const material =
       source.kind === 'photos'
-        ? `v6|${source.photos.join('|')}`
+        ? `v7|${source.photos.join('|')}`
         : source.kind === 'url'
-          ? `v6|url:${source.url}`
-          : `v6|text:${source.text}`
+          ? `v7|url:${source.url}`
+          : `v7|text:${source.text}`
     return ImportHash(createHash('sha256').update(material).digest('hex'))
   }
 }
