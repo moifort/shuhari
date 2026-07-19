@@ -140,9 +140,6 @@ enum Fixtures {
         versionToOpen: bourguignonV4
     )
 
-    /// The tried versions of the bourguignon, most recent first — its attempt journal.
-    static let bourguignonAttempts = bourguignon.attempts
-
     // MARK: - Risotto (thermomix, per-step machine settings)
 
     static let risottoV2 = RecipeVersion(

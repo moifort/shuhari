@@ -11,8 +11,6 @@ struct RecipeRouteView: View {
         switch route {
         case .recipe(let id):
             RecipeDetailView(recipeId: id, path: $path, onReload: onReload)
-        case .history(let id):
-            HistoryView(recipeId: id)
         case .attempt(let recipeId, let versionNumber):
             // The attempt reuses the recipe sheet, focused on the version: same
             // title, sections and CTAs, plus an orange banner and change dots.

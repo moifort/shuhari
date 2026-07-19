@@ -23,9 +23,10 @@ struct DebugGallery: View {
         case "recipe-fresh":
             RecipeDetailGalleryScreen(recipe: Fixtures.freshImport)
         case "history":
-            NavigationStack {
-                HistoryPage(recipe: Fixtures.bourguignon)
-            }
+            Color.clear
+                .sheet(isPresented: .constant(true)) {
+                    HistorySheet(previewRecipe: Fixtures.bourguignon)
+                }
         case "attempt":
             RecipeDetailGalleryScreen(recipe: Fixtures.bourguignon, focusVersionNumber: 3)
         case "attempt-pending":

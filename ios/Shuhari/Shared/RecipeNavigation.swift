@@ -3,7 +3,6 @@ import Foundation
 /// Push destinations inside the notebook `NavigationStack`.
 enum RecipeRoute: Hashable {
     case recipe(id: String)
-    case history(id: String)
     case attempt(recipeId: String, versionNumber: Int)
 }
 

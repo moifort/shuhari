@@ -1,44 +1,72 @@
 import SwiftUI
 
-/// The version history: newest at the top.
+/// The version list, newest first, cut into month sections the way the library is —
+/// the body of the sheet the recipe sheet's bottom bar opens, dressed like the
+/// attempt sheet: a compact inline title and a close button, no subtitle (the recipe
+/// it belongs to sits right behind) and no hint. Rows are plain buttons, not links:
+/// picking a version hands it back to the caller, which closes the sheet and opens
+/// that version's recipe sheet — so no chevron is drawn.
 struct HistoryPage: View {
     let recipe: Recipe
+    let onSelect: (_ versionNumber: Int) -> Void
 
-    private var orderedVersions: [RecipeVersion] {
-        recipe.versions.sorted { $0.number > $1.number }
+    /// One month's worth of versions, most recent version first.
+    private struct MonthGroup: Identifiable {
+        let id: String
+        let label: String
+        let versions: [RecipeVersion]
+    }
+
+    /// The versions bucketed by the month they were created, most recent month first
+    /// — the grouping the library already uses for its own rows.
+    private var monthGroups: [MonthGroup] {
+        let calendar = Calendar.current
+        return Dictionary(grouping: recipe.versions) { version in
+            calendar.dateComponents([.year, .month], from: version.createdAt)
+        }
+        .map { components, versions in
+            MonthGroup(
+                id: MonthLabel.id(components),
+                label: MonthLabel.of(components, calendar: calendar),
+                versions: versions.sorted { $0.number > $1.number }
+            )
+        }
+        .sorted { $0.id > $1.id }
     }
 
     var body: some View {
         List {
-            Section {
-                ForEach(orderedVersions, id: \.number) { version in
-                    // Any version is cookable — tapping a row opens its recipe sheet.
-                    NavigationLink(value: RecipeRoute.attempt(recipeId: recipe.id, versionNumber: version.number)) {
-                        VersionTimelineItem(
-                            number: version.number,
-                            change: version.change,
-                            originDetail: version.originDetail,
-                            rating: version.rating,
-                            tried: version.tried,
-                            date: version.createdAt,
-                            isFocus: version.number == recipe.versionToOpen.number,
-                            isLast: version.number == orderedVersions.last?.number
-                        )
+            ForEach(monthGroups) { group in
+                Section {
+                    ForEach(group.versions, id: \.number) { version in
+                        Button {
+                            onSelect(version.number)
+                        } label: {
+                            VersionRow(
+                                number: version.number,
+                                change: version.change,
+                                originDetail: version.originDetail,
+                                rating: version.rating,
+                                tried: version.tried,
+                                isFocus: version.number == recipe.versionToOpen.number
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("version-row-v\(version.number)")
                     }
+                } header: {
+                    Text(group.label)
                 }
-            } footer: {
-                Text("Chaque cran ne change que ce qui est écrit.")
             }
-
-            AttemptJournalSection(recipeTitle: recipe.title, attempts: recipe.attempts)
         }
-        .navigationTitle("Historique")
-        .navigationSubtitle(recipe.title)
+        .contentMargins(.top, 0, for: .scrollContent)
+        // Same chrome as the attempt sheet: a compact inline title over the list,
+        // the close button coming from the sheet itself.
+        .navigationTitle("Versions")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
 #Preview {
-    NavigationStack {
-        HistoryPage(recipe: Fixtures.bourguignon)
-    }
+    HistoryPage(recipe: Fixtures.bourguignon, onSelect: { _ in })
 }

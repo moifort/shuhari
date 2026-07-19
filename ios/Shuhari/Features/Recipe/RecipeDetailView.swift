@@ -61,8 +61,13 @@ struct RecipeDetailView: View {
                         Task { await viewModel.load() }
                     }
                 }
+                // Picking a version closes the history and opens that version's
+                // recipe sheet in this stack — the sheet never pushes it itself.
                 .sheet(isPresented: $showHistory) {
-                    HistorySheet(recipeId: recipeId) { onReload() }
+                    HistorySheet(recipeId: recipeId) { versionNumber in
+                        showHistory = false
+                        path.append(RecipeRoute.attempt(recipeId: recipeId, versionNumber: versionNumber))
+                    }
                 }
                 .sheet(isPresented: $showEdit) {
                     RecipeEditSheet(initialTitle: recipe.title) { title in
