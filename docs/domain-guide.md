@@ -2,7 +2,7 @@
 
 Step-by-step guide to adding a backend domain. Each step maps to a DDD building block from
 Evans (*Domain-Driven Design*) or Wlaschin (*Domain Modeling Made Functional*). The examples
-come from the real `recipe` (persisted) and `proposition` (ephemeral) domains.
+come from the real `recipe` (persisted) and `proposal` (ephemeral) domains.
 
 > The rules below are enforced by `server/architecture.unit.test.ts` — run `bun test` and it
 > will fail if a new domain breaks a convention.
@@ -328,7 +328,7 @@ import { RecipeCommand } from '~/domain/recipe/command'
 import { RecipeQuery } from '~/domain/recipe/query'
 import { Ai } from '~/system/ai'
 
-export namespace PropositionUseCase {
+export namespace ProposalUseCase {
   // Ask the AI for the next version after an essai. Reads the tried version through
   // the recipe domain's public Query, feeds it to the AI engine and brands the
   // result — a cross-boundary orchestration (recipe + ai) that persists nothing.
@@ -341,17 +341,17 @@ export namespace PropositionUseCase {
     if (recipe === 'not-found') return 'not-found'
     const version = await RecipeQuery.versionBy(recipeId, versionNumber)
     if (version === 'not-found') return 'not-found'
-    const proposition = await Ai.proposeNext(/* recipe + version + its essai outcome */)
-    return brandProposition(recipe.type, proposition)
+    const proposal = await Ai.proposeNext(/* recipe + version + its essai outcome */)
+    return brandProposal(recipe.type, proposal)
   }
 
-  // Accepting a proposition threads `basedOn` back into the recipe domain's command.
-  export const accept = (userId: UserId, recipeId: RecipeId, proposition: AcceptedProposition) =>
-    RecipeCommand.addVersion(userId, recipeId, { basedOn: proposition.basedOn /* …content */ })
+  // Accepting a proposal threads `basedOn` back into the recipe domain's command.
+  export const accept = (userId: UserId, recipeId: RecipeId, proposal: AcceptedProposal) =>
+    RecipeCommand.addVersion(userId, recipeId, { basedOn: proposal.basedOn /* …content */ })
 }
 ```
 
-Names carry intent (`fromEssai`, `accept`, never `handleProposal`). `proposition` is the only
+Names carry intent (`fromEssai`, `accept`, never `handleProposal`). `proposal` is the only
 domain that imports `~/system/ai`, and it depends one-way on `recipe` (never the reverse).
 
 ## Checklist

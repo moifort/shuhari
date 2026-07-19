@@ -1,5 +1,5 @@
-mutation AcceptProposition($recipeId: RecipeId!, $proposition: PropositionInput!) {
-  acceptProposition(recipeId: $recipeId, proposition: $proposition) {
+mutation AcceptProposal($recipeId: RecipeId!, $proposal: ProposalInput!) {
+  acceptProposal(recipeId: $recipeId, proposal: $proposal) {
     recipe {
       id
     }

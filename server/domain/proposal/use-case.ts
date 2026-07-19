@@ -23,12 +23,8 @@ import type {
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
 import { Ai } from '~/system/ai'
-import type {
-  Proposition as AiProposition,
-  ImportSource,
-  ImportTmxSettings,
-} from '~/system/ai/types'
-import type { AcceptedProposition, Proposition } from './types'
+import type { Proposal as AiProposal, ImportSource, ImportTmxSettings } from '~/system/ai/types'
+import type { AcceptedProposal, Proposal } from './types'
 
 // The content-only slice branded from the AI response.
 type BrandedContent = {
@@ -46,15 +42,15 @@ const brandLooseTmx = (raw: ImportTmxSettings): LooseTmxSettings => ({
   reverse: raw.reverse,
 })
 
-// Turn the untrusted AI proposition into branded domain shapes. tmxSteps are only
+// Turn the untrusted AI proposal into branded domain shapes. tmxSteps are only
 // kept on a tmx recipe and are realigned with the steps (dropped if misaligned).
-const brandProposition = (type: RecipeType, proposition: AiProposition): BrandedContent => {
-  const ingredients = proposition.ingredients.map((i) => ({
+const brandProposal = (type: RecipeType, proposal: AiProposal): BrandedContent => {
+  const ingredients = proposal.ingredients.map((i) => ({
     name: IngredientName(i.name),
     quantity: IngredientQuantity(i.quantity),
   }))
-  const steps = proposition.steps.map((s) => StepText(s))
-  const rawTmx = proposition.tmxSteps ?? []
+  const steps = proposal.steps.map((s) => StepText(s))
+  const rawTmx = proposal.tmxSteps ?? []
   const tmxSteps =
     type === 'tmx'
       ? alignedTmxSteps(steps, toTmxSettings(rawTmx.map((s) => (s ? brandLooseTmx(s) : null))))
@@ -62,7 +58,7 @@ const brandProposition = (type: RecipeType, proposition: AiProposition): Branded
   return { ingredients, steps, tmxSteps }
 }
 
-export namespace PropositionUseCase {
+export namespace ProposalUseCase {
   // Ask the AI for the next version after an essai. Loads the tried version (and
   // its own note/remarks outcome) by key — recipe + version, two keyed doc reads,
   // no lineage scan — feeds them to the AI, brands the result into domain shapes
@@ -83,7 +79,7 @@ export namespace PropositionUseCase {
         ? [{ note: version.note, remarks: version.remarks }]
         : []
 
-    const proposition = await Ai.proposeNext({
+    const proposal = await Ai.proposeNext({
       type: recipe.type,
       category: recipe.category,
       currentIngredients: version.ingredients.map((i) => ({
@@ -104,11 +100,11 @@ export namespace PropositionUseCase {
       trials,
     })
 
-    const { ingredients, steps, tmxSteps } = brandProposition(recipe.type, proposition)
-    const branded: Proposition = {
+    const { ingredients, steps, tmxSteps } = brandProposal(recipe.type, proposal)
+    const branded: Proposal = {
       basedOn: version.number,
-      changeSummary: proposition.changeSummary,
-      rationale: proposition.rationale,
+      changeSummary: proposal.changeSummary,
+      rationale: proposal.rationale,
       ingredients,
       steps,
       tmxSteps,
@@ -117,27 +113,23 @@ export namespace PropositionUseCase {
   }
 
   // Analyze an import source (photos, a URL or raw text) into a structured recipe
-  // preview. The proposition domain is the sole caller of the import AI; confirming
+  // preview. The proposal domain is the sole caller of the import AI; confirming
   // this preview persists a brand-new recipe via `RecipeCommand.create` (the recipe
   // domain's `createRecipe` mutation) — nothing is saved here. `_userId` is ignored on
   // purpose: the analysis is globally SHA-cached (keyed on the source, not the caller)
   // and stays user-scoped only from the confirmed `create` onward.
   export const fromPhoto = async (_userId: UserId, source: ImportSource) => Ai.analyzeImport(source)
 
-  // Accept a proposition as an iteration: append version n+1 from the client-supplied
+  // Accept a proposal as an iteration: append version n+1 from the client-supplied
   // content, stamping the version it iterated on (`basedOn`, threaded back through the
   // payload so no lineage rescan is needed).
-  export const accept = async (
-    userId: UserId,
-    recipeId: RecipeId,
-    proposition: AcceptedProposition,
-  ) =>
+  export const accept = async (userId: UserId, recipeId: RecipeId, proposal: AcceptedProposal) =>
     RecipeCommand.addVersion(userId, recipeId, {
-      change: proposition.changeSummary,
-      basedOn: proposition.basedOn,
-      ...(proposition.rationale ? { why: proposition.rationale } : {}),
-      ingredients: proposition.ingredients,
-      steps: proposition.steps,
-      tmxSteps: proposition.tmxSteps,
+      change: proposal.changeSummary,
+      basedOn: proposal.basedOn,
+      ...(proposal.rationale ? { why: proposal.rationale } : {}),
+      ingredients: proposal.ingredients,
+      steps: proposal.steps,
+      tmxSteps: proposal.tmxSteps,
     })
 }

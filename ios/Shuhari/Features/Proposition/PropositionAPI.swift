@@ -19,7 +19,7 @@ enum PropositionAPI {
                     )
                 }
             })
-        let input = ShuhariGraphQL.PropositionInput(
+        let input = ShuhariGraphQL.ProposalInput(
             basedOn: proposition.basedOn,
             changeSummary: proposition.changeSummary,
             ingredients: proposition.ingredients.map { ShuhariGraphQL.IngredientInput(name: $0.name, quantity: $0.quantity) },
@@ -30,7 +30,7 @@ enum PropositionAPI {
 
         _ = try await GraphQLHelpers.perform(
             GraphQLClient.shared.apollo,
-            mutation: ShuhariGraphQL.AcceptPropositionMutation(recipeId: recipeId, proposition: input)
+            mutation: ShuhariGraphQL.AcceptProposalMutation(recipeId: recipeId, proposal: input)
         )
     }
 }

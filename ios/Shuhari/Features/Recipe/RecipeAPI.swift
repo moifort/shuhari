@@ -71,7 +71,7 @@ func mapVersion(_ v: ShuhariGraphQL.VersionFields) -> RecipeVersion {
     )
 }
 
-func mapProposition(_ d: ShuhariGraphQL.PropositionFields) -> Proposition {
+func mapProposition(_ d: ShuhariGraphQL.ProposalFields) -> Proposition {
     Proposition(
         basedOn: d.basedOn,
         changeSummary: d.changeSummary,

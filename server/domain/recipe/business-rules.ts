@@ -74,7 +74,7 @@ const emptySettings = (s: TmxSettings) =>
   s.time === undefined && s.temperature === undefined && s.speed === undefined && !s.reverse
 
 // One step's Thermomix settings as they arrive from a GraphQL input or a branded
-// AI proposition: each field may be present, null or absent. A `null`/`undefined`
+// AI proposal: each field may be present, null or absent. A `null`/`undefined`
 // entry stands for a plain (non-Thermomix) step.
 export type LooseTmxSettings = {
   time?: TmxTime | null
@@ -86,7 +86,7 @@ export type LooseTmxSettings = {
 // Normalize loose per-step settings into clean TmxSettings, dropping absent/null
 // keys. `reverse` is kept only when true — false carries no information (a step
 // whose only "setting" is reverse:false is not a Thermomix step). The single home
-// for this rule so the GraphQL and AI-proposition paths can never diverge;
+// for this rule so the GraphQL and AI-proposal paths can never diverge;
 // `alignedTmxSteps` then decides whether the parallel array is kept at all.
 export const toTmxSettings = (
   entries: (LooseTmxSettings | null | undefined)[],

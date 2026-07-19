@@ -1,12 +1,12 @@
 import { IngredientInput, TmxSettingsInput } from '~/domain/recipe/infrastructure/graphql/inputs'
 import { builder } from '~/domain/shared/graphql/builder'
 
-// The full next-version proposition the client sends back on accept. It carries the
+// The full next-version proposal the client sends back on accept. It carries the
 // AI's (possibly user-edited) content plus its summary, rationale and the version it
 // iterates on — send the COMPLETE next version, never a partial edit.
-export const PropositionInput = builder.inputType('PropositionInput', {
+export const ProposalInput = builder.inputType('ProposalInput', {
   description:
-    'A complete next-version proposition to accept as an iteration, e.g. the AI’s ' +
+    'A complete next-version proposal to accept as an iteration, e.g. the AI’s ' +
     '`"Less sugar, longer resting time"` proposal. Send the FULL next version (omitted ' +
     'ingredients/steps wipe those lists).',
   fields: (t) => ({

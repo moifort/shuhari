@@ -2,13 +2,13 @@ import { DishCategoryEnum, RecipeTypeEnum } from '~/domain/recipe/infrastructure
 import { IngredientType, TmxSettingsType } from '~/domain/recipe/infrastructure/graphql/types'
 import { builder } from '~/domain/shared/graphql/builder'
 import type { ImportAnalysis, ImportTmxSettings } from '~/system/ai/types'
-import type { Proposition } from '../../types'
+import type { Proposal } from '../../types'
 
-export const PropositionType = builder.objectRef<Proposition>('Proposition').implement({
+export const ProposalType = builder.objectRef<Proposal>('Proposal').implement({
   description:
     'The AI’s suggestion for your next attempt, e.g. `"Less sugar, longer resting time"`. After ' +
     'an essai, the AI reads your rating and notes and proposes a tweaked version. It is just a ' +
-    'proposal shown on screen — nothing is saved until you accept it (see acceptProposition).',
+    'proposal shown on screen — nothing is saved until you accept it (see acceptProposal).',
   fields: (t) => ({
     basedOn: t.expose('basedOn', {
       type: 'VersionNumber',

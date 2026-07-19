@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto'
 import { DISH_CATEGORY_VALUES, RECIPE_TYPE_VALUES } from '~/domain/recipe/types'
-import { ImportHash, parseImportResponse, parsePropositionResponse } from '~/system/ai/primitives'
+import { ImportHash, parseImportResponse, parseProposalResponse } from '~/system/ai/primitives'
 import * as repository from '~/system/ai/repository'
 import type {
   ImportHash as ImportHashType,
   ImportSource,
-  Proposition,
-  PropositionContext,
+  Proposal,
+  ProposalContext,
 } from '~/system/ai/types'
 import { config } from '~/system/config/index'
 
@@ -19,7 +19,7 @@ type GeminiPart = { text: string } | { inline_data: { mime_type: string; data: s
 
 const RECIPE_TYPE_ENUM = [...RECIPE_TYPE_VALUES]
 
-// Shared ingredient/step item shapes so the import and proposition schemas can't drift.
+// Shared ingredient/step item shapes so the import and proposal schemas can't drift.
 const ingredientsSchemaProperty = {
   type: 'array',
   description: 'Ingrédients de la recette avec leur quantité',
@@ -115,7 +115,7 @@ const importResponseSchema = {
   ],
 }
 
-const propositionResponseSchema = {
+const proposalResponseSchema = {
   type: 'object',
   properties: {
     changeSummary: {
@@ -171,16 +171,16 @@ export namespace Ai {
     return result
   }
 
-  export const proposeNext = async (context: PropositionContext): Promise<Proposition> => {
+  export const proposeNext = async (context: ProposalContext): Promise<Proposal> => {
     const text = await callGemini({
-      contents: [{ parts: [{ text: propositionPrompt(context) }] }],
+      contents: [{ parts: [{ text: proposalPrompt(context) }] }],
       generationConfig: {
         responseMimeType: 'application/json',
-        responseSchema: propositionResponseSchema,
+        responseSchema: proposalResponseSchema,
       },
     })
-    if (!text) throw new Error('Gemini did not return a structured proposition')
-    return parsePropositionResponse(text)
+    if (!text) throw new Error('Gemini did not return a structured proposal')
+    return parseProposalResponse(text)
   }
 
   const importParts = (source: ImportSource): GeminiPart[] => {
@@ -200,10 +200,10 @@ export namespace Ai {
 
   // Cuisine-scoped iteration rule (plat + tmx). Café/cocktail will get their own
   // rules later — no speculative abstraction here.
-  const cuisineIterationRule = (_type: PropositionContext['type']) =>
+  const cuisineIterationRule = (_type: ProposalContext['type']) =>
     'Pour un plat ou une recette Thermomix, tu peux ajuster plusieurs éléments cohérents à la fois. Renvoie la liste COMPLÈTE des ingrédients et des étapes de la prochaine version (pas seulement ce qui change), plus un résumé court des changements.'
 
-  const formatTmx = (tmx: NonNullable<PropositionContext['currentTmxSteps'][number]>): string => {
+  const formatTmx = (tmx: NonNullable<ProposalContext['currentTmxSteps'][number]>): string => {
     const parts = [
       tmx.time && `durée ${tmx.time}`,
       tmx.temperature && `température ${tmx.temperature}`,
@@ -213,7 +213,7 @@ export namespace Ai {
     return parts.length ? ` [Thermomix : ${parts.join(', ')}]` : ''
   }
 
-  const propositionPrompt = (context: PropositionContext): string => {
+  const proposalPrompt = (context: ProposalContext): string => {
     const ingredients =
       context.currentIngredients.map((i) => `- ${i.name} : ${i.quantity}`).join('\n') || '—'
     const steps =

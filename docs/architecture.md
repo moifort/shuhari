@@ -48,7 +48,7 @@ server/
 │   │   ├── types.ts             # UserId, Count
 │   │   ├── primitives.ts        # their Zod constructors
 │   │   └── graphql/             # builder.ts, scalars.ts, schema.ts, loaders.ts
-│   └── {domain}/                # one folder per domain (recipe, proposition, …)
+│   └── {domain}/                # one folder per domain (recipe, proposal, …)
 │       ├── types.ts             # domain types (branded)
 │       ├── primitives.ts        # Zod validation constructors
 │       ├── command.ts           # write operations (public namespace)
@@ -80,9 +80,9 @@ server/
 └── test/fake-firestore.ts       # in-memory Firestore fake with read/write accounting
 ```
 
-Not every domain has every file. `recipe` is the only persisted, full-stack domain; `proposition`
+Not every domain has every file. `recipe` is the only persisted, full-stack domain; `proposal`
 is ephemeral — it owns a `use-case.ts` + GraphQL slice but **no repository and no storage** (an AI
-proposition is validated and applied, never saved). The read-only `changelog` aggregation has no
+proposal is validated and applied, never saved). The read-only `changelog` aggregation has no
 `command.ts`/`repository.ts`;
 `portability` orchestrates through a `use-case.ts` and owns no repository. `changelog` and
 `portability` are system-hosted mini-domains: they live under `server/system/` (not

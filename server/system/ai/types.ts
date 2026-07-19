@@ -37,9 +37,9 @@ export type CachedImport = {
   cachedAt: Date
 }
 
-// Context handed to the proposition model: the full current version and the trials
+// Context handed to the proposal model: the full current version and the trials
 // run against it, so the AI can propose the next version.
-export type PropositionContext = {
+export type ProposalContext = {
   type: RecipeType
   category: DishCategory
   currentIngredients: { name: string; quantity: string }[]
@@ -52,9 +52,9 @@ export type PropositionContext = {
   }[]
 }
 
-// Raw next-version proposition produced by Gemini — a full ingredient/step list
+// Raw next-version proposal produced by Gemini — a full ingredient/step list
 // plus a short change summary. Plain strings, validated into branded types on accept.
-export type Proposition = {
+export type Proposal = {
   changeSummary: string
   rationale: string
   ingredients: { name: string; quantity: string }[]

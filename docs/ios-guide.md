@@ -24,7 +24,7 @@ ios/
     ├── GoogleService-Info.plist        # Firebase config
     ├── Generated/GraphQL/              # Apollo codegen output (do not edit)
     │   ├── Operations/{Queries,Mutations}/
-    │   ├── Fragments/                  # VersionFields, PropositionFields
+    │   ├── Fragments/                  # VersionFields, ProposalFields
     │   └── Schema/                     # CustomScalars (RecipeId, Note, …), Enums, Objects, InputObjects
     ├── Features/
     │   ├── Auth/  Home/  Recipe/  Proposition/  Execution/  Import/  Settings/

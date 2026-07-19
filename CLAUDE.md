@@ -56,7 +56,7 @@ Everything versioned and technical is written in **English**: commit messages, c
 > examples.
 
 - **Stack**: Bun + Nitro 2.13 (`preset firebase`, gen 2, nodejs22, `europe-west3`) + Apollo Server 5 + Pothos 4 + firebase-admin (native Firestore) + Zod + ts-brand. DDD/CQRS strict.
-- **Domains** live in `server/domain/{recipe,proposition,shared}` (`recipe` is the only persisted domain; `proposition` is ephemeral — never stored — and the sole caller of `~/system/ai`); system concerns in `server/system/{ai,changelog,portability,firebase,config,migration,request-cache}`.
+- **Domains** live in `server/domain/{recipe,proposal,shared}` (`recipe` is the only persisted domain; `proposal` is ephemeral — never stored — and the sole caller of `~/system/ai`); system concerns in `server/system/{ai,changelog,portability,firebase,config,migration,request-cache}`.
 - Domain architecture: `server/domain/{domain}/types.ts`, `primitives.ts`, `command.ts`, `query.ts`, `infrastructure/repository.ts`, `infrastructure/graphql/{types,queries,mutations,inputs,enums}.ts`
 - **`business-rules.ts`** (optional): pure functions (no IO, no async) extracted from complex commands. Function names ARE the business concept (`bestNote`, `versionToOpen`, `nextVersionNumber` — never `computeX`, `getX`). 100% test coverage (`business-rules.unit.test.ts`)
 - **`use-case.ts`** (optional): multi-domain orchestrations when a route needs to coordinate several commands/queries. Names carry business intent (never `handleX`, `processX`). No direct storage access.
@@ -79,7 +79,7 @@ Everything versioned and technical is written in **English**: commit messages, c
 - **Linear lineage**: a recipe owns a chain of `RecipeVersion`s (`v1 → v2 → v3 …`). `RecipeVersion.basedOn` is the `VersionNumber` a version was iterated from (`null` for v1). No forks, no variations, no `derivedFrom`.
 - **Essai = one overwritable outcome per version**: `RecipeCommand.recordEssai` records `note` (1..5), `remarks`, `executedAt`, `photoPath` onto *any* version and rewrites them in place on a re-cook. An essai is not an entity — it lives on the version. A never-cooked version has no note (`note: null`).
 - **No promotion — everything derived** (`recipe/business-rules.ts`): `bestNote` = the recipe's best essai note across its cooked versions (highest note; tie → most recent version), driving the display note. `versionToOpen` = the version the fiche opens on: the most recent one `basedOn` the best-noted version (the essai in progress), else the best-noted version, else the latest.
-- **Iteration**: an essai with remarks feeds the AI (`PropositionUseCase.fromEssai`); accepting the proposition appends version `n+1` via `RecipeCommand.addVersion`, threading `basedOn = the tried version`. An essai without remarks is a note only — no AI. Import confirmation persists a fresh recipe + v1 via `RecipeCommand.create` (the `createRecipe` mutation).
+- **Iteration**: an essai with remarks feeds the AI (`ProposalUseCase.fromEssai`); accepting the proposal appends version `n+1` via `RecipeCommand.addVersion`, threading `basedOn = the tried version`. An essai without remarks is a note only — no AI. Import confirmation persists a fresh recipe + v1 via `RecipeCommand.create` (the `createRecipe` mutation).
 
 ## Database Migrations
 

@@ -11,11 +11,11 @@ import '~/domain/recipe/infrastructure/graphql/inputs'
 import '~/domain/recipe/infrastructure/graphql/queries'
 import '~/domain/recipe/infrastructure/graphql/mutations'
 
-// Proposition domain (ephemeral AI propositions — import preview + next-version
+// Proposal domain (ephemeral AI proposals — import preview + next-version
 // suggestions; request/accept + analyzeImport mutations)
-import '~/domain/proposition/infrastructure/graphql/types'
-import '~/domain/proposition/infrastructure/graphql/inputs'
-import '~/domain/proposition/infrastructure/graphql/mutations'
+import '~/domain/proposal/infrastructure/graphql/types'
+import '~/domain/proposal/infrastructure/graphql/inputs'
+import '~/domain/proposal/infrastructure/graphql/mutations'
 
 // Changelog (application release notes)
 import '~/system/changelog/infrastructure/graphql/types'

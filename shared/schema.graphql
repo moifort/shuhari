@@ -1,7 +1,7 @@
 """
 What you get back after accepting an AI suggestion, e.g. the new `v3` added to the chain
 """
-type AcceptPropositionResult {
+type AcceptProposalResult {
   """The number of the version that was just created, e.g. `3`"""
   createdVersion: VersionNumber
 
@@ -167,7 +167,7 @@ type Mutation {
   Accept an AI suggestion (optionally after editing it). It becomes the next version in the chain, ready to cook.
   
   ```graphql
-  acceptProposition(recipeId: "9f1c-a3b2", proposition: {
+  acceptProposal(recipeId: "9f1c-a3b2", proposal: {
     basedOn: 2
     changeSummary: "Less sugar"
     rationale: "You noted it was too sweet"
@@ -178,13 +178,13 @@ type Mutation {
   }
   ```
   """
-  acceptProposition(
+  acceptProposal(
     """The full suggested version to save (with any edits you made)"""
-    proposition: PropositionInput!
+    proposal: ProposalInput!
 
     """The recipe being iterated on, e.g. the id of `"Grandma’s lasagna"`"""
     recipeId: RecipeId!
-  ): AcceptPropositionResult!
+  ): AcceptProposalResult!
 
   """
   Analyze an import source (photos, a URL or raw text) into a structured recipe preview. Exactly one source must be provided. Results are cached server-side by SHA-256.
@@ -249,7 +249,7 @@ type Mutation {
   ): ImportResult!
 
   """
-  Save what happened when you cooked a version: its rating and your notes. Overwritable — recording again on the same version simply updates it. Fast and does not call the AI. If the rating is low and you want a suggested improvement, ask for a proposition separately (see requestProposition). Returns the version, now updated with its outcome.
+  Save what happened when you cooked a version: its rating and your notes. Overwritable — recording again on the same version simply updates it. Fast and does not call the AI. If the rating is low and you want a suggested improvement, ask for a proposal separately (see requestProposal). Returns the version, now updated with its outcome.
   
   ```graphql
   recordEssai(input: {
@@ -272,14 +272,14 @@ type Mutation {
   Ask the AI for a suggested next version. It looks at the version you just cooked (its rating and notes) and proposes one improvement. Nothing is saved yet — you get a proposal to review.
   
   ```graphql
-  requestProposition(recipeId: "9f1c-a3b2", versionNumber: 2) {
+  requestProposal(recipeId: "9f1c-a3b2", versionNumber: 2) {
     basedOn
     changeSummary
     rationale
   }
   ```
   """
-  requestProposition(
+  requestProposal(
     """
     The recipe to get a suggestion for, e.g. the id of `"Grandma’s lasagna"`
     """
@@ -287,7 +287,7 @@ type Mutation {
 
     """The version you just cooked and want to iterate on, e.g. `2`"""
     versionNumber: VersionNumber!
-  ): Proposition!
+  ): Proposal!
 
   """
   Rename a recipe — change its title. Returns the updated recipe.
@@ -314,9 +314,9 @@ A rating out of 5, as a whole number from `1` (bad) to `5` (excellent), e.g. `4`
 scalar Note
 
 """
-The AI’s suggestion for your next attempt, e.g. `"Less sugar, longer resting time"`. After an essai, the AI reads your rating and notes and proposes a tweaked version. It is just a proposal shown on screen — nothing is saved until you accept it (see acceptProposition).
+The AI’s suggestion for your next attempt, e.g. `"Less sugar, longer resting time"`. After an essai, the AI reads your rating and notes and proposes a tweaked version. It is just a proposal shown on screen — nothing is saved until you accept it (see acceptProposal).
 """
-type Proposition {
+type Proposal {
   """
   The version this proposal iterates on (the one you just cooked), e.g. `2`. Sent straight back on accept so the new version records what it was based on.
   """
@@ -349,9 +349,9 @@ type Proposition {
 }
 
 """
-A complete next-version proposition to accept as an iteration, e.g. the AI’s `"Less sugar, longer resting time"` proposal. Send the FULL next version (omitted ingredients/steps wipe those lists).
+A complete next-version proposal to accept as an iteration, e.g. the AI’s `"Less sugar, longer resting time"` proposal. Send the FULL next version (omitted ingredients/steps wipe those lists).
 """
-input PropositionInput {
+input ProposalInput {
   """
   The version this iterates on — echo back the `basedOn` from the proposal, e.g. `2`
   """

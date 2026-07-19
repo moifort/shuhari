@@ -31,8 +31,8 @@ enum ExecutionAPI {
     static func requestProposition(recipeId: String, versionNumber: Int) async throws -> Proposition {
         let data = try await GraphQLHelpers.perform(
             GraphQLClient.shared.apollo,
-            mutation: ShuhariGraphQL.RequestPropositionMutation(recipeId: recipeId, versionNumber: versionNumber)
+            mutation: ShuhariGraphQL.RequestProposalMutation(recipeId: recipeId, versionNumber: versionNumber)
         )
-        return mapProposition(data.requestProposition.fragments.propositionFields)
+        return mapProposition(data.requestProposal.fragments.proposalFields)
     }
 }
