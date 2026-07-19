@@ -17,8 +17,8 @@ import {
 type RatedVersion = RecipeVersion & { rating: Rating }
 const isRated = (version: RecipeVersion): version is RatedVersion => version.rating !== null
 
-// The library's category sort follows the course order (Entrée → Plat → Dessert →
-// Soupe → Sauce → Boulangerie), not the alphabetical order of the enum values. We
+// The library's category sort follows the course order (starter → main → dessert →
+// soup → sauce → baking), not the alphabetical order of the enum values. We
 // denormalize that business rank (0..5) onto each recipe document so Firestore can
 // order by it with a stable cursor — sorting client-side would break pagination.
 export const categoryRank = (category: DishCategory): number =>
@@ -43,7 +43,7 @@ export const bestRating = (versions: RecipeVersion[]): RecipeVersion | null =>
       null,
     )
 
-// Which version the fiche opens on when entered from the home. Priority:
+// Which version the recipe sheet opens on when entered from the home. Priority:
 //   1. the attempt in progress — the most recent version based on the best-rated one
 //      (an iteration cooked or awaiting a cook off the current reference);
 //   2. failing that, the best-rated version itself;

@@ -224,7 +224,7 @@ RecipeType.implement({
       description: 'The whole history, oldest first, e.g. `v1 → v2 → v3`',
       resolve: (r) => RecipeQuery.versionsOf(r.id),
     }),
-    // Satellite: the version the fiche opens on, derived from the full lineage via
+    // Satellite: the version the recipe sheet opens on, derived from the full lineage via
     // the batched loader (shares the scan with bestRating — no extra reads).
     versionToOpen: t.field({
       type: VersionType,

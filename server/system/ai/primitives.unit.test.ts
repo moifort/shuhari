@@ -192,7 +192,7 @@ describe('parseImportResponse — drops blank items instead of failing', () => {
 
   test('caps runaway arrays at 100 items', () => {
     const many = Array.from({ length: 150 }, (_, i) => ({ name: `Ing ${i}`, quantity: '1' }))
-    const result = parsedImport({ type: 'dish', title: 'Grosse recette', ingredients: many })
+    const result = parsedImport({ type: 'dish', title: 'Big recipe', ingredients: many })
 
     expect(result.ingredients).toHaveLength(100)
   })

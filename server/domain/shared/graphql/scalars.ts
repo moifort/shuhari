@@ -65,7 +65,7 @@ builder.scalarType('VersionNumber', {
 builder.scalarType('Rating', {
   description:
     'A rating out of 5, as a whole number from `1` (bad) to `5` (excellent), e.g. `4`. The best ' +
-    'rating across a recipe’s attempts drives the version its fiche opens on.',
+    'rating across a recipe’s attempts drives the version its recipe sheet opens on.',
   serialize: (value) => value as number,
   parseValue: validatedParse('Rating', Rating),
 })

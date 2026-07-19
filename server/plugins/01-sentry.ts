@@ -1,7 +1,8 @@
 import * as Sentry from '@sentry/node'
 
-// DSN exposé via NITRO_SENTRY_DSN (Secret Manager en prod — infra/secrets.tf +
-// function.tf — et .env en local), suivant la convention NITRO_ du repo.
+// DSN exposed through NITRO_SENTRY_DSN (Secret Manager in production —
+// infra/secrets.tf + function.tf — and .env locally), following the repo's
+// NITRO_ convention.
 //
 // Only a real URL is forwarded: a blank or garbage value (e.g. a placeholder
 // "-") disables reporting instead of crashing the function at boot (a bad dsn

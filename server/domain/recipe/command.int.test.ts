@@ -171,15 +171,15 @@ describe('RecipeCommand.recordAttempt', () => {
       recipeId: recipe.id,
       versionNumber: 1 as VersionNumber,
       rating: 4 as Rating,
-      remarks: 'Mieux' as Remarks,
+      remarks: 'Better' as Remarks,
     })
     if (typeof again === 'string') throw new Error(`expected a result, got ${again}`)
     expect(again.rating).toBe(4 as Rating)
-    expect(again.remarks).toBe('Mieux' as Remarks)
+    expect(again.remarks).toBe('Better' as Remarks)
 
     const stored = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)
     expect(stored?.rating).toBe(4 as Rating)
-    expect(stored?.remarks).toBe('Mieux' as Remarks)
+    expect(stored?.remarks).toBe('Better' as Remarks)
   })
 
   test('returns not-found for an unknown recipe or version', async () => {

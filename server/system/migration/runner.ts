@@ -29,8 +29,8 @@ export const runMigrations = async (migrations: Migration[]) => {
       if (!result.ok)
         return { outcome: 'failed' as const, version: migration.version, error: result.error }
       await metaRef.set({ version: migration.version, appliedAt: new Date() })
-      // Seule sortie du runner : visible dans Cloud Logging (la CI, elle, lit la
-      // réponse HTTP de POST /admin/migrate).
+      // The runner's only output: visible in Cloud Logging (CI, for its part,
+      // reads the HTTP response of POST /admin/migrate).
       console.info(
         `Applied v${migration.version} "${migration.name}" (${result.transformed} transformed)`,
       )

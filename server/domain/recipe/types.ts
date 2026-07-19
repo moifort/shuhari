@@ -47,7 +47,7 @@ export type TmxSettings = {
   time?: TmxTime // "3 min", "30 s", "1 h 10 min"
   temperature?: TmxTemperature // "100°C", "Varoma"
   speed?: TmxSpeed // "5", "3,5", "pétrin", "mijotage", "turbo"
-  reverse?: boolean // sens inverse
+  reverse?: boolean // reverse rotation
 }
 
 export type VersionOriginKind = 'import' | 'ai-proposal' | 'manual'
