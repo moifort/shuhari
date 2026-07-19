@@ -283,6 +283,34 @@ launch argument is set (screens: `home`, `cuisine`, `recipe`, `recipe-tmx`, `his
 `execute`, `execute-tmx`, `capture`, `proposal`, `import-preview`, `import-preview-tmx`,
 `ai-thinking`, `root`).
 
+**After finishing any iOS task, launch the result in the simulator on your own** — never ask
+first. Once the code compiles: boot the simulator (iPhone 17, OS 26.2), install, then launch
+straight into the affected screen with the gallery launch argument and screenshot it to verify
+the change visually before reporting:
+
+```bash
+xcrun simctl launch booted com.polyforms.shuhari.app -gallery recipe
+```
+
+If the touched screen has no `switch` case in `Shared/DebugGallery.swift` yet, add one. This is
+distinct from installing on the physical iPhone, which always requires an explicit yes (see
+[CLAUDE.md](../CLAUDE.md#ios-physical-device-install)).
+
+## Hide empty sections
+
+A `Section` (Form or detail list) with no data must not be rendered at all — no empty-state
+text, no placeholder, no "Ajouter" affordance. Guard every optional section:
+
+```swift
+if !items.isEmpty {
+  Section("Ingrédients") { … }
+}
+```
+
+An empty section reads as broken. Applies everywhere sections render data-driven content —
+import preview (Ingrédients, Paramètres), recipe display (`CurrentVersionSection`, …). Hide,
+don't stub.
+
 ## Error reporting — Sentry
 
 `ShuhariApp.init()` calls `SentrySDK.start` (right after `FirebaseApp.configure()`) with a

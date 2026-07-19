@@ -5,7 +5,7 @@ The rules for how work is checkpointed locally and shipped to the remote. CLAUDE
 
 ## Language
 
-Everything in git history is **English**: commit messages, branch names, PR text. `CHANGELOG.md`
+Everything in git history is **English**: commit messages and branch names. `CHANGELOG.md`
 is English too — it is the source of truth. The only French in the repo is user-facing copy
 (`CHANGELOG.fr.md`, the copy served to the app, and the iOS app's on-screen text). Never mix
 languages inside a commit message.
@@ -45,7 +45,13 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 Commit on the working branch (usually **`main`**) — this project commits freely to `main` by
 convention, so the generic "branch first before committing" rule does **not** apply here. Only
-branch when the user asks for a branch/PR.
+branch when the user asks for one.
+
+## Never open a pull request
+
+This is a solo project: CI (Unit Tests + Deploy) runs on `main` pushes only, so a pull request
+is pure ceremony. **Never open one, never suggest one.** On "push", the work goes straight to
+`origin/main` — even from a feature branch (see *Push protocol* below).
 
 ## Rollback
 
@@ -79,7 +85,8 @@ by hand, then commit the removal; that pain is exactly why one-task-one-commit m
    then `bun run generate:ios`, and commit the regenerated `shared/schema.graphql`
    and the generated Apollo operations so the app's typed operations stay in sync with the
    deployed schema.
-5. **Push.**
+5. **Push — straight to `origin/main`.** `git push origin HEAD:main` (fast-forward), whatever
+   the working branch — never via a pull request. Realign local `main` afterwards.
 6. **Analyze the CI.** A push to `main` fires two workflows — **Unit Tests** (`bun tsc`) and
    **Deploy**. Watch them through to completion rather than assuming green: `gh run watch`, or
    `gh run list --branch main --limit 5` then `gh run view <id> --log-failed` on any failure.

@@ -12,6 +12,18 @@ Everything versioned and technical is written in **English**: commit messages, c
 
 The **only** French in the repo is user-facing copy — `CHANGELOG.fr.md` (the copy served to the app, plus its generated asset `server/system/changelog-content.ts`) and the iOS app's on-screen text (`Text`, `label`, `navigationTitle`, `accessibilityLabel`, preview names) — and French **data values** quoted as examples in code/prompts (Thermomix speeds, ingredient names) plus the import fallback title. Never mix languages in a commit message or a comment. Control: `grep -rnP '[\x{00C0}-\x{00FF}]' server/` (the accented-letter range) must only return those exceptions. Full rules: [docs/code-style.md](docs/code-style.md#language).
 
+## Collaboration
+
+> Full working agreement: [docs/collaboration.md](docs/collaboration.md) — read it at the start
+> of any session. Key rules:
+
+- **Docs are the spec**: align code to `docs/`, never the reverse; `docs/code-style.md` is law and must never be modified. Corrections given in conversation are applied repo-wide **and** codified in the matching doc, in the same task.
+- **Design talk is not a go**: in architecture discussions, "je veux faire X" is design intent — implement only on an explicit "vas-y" / "implémente" / "lance".
+- **Every plan opens with a "Domaines impactés" block** (Créés / Modifiés / Supprimés) before the body.
+- **Never open a PR**: on "push", everything goes straight to `origin/main`.
+- **No machine-local assistant memory**: collaboration learnings are written into `docs/`, nothing else.
+- **Ops autonomy**: execute everything CLI-doable yourself; hand off only credential-gated steps, with numbered instructions.
+
 ## Build & Verification Commands
 
 - **Backend typecheck**: `bun tsc --noEmit`
@@ -39,6 +51,7 @@ The **only** French in the repo is user-facing copy — `CHANGELOG.fr.md` (the c
 5. **Report the diff size after every task**: right after committing, run `git show --stat HEAD | tail -1` and state the lines added / removed in the reply (e.g. "+412 / −587 over 23 files"). A refactor that only adds is a refactor that forgot to delete — the number is the check.
 6. **Rollback** = `git revert` the task's commit (see [docs/git-workflow.md](docs/git-workflow.md)).
 7. **Never push until the user explicitly says "push".** Commits accumulate locally; pushing is user-gated.
+8. **Never open a PR.** A "push" goes straight to `origin/main` (`git push origin HEAD:main`), whatever the working branch — see [docs/git-workflow.md](docs/git-workflow.md).
 
 ### Push protocol (only when the user says "push")
 
@@ -46,7 +59,7 @@ The **only** French in the repo is user-facing copy — `CHANGELOG.fr.md` (the c
 2. **Biome autofix**: run `bun run lint:fix`, confirm `bun run lint` is clean, and commit any changes — CI's `biome check` lints everything (incl. asset-catalog JSON), and local `bun test` doesn't cover it.
 3. **README** (`README.md`): update the features / tech-stack sections if the pushed work changed them.
 4. **iOS GraphQL API** (if the schema changed): run `bun run generate:graphql`, then `bun run generate:ios`, and commit the regenerated `shared/schema.graphql` + `ios/Shuhari/**/Generated` so the app's typed operations stay in sync with the deployed schema.
-5. Push.
+5. Push — straight to `origin/main` (`git push origin HEAD:main`), never via a PR; realign local `main` afterwards.
 6. **Analyze the CI**: a push to `main` fires **Unit Tests** + **Deploy** — watch them (`gh run watch`, or `gh run list --branch main` + `gh run view <id> --log-failed` on failure). Not done until CI is green; fix any failure with a follow-up commit + push.
 
 **Not at push time — the changelog.** Do **not** touch `CHANGELOG.md` / `CHANGELOG.fr.md` when pushing. The changelog is written only at the moment of an iOS App Store release, as part of the release flow (see [App Store Distribution](#app-store-distribution)) — a normal `main` push carries no changelog change, and there is no CI date-stamp (versioning is manual).
@@ -57,8 +70,8 @@ The **only** French in the repo is user-facing copy — `CHANGELOG.fr.md` (the c
 > [domain-guide](docs/domain-guide.md), [graphql-patterns](docs/graphql-patterns.md),
 > [branded-types](docs/branded-types.md), [code-style](docs/code-style.md),
 > [error-handling](docs/error-handling.md), [migrations](docs/migrations.md),
-> [readme-guide](docs/readme-guide.md). This section is the quick reference; the docs go deeper with
-> examples.
+> [readme-guide](docs/readme-guide.md), [collaboration](docs/collaboration.md). This section is the
+> quick reference; the docs go deeper with examples.
 
 - **Stack**: Bun + Nitro 2.13 (`preset firebase`, gen 2, nodejs22, `europe-west3`) + Apollo Server 5 + Pothos 4 + firebase-admin (native Firestore) + Zod + ts-brand. DDD/CQRS strict.
 - **Domains** live in `server/domain/{recipe,proposal,shared}` (`recipe` is the only persisted domain; `proposal` is ephemeral — never stored — and the sole caller of `~/system/ai`); system concerns in `server/system/{ai,changelog,portability,firebase,config,migration,request-cache}`.
@@ -102,6 +115,7 @@ The **only** French in the repo is user-facing copy — `CHANGELOG.fr.md` (the c
 - Runner (`runner.ts`) wraps each migration in try/catch — migrations don't need their own error handling
 - **When to migrate**: renaming a field, changing a field's structure, changing enum values (e.g. a new `RecipeType`), removing stale data
 - **No migration needed**: adding a new optional (`?`) field, adding a new collection, changing query logic/routes
+- **Dated note (2026-07)**: production Firestore is empty (pre-first-release) — schema refactors need **no migration** while that holds; see [docs/migrations.md](docs/migrations.md)
 
 ## iOS Patterns (SwiftUI)
 
@@ -151,6 +165,7 @@ Look up the current public macOS build at https://developer.apple.com/news/relea
 ## iOS Simulator
 
 - Device: iPhone 17, OS 26.2
+- **After finishing any iOS task**, build and launch the app in the simulator on your own — do not ask first. When the task touched UI, launch straight into the affected screen with DebugGallery (`xcrun simctl launch booted com.polyforms.shuhari.app -gallery <screen>`) and screenshot it to verify the change visually before reporting. Screens = the `switch` cases in `ios/Shuhari/Shared/DebugGallery.swift`; add a case if the touched screen has none. See [docs/ios-guide.md](docs/ios-guide.md#previews-as-a-storybook--debuggallery). Distinct from the physical-device install below, which still requires an explicit yes.
 
 ## iOS Physical Device Install
 
