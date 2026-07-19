@@ -29,7 +29,7 @@ const ingredientsSchemaProperty = {
       name: {
         type: 'string',
         description:
-          'Short name of the ingredient ALONE, in French, without any preparation (e.g. "Gin", "Beurre", "Pommes de terre"). The preparation (peeled, sliced…) belongs in the steps, NOT in the name. ≤120 characters.',
+          'Short name of the ingredient in French (e.g. "Gin", "Beurre", "Pommes de terre"). Transient preparation (peeled, sliced…) belongs in the steps, NOT in the name. But an intrinsic variety, type or grade (a potato cultivar, a flour type, a cocoa percentage) belongs in the name, in parentheses: "Pommes de terre (Marbella)", "Farine (T45)", "Chocolat noir (70 %)". ≤120 characters.',
       },
       quantity: {
         type: 'string',
@@ -139,7 +139,7 @@ const proposalResponseSchema = {
     changeSummary: {
       type: 'string',
       description:
-        'Short summary of what changes, written in French (e.g. "Bouillon 700 → 650 ml"), ≤200 characters',
+        'Short summary of what changes, written in French, as a comma-separated list of value deltas in "label old → new unit" arrow notation (e.g. "Bouillon 50 → 40 cl, cuisson 3 h 30 → 4 h"), ≤200 characters',
     },
     rationale: { type: 'string', description: 'Explanation of the reasoning, written in French' },
     ingredients: ingredientsSchemaProperty,
@@ -155,7 +155,7 @@ Rules:
 - MANDATORY: write every generated value — title, ingredient names and quantities, step text — in French. The reader is a French speaker; never answer in English.
 - Determine the type: dish (cooked recipe) or thermomix (Thermomix recipe).
 - Determine the dish category: starter, main, dessert, soup, sauce or baking (pastry, bread, viennoiserie). When in doubt, pick main.
-- ingredients: the ORDERED list of the recipe's components with their quantity (e.g. Gin → 50 ml, Beurre → 170 g, Fraise → 3 pièces). Include EVERY ingredient visible in the source, each with its quantity and unit. This is the recipe's "shopping list". The NAME stays short: the ingredient alone, never its preparation ("Pommes de terre", not "Pommes de terre épluchées et coupées en rondelles" — the preparation belongs in the steps).
+- ingredients: the ORDERED list of the recipe's components with their quantity (e.g. Gin → 50 ml, Beurre → 170 g, Fraise → 3 pièces). Include EVERY ingredient visible in the source, each with its quantity and unit. This is the recipe's "shopping list". The NAME stays short: the ingredient alone, never its transient preparation ("Pommes de terre", not "Pommes de terre épluchées et coupées en rondelles" — the preparation belongs in the steps). An intrinsic variety, type or grade stays in the name, in parentheses ("Pommes de terre (Marbella)", "Farine (T45)").
 - steps: short steps, imperative mood, in order. Precise settings (oven temperature, duration, ratio…) stay in the step text.
 - For a Thermomix recipe (type thermomix): for every step performed on the Thermomix, fill the nested settings object (time, temperature, speed, reverse) exactly as stated in the recipe (time "3 min" / "30 s" / "1 h 10 min"; temperature "100°C" or "Varoma"; speed "0,5" to "10", "pétrin", "mijotage" or "turbo"). ALWAYS return every step as an object: use null for every missing setting, and set settings to null (or leave its fields null) when the step is not done on the Thermomix or when the recipe is not of type thermomix — never omit or merge a step because it carries no setting.
 - Be concise: every value stays short (ingredient name ≤120, quantity ≤60, step ≤300, title ≤200, Thermomix setting ≤20 characters).
@@ -222,7 +222,7 @@ export namespace Ai {
   // Cuisine-scoped iteration rule (dish + thermomix). Coffee and cocktail will get
   // their own rules later — no speculative abstraction here.
   const cuisineIterationRule = (_type: ProposalContext['type']) =>
-    'For a dish or a Thermomix recipe, you may adjust several coherent elements at once. Return the COMPLETE ingredient and step list of the next version (not only what changes), plus a short summary of the changes.'
+    'For a dish or a Thermomix recipe, you may adjust several coherent elements at once. Return the COMPLETE ingredient and step list of the next version (not only what changes), plus a short summary of the changes. When the remarks ask for a precise adjustment (a new cooking time, temperature, speed or quantity), apply that exact value in the right structured field — a Thermomix time/temperature/speed in the step settings, a duration in the dish step text, a quantity on the ingredient — and record every value change in changeSummary with the "old → new" arrow notation.'
 
   const formatThermomix = (
     settings: ProposalContext['currentSteps'][number]['settings'],
