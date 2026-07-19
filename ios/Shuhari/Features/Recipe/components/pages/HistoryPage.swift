@@ -45,9 +45,7 @@ struct HistoryPage: View {
                             VersionRow(
                                 number: version.number,
                                 change: version.change,
-                                originDetail: version.originDetail,
                                 rating: version.rating,
-                                tried: version.tried,
                                 isFocus: version.number == recipe.versionToOpen.number
                             )
                         }
