@@ -49,7 +49,7 @@ struct HomePage: View {
                             } label: {
                                 lens.iconImage(filled: isSelected)
                             }
-                            .tint(isSelected ? .accentColor : .primary)
+                            .tint(isSelected ? lens.selectedTint : .primary)
                             .accessibilityLabel(lens.label)
                             .accessibilityIdentifier("home-lens-\(lens.id)")
                         }

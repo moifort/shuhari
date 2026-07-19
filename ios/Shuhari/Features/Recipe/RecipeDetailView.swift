@@ -158,7 +158,7 @@ struct RecipeDetailView: View {
             } label: {
                 Image(systemName: recipe.favorite ? "heart.fill" : "heart")
             }
-            .tint(recipe.favorite ? .accentColor : .primary)
+            .tint(recipe.favorite ? Theme.Status.favorite : .primary)
             .accessibilityIdentifier("favorite-recipe-button")
             .accessibilityLabel(recipe.favorite ? "Retirer des favoris" : "Ajouter aux favoris")
         }

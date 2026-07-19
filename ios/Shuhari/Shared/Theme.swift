@@ -13,6 +13,8 @@ enum Theme {
         static let changed = Self.attempt
         /// Thermomix machine settings.
         static let thermomix = Color.teal
+        /// A recipe kept as a favourite — the heart, wherever it appears.
+        static let favorite = Color.red
 
         /// Attempt rating thresholds: ≥ 4 high, 3 medium, ≤ 2 low.
         static func rating(_ rating: Int) -> Color {

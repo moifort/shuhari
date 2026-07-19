@@ -30,6 +30,15 @@ enum LibraryLens: Hashable, Identifiable, Sendable {
         }
     }
 
+    /// The colour the lens wears when it is on: the favourites keep the heart's red,
+    /// a type takes the app accent.
+    var selectedTint: Color {
+        switch self {
+        case .type: .accentColor
+        case .favorites: Theme.Status.favorite
+        }
+    }
+
     /// The recipe type this lens narrows to — nothing for the favourites, which mix
     /// dishes and Thermomix recipes.
     var recipeType: RecipeType? {
