@@ -1,4 +1,4 @@
-import { alignedTmxSteps, nextVersionNumber } from '~/domain/recipe/business-rules'
+import { alignedThermomixSteps, nextVersionNumber } from '~/domain/recipe/business-rules'
 import * as repository from '~/domain/recipe/infrastructure/repository'
 import { randomRecipeId, VersionNumber } from '~/domain/recipe/primitives'
 import type {
@@ -12,7 +12,7 @@ import type {
   RecipeVersion,
   Remarks,
   StepText,
-  TmxSettings,
+  ThermomixSettings,
   VersionNumber as VersionNumberT,
   VersionOrigin,
 } from '~/domain/recipe/types'
@@ -27,7 +27,7 @@ export type NewRecipeInput = {
   title: RecipeTitle
   steps: StepText[]
   ingredients: Ingredient[]
-  tmxSteps: TmxSettings[]
+  tmxSteps: ThermomixSettings[]
 }
 
 export type NewVersionInput = {
@@ -36,7 +36,7 @@ export type NewVersionInput = {
   why?: string
   steps: StepText[]
   ingredients: Ingredient[]
-  tmxSteps: TmxSettings[]
+  tmxSteps: ThermomixSettings[]
 }
 
 export type RecordAttemptInput = {
@@ -80,7 +80,8 @@ export namespace RecipeCommand {
     const recipe = await repository.findBy(userId, recipeId)
     if (!recipe) return 'not-found' as const
     const number = nextVersionNumber(recipe.versionCount)
-    const tmxSteps = recipe.type === 'tmx' ? alignedTmxSteps(input.steps, input.tmxSteps) : []
+    const tmxSteps =
+      recipe.type === 'thermomix' ? alignedThermomixSteps(input.steps, input.tmxSteps) : []
     const version: RecipeVersion = {
       userId,
       recipeId,
@@ -167,8 +168,9 @@ export namespace RecipeCommand {
   }
 
   const firstVersion = (recipe: Recipe, origin: VersionOrigin, input: NewRecipeInput) => {
-    // Thermomix settings only exist on tmx recipes — [] for any other type.
-    const tmxSteps = recipe.type === 'tmx' ? alignedTmxSteps(input.steps, input.tmxSteps) : []
+    // Thermomix settings only exist on thermomix recipes — [] for any other type.
+    const tmxSteps =
+      recipe.type === 'thermomix' ? alignedThermomixSteps(input.steps, input.tmxSteps) : []
     return {
       userId: recipe.userId,
       recipeId: recipe.id,

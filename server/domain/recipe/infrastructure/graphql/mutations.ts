@@ -1,5 +1,5 @@
 import { match, P } from 'ts-pattern'
-import { toTmxSettings } from '~/domain/recipe/business-rules'
+import { toThermomixSettings } from '~/domain/recipe/business-rules'
 import { RecipeCommand } from '~/domain/recipe/command'
 import { RecipeUseCase } from '~/domain/recipe/use-case'
 import { builder } from '~/domain/shared/graphql/builder'
@@ -43,7 +43,7 @@ builder.mutationField('createRecipe', (t) =>
           title: input.title,
           steps: input.steps,
           ingredients: input.ingredients,
-          tmxSteps: toTmxSettings(input.tmxSteps.map(looseSettings)),
+          tmxSteps: toThermomixSettings(input.tmxSteps.map(looseSettings)),
         },
         input.sourceLabel ?? undefined,
       ),

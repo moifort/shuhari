@@ -5,7 +5,7 @@ import { DISH_CATEGORY_VALUES, RECIPE_TYPE_VALUES } from '~/domain/recipe/types'
 import type {
   ImportAnalysis,
   ImportHash as ImportHashType,
-  ImportTmxSettings,
+  ImportThermomixSettings,
   Proposal,
 } from '~/system/ai/types'
 
@@ -74,9 +74,9 @@ const stepSchema = z.union([
   z
     .object({
       text: clampedField(RECIPE_MAX.stepText),
-      tmxTime: optionalClamped(RECIPE_MAX.tmx),
-      tmxTemperature: optionalClamped(RECIPE_MAX.tmx),
-      tmxSpeed: optionalClamped(RECIPE_MAX.tmx),
+      tmxTime: optionalClamped(RECIPE_MAX.thermomix),
+      tmxTemperature: optionalClamped(RECIPE_MAX.thermomix),
+      tmxSpeed: optionalClamped(RECIPE_MAX.thermomix),
       tmxReverse: nullAsAbsent(z.boolean()),
     })
     .transform(({ text, tmxTime, tmxTemperature, tmxSpeed, tmxReverse }) => ({
@@ -107,8 +107,8 @@ const foldIngredients = (raw: { name: string; quantity: string }[]) =>
 // tmxSteps collapses to `[]` when no surviving step carries a setting. Shared by
 // import and proposal.
 const foldSteps = (
-  raw: { text: string; tmx: ImportTmxSettings }[],
-): { steps: string[]; tmxSteps: ImportTmxSettings[] } => {
+  raw: { text: string; tmx: ImportThermomixSettings }[],
+): { steps: string[]; tmxSteps: ImportThermomixSettings[] } => {
   const kept = raw.filter((s) => s.text.length > 0).slice(0, MAX_ITEMS)
   const tmxSteps = kept.map((s) => s.tmx)
   return {

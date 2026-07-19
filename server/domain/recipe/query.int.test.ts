@@ -113,30 +113,30 @@ describe('RecipeQuery.library — category business order', () => {
 describe('RecipeQuery.library — type filter', () => {
   beforeEach(() => {
     seedRecipe('dish-a', { type: 'dish', category: 'main', updatedAt: 1000 })
-    seedRecipe('tmx-a', { type: 'tmx', category: 'dessert', updatedAt: 2000 })
-    seedRecipe('tmx-b', { type: 'tmx', category: 'starter', updatedAt: 3000 })
+    seedRecipe('thermomix-a', { type: 'thermomix', category: 'dessert', updatedAt: 2000 })
+    seedRecipe('thermomix-b', { type: 'thermomix', category: 'starter', updatedAt: 3000 })
   })
 
   test('keeps only the requested type, combined with the sort', async () => {
     const page = await RecipeQuery.library(userId, {
-      type: 'tmx',
+      type: 'thermomix',
       sort: 'updatedAt',
       order: 'desc',
       limit: 10,
     })
-    expect(ids(page)).toEqual(['tmx-b', 'tmx-a'])
+    expect(ids(page)).toEqual(['thermomix-b', 'thermomix-a'])
     expect(page.hasMore).toBe(false)
   })
 
   test('the type filter also applies under the category sort', async () => {
     const page = await RecipeQuery.library(userId, {
-      type: 'tmx',
+      type: 'thermomix',
       sort: 'category',
       order: 'desc',
       limit: 10,
     })
     // starter(0) before dessert(2)
-    expect(ids(page)).toEqual(['tmx-b', 'tmx-a'])
+    expect(ids(page)).toEqual(['thermomix-b', 'thermomix-a'])
   })
 })
 
@@ -144,8 +144,8 @@ describe('RecipeQuery.library — category filter', () => {
   beforeEach(() => {
     seedRecipe('dish-old', { type: 'dish', category: 'main', updatedAt: 1000 })
     seedRecipe('dessert-a', { type: 'dish', category: 'dessert', updatedAt: 2000 })
-    seedRecipe('dish-new', { type: 'tmx', category: 'main', updatedAt: 3000 })
-    seedRecipe('dessert-b', { type: 'tmx', category: 'dessert', updatedAt: 4000 })
+    seedRecipe('dish-new', { type: 'thermomix', category: 'main', updatedAt: 3000 })
+    seedRecipe('dessert-b', { type: 'thermomix', category: 'dessert', updatedAt: 4000 })
   })
 
   test('keeps only the requested category, ordered updatedAt desc', async () => {
@@ -161,7 +161,7 @@ describe('RecipeQuery.library — category filter', () => {
 
   test('combines a type facet with the category filter', async () => {
     const page = await RecipeQuery.library(userId, {
-      type: 'tmx',
+      type: 'thermomix',
       category: 'main',
       sort: 'updatedAt',
       order: 'desc',

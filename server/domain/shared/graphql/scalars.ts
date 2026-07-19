@@ -8,9 +8,9 @@ import {
   RecipeTitle,
   Remarks,
   StepText,
-  TmxSpeed,
-  TmxTemperature,
-  TmxTime,
+  ThermomixSpeed,
+  ThermomixTemperature,
+  ThermomixTime,
   VersionNumber,
 } from '~/domain/recipe/primitives'
 import { UserId } from '~/domain/shared/primitives'
@@ -91,25 +91,25 @@ builder.scalarType('StepText', {
   parseValue: validatedParse('StepText', StepText),
 })
 
-builder.scalarType('TmxTime', {
+builder.scalarType('ThermomixTime', {
   description:
     'How long a Thermomix step runs, written as you would read it, e.g. `"3 min"` or `"30 s"`',
   serialize: (value) => value as string,
-  parseValue: validatedParse('TmxTime', TmxTime),
+  parseValue: validatedParse('ThermomixTime', ThermomixTime),
 })
 
-builder.scalarType('TmxTemperature', {
+builder.scalarType('ThermomixTemperature', {
   description:
     'The temperature of a Thermomix step, e.g. `"100°C"` or `"Varoma"` (its steam setting)',
   serialize: (value) => value as string,
-  parseValue: validatedParse('TmxTemperature', TmxTemperature),
+  parseValue: validatedParse('ThermomixTemperature', ThermomixTemperature),
 })
 
-builder.scalarType('TmxSpeed', {
+builder.scalarType('ThermomixSpeed', {
   description:
     'The blade speed of a Thermomix step, e.g. `"5"`, `"pétrin"` (kneading) or `"turbo"`',
   serialize: (value) => value as string,
-  parseValue: validatedParse('TmxSpeed', TmxSpeed),
+  parseValue: validatedParse('ThermomixSpeed', ThermomixSpeed),
 })
 
 builder.scalarType('Remarks', {

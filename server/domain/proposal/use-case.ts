@@ -1,16 +1,16 @@
 import {
-  alignedTmxSteps,
-  type LooseTmxSettings,
-  toTmxSettings,
+  alignedThermomixSteps,
+  type LooseThermomixSettings,
+  toThermomixSettings,
 } from '~/domain/recipe/business-rules'
 import { RecipeCommand } from '~/domain/recipe/command'
 import {
   IngredientName,
   IngredientQuantity,
   StepText,
-  TmxSpeed,
-  TmxTemperature,
-  TmxTime,
+  ThermomixSpeed,
+  ThermomixTemperature,
+  ThermomixTime,
 } from '~/domain/recipe/primitives'
 import { RecipeQuery } from '~/domain/recipe/query'
 import type {
@@ -18,32 +18,36 @@ import type {
   RecipeId,
   RecipeType,
   StepText as StepTextT,
-  TmxSettings,
+  ThermomixSettings,
   VersionNumber,
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
 import { Ai } from '~/system/ai'
-import type { Proposal as AiProposal, ImportSource, ImportTmxSettings } from '~/system/ai/types'
+import type {
+  Proposal as AiProposal,
+  ImportSource,
+  ImportThermomixSettings,
+} from '~/system/ai/types'
 import type { AcceptedProposal, Proposal } from './types'
 
 // The content-only slice branded from the AI response.
 type BrandedContent = {
   ingredients: Ingredient[]
   steps: StepTextT[]
-  tmxSteps: TmxSettings[]
+  tmxSteps: ThermomixSettings[]
 }
 
-// Brand one step's raw AI tmx settings into the loose shape the shared
-// `toTmxSettings` normalizer expects.
-const brandLooseTmx = (raw: ImportTmxSettings): LooseTmxSettings => ({
-  ...(raw.time ? { time: TmxTime(raw.time) } : {}),
-  ...(raw.temperature ? { temperature: TmxTemperature(raw.temperature) } : {}),
-  ...(raw.speed ? { speed: TmxSpeed(raw.speed) } : {}),
+// Brand one step's raw AI thermomix settings into the loose shape the shared
+// `toThermomixSettings` normalizer expects.
+const brandLooseThermomix = (raw: ImportThermomixSettings): LooseThermomixSettings => ({
+  ...(raw.time ? { time: ThermomixTime(raw.time) } : {}),
+  ...(raw.temperature ? { temperature: ThermomixTemperature(raw.temperature) } : {}),
+  ...(raw.speed ? { speed: ThermomixSpeed(raw.speed) } : {}),
   ...(raw.reverse ? { reverse: raw.reverse } : {}),
 })
 
 // Turn the untrusted AI proposal into branded domain shapes. tmxSteps are only
-// kept on a tmx recipe and are realigned with the steps (dropped if misaligned).
+// kept on a thermomix recipe and are realigned with the steps (dropped if misaligned).
 const brandProposal = (type: RecipeType, proposal: AiProposal): BrandedContent => {
   const ingredients = proposal.ingredients.map((i) => ({
     name: IngredientName(i.name),
@@ -51,8 +55,11 @@ const brandProposal = (type: RecipeType, proposal: AiProposal): BrandedContent =
   }))
   const steps = proposal.steps.map((s) => StepText(s))
   const tmxSteps =
-    type === 'tmx'
-      ? alignedTmxSteps(steps, toTmxSettings(proposal.tmxSteps.map(brandLooseTmx)))
+    type === 'thermomix'
+      ? alignedThermomixSteps(
+          steps,
+          toThermomixSettings(proposal.tmxSteps.map(brandLooseThermomix)),
+        )
       : []
   return { ingredients, steps, tmxSteps }
 }
@@ -86,7 +93,7 @@ export namespace ProposalUseCase {
         quantity: i.quantity as string,
       })),
       currentSteps: version.steps.map((s) => s as string),
-      currentTmxSteps: version.tmxSteps.map((s) => ({
+      currentThermomixSteps: version.tmxSteps.map((s) => ({
         time: s.time,
         temperature: s.temperature,
         speed: s.speed,

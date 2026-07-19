@@ -9,8 +9,8 @@ export const RecipeTypeEnum = builder.enumType('RecipeType', {
       value: 'dish',
       description: 'A cooked dish — steps are plain text, e.g. `"Grandma’s lasagna"`',
     },
-    TMX: {
-      value: 'tmx',
+    THERMOMIX: {
+      value: 'thermomix',
       description:
         'A Thermomix recipe — each step also carries machine settings, e.g. ' +
         '`"10 min / 100°C / speed 2"`',

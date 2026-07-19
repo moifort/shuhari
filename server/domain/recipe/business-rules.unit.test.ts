@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 import {
-  alignedTmxSteps,
+  alignedThermomixSteps,
   bestRating,
   categoryRank,
   nextVersionNumber,
-  toTmxSettings,
+  toThermomixSettings,
   versionToOpen,
 } from '~/domain/recipe/business-rules'
 import {
@@ -12,10 +12,10 @@ import {
   type Rating,
   type RecipeVersion,
   type StepText,
-  type TmxSettings,
-  type TmxSpeed,
-  type TmxTemperature,
-  type TmxTime,
+  type ThermomixSettings,
+  type ThermomixSpeed,
+  type ThermomixTemperature,
+  type ThermomixTime,
   type VersionNumber,
 } from '~/domain/recipe/types'
 
@@ -102,51 +102,56 @@ describe('versionToOpen', () => {
   })
 })
 
-describe('alignedTmxSteps', () => {
+describe('alignedThermomixSteps', () => {
   const steps = ['Mixer', 'Cuire'].map((s) => s as StepText)
-  const settings: TmxSettings = { time: '5 min' as TmxTime, speed: '4' as TmxSpeed }
+  const settings: ThermomixSettings = {
+    time: '5 min' as ThermomixTime,
+    speed: '4' as ThermomixSpeed,
+  }
 
   test('keeps settings aligned with the steps', () => {
-    expect(alignedTmxSteps(steps, [settings, {}])).toEqual([settings, {}])
+    expect(alignedThermomixSteps(steps, [settings, {}])).toEqual([settings, {}])
   })
   test('drops settings whose length differs from the steps', () => {
-    expect(alignedTmxSteps(steps, [settings])).toEqual([])
+    expect(alignedThermomixSteps(steps, [settings])).toEqual([])
   })
   test('drops settings when every entry is empty', () => {
-    expect(alignedTmxSteps(steps, [{}, {}])).toEqual([])
+    expect(alignedThermomixSteps(steps, [{}, {}])).toEqual([])
   })
   test('normalizes entries carrying no actual setting to the empty settings object', () => {
-    expect(alignedTmxSteps(steps, [settings, { reverse: false }])).toEqual([settings, {}])
-    expect(alignedTmxSteps(steps, [{}, { reverse: false }])).toEqual([])
+    expect(alignedThermomixSteps(steps, [settings, { reverse: false }])).toEqual([settings, {}])
+    expect(alignedThermomixSteps(steps, [{}, { reverse: false }])).toEqual([])
   })
   test('keeps reverse alone as a setting when true', () => {
-    expect(alignedTmxSteps(steps, [{ reverse: true }, {}])).toEqual([{ reverse: true }, {}])
+    expect(alignedThermomixSteps(steps, [{ reverse: true }, {}])).toEqual([{ reverse: true }, {}])
   })
   test('returns [] for an empty list', () => {
-    expect(alignedTmxSteps(steps, [])).toEqual([])
+    expect(alignedThermomixSteps(steps, [])).toEqual([])
   })
 })
 
-describe('toTmxSettings', () => {
+describe('toThermomixSettings', () => {
   test('maps an entry with no field to the empty settings object (a plain step)', () => {
-    expect(toTmxSettings([{}, {}])).toEqual([{}, {}])
+    expect(toThermomixSettings([{}, {}])).toEqual([{}, {}])
   })
   test('drops absent fields', () => {
     expect(
-      toTmxSettings([{ time: '5 min' as TmxTime, temperature: undefined, speed: undefined }]),
-    ).toEqual([{ time: '5 min' as TmxTime }])
+      toThermomixSettings([
+        { time: '5 min' as ThermomixTime, temperature: undefined, speed: undefined },
+      ]),
+    ).toEqual([{ time: '5 min' as ThermomixTime }])
   })
   test('keeps reverse only when true (false carries no information)', () => {
-    expect(toTmxSettings([{ reverse: true }])).toEqual([{ reverse: true }])
-    expect(toTmxSettings([{ reverse: false }])).toEqual([{}])
+    expect(toThermomixSettings([{ reverse: true }])).toEqual([{ reverse: true }])
+    expect(toThermomixSettings([{ reverse: false }])).toEqual([{}])
   })
   test('assembles a fully-populated setting', () => {
     const entry = {
-      time: '3 min' as TmxTime,
-      temperature: '100°C' as TmxTemperature,
-      speed: '4' as TmxSpeed,
+      time: '3 min' as ThermomixTime,
+      temperature: '100°C' as ThermomixTemperature,
+      speed: '4' as ThermomixSpeed,
       reverse: true,
     }
-    expect(toTmxSettings([entry])).toEqual([entry])
+    expect(toThermomixSettings([entry])).toEqual([entry])
   })
 })

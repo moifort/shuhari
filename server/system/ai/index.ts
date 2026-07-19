@@ -90,7 +90,7 @@ const importResponseSchema = {
     type: {
       type: 'string',
       enum: RECIPE_TYPE_ENUM,
-      description: 'Experiment type: dish (cooked recipe) or tmx (Thermomix)',
+      description: 'Experiment type: dish (cooked recipe) or thermomix (Thermomix)',
     },
     category: {
       type: 'string',
@@ -141,11 +141,11 @@ const IMPORT_INSTRUCTIONS = `You are the assistant of a culinary experimentation
 
 Rules:
 - MANDATORY: write every generated value — title, ingredient names and quantities, step text — in French. The reader is a French speaker; never answer in English.
-- Determine the type: dish (cooked recipe) or tmx (Thermomix recipe).
+- Determine the type: dish (cooked recipe) or thermomix (Thermomix recipe).
 - Determine the dish category: starter, main, dessert, soup, sauce or baking (pastry, bread, viennoiserie). When in doubt, pick main.
 - ingredients: the ORDERED list of the recipe's components with their quantity (e.g. Gin → 50 ml, Beurre → 170 g, Fraise → 3 pièces). Include EVERY ingredient visible in the source, each with its quantity and unit. This is the recipe's "shopping list". The NAME stays short: the ingredient alone, never its preparation ("Pommes de terre", not "Pommes de terre épluchées et coupées en rondelles" — the preparation belongs in the steps).
 - steps: short steps, imperative mood, in order. Precise settings (oven temperature, duration, ratio…) stay in the step text.
-- For a Thermomix recipe (type tmx): for every step performed on the Thermomix, fill tmxTime, tmxTemperature, tmxSpeed and tmxReverse exactly as stated in the recipe (time "3 min" / "30 s" / "1 h 10 min"; temperature "100°C" or "Varoma"; speed "0,5" to "10", "pétrin", "mijotage" or "turbo"). ALWAYS return every step as an object: use null for every missing setting, and for ALL of these fields when the step is not done on the Thermomix or when the recipe is not of type tmx — never omit or merge a step because it carries no setting.
+- For a Thermomix recipe (type thermomix): for every step performed on the Thermomix, fill tmxTime, tmxTemperature, tmxSpeed and tmxReverse exactly as stated in the recipe (time "3 min" / "30 s" / "1 h 10 min"; temperature "100°C" or "Varoma"; speed "0,5" to "10", "pétrin", "mijotage" or "turbo"). ALWAYS return every step as an object: use null for every missing setting, and for ALL of these fields when the step is not done on the Thermomix or when the recipe is not of type thermomix — never omit or merge a step because it carries no setting.
 - Be concise: every value stays short (ingredient name ≤120, quantity ≤60, step ≤300, title ≤200, Thermomix setting ≤20 characters).
 - If the source contains no usable recipe (unreadable image or one without a recipe, off-topic page or text), set recipeFound to false and leave every other field empty or null. Otherwise set recipeFound to true.
 - Use null for any missing information.
@@ -207,17 +207,17 @@ export namespace Ai {
     return [{ text: `${IMPORT_INSTRUCTIONS}\n\nRecipe text:\n${source.text}` }]
   }
 
-  // Cuisine-scoped iteration rule (dish + tmx). Coffee and cocktail will get
+  // Cuisine-scoped iteration rule (dish + thermomix). Coffee and cocktail will get
   // their own rules later — no speculative abstraction here.
   const cuisineIterationRule = (_type: ProposalContext['type']) =>
     'For a dish or a Thermomix recipe, you may adjust several coherent elements at once. Return the COMPLETE ingredient and step list of the next version (not only what changes), plus a short summary of the changes.'
 
-  const formatTmx = (tmx: ProposalContext['currentTmxSteps'][number]): string => {
+  const formatThermomix = (thermomix: ProposalContext['currentThermomixSteps'][number]): string => {
     const parts = [
-      tmx.time && `time ${tmx.time}`,
-      tmx.temperature && `temperature ${tmx.temperature}`,
-      tmx.speed && `speed ${tmx.speed}`,
-      tmx.reverse && 'reverse rotation',
+      thermomix.time && `time ${thermomix.time}`,
+      thermomix.temperature && `temperature ${thermomix.temperature}`,
+      thermomix.speed && `speed ${thermomix.speed}`,
+      thermomix.reverse && 'reverse rotation',
     ].filter(Boolean)
     return parts.length ? ` [Thermomix: ${parts.join(', ')}]` : ''
   }
@@ -228,10 +228,10 @@ export namespace Ai {
     const steps =
       context.currentSteps
         .map((s, i) => {
-          const tmx = context.currentTmxSteps[i]
+          const thermomix = context.currentThermomixSteps[i]
           // The parallel array is total, but shorter than the steps on a dish
           // recipe (it is simply `[]` there) — an unaligned index is a plain step.
-          return `${i + 1}. ${s}${tmx ? formatTmx(tmx) : ''}`
+          return `${i + 1}. ${s}${thermomix ? formatThermomix(thermomix) : ''}`
         })
         .join('\n') || '—'
     const attempts =

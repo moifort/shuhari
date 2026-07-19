@@ -9,9 +9,9 @@ import type {
   RecipeTitle,
   Remarks,
   StepText,
-  TmxSpeed,
-  TmxTemperature,
-  TmxTime,
+  ThermomixSpeed,
+  ThermomixTemperature,
+  ThermomixTime,
   VersionNumber,
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
@@ -45,9 +45,9 @@ export const builder = new SchemaBuilder<{
     IngredientName: { Input: IngredientName; Output: IngredientName }
     IngredientQuantity: { Input: IngredientQuantity; Output: IngredientQuantity }
     StepText: { Input: StepText; Output: StepText }
-    TmxTime: { Input: TmxTime; Output: TmxTime }
-    TmxTemperature: { Input: TmxTemperature; Output: TmxTemperature }
-    TmxSpeed: { Input: TmxSpeed; Output: TmxSpeed }
+    ThermomixTime: { Input: ThermomixTime; Output: ThermomixTime }
+    ThermomixTemperature: { Input: ThermomixTemperature; Output: ThermomixTemperature }
+    ThermomixSpeed: { Input: ThermomixSpeed; Output: ThermomixSpeed }
     Remarks: { Input: Remarks; Output: Remarks }
   }
 }>({

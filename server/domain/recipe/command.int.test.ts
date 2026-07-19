@@ -9,9 +9,9 @@ import type {
   RecipeTitle,
   Remarks,
   StepText,
-  TmxSettings,
-  TmxSpeed,
-  TmxTime,
+  ThermomixSettings,
+  ThermomixSpeed,
+  ThermomixTime,
   VersionNumber,
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
@@ -32,7 +32,7 @@ const newInput = () => ({
   title: 'Blanquette' as RecipeTitle,
   steps: ['Saisir', 'Mijoter'] as StepText[],
   ingredients: [] as Ingredient[],
-  tmxSteps: [] as TmxSettings[],
+  tmxSteps: [] as ThermomixSettings[],
 })
 
 let fake = resetFakeFirestore()
@@ -62,16 +62,23 @@ describe('RecipeCommand.create', () => {
   })
 
   test('persists per-step Thermomix settings when aligned with the steps', async () => {
-    const tmx: TmxSettings = { time: '5 min' as TmxTime, speed: '4' as TmxSpeed, reverse: true }
+    const thermomix: ThermomixSettings = {
+      time: '5 min' as ThermomixTime,
+      speed: '4' as ThermomixSpeed,
+      reverse: true,
+    }
     const recipe = await RecipeCommand.create(userId, {
       ...newInput(),
-      type: 'tmx' as const,
-      tmxSteps: [tmx, {}],
+      type: 'thermomix' as const,
+      tmxSteps: [thermomix, {}],
     })
 
     // A plain step keeps its slot in the parallel array as the empty settings
     // object — Firestore stores it verbatim, no `null` placeholder needed.
-    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.tmxSteps).toEqual([tmx, {}])
+    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.tmxSteps).toEqual([
+      thermomix,
+      {},
+    ])
   })
 
   test('stores [] tmxSteps when absent or misaligned', async () => {
@@ -80,16 +87,16 @@ describe('RecipeCommand.create', () => {
 
     const misaligned = await RecipeCommand.create(userId, {
       ...newInput(),
-      type: 'tmx' as const,
-      tmxSteps: [{ time: '5 min' as TmxTime }],
+      type: 'thermomix' as const,
+      tmxSteps: [{ time: '5 min' as ThermomixTime }],
     })
     expect(fake.snapshot('recipe-versions').get(`${misaligned.id}_1`)?.tmxSteps).toEqual([])
 
-    const notTmx = await RecipeCommand.create(userId, {
+    const notThermomix = await RecipeCommand.create(userId, {
       ...newInput(),
-      tmxSteps: [{ time: '5 min' as TmxTime }, {}],
+      tmxSteps: [{ time: '5 min' as ThermomixTime }, {}],
     })
-    expect(fake.snapshot('recipe-versions').get(`${notTmx.id}_1`)?.tmxSteps).toEqual([])
+    expect(fake.snapshot('recipe-versions').get(`${notThermomix.id}_1`)?.tmxSteps).toEqual([])
   })
 
   test('persists ingredients on v1 and stores [] when absent', async () => {
@@ -106,14 +113,14 @@ describe('RecipeCommand.create', () => {
 
 describe('RecipeCommand.addVersion', () => {
   test('appends v2, stamping its basedOn and bumping the version count', async () => {
-    const recipe = await RecipeCommand.create(userId, { ...newInput(), type: 'tmx' as const })
+    const recipe = await RecipeCommand.create(userId, { ...newInput(), type: 'thermomix' as const })
 
     const withV2 = (await RecipeCommand.addVersion(userId, recipe.id, {
       change: 'Bouillon 700 → 650 ml',
       basedOn: 1 as VersionNumber,
       steps: ['Saisir', 'Mijoter'] as StepText[],
       ingredients: [],
-      tmxSteps: [{}, { speed: 'turbo' as TmxSpeed }],
+      tmxSteps: [{}, { speed: 'turbo' as ThermomixSpeed }],
     })) as Recipe
 
     expect(withV2.versionCount).toBe(2 as VersionNumber)

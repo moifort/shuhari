@@ -1,4 +1,7 @@
-import { IngredientInput, TmxSettingsInput } from '~/domain/recipe/infrastructure/graphql/inputs'
+import {
+  IngredientInput,
+  ThermomixSettingsInput,
+} from '~/domain/recipe/infrastructure/graphql/inputs'
 import { builder } from '~/domain/shared/graphql/builder'
 
 // The full next-version proposal the client sends back on accept. It carries the
@@ -37,7 +40,7 @@ export const ProposalInput = builder.inputType('ProposalInput', {
       description: 'The complete step list of the next version, e.g. `"Rest the dough for 2 h"`',
     }),
     tmxSteps: t.field({
-      type: [TmxSettingsInput],
+      type: [ThermomixSettingsInput],
       required: true,
       description:
         'Per-step Thermomix settings, aligned with steps, e.g. `"10 min / 100°C / speed 2"` ' +

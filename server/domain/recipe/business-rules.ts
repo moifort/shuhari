@@ -5,10 +5,10 @@ import {
   type Rating,
   type RecipeVersion,
   type StepText,
-  type TmxSettings,
-  type TmxSpeed,
-  type TmxTemperature,
-  type TmxTime,
+  type ThermomixSettings,
+  type ThermomixSpeed,
+  type ThermomixTemperature,
+  type ThermomixTime,
   type VersionNumber,
 } from '~/domain/recipe/types'
 
@@ -68,32 +68,35 @@ export const versionToOpen = (versions: RecipeVersion[]): RecipeVersion => {
 // without any actual setting (reverse alone carries none when false) are
 // normalized to the empty settings object `{}` — the single spelling of a plain
 // step, which keeps the array itself free of holes.
-export const alignedTmxSteps = (steps: StepText[], tmxSteps: TmxSettings[]): TmxSettings[] => {
+export const alignedThermomixSteps = (
+  steps: StepText[],
+  tmxSteps: ThermomixSettings[],
+): ThermomixSettings[] => {
   if (tmxSteps.length !== steps.length) return []
   const normalized = tmxSteps.map((s) => (emptySettings(s) ? {} : s))
   return normalized.some((s) => !emptySettings(s)) ? normalized : []
 }
 
-const emptySettings = (s: TmxSettings) =>
+const emptySettings = (s: ThermomixSettings) =>
   s.time === undefined && s.temperature === undefined && s.speed === undefined && !s.reverse
 
 // One step's Thermomix settings as they arrive from a GraphQL input or a branded
 // AI proposal: each field may be present or absent (the boundaries strip the
 // `null`s their clients speak). An entry with no field at all stands for a plain
 // (non-Thermomix) step.
-export type LooseTmxSettings = {
-  time?: TmxTime
-  temperature?: TmxTemperature
-  speed?: TmxSpeed
+export type LooseThermomixSettings = {
+  time?: ThermomixTime
+  temperature?: ThermomixTemperature
+  speed?: ThermomixSpeed
   reverse?: boolean
 }
 
-// Normalize loose per-step settings into clean TmxSettings, dropping absent keys.
+// Normalize loose per-step settings into clean ThermomixSettings, dropping absent keys.
 // `reverse` is kept only when true — false carries no information (a step whose
 // only "setting" is reverse:false is not a Thermomix step). The single home for
 // this rule so the GraphQL and AI-proposal paths can never diverge;
-// `alignedTmxSteps` then decides whether the parallel array is kept at all.
-export const toTmxSettings = (entries: LooseTmxSettings[]): TmxSettings[] =>
+// `alignedThermomixSteps` then decides whether the parallel array is kept at all.
+export const toThermomixSettings = (entries: LooseThermomixSettings[]): ThermomixSettings[] =>
   entries.map((entry) => ({
     ...(entry.time ? { time: entry.time } : {}),
     ...(entry.temperature ? { temperature: entry.temperature } : {}),

@@ -1,5 +1,5 @@
-import type { LooseTmxSettings } from '~/domain/recipe/business-rules'
-import type { TmxSpeed, TmxTemperature, TmxTime } from '~/domain/recipe/types'
+import type { LooseThermomixSettings } from '~/domain/recipe/business-rules'
+import type { ThermomixSpeed, ThermomixTemperature, ThermomixTime } from '~/domain/recipe/types'
 import { builder } from '~/domain/shared/graphql/builder'
 import { stripNulls } from '~/utils/input'
 import { DishCategoryEnum, RecipeTypeEnum } from './enums'
@@ -8,11 +8,11 @@ import { DishCategoryEnum, RecipeTypeEnum } from './enums'
 // spells it "absent". A plain step is an entry with every field null, which
 // stripNulls turns into the empty settings object.
 export const looseSettings = (entry: {
-  time?: TmxTime | null
-  temperature?: TmxTemperature | null
-  speed?: TmxSpeed | null
+  time?: ThermomixTime | null
+  temperature?: ThermomixTemperature | null
+  speed?: ThermomixSpeed | null
   reverse?: boolean | null
-}): LooseTmxSettings => stripNulls(entry)
+}): LooseThermomixSettings => stripNulls(entry)
 
 export const IngredientInput = builder.inputType('IngredientInput', {
   description:
@@ -31,14 +31,17 @@ export const IngredientInput = builder.inputType('IngredientInput', {
   }),
 })
 
-export const TmxSettingsInput = builder.inputType('TmxSettingsInput', {
+export const ThermomixSettingsInput = builder.inputType('ThermomixSettingsInput', {
   description:
     'The Thermomix settings to attach to one step, e.g. `"10 min / 100°C / speed 2"`. Every ' +
     'field is optional.',
   fields: (t) => ({
-    time: t.field({ type: 'TmxTime', description: 'Duration, e.g. `"10 min"`' }),
-    temperature: t.field({ type: 'TmxTemperature', description: 'Temperature, e.g. `"100°C"`' }),
-    speed: t.field({ type: 'TmxSpeed', description: 'Blade speed, e.g. `"2"` or `"turbo"`' }),
+    time: t.field({ type: 'ThermomixTime', description: 'Duration, e.g. `"10 min"`' }),
+    temperature: t.field({
+      type: 'ThermomixTemperature',
+      description: 'Temperature, e.g. `"100°C"`',
+    }),
+    speed: t.field({ type: 'ThermomixSpeed', description: 'Blade speed, e.g. `"2"` or `"turbo"`' }),
     reverse: t.boolean({
       required: false,
       description: 'Reverse (gentle mixing) on or off, e.g. `true`',
@@ -81,7 +84,7 @@ export const CreateRecipeInput = builder.inputType('CreateRecipeInput', {
         'The method, one instruction per step, in order, e.g. `"Fold in the egg whites"`',
     }),
     tmxSteps: t.field({
-      type: [TmxSettingsInput],
+      type: [ThermomixSettingsInput],
       required: true,
       description:
         'Thermomix settings lined up with the steps above — one entry per step, e.g. ' +

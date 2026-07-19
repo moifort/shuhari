@@ -13,9 +13,9 @@ import {
   type RecipeType as RecipeTypeType,
   type Remarks as RemarksType,
   type StepText as StepTextType,
-  type TmxSpeed as TmxSpeedType,
-  type TmxTemperature as TmxTemperatureType,
-  type TmxTime as TmxTimeType,
+  type ThermomixSpeed as ThermomixSpeedType,
+  type ThermomixTemperature as ThermomixTemperatureType,
+  type ThermomixTime as ThermomixTimeType,
   type VersionNumber as VersionNumberType,
   type VersionOriginKind as VersionOriginKindType,
 } from '~/domain/recipe/types'
@@ -62,19 +62,19 @@ export const StepText = (value: unknown) => {
   return make<StepTextType>()(v)
 }
 
-export const TmxTime = (value: unknown) => {
-  const v = z.string().trim().min(1).max(RECIPE_MAX.tmx).parse(value)
-  return make<TmxTimeType>()(v)
+export const ThermomixTime = (value: unknown) => {
+  const v = z.string().trim().min(1).max(RECIPE_MAX.thermomix).parse(value)
+  return make<ThermomixTimeType>()(v)
 }
 
-export const TmxTemperature = (value: unknown) => {
-  const v = z.string().trim().min(1).max(RECIPE_MAX.tmx).parse(value)
-  return make<TmxTemperatureType>()(v)
+export const ThermomixTemperature = (value: unknown) => {
+  const v = z.string().trim().min(1).max(RECIPE_MAX.thermomix).parse(value)
+  return make<ThermomixTemperatureType>()(v)
 }
 
-export const TmxSpeed = (value: unknown) => {
-  const v = z.string().trim().min(1).max(RECIPE_MAX.tmx).parse(value)
-  return make<TmxSpeedType>()(v)
+export const ThermomixSpeed = (value: unknown) => {
+  const v = z.string().trim().min(1).max(RECIPE_MAX.thermomix).parse(value)
+  return make<ThermomixSpeedType>()(v)
 }
 
 export const VersionOriginKind = (value: unknown) =>

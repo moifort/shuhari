@@ -1,7 +1,7 @@
 import { DishCategoryEnum, RecipeTypeEnum } from '~/domain/recipe/infrastructure/graphql/enums'
-import { IngredientType, TmxSettingsType } from '~/domain/recipe/infrastructure/graphql/types'
+import { IngredientType, ThermomixSettingsType } from '~/domain/recipe/infrastructure/graphql/types'
 import { builder } from '~/domain/shared/graphql/builder'
-import type { ImportAnalysis, ImportTmxSettings } from '~/system/ai/types'
+import type { ImportAnalysis, ImportThermomixSettings } from '~/system/ai/types'
 import type { Proposal } from '../../types'
 
 export const ProposalType = builder.objectRef<Proposal>('Proposal').implement({
@@ -40,10 +40,10 @@ export const ProposalType = builder.objectRef<Proposal>('Proposal').implement({
         'what changed)',
     }),
     tmxSteps: t.field({
-      type: [TmxSettingsType],
+      type: [ThermomixSettingsType],
       description:
         'Per-step Thermomix settings aligned with steps, e.g. `"10 min / 100°C / speed 2"` ' +
-        '(an entry with every field `null` = plain step; `[]` if not tmx)',
+        '(an entry with every field `null` = plain step; `[]` if not thermomix)',
       resolve: (d) => d.tmxSteps,
     }),
   }),
@@ -61,15 +61,17 @@ const ImportIngredientType = builder.objectRef<ImportIngredient>('ImportIngredie
   }),
 })
 
-const ImportTmxSettingsType = builder.objectRef<ImportTmxSettings>('ImportTmxSettings').implement({
-  description: 'Thermomix settings for one step extracted by the AI (unvalidated preview)',
-  fields: (t) => ({
-    time: t.exposeString('time', { nullable: true }),
-    temperature: t.exposeString('temperature', { nullable: true }),
-    speed: t.exposeString('speed', { nullable: true }),
-    reverse: t.exposeBoolean('reverse', { nullable: true }),
-  }),
-})
+const ImportThermomixSettingsType = builder
+  .objectRef<ImportThermomixSettings>('ImportThermomixSettings')
+  .implement({
+    description: 'Thermomix settings for one step extracted by the AI (unvalidated preview)',
+    fields: (t) => ({
+      time: t.exposeString('time', { nullable: true }),
+      temperature: t.exposeString('temperature', { nullable: true }),
+      speed: t.exposeString('speed', { nullable: true }),
+      reverse: t.exposeBoolean('reverse', { nullable: true }),
+    }),
+  })
 
 export const ImportAnalysisType = builder.objectRef<ImportAnalysis>('ImportAnalysis').implement({
   description: 'Structured recipe extracted from an import source (editable preview)',
@@ -84,10 +86,10 @@ export const ImportAnalysisType = builder.objectRef<ImportAnalysis>('ImportAnaly
     ingredients: t.field({ type: [ImportIngredientType], resolve: (a) => a.ingredients }),
     steps: t.exposeStringList('steps'),
     tmxSteps: t.field({
-      type: [ImportTmxSettingsType],
+      type: [ImportThermomixSettingsType],
       description:
         'Per-step Thermomix settings, aligned with steps (an entry with every field `null` = ' +
-        'plain step; `[]` if not tmx)',
+        'plain step; `[]` if not thermomix)',
       resolve: (a) => a.tmxSteps,
     }),
   }),

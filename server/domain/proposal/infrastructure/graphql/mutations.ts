@@ -2,7 +2,7 @@ import { GraphQLError } from 'graphql'
 import { match, P } from 'ts-pattern'
 import type { AcceptedProposal } from '~/domain/proposal/types'
 import { ProposalUseCase } from '~/domain/proposal/use-case'
-import { toTmxSettings } from '~/domain/recipe/business-rules'
+import { toThermomixSettings } from '~/domain/recipe/business-rules'
 import { looseSettings } from '~/domain/recipe/infrastructure/graphql/inputs'
 import { RecipeType } from '~/domain/recipe/infrastructure/graphql/types'
 import type { Recipe, VersionNumber } from '~/domain/recipe/types'
@@ -113,7 +113,7 @@ builder.mutationField('acceptProposal', (t) =>
         rationale: proposal.rationale,
         ingredients: proposal.ingredients,
         steps: proposal.steps,
-        tmxSteps: toTmxSettings(proposal.tmxSteps.map(looseSettings)),
+        tmxSteps: toThermomixSettings(proposal.tmxSteps.map(looseSettings)),
       }
       const result = await ProposalUseCase.accept(userId, recipeId, accepted)
       const recipe = ensureRecipe(result)

@@ -2,8 +2,8 @@ import type { Brand } from 'ts-brand'
 import type { UserId } from '~/domain/shared/types'
 
 // The culinary experiment domains. Drives colour/icon in the app. `dish` is a
-// cooked dish, `tmx` a Thermomix recipe.
-export const RECIPE_TYPE_VALUES = ['dish', 'tmx'] as const
+// cooked dish, `thermomix` a Thermomix recipe.
+export const RECIPE_TYPE_VALUES = ['dish', 'thermomix'] as const
 export type RecipeType = (typeof RECIPE_TYPE_VALUES)[number]
 
 // The course a dish belongs to. Detected by the AI at import and drives sorting
@@ -33,9 +33,9 @@ export type Remarks = Brand<string, 'Remarks'>
 export type IngredientName = Brand<string, 'IngredientName'>
 export type IngredientQuantity = Brand<string, 'IngredientQuantity'>
 export type StepText = Brand<string, 'StepText'>
-export type TmxTime = Brand<string, 'TmxTime'>
-export type TmxTemperature = Brand<string, 'TmxTemperature'>
-export type TmxSpeed = Brand<string, 'TmxSpeed'>
+export type ThermomixTime = Brand<string, 'ThermomixTime'>
+export type ThermomixTemperature = Brand<string, 'ThermomixTemperature'>
+export type ThermomixSpeed = Brand<string, 'ThermomixSpeed'>
 
 // A recipe component with its measured quantity ("Gin" → "50 ml", "Beurre" →
 // "170 g"). The shopping-list view of the recipe. Ordered list, never a map.
@@ -45,10 +45,10 @@ export type Ingredient = { name: IngredientName; quantity: IngredientQuantity }
 // ever done on them — "Varoma" and "pétrin" are valid values, not numbers).
 // Every field absent (`{}`) means "this step carries no Thermomix setting" — the
 // single representation of a plain step inside the parallel `tmxSteps` array.
-export type TmxSettings = {
-  time?: TmxTime // "3 min", "30 s", "1 h 10 min"
-  temperature?: TmxTemperature // "100°C", "Varoma"
-  speed?: TmxSpeed // "5", "3,5", "pétrin", "mijotage", "turbo"
+export type ThermomixSettings = {
+  time?: ThermomixTime // "3 min", "30 s", "1 h 10 min"
+  temperature?: ThermomixTemperature // "100°C", "Varoma"
+  speed?: ThermomixSpeed // "5", "3,5", "pétrin", "mijotage", "turbo"
   reverse?: boolean // reverse rotation
 }
 
@@ -94,9 +94,9 @@ export type RecipeVersion = {
   // measurable.
   ingredients: Ingredient[]
   // Thermomix settings aligned with `steps` by index (an entry with every field
-  // absent — `{}` — = plain step). `[]` for non-tmx recipes — "is Thermomix" is
-  // derived from `type === 'tmx'`, never from the presence of this array.
-  tmxSteps: TmxSettings[]
+  // absent — `{}` — = plain step). `[]` for non-thermomix recipes — "is Thermomix"
+  // is derived from `type === 'thermomix'`, never from the presence of this array.
+  tmxSteps: ThermomixSettings[]
   // The attempt outcome, written once when the version is executed. All absent
   // while the version is still a planned attempt (no `executedAt`).
   executedAt?: Date

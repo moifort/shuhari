@@ -7,10 +7,10 @@ import type {
   RecipeId,
   RecipeTitle,
   StepText,
-  TmxSettings,
-  TmxSpeed,
-  TmxTemperature,
-  TmxTime,
+  ThermomixSettings,
+  ThermomixSpeed,
+  ThermomixTemperature,
+  ThermomixTime,
   VersionNumber,
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
@@ -44,13 +44,13 @@ const ing = (name: string, quantity: string): Ingredient => ({
 const stepList = (...s: string[]) => s.map((x) => x as StepText)
 const PROPOSAL_INGREDIENTS = [ing('Veau', '800 g'), ing('Bouillon', '650 ml')]
 
-const recipeInput = (opts: { type?: 'dish' | 'tmx' } = {}) => ({
+const recipeInput = (opts: { type?: 'dish' | 'thermomix' } = {}) => ({
   type: opts.type ?? ('dish' as const),
   category: 'main' as const,
   title: 'Blanquette' as RecipeTitle,
   steps: ['Saisir', 'Mijoter'] as StepText[],
   ingredients: [],
-  tmxSteps: [] as TmxSettings[],
+  tmxSteps: [] as ThermomixSettings[],
 })
 
 const baseProposal = (): AiProposal => ({
@@ -114,16 +114,20 @@ describe('ProposalUseCase.fromAttempt', () => {
     expect(fake.batches.length).toBe(batchesBefore)
   })
 
-  test('aligns tmxSteps with the steps for a tmx recipe, [] for a dish recipe', async () => {
+  test('aligns tmxSteps with the steps for a thermomix recipe, [] for a dish recipe', async () => {
     proposal = {
       ...baseProposal(),
       tmxSteps: [{ time: '5 min', temperature: '120°C', speed: '1' }, {}],
     }
-    const tmx = await RecipeCommand.create(userId, recipeInput({ type: 'tmx' }))
-    const tmxProposal = await ProposalUseCase.fromAttempt(userId, tmx.id, V1)
-    if (tmxProposal === 'not-found') throw new Error('expected a proposal')
-    expect(tmxProposal.tmxSteps).toEqual([
-      { time: '5 min' as TmxTime, temperature: '120°C' as TmxTemperature, speed: '1' as TmxSpeed },
+    const thermomix = await RecipeCommand.create(userId, recipeInput({ type: 'thermomix' }))
+    const thermomixProposal = await ProposalUseCase.fromAttempt(userId, thermomix.id, V1)
+    if (thermomixProposal === 'not-found') throw new Error('expected a proposal')
+    expect(thermomixProposal.tmxSteps).toEqual([
+      {
+        time: '5 min' as ThermomixTime,
+        temperature: '120°C' as ThermomixTemperature,
+        speed: '1' as ThermomixSpeed,
+      },
       {},
     ])
 

@@ -1,7 +1,7 @@
 import { bestRating, versionToOpen } from '~/domain/recipe/business-rules'
 import { type RecipeLibraryPage, RecipeQuery } from '~/domain/recipe/query'
 import { builder } from '~/domain/shared/graphql/builder'
-import type { Ingredient, Recipe, RecipeVersion, TmxSettings } from '../../types'
+import type { Ingredient, Recipe, RecipeVersion, ThermomixSettings } from '../../types'
 import { DishCategoryEnum, RecipeTypeEnum, VersionOriginKindEnum } from './enums'
 
 export const IngredientType = builder.objectRef<Ingredient>('Ingredient').implement({
@@ -20,38 +20,40 @@ export const IngredientType = builder.objectRef<Ingredient>('Ingredient').implem
   }),
 })
 
-export const TmxSettingsType = builder.objectRef<TmxSettings>('TmxSettings').implement({
-  description:
-    'The Thermomix machine settings that go with one step (only for TMX recipes). Every field ' +
-    'is optional — a step can set just a speed, or a full time + temperature + speed combo, ' +
-    'e.g. `"10 min / 100°C / speed 2"`.',
-  fields: (t) => ({
-    time: t.field({
-      type: 'TmxTime',
-      nullable: true,
-      description: 'How long the step runs, e.g. `"10 min"` or `"30 s"` (`null` if not set)',
-      resolve: (s) => s.time ?? null,
+export const ThermomixSettingsType = builder
+  .objectRef<ThermomixSettings>('ThermomixSettings')
+  .implement({
+    description:
+      'The Thermomix machine settings that go with one step (only for TMX recipes). Every field ' +
+      'is optional — a step can set just a speed, or a full time + temperature + speed combo, ' +
+      'e.g. `"10 min / 100°C / speed 2"`.',
+    fields: (t) => ({
+      time: t.field({
+        type: 'ThermomixTime',
+        nullable: true,
+        description: 'How long the step runs, e.g. `"10 min"` or `"30 s"` (`null` if not set)',
+        resolve: (s) => s.time ?? null,
+      }),
+      temperature: t.field({
+        type: 'ThermomixTemperature',
+        nullable: true,
+        description: 'The cooking temperature, e.g. `"100°C"` or `"Varoma"` (`null` if not set)',
+        resolve: (s) => s.temperature ?? null,
+      }),
+      speed: t.field({
+        type: 'ThermomixSpeed',
+        nullable: true,
+        description: 'The blade speed, e.g. `"2"`, `"kneading"`, `"turbo"` (`null` if not set)',
+        resolve: (s) => s.speed ?? null,
+      }),
+      reverse: t.boolean({
+        nullable: true,
+        description:
+          'Whether the blades spin in reverse (gentle mixing) — `true`/`false`, `null` if not set',
+        resolve: (s) => s.reverse ?? null,
+      }),
     }),
-    temperature: t.field({
-      type: 'TmxTemperature',
-      nullable: true,
-      description: 'The cooking temperature, e.g. `"100°C"` or `"Varoma"` (`null` if not set)',
-      resolve: (s) => s.temperature ?? null,
-    }),
-    speed: t.field({
-      type: 'TmxSpeed',
-      nullable: true,
-      description: 'The blade speed, e.g. `"2"`, `"kneading"`, `"turbo"` (`null` if not set)',
-      resolve: (s) => s.speed ?? null,
-    }),
-    reverse: t.boolean({
-      nullable: true,
-      description:
-        'Whether the blades spin in reverse (gentle mixing) — `true`/`false`, `null` if not set',
-      resolve: (s) => s.reverse ?? null,
-    }),
-  }),
-})
+  })
 
 // A version is also an attempt: immutable content/lineage, plus its outcome fields
 // (rating/remarks/executedAt) written once when executed. `tried` derives from
@@ -127,10 +129,10 @@ export const VersionType = builder.objectRef<RecipeVersion>('Version').implement
         '`"Fold in the egg whites"`',
     }),
     tmxSteps: t.field({
-      type: [TmxSettingsType],
+      type: [ThermomixSettingsType],
       description:
         'Per-step Thermomix settings aligned with steps, e.g. `"10 min / 100°C / speed 2"` ' +
-        '(an entry with every field `null` = plain step; `[]` if not tmx)',
+        '(an entry with every field `null` = plain step; `[]` if not thermomix)',
       resolve: (v) => v.tmxSteps,
     }),
     executedAt: t.field({

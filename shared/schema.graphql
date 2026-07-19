@@ -55,7 +55,7 @@ input CreateRecipeInput {
   """
   Thermomix settings lined up with the steps above — one entry per step, e.g. `"10 min / 100°C / speed 2"`, an entry with every field left out for a step with no machine settings. Send `[]` for a non-TMX recipe.
   """
-  tmxSteps: [TmxSettingsInput!]!
+  tmxSteps: [ThermomixSettingsInput!]!
 
   """Cooked dish (`DISH`) or Thermomix recipe (`TMX`)"""
   type: RecipeType!
@@ -99,9 +99,9 @@ type ImportAnalysis {
   title: String!
 
   """
-  Per-step Thermomix settings, aligned with steps (an entry with every field `null` = plain step; `[]` if not tmx)
+  Per-step Thermomix settings, aligned with steps (an entry with every field `null` = plain step; `[]` if not thermomix)
   """
-  tmxSteps: [ImportTmxSettings!]!
+  tmxSteps: [ImportThermomixSettings!]!
   type: RecipeType!
 }
 
@@ -125,7 +125,7 @@ type ImportResult {
 """
 Thermomix settings for one step extracted by the AI (unvalidated preview)
 """
-type ImportTmxSettings {
+type ImportThermomixSettings {
   reverse: Boolean
   speed: String
   temperature: String
@@ -342,9 +342,9 @@ type Proposal {
   steps: [StepText!]!
 
   """
-  Per-step Thermomix settings aligned with steps, e.g. `"10 min / 100°C / speed 2"` (an entry with every field `null` = plain step; `[]` if not tmx)
+  Per-step Thermomix settings aligned with steps, e.g. `"10 min / 100°C / speed 2"` (an entry with every field `null` = plain step; `[]` if not thermomix)
   """
-  tmxSteps: [TmxSettings!]!
+  tmxSteps: [ThermomixSettings!]!
 }
 
 """
@@ -377,7 +377,7 @@ input ProposalInput {
   """
   Per-step Thermomix settings, aligned with steps, e.g. `"10 min / 100°C / speed 2"` (an entry with every field left out = plain step). Send `[]` for a non-TMX recipe.
   """
-  tmxSteps: [TmxSettingsInput!]!
+  tmxSteps: [ThermomixSettingsInput!]!
 }
 
 type Query {
@@ -537,7 +537,7 @@ enum RecipeType {
   """
   A Thermomix recipe — each step also carries machine settings, e.g. `"10 min / 100°C / speed 2"`
   """
-  TMX
+  THERMOMIX
 }
 
 """
@@ -604,7 +604,7 @@ scalar StepText
 """
 The Thermomix machine settings that go with one step (only for TMX recipes). Every field is optional — a step can set just a speed, or a full time + temperature + speed combo, e.g. `"10 min / 100°C / speed 2"`.
 """
-type TmxSettings {
+type ThermomixSettings {
   """
   Whether the blades spin in reverse (gentle mixing) — `true`/`false`, `null` if not set
   """
@@ -613,50 +613,50 @@ type TmxSettings {
   """
   The blade speed, e.g. `"2"`, `"kneading"`, `"turbo"` (`null` if not set)
   """
-  speed: TmxSpeed
+  speed: ThermomixSpeed
 
   """
   The cooking temperature, e.g. `"100°C"` or `"Varoma"` (`null` if not set)
   """
-  temperature: TmxTemperature
+  temperature: ThermomixTemperature
 
   """
   How long the step runs, e.g. `"10 min"` or `"30 s"` (`null` if not set)
   """
-  time: TmxTime
+  time: ThermomixTime
 }
 
 """
 The Thermomix settings to attach to one step, e.g. `"10 min / 100°C / speed 2"`. Every field is optional.
 """
-input TmxSettingsInput {
+input ThermomixSettingsInput {
   """Reverse (gentle mixing) on or off, e.g. `true`"""
   reverse: Boolean
 
   """Blade speed, e.g. `"2"` or `"turbo"`"""
-  speed: TmxSpeed
+  speed: ThermomixSpeed
 
   """Temperature, e.g. `"100°C"`"""
-  temperature: TmxTemperature
+  temperature: ThermomixTemperature
 
   """Duration, e.g. `"10 min"`"""
-  time: TmxTime
+  time: ThermomixTime
 }
 
 """
 The blade speed of a Thermomix step, e.g. `"5"`, `"pétrin"` (kneading) or `"turbo"`
 """
-scalar TmxSpeed
+scalar ThermomixSpeed
 
 """
 The temperature of a Thermomix step, e.g. `"100°C"` or `"Varoma"` (its steam setting)
 """
-scalar TmxTemperature
+scalar ThermomixTemperature
 
 """
 How long a Thermomix step runs, written as you would read it, e.g. `"3 min"` or `"30 s"`
 """
-scalar TmxTime
+scalar ThermomixTime
 
 """
 Fields to rename a recipe, e.g. set title to `"Nonna’s lasagna"`. Send only what you want to change — anything you leave out stays as it was.
@@ -743,9 +743,9 @@ type Version {
   steps: [StepText!]!
 
   """
-  Per-step Thermomix settings aligned with steps, e.g. `"10 min / 100°C / speed 2"` (an entry with every field `null` = plain step; `[]` if not tmx)
+  Per-step Thermomix settings aligned with steps, e.g. `"10 min / 100°C / speed 2"` (an entry with every field `null` = plain step; `[]` if not thermomix)
   """
-  tmxSteps: [TmxSettings!]!
+  tmxSteps: [ThermomixSettings!]!
 
   """
   The quick yes/no of the field above: `true` once you have cooked and rated it, `false` while it is still waiting to be tried

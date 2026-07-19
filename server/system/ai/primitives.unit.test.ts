@@ -5,12 +5,12 @@ import {
   IngredientQuantity,
   RecipeTitle,
   StepText,
-  TmxTime,
+  ThermomixTime,
 } from '~/domain/recipe/primitives'
 import { parseImportResponse, parseProposalResponse } from '~/system/ai/primitives'
 import type { ImportAnalysis } from '~/system/ai/types'
 
-const base = { type: 'tmx', title: 'Risotto' }
+const base = { type: 'thermomix', title: 'Risotto' }
 
 // Unwraps a parse expected to yield an analysis; the union's 'no-recipe-found'
 // arm is exercised on its own in the dedicated describe below.
@@ -124,9 +124,9 @@ describe('parseImportResponse — ingredients', () => {
 })
 
 describe('parseImportResponse — clamps oversized AI strings to domain limits', () => {
-  test('truncates title, ingredients, steps and tmx settings', () => {
+  test('truncates title, ingredients, steps and thermomix settings', () => {
     const result = parsedImport({
-      type: 'tmx',
+      type: 'thermomix',
       title: 'T'.repeat(500),
       ingredients: [{ name: 'N'.repeat(200), quantity: 'Q'.repeat(200) }],
       steps: [{ text: 'E'.repeat(500), tmxTime: 't'.repeat(50) }],
@@ -136,7 +136,7 @@ describe('parseImportResponse — clamps oversized AI strings to domain limits',
     expect(result.ingredients[0].name.length).toBe(RECIPE_MAX.ingredientName)
     expect(result.ingredients[0].quantity.length).toBe(RECIPE_MAX.ingredientQuantity)
     expect(result.steps[0].length).toBe(RECIPE_MAX.stepText)
-    expect(result.tmxSteps[0]?.time?.length).toBe(RECIPE_MAX.tmx)
+    expect(result.tmxSteps[0]?.time?.length).toBe(RECIPE_MAX.thermomix)
 
     // Backstop against drift: the clamped values pass the domain constructors,
     // so createRecipe can never 400 on these lengths.
@@ -144,14 +144,14 @@ describe('parseImportResponse — clamps oversized AI strings to domain limits',
     expect(() => IngredientName(result.ingredients[0].name)).not.toThrow()
     expect(() => IngredientQuantity(result.ingredients[0].quantity)).not.toThrow()
     expect(() => StepText(result.steps[0])).not.toThrow()
-    expect(() => TmxTime(result.tmxSteps[0]?.time ?? '')).not.toThrow()
+    expect(() => ThermomixTime(result.tmxSteps[0]?.time ?? '')).not.toThrow()
   })
 })
 
 describe('parseImportResponse — drops blank items instead of failing', () => {
   test('drops ingredients/steps whose required fields came back blank', () => {
     const result = parsedImport({
-      type: 'tmx',
+      type: 'thermomix',
       title: 'Risotto',
       ingredients: [
         { name: 'Gin', quantity: '30 ml' },

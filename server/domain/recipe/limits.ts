@@ -7,5 +7,5 @@ export const RECIPE_MAX = {
   ingredientName: 120,
   ingredientQuantity: 60,
   stepText: 300,
-  tmx: 20,
+  thermomix: 20,
 } as const
