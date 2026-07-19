@@ -7,8 +7,8 @@ import SwiftUI
 ///
 /// Diff marking: rows are always editable `TextField`s, so a from→to
 /// `DiffValue` doesn't fit; instead a row carries a leading `Theme.Status.changed`
-/// dot whenever its current value differs from the base version (new or modified).
-/// It updates live as the user types.
+/// dot whenever its current value differs from the base version (new or modified),
+/// centred on the row's first line of text. It updates live as the user types.
 ///
 /// The proposal is ephemeral (never persisted): "Fermer" discards it, "Valider"
 /// accepts it. On accept the page emits the COMPLETE proposal (full-replacement
@@ -41,6 +41,8 @@ struct ProposalPage: View {
 
     @State private var ingredients: [EditableIngredient]
     @State private var steps: [EditableStep]
+    /// Height of one line of body text — the box the change dot centres itself in.
+    @ScaledMetric(relativeTo: .body) private var bodyLineHeight: CGFloat = 20.5
 
     init(
         proposal: Proposal,
@@ -149,15 +151,19 @@ struct ProposalPage: View {
 
     // MARK: - Steps
 
+    /// Same layout as the import preview's step row: a top-aligned gutter (dot,
+    /// number) beside the text column, so a wrapped line stays under the first
+    /// line of text instead of running back to the row margin.
     private var stepsSection: some View {
         Section("Étapes") {
             ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                HStack(alignment: .top, spacing: 12) {
                     changeDot(stepDiffers(step.text))
                     Text("\(index + 1)")
                         .font(.subheadline.weight(.semibold))
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
+                        .frame(minWidth: 20, alignment: .trailing)
                     VStack(alignment: .leading, spacing: 6) {
                         TextField("Étape", text: $steps[index].text, axis: .vertical)
                             .lineLimit(1...6)
@@ -180,11 +186,13 @@ struct ProposalPage: View {
 
     /// The orange dot marking a changed row — same 7 pt token as `StepsList`.
     /// Filled clear (not removed) on an unchanged row so every row keeps the same
-    /// leading alignment.
+    /// leading alignment. It sits in a box one body line tall so that a top-aligned
+    /// row centres it on the first line of text.
     private func changeDot(_ changed: Bool) -> some View {
         Circle()
             .fill(changed ? Theme.Status.changed : .clear)
             .frame(width: 7, height: 7)
+            .frame(height: bodyLineHeight)
             .accessibilityHidden(true)
     }
 
