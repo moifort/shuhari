@@ -57,7 +57,19 @@ struct DebugGallery: View {
                     proposal: Fixtures.proposal,
                     nextVersionNumber: 5,
                     baseIngredients: Fixtures.bourguignonV4.ingredients,
-                    baseSteps: Fixtures.bourguignonV4.steps,
+                    baseSteps: Fixtures.bourguignonV4.content.stepsWithSettings,
+                    isWorking: false,
+                    onClose: {},
+                    onValidate: { _ in }
+                )
+            }
+        case "proposal-thermomix":
+            NavigationStack {
+                ProposalPage(
+                    proposal: Fixtures.proposalThermomix,
+                    nextVersionNumber: 3,
+                    baseIngredients: Fixtures.risottoV2.ingredients,
+                    baseSteps: Fixtures.risottoV2.content.stepsWithSettings,
                     isWorking: false,
                     onClose: {},
                     onValidate: { _ in }
@@ -79,7 +91,7 @@ struct DebugGallery: View {
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : cuisine, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found")
+                description: Text("Écrans : cuisine, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found")
             )
         }
     }

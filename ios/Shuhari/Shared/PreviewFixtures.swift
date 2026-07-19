@@ -231,6 +231,30 @@ enum Fixtures {
         )
     )
 
+    /// The Thermomix counterpart of `proposal`: the step texts are the base's word
+    /// for word, only one step's machine settings move (14 → 16 min) along with the
+    /// bouillon — the case where a change lives entirely in the settings.
+    static let proposalThermomix = Proposal(
+        basedOn: 2,
+        changeSummary: "Bouillon 650 → 600 ml, cuisson du riz 14 → 16 min",
+        rationale: "Le riz reste un peu ferme et le risotto un peu liquide ; moins de bouillon et deux minutes de plus devraient l’affiner.",
+        content: .thermomix(
+            ingredients: risottoIngredients.map {
+                $0.name == "Bouillon" ? Ingredient(name: $0.name, quantity: "600 ml") : $0
+            },
+            steps: risottoSteps.map {
+                $0.text == "Ajouter le bouillon, cuire."
+                    ? ThermomixStep(
+                        text: $0.text,
+                        settings: ThermomixSettings(
+                            time: "16 min", temperature: "100 °C", speed: "1", reverse: true
+                        )
+                    )
+                    : $0
+            }
+        )
+    )
+
     static let importAnalysis = ImportAnalysis(
         title: "Cookies aux noix de pécan",
         type: .dish,

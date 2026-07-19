@@ -95,7 +95,7 @@ struct ExecuteFlowView: View {
                     proposal: proposal,
                     nextVersionNumber: recipe.nextVersionNumber,
                     baseIngredients: base?.ingredients ?? [],
-                    baseSteps: base?.steps ?? [],
+                    baseSteps: base?.content.stepsWithSettings ?? [],
                     isWorking: isAcceptingProposal,
                     onClose: { finish() },
                     onValidate: { edited in Task { await acceptProposal(edited) } }

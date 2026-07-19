@@ -20,7 +20,9 @@ struct ProposalPage: View {
     let nextVersionNumber: Int
     /// The base version's content, to mark what the proposal changes.
     let baseIngredients: [Ingredient]
-    let baseSteps: [String]
+    /// The base steps with their machine settings, so a Thermomix step that only
+    /// changed a time, a temperature or a speed still reads as changed.
+    let baseSteps: [ThermomixStep]
     let isWorking: Bool
     let onClose: () -> Void
     let onValidate: (_ edited: ProposalEdit) -> Void
@@ -48,7 +50,7 @@ struct ProposalPage: View {
         proposal: Proposal,
         nextVersionNumber: Int,
         baseIngredients: [Ingredient],
-        baseSteps: [String],
+        baseSteps: [ThermomixStep],
         isWorking: Bool,
         onClose: @escaping () -> Void,
         onValidate: @escaping (_ edited: ProposalEdit) -> Void
@@ -69,12 +71,7 @@ struct ProposalPage: View {
     /// The proposal's steps as editable rows, each keeping its own settings — a dish
     /// step (or a plain Thermomix step) carries `.plain`.
     private static func editableSteps(from content: VersionContent) -> [EditableStep] {
-        switch content {
-        case .dish(_, let steps):
-            return steps.map { EditableStep(text: $0, settings: .plain) }
-        case .thermomix(_, let steps):
-            return steps.map { EditableStep(text: $0.text, settings: $0.settings) }
-        }
+        content.stepsWithSettings.map { EditableStep(text: $0.text, settings: $0.settings) }
     }
 
     var body: some View {
@@ -163,7 +160,7 @@ struct ProposalPage: View {
         Section("Étapes") {
             ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
                 HStack(alignment: .top, spacing: 12) {
-                    changeDot(stepDiffers(step.text))
+                    changeDot(stepDiffers(step))
                     Text("\(index + 1)")
                         .font(.subheadline.weight(.semibold))
                         .monospacedDigit()
@@ -207,9 +204,11 @@ struct ProposalPage: View {
         !baseIngredients.contains { $0.name == ingredient.name && $0.quantity == ingredient.quantity }
     }
 
-    /// A step differs when its exact text is absent from the base version's steps.
-    private func stepDiffers(_ text: String) -> Bool {
-        !baseSteps.contains(text)
+    /// A step differs when the base version carries no step with the exact same
+    /// text AND the exact same machine settings — a Thermomix step retimed or
+    /// reheated changes without a word of its text moving.
+    private func stepDiffers(_ step: EditableStep) -> Bool {
+        !baseSteps.contains(ThermomixStep(text: step.text, settings: step.settings))
     }
 
     // MARK: - Accepted proposal
@@ -260,7 +259,7 @@ struct ProposalPage: View {
             proposal: Fixtures.proposal,
             nextVersionNumber: 5,
             baseIngredients: Fixtures.bourguignonV4.ingredients,
-            baseSteps: Fixtures.bourguignonV4.steps,
+            baseSteps: Fixtures.bourguignonV4.content.stepsWithSettings,
             isWorking: false,
             onClose: {},
             onValidate: { _ in }

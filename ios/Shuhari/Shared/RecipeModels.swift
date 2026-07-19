@@ -64,6 +64,16 @@ enum VersionContent: Sendable, Hashable {
         case .thermomix(_, let steps): steps.map(\.text)
         }
     }
+
+    /// The steps with their machine settings attached (a dish step carries
+    /// `.plain`) — the shape a diff compares, since a Thermomix step can change
+    /// through its settings alone, its text untouched.
+    var stepsWithSettings: [ThermomixStep] {
+        switch self {
+        case .dish(_, let steps): steps.map { ThermomixStep(text: $0, settings: .plain) }
+        case .thermomix(_, let steps): steps
+        }
+    }
 }
 
 // MARK: - Version
