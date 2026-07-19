@@ -24,7 +24,7 @@ export const ThermomixSettingsType = builder
   .objectRef<ThermomixSettings>('ThermomixSettings')
   .implement({
     description:
-      'The Thermomix machine settings that go with one step (only for TMX recipes). Every field ' +
+      'The Thermomix machine settings that go with one step (only for Thermomix recipes). Every field ' +
       'is optional — a step can set just a speed, or a full time + temperature + speed combo, ' +
       'e.g. `"10 min / 100°C / speed 2"`.',
     fields: (t) => ({
@@ -192,7 +192,7 @@ RecipeType.implement({
     }),
     type: t.expose('type', {
       type: RecipeTypeEnum,
-      description: 'Whether it is a cooked dish (`DISH`) or a Thermomix recipe (`TMX`)',
+      description: 'Whether it is a cooked dish (`DISH`) or a Thermomix recipe (`THERMOMIX`)',
     }),
     category: t.expose('category', {
       type: DishCategoryEnum,

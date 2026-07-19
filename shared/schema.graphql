@@ -53,11 +53,11 @@ input CreateRecipeInput {
   title: RecipeTitle!
 
   """
-  Thermomix settings lined up with the steps above — one entry per step, e.g. `"10 min / 100°C / speed 2"`, an entry with every field left out for a step with no machine settings. Send `[]` for a non-TMX recipe.
+  Thermomix settings lined up with the steps above — one entry per step, e.g. `"10 min / 100°C / speed 2"`, an entry with every field left out for a step with no machine settings. Send `[]` for a non-Thermomix recipe.
   """
   tmxSteps: [ThermomixSettingsInput!]!
 
-  """Cooked dish (`DISH`) or Thermomix recipe (`TMX`)"""
+  """Cooked dish (`DISH`) or Thermomix recipe (`THERMOMIX`)"""
   type: RecipeType!
 }
 
@@ -375,7 +375,7 @@ input ProposalInput {
   steps: [StepText!]!
 
   """
-  Per-step Thermomix settings, aligned with steps, e.g. `"10 min / 100°C / speed 2"` (an entry with every field left out = plain step). Send `[]` for a non-TMX recipe.
+  Per-step Thermomix settings, aligned with steps, e.g. `"10 min / 100°C / speed 2"` (an entry with every field left out = plain step). Send `[]` for a non-Thermomix recipe.
   """
   tmxSteps: [ThermomixSettingsInput!]!
 }
@@ -422,10 +422,10 @@ type Query {
   ): Recipe
 
   """
-  One page of your recipe library, loaded a few at a time for infinite scroll. You can narrow it (e.g. only `TMX` recipes, or only `DESSERT`) and choose the order. For example: the 20 most recently updated dishes, then pass the last id as `after` to load the next 20.
+  One page of your recipe library, loaded a few at a time for infinite scroll. You can narrow it (e.g. only `THERMOMIX` recipes, or only `DESSERT`) and choose the order. For example: the 20 most recently updated dishes, then pass the last id as `after` to load the next 20.
   
   ```graphql
-  recipes(type: TMX, sort: UPDATED_AT, order: DESC, limit: 20) {
+  recipes(type: THERMOMIX, sort: UPDATED_AT, order: DESC, limit: 20) {
     items { id title bestRating }
     hasMore
   }
@@ -451,7 +451,7 @@ type Query {
     """Field the page is ordered by, e.g. `UPDATED_AT`"""
     sort: RecipeSort = UPDATED_AT
 
-    """Facet: keep only this recipe type, e.g. `TMX`"""
+    """Facet: keep only this recipe type, e.g. `THERMOMIX`"""
     type: RecipeType
   ): Recipes!
 }
@@ -484,7 +484,9 @@ type Recipe {
   """Its name, e.g. `"Grandma’s lasagna"`"""
   title: RecipeTitle!
 
-  """Whether it is a cooked dish (`DISH`) or a Thermomix recipe (`TMX`)"""
+  """
+  Whether it is a cooked dish (`DISH`) or a Thermomix recipe (`THERMOMIX`)
+  """
   type: RecipeType!
 
   """
@@ -602,7 +604,7 @@ One instruction in the method, e.g. `"Fold in the egg whites"` (1 to 300 charact
 scalar StepText
 
 """
-The Thermomix machine settings that go with one step (only for TMX recipes). Every field is optional — a step can set just a speed, or a full time + temperature + speed combo, e.g. `"10 min / 100°C / speed 2"`.
+The Thermomix machine settings that go with one step (only for Thermomix recipes). Every field is optional — a step can set just a speed, or a full time + temperature + speed combo, e.g. `"10 min / 100°C / speed 2"`.
 """
 type ThermomixSettings {
   """

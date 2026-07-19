@@ -57,7 +57,7 @@ export const CreateRecipeInput = builder.inputType('CreateRecipeInput', {
     type: t.field({
       type: RecipeTypeEnum,
       required: true,
-      description: 'Cooked dish (`DISH`) or Thermomix recipe (`TMX`)',
+      description: 'Cooked dish (`DISH`) or Thermomix recipe (`THERMOMIX`)',
     }),
     category: t.field({
       type: DishCategoryEnum,
@@ -89,7 +89,7 @@ export const CreateRecipeInput = builder.inputType('CreateRecipeInput', {
       description:
         'Thermomix settings lined up with the steps above — one entry per step, e.g. ' +
         '`"10 min / 100°C / speed 2"`, an entry with every field left out for a step with no ' +
-        'machine settings. Send `[]` for a non-TMX recipe.',
+        'machine settings. Send `[]` for a non-Thermomix recipe.',
     }),
   }),
 })

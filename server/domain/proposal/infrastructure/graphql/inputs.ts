@@ -44,7 +44,7 @@ export const ProposalInput = builder.inputType('ProposalInput', {
       required: true,
       description:
         'Per-step Thermomix settings, aligned with steps, e.g. `"10 min / 100°C / speed 2"` ' +
-        '(an entry with every field left out = plain step). Send `[]` for a non-TMX recipe.',
+        '(an entry with every field left out = plain step). Send `[]` for a non-Thermomix recipe.',
     }),
   }),
 })
