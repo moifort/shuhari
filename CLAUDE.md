@@ -46,7 +46,7 @@ The **only** French in the repo is user-facing copy — `CHANGELOG.fr.md` (the c
 
 1. Always verify the build before committing (backend `bun tsc --noEmit` + `xcodebuild` depending on what was touched)
 2. Run `bun run prepare` before `bun tsc` if routes were added/modified
-3. After each completed task: run an expert code review (`superpowers:requesting-code-review`) before committing
+3. After each completed task: review the diff yourself, **inline**, before committing — never delegate to a subagent (see [docs/collaboration.md](docs/collaboration.md#work-inline-never-through-subagents))
 4. **Commit freely, one task = one commit**: commit each finished task without asking — you decide the boundaries. Keep tasks in separate commits so a rollback is a clean `git revert`; never bundle several tasks into one commit. English messages, Conventional Commits, `Co-Authored-By:` trailer.
 5. **Report the diff size after every task**: right after committing, run `git show --stat HEAD | tail -1` and state the lines added / removed in the reply (e.g. "+412 / −587 over 23 files"). A refactor that only adds is a refactor that forgot to delete — the number is the check.
 6. **Rollback** = `git revert` the task's commit (see [docs/git-workflow.md](docs/git-workflow.md)).

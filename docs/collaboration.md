@@ -27,6 +27,16 @@ the single source for collaboration conventions, replacing any machine-local ass
   lines — Créés / Modifiés / Supprimés — listing the affected domains (`server/domain/*`, iOS
   features), before the detailed body. The blast radius is how plans are scanned.
 
+## Work inline, never through subagents
+
+Do the work **in the main conversation**: exploration, code review, debugging, refactors. Never
+dispatch a subagent (`Task`, `Agent`, review agents, parallel workers) — the user follows the
+session live and a subagent hides the reasoning, burns time on re-reading context the session
+already holds, and comes back with a verdict nobody watched being formed.
+
+That includes the post-task code review of step 3 of the workflow: read your own diff, state
+what you checked and what you found, in the reply.
+
 ## Ops autonomy
 
 For infra/setup/ops tasks, **do everything technically possible yourself** rather than handing
