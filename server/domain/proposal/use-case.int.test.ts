@@ -50,7 +50,7 @@ const recipeInput = (opts: { type?: 'dish' | 'tmx' } = {}) => ({
   title: 'Blanquette' as RecipeTitle,
   steps: ['Saisir', 'Mijoter'] as StepText[],
   ingredients: [],
-  tmxSteps: [] as (TmxSettings | null)[],
+  tmxSteps: [] as (TmxSettings | undefined)[],
 })
 
 const baseProposal = (): AiProposal => ({
@@ -61,7 +61,6 @@ const baseProposal = (): AiProposal => ({
     { name: 'Bouillon', quantity: '650 ml' },
   ],
   steps: ['Saisir', 'Mijoter'],
-  tmxSteps: null,
 })
 
 const baseAnalysis = (): ImportAnalysis => ({
@@ -71,7 +70,6 @@ const baseAnalysis = (): ImportAnalysis => ({
   sourceLabel: 'Grand-mère',
   ingredients: [{ name: 'Veau', quantity: '800 g' }],
   steps: ['Saisir', 'Mijoter'],
-  tmxSteps: null,
 })
 
 let fake = resetFakeFirestore()
@@ -117,14 +115,14 @@ describe('ProposalUseCase.fromAttempt', () => {
   test('aligns tmxSteps with the steps for a tmx recipe, [] for a dish recipe', async () => {
     proposal = {
       ...baseProposal(),
-      tmxSteps: [{ time: '5 min', temperature: '120°C', speed: '1', reverse: null }, null],
+      tmxSteps: [{ time: '5 min', temperature: '120°C', speed: '1' }, undefined],
     }
     const tmx = await RecipeCommand.create(userId, recipeInput({ type: 'tmx' }))
     const tmxProposal = await ProposalUseCase.fromAttempt(userId, tmx.id, V1)
     if (tmxProposal === 'not-found') throw new Error('expected a proposal')
     expect(tmxProposal.tmxSteps).toEqual([
       { time: '5 min' as TmxTime, temperature: '120°C' as TmxTemperature, speed: '1' as TmxSpeed },
-      null,
+      undefined,
     ])
 
     // Same proposal on a dish recipe: Thermomix settings are dropped entirely.

@@ -1,5 +1,22 @@
+import type { LooseTmxSettings } from '~/domain/recipe/business-rules'
+import type { TmxSpeed, TmxTemperature, TmxTime } from '~/domain/recipe/types'
 import { builder } from '~/domain/shared/graphql/builder'
+import { stripNulls } from '~/utils/input'
 import { DishCategoryEnum, RecipeTypeEnum } from './enums'
+
+// Boundary: a client spells "plain step" as a `null` entry in the parallel array
+// and "setting not set" as a `null` field — the domain spells both "absent".
+export const looseSettings = (
+  entry:
+    | {
+        time?: TmxTime | null
+        temperature?: TmxTemperature | null
+        speed?: TmxSpeed | null
+        reverse?: boolean | null
+      }
+    | null
+    | undefined,
+): LooseTmxSettings | undefined => (entry ? stripNulls(entry) : undefined)
 
 export const IngredientInput = builder.inputType('IngredientInput', {
   description:
@@ -114,8 +131,8 @@ export const RecordAttemptInput = builder.inputType('RecordAttemptInput', {
       required: true,
       description: 'Your remarks on how it turned out, e.g. `"Still a touch too sweet"`',
     }),
-    // Placeholder: accepted but not yet persisted — recordAttempt always stores
-    // photoPath: null and photoUrl resolves null until GCS photo storage is
+    // Placeholder: accepted but not yet persisted — recordAttempt never stores a
+    // photoPath and photoUrl resolves null until GCS photo storage is
     // provisioned. Kept on the contract so the app can send it without a schema change.
     photo: t.string({
       description: 'Base64 JPEG of the result, e.g. `"/9j/4AAQSkZJRg…"` (optional; not yet stored)',

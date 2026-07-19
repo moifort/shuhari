@@ -29,6 +29,20 @@ const toDate = (value: unknown): unknown => {
   return obj
 }
 
+// Storage boundary between Firestore's encoding of an absent field and the
+// domain's: Firestore rejects `undefined` and spells absence as a missing key or
+// (on legacy documents) an explicit `null`, while the domain spells it `T?`.
+// These two shallow filters are the encode/decode pair a repository applies so
+// the domain only ever sees "key present with a value, or no key at all".
+// Writes must be full `set`s for the encode side to mean anything: a key dropped
+// from a `set` erases the stored field, a key dropped from a merge/update does
+// not. Not recursive — nested domain objects are built without absent keys.
+export const withoutAbsentFields = <T extends DocumentData>(data: T): T =>
+  Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined)) as T
+
+export const withoutStoredNulls = <T extends DocumentData>(data: T): T =>
+  Object.fromEntries(Object.entries(data).filter(([, value]) => value !== null)) as T
+
 // Firestore batches accept at most 500 operations.
 const BATCH_LIMIT = 400
 

@@ -72,7 +72,7 @@ export type Recipe = {
 
 // One entry in a recipe's linear lineage (v1 → v2 → …). Its content and lineage
 // (steps/ingredients/tmxSteps/origin/change/basedOn) are immutable, but a version
-// *is* an attempt: it is a planned attempt while `executedAt === null`, then carries
+// *is* an attempt: it is a planned attempt while `executedAt` is absent, then carries
 // its outcome (rating/remarks/photo). The outcome is overwritable — recording again
 // re-cooks the same version in place rather than forcing a new one.
 export type RecipeVersion = {
@@ -81,24 +81,24 @@ export type RecipeVersion = {
   number: VersionNumber
   createdAt: Date
   origin: VersionOrigin
-  change: string | null // human summary of what changed ("Bouillon 700 → 650 ml"); null for v1
+  change?: string // human summary of what changed ("Bouillon 700 → 650 ml"); absent on v1
   // The version this one iterates on — set to the attempt it was proposed from
-  // (`versionToOpen` at proposal time); `null` for the original v1, which iterates
+  // (`versionToOpen` at proposal time); absent on the original v1, which iterates
   // on nothing. Drives the "attempt in progress" branch of `versionToOpen`.
-  basedOn: VersionNumber | null
+  basedOn?: VersionNumber
   why?: string // AI rationale, for proposed versions
   steps: StepText[]
   // The recipe's components with quantities. `[]` when the recipe has nothing
   // measurable.
   ingredients: Ingredient[]
-  // Thermomix settings aligned with `steps` by index (null = plain step). `[]`
-  // for non-tmx recipes — "is Thermomix" is derived from `type === 'tmx'`, never
-  // from the presence of this array.
-  tmxSteps: (TmxSettings | null)[]
-  // The attempt outcome, written once when the version is executed. All null while
-  // the version is still a planned attempt (`executedAt === null`).
-  executedAt: Date | null
-  rating: Rating | null
-  remarks: Remarks | null
-  photoPath: string | null // GCS object path; never exposed raw (see photoUrl)
+  // Thermomix settings aligned with `steps` by index (an absent entry = plain
+  // step). `[]` for non-tmx recipes — "is Thermomix" is derived from
+  // `type === 'tmx'`, never from the presence of this array.
+  tmxSteps: (TmxSettings | undefined)[]
+  // The attempt outcome, written once when the version is executed. All absent
+  // while the version is still a planned attempt (no `executedAt`).
+  executedAt?: Date
+  rating?: Rating
+  remarks?: Remarks
+  photoPath?: string // GCS object path; never exposed raw (see photoUrl)
 }

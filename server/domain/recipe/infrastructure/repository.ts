@@ -2,38 +2,59 @@ import type { WriteBatch } from 'firebase-admin/firestore'
 import { categoryRank } from '~/domain/recipe/business-rules'
 import type {
   DishCategory,
+  Ingredient,
   Recipe,
   RecipeId,
   RecipeSort,
   RecipeType,
   RecipeVersion,
   SortOrder,
+  TmxSettings,
   VersionNumber,
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
 import { db } from '~/system/firebase'
 import { isInRequestCache, memoizedPerRequest } from '~/system/request-cache'
-import { deleteInBatches, genericDataConverter } from '~/utils/firestore'
+import {
+  deleteInBatches,
+  genericDataConverter,
+  withoutAbsentFields,
+  withoutStoredNulls,
+} from '~/utils/firestore'
+
+// How a version is spelled in Firestore, as opposed to in the domain: an absent
+// field is a missing key, a plain step is a `null` placeholder in the parallel
+// tmxSteps array, and the always-present arrays may be missing altogether on
+// documents written before they existed.
+type StoredVersion = Omit<RecipeVersion, 'ingredients' | 'tmxSteps'> & {
+  ingredients?: Ingredient[]
+  tmxSteps?: (TmxSettings | null)[]
+}
 
 const recipes = () => db().collection('recipes').withConverter(genericDataConverter<Recipe>())
 const versions = () =>
-  db().collection('recipe-versions').withConverter(genericDataConverter<RecipeVersion>())
+  db().collection('recipe-versions').withConverter(genericDataConverter<StoredVersion>())
 
 const versionDocId = (recipeId: RecipeId, number: VersionNumber) => `${recipeId}_${number}`
 
-// Legacy versions written before ingredients/tmxSteps became always-present
-// arrays, or before the attempt outcome was folded onto the version, may lack the
-// fields; default them so the invariant holds on read (outcome null = not yet
-// executed, still a planned attempt).
-const normalizeVersion = (version: RecipeVersion) => ({
-  ...version,
-  basedOn: version.basedOn ?? null,
-  ingredients: version.ingredients ?? [],
-  tmxSteps: version.tmxSteps ?? [],
-  executedAt: version.executedAt ?? null,
-  rating: version.rating ?? null,
-  remarks: version.remarks ?? null,
-  photoPath: version.photoPath ?? null,
+// Storage boundary, read side. Firestore (and any document written before the
+// attempt outcome moved onto the version) spells an absent field `null`, while
+// the domain spells it "absent" — so the `null`s are erased on the way in, and
+// the always-present arrays are defaulted so the invariant holds on read.
+const normalizeVersion = (stored: StoredVersion): RecipeVersion => ({
+  ...withoutStoredNulls(stored),
+  ingredients: stored.ingredients ?? [],
+  tmxSteps: (stored.tmxSteps ?? []).map((settings) => settings ?? undefined),
+})
+
+// Storage boundary, write side. Every version write is a full `set` (never a
+// merge), so an omitted key erases the stored field — which is precisely what an
+// absent domain field means. Firestore rejects `undefined`, hence the pruning,
+// and the per-step "plain step" hole is encoded as the `null` placeholder an
+// array needs.
+const storedVersion = (version: RecipeVersion): StoredVersion => ({
+  ...withoutAbsentFields(version),
+  tmxSteps: version.tmxSteps.map((settings) => settings ?? null),
 })
 
 const allCacheKey = (userId: UserId) => `recipes:all:${userId}`
@@ -48,7 +69,7 @@ export const findAllByUser = (userId: UserId) =>
 export const findBy = async (userId: UserId, id: RecipeId) => {
   const doc = await recipes().doc(id).get()
   const data = doc.data()
-  return data && data.userId === userId ? data : null
+  return data && data.userId === userId ? data : undefined
 }
 
 // Batch-load recipes by id with a single getAll — reuse the memoized full scan
@@ -111,7 +132,7 @@ export const findPage = async (userId: UserId, args: RecipePageArgs): Promise<Re
 export const findVersion = async (recipeId: RecipeId, number: VersionNumber) => {
   const doc = await versions().doc(versionDocId(recipeId, number)).get()
   const data = doc.data()
-  return data ? normalizeVersion(data) : null
+  return data ? normalizeVersion(data) : undefined
 }
 
 export const findVersionsOf = async (recipeId: RecipeId) => {
@@ -129,12 +150,14 @@ export const findAllVersionsByUser = (userId: UserId) =>
   })
 
 // Single write point for a version: its immutable content on creation, and the
-// attempt outcome once it is executed (the whole document is rewritten, `set` not
-// `update`, so the outcome fields land alongside the content).
+// attempt outcome once it is executed. The whole document is rewritten, `set` not
+// `update`, so the outcome fields land alongside the content — and a field the
+// domain no longer carries is erased rather than left behind.
 export const saveVersion = async (version: RecipeVersion, batch?: WriteBatch) => {
   const ref = versions().doc(versionDocId(version.recipeId, version.number))
-  if (batch) batch.set(ref, version)
-  else await ref.set(version)
+  const stored = storedVersion(version)
+  if (batch) batch.set(ref, stored)
+  else await ref.set(stored)
   return version
 }
 

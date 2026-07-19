@@ -1,7 +1,7 @@
 import type { ApolloServer } from '@apollo/server'
 import type { GraphQLContext } from '~/domain/shared/graphql/builder'
 
-let instance: ApolloServer<GraphQLContext> | null = null
+let instance: ApolloServer<GraphQLContext> | undefined
 
 export const setApollo = (apollo: ApolloServer<GraphQLContext>) => {
   instance = apollo

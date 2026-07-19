@@ -27,16 +27,16 @@ export type NewRecipeInput = {
   title: RecipeTitle
   steps: StepText[]
   ingredients: Ingredient[]
-  tmxSteps: (TmxSettings | null)[]
+  tmxSteps: (TmxSettings | undefined)[]
 }
 
 export type NewVersionInput = {
   change: string
-  basedOn: VersionNumberT | null
+  basedOn?: VersionNumberT
   why?: string
   steps: StepText[]
   ingredients: Ingredient[]
-  tmxSteps: (TmxSettings | null)[]
+  tmxSteps: (TmxSettings | undefined)[]
 }
 
 export type RecordAttemptInput = {
@@ -44,12 +44,12 @@ export type RecordAttemptInput = {
   versionNumber: VersionNumberT
   rating: Rating
   remarks: Remarks
-  photoPath?: string | null
+  photoPath?: string
 }
 
 export namespace RecipeCommand {
   // Create → recipe + its v1, written atomically. v1 is the original planned attempt
-  // (`basedOn` is null, it iterates on nothing) and awaits its first cook.
+  // (no `basedOn`, it iterates on nothing) and awaits its first cook.
   export const create = async (userId: UserId, input: NewRecipeInput, sourceLabel?: string) => {
     const now = new Date()
     const recipe: Recipe = {
@@ -88,15 +88,13 @@ export namespace RecipeCommand {
       createdAt: new Date(),
       origin: { kind: 'ai-proposal' },
       change: input.change,
-      basedOn: input.basedOn,
+      ...(input.basedOn !== undefined ? { basedOn: input.basedOn } : {}),
       ...(input.why ? { why: input.why } : {}),
       steps: input.steps,
       ingredients: input.ingredients,
       tmxSteps,
-      executedAt: null,
-      rating: null,
-      remarks: null,
-      photoPath: null,
+      // No outcome fields: a freshly appended version is a planned attempt, never
+      // cooked yet (the full-document write leaves nothing of an older outcome).
     }
     const updated: Recipe = {
       ...recipe,
@@ -121,12 +119,15 @@ export namespace RecipeCommand {
     if (!recipe) return 'not-found' as const
     const version = await repository.findVersion(input.recipeId, input.versionNumber)
     if (!version) return 'not-found' as const
+    // Drop the previous photo before spreading: a re-cook without a photo must
+    // erase the one the earlier attempt left behind, not inherit it.
+    const { photoPath: _replacedPhoto, ...content } = version
     const executed: RecipeVersion = {
-      ...version,
+      ...content,
       executedAt: new Date(),
       rating: input.rating,
       remarks: input.remarks,
-      photoPath: input.photoPath ?? null,
+      ...(input.photoPath ? { photoPath: input.photoPath } : {}),
     }
     const updatedRecipe: Recipe = { ...recipe, updatedAt: new Date() }
     return atomically(async (batch) => {
@@ -174,15 +175,11 @@ export namespace RecipeCommand {
       number: FIRST_VERSION,
       createdAt: recipe.createdAt,
       origin,
-      change: null,
-      basedOn: null,
+      // No `change`/`basedOn`: v1 is the original, it iterates on nothing and
+      // changes nothing. No outcome either — it awaits its first cook.
       steps: input.steps,
       ingredients: input.ingredients,
       tmxSteps,
-      executedAt: null,
-      rating: null,
-      remarks: null,
-      photoPath: null,
     }
   }
 }

@@ -33,17 +33,21 @@ const clampedField = (max: number) =>
     .nullish()
     .transform((v) => (v ?? '').trim().slice(0, max))
 
-// Optional/nullable string → clamped, or null when absent/blank.
+// Optional string → clamped, or absent when Gemini left it out, nulled it or
+// returned it blank.
 const optionalClamped = (max: number) =>
   z
     .string()
     .nullish()
     .transform((v) => {
       const t = (v ?? '').trim().slice(0, max)
-      return t.length ? t : null
+      return t.length ? t : undefined
     })
 
-const nullToNull = <T>(schema: z.ZodType<T>) => schema.nullish().transform((v) => v ?? null)
+// Boundary normalization: Gemini spells "no value" as an explicit JSON `null`
+// (the prompt asks it to), the domain spells it "absent" — so a null becomes
+// undefined the moment the response is parsed.
+const nullAsAbsent = <T>(schema: z.ZodType<T>) => schema.nullish().transform((v) => v ?? undefined)
 
 // Generous caps for fields that reach the domain unvalidated (no branded scalar):
 // they can't 400, but an unbounded value would bloat the Firestore document.
@@ -62,24 +66,35 @@ const ingredientSchema = z.object({
 // A step comes back as an object carrying the text plus optional Thermomix
 // settings; a bare string (schema-less fallback) is tolerated as a plain step.
 const stepSchema = z.union([
-  clamped(RECIPE_MAX.stepText).transform((text) => ({ text, tmx: null })),
+  clamped(RECIPE_MAX.stepText).transform((text) => ({
+    text,
+    tmx: undefined as ImportTmxSettings | undefined,
+  })),
   z
     .object({
       text: clampedField(RECIPE_MAX.stepText),
       tmxTime: optionalClamped(RECIPE_MAX.tmx),
       tmxTemperature: optionalClamped(RECIPE_MAX.tmx),
       tmxSpeed: optionalClamped(RECIPE_MAX.tmx),
-      tmxReverse: nullToNull(z.boolean()),
+      tmxReverse: nullAsAbsent(z.boolean()),
     })
     .transform(({ text, tmxTime, tmxTemperature, tmxSpeed, tmxReverse }) => ({
       text,
       // tmxReverse: false carries no information — Gemini sometimes emits it
-      // instead of null on plain steps, and it must not turn them into
+      // instead of nothing on plain steps, and it must not turn them into
       // "Thermomix" steps.
       tmx:
-        tmxTime === null && tmxTemperature === null && tmxSpeed === null && !tmxReverse
-          ? null
-          : { time: tmxTime, temperature: tmxTemperature, speed: tmxSpeed, reverse: tmxReverse },
+        tmxTime === undefined &&
+        tmxTemperature === undefined &&
+        tmxSpeed === undefined &&
+        !tmxReverse
+          ? undefined
+          : {
+              ...(tmxTime ? { time: tmxTime } : {}),
+              ...(tmxTemperature ? { temperature: tmxTemperature } : {}),
+              ...(tmxSpeed ? { speed: tmxSpeed } : {}),
+              ...(tmxReverse !== undefined ? { reverse: tmxReverse } : {}),
+            },
     })),
 ])
 
@@ -88,22 +103,24 @@ const foldIngredients = (raw: { name: string; quantity: string }[]) =>
   raw.filter((i) => i.name && i.quantity).slice(0, MAX_ITEMS)
 
 // Drop blank steps, cap the count, and split into aligned steps/tmxSteps arrays.
-// tmxSteps collapses to null when no surviving step carries a setting. Shared by
+// tmxSteps drops out entirely when no surviving step carries a setting. Shared by
 // import and proposal.
 const foldSteps = (
-  raw: { text: string; tmx: ImportTmxSettings | null }[],
-): { steps: string[]; tmxSteps: (ImportTmxSettings | null)[] | null } => {
+  raw: { text: string; tmx: ImportTmxSettings | undefined }[],
+): { steps: string[]; tmxSteps?: (ImportTmxSettings | undefined)[] } => {
   const kept = raw.filter((s) => s.text.length > 0).slice(0, MAX_ITEMS)
   const tmxSteps = kept.map((s) => s.tmx)
   return {
     steps: kept.map((s) => s.text),
-    tmxSteps: tmxSteps.some((s) => s !== null) ? tmxSteps : null,
+    ...(tmxSteps.some((s) => s !== undefined) ? { tmxSteps } : {}),
   }
 }
 
 // Gemini marks absent fields as explicit null (the prompt instructs it to), so
-// every optional field accepts null. All strings are clamped; array items whose
-// required fields came back blank are dropped rather than failing the parse.
+// every optional field accepts null and normalizes it away — parsing the response
+// is the boundary where the AI's nulls become the domain's absent fields. All
+// strings are clamped; array items whose required fields came back blank are
+// dropped rather than failing the parse.
 export const ImportAnalysisSchema = z
   .object({
     type: z.enum(RECIPE_TYPE_VALUES),
@@ -121,10 +138,10 @@ export const ImportAnalysisSchema = z
       category: raw.category,
       // Title is required downstream; never let a blank one through.
       title: raw.title || 'Recette importée',
-      sourceLabel: raw.sourceLabel,
+      ...(raw.sourceLabel ? { sourceLabel: raw.sourceLabel } : {}),
       ingredients: foldIngredients(raw.ingredients),
       steps,
-      tmxSteps,
+      ...(tmxSteps ? { tmxSteps } : {}),
     }
   })
 
@@ -142,7 +159,7 @@ export const ProposalSchema = z
       rationale: raw.rationale,
       ingredients: foldIngredients(raw.ingredients),
       steps,
-      tmxSteps,
+      ...(tmxSteps ? { tmxSteps } : {}),
     }
   })
 

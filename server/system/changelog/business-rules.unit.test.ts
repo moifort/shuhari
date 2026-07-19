@@ -30,12 +30,12 @@ describe('parseChangelog', () => {
     expect(result[0].date?.toISOString()).toBe('2026-04-26T00:00:00.000Z')
   })
 
-  test('parses an Unreleased section with a null date', () => {
+  test('parses an Unreleased section, which carries no date', () => {
     const md = '# Changelog\n\n## Unreleased\n- Pending note\n'
     const result = parseChangelog(md)
     expect(result).toHaveLength(1)
     expect(result[0].version).toBe(ChangelogVersion('Unreleased'))
-    expect(result[0].date).toBeNull()
+    expect(result[0].date).toBeUndefined()
     expect(result[0].notes).toEqual(['Pending note'])
   })
 

@@ -6,7 +6,12 @@
 // with a value, or not present at all) and Firestore rejects `undefined`
 // values — dropping the null KEYS (not nulling them) keeps both invariants.
 //
-// Not recursive: every mutation input in the schema is flat.
+// This is the ONE place a client's `null` is allowed to reach the server side of
+// the boundary; past it, absence is spelled `T?` everywhere (see
+// docs/code-style.md, "No `null` in the domain").
+//
+// Not recursive: every mutation input in the schema is flat — a nested list of
+// input objects (tmxSteps) is mapped item by item at the resolver.
 type StripNulls<T> = { [K in keyof T]: Exclude<T[K], null> }
 
 export const stripNulls = <T extends Record<string, unknown>>(obj: T): StripNulls<T> => {

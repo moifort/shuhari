@@ -45,7 +45,8 @@ export const ProposalType = builder.objectRef<Proposal>('Proposal').implement({
       description:
         'Per-step Thermomix settings aligned with steps, e.g. `"10 min / 100°C / speed 2"` ' +
         '(`null` = plain step; `[]` if not tmx)',
-      resolve: (d) => d.tmxSteps,
+      // Boundary: the domain leaves a plain step's slot absent, GraphQL spells it `null`.
+      resolve: (d) => d.tmxSteps.map((settings) => settings ?? null),
     }),
   }),
 })
@@ -88,7 +89,7 @@ export const ImportAnalysisType = builder.objectRef<ImportAnalysis>('ImportAnaly
       type: [ImportTmxSettingsType],
       nullable: { list: true, items: true },
       description: 'Per-step Thermomix settings, aligned with steps (null = plain step)',
-      resolve: (a) => a.tmxSteps ?? null,
+      resolve: (a) => a.tmxSteps?.map((settings) => settings ?? null) ?? null,
     }),
   }),
 })

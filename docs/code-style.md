@@ -96,6 +96,41 @@ Applies to both backend TypeScript and iOS Swift. When absence seems meaningful,
 real field instead of the array's presence — a Thermomix recipe is `type === 'tmx'`, not "`tmxSteps`
 is present" (see the next rule).
 
+### ⛔ No `null` in the domain — absence is `?` / `undefined`
+
+> **Wlaschin:** one representation per state. `null` and `undefined` are two spellings of "absent";
+> keeping both makes every guard a coin flip (`=== null`? `== null`? `?? `?).
+
+The domain (`types.ts`, `primitives.ts`, `command.ts`, `query.ts`, `business-rules.ts`,
+`use-case.ts`, `infrastructure/repository.ts`, `server/system/**`, `server/utils/**`) never spells
+absence `null`: an absent field is `field?: T` (and the key is simply **not written**), a lookup that
+finds nothing returns `T | undefined` — or the discriminated `'not-found' as const` sentinel where
+the flow already uses one.
+
+```ts
+// Bad
+type RecipeVersion = { basedOn: VersionNumber | null; rating: Rating | null }
+export const bestRating = (versions: RecipeVersion[]): RecipeVersion | null => …
+// Good
+type RecipeVersion = { basedOn?: VersionNumber; rating?: Rating }
+export const bestRating = (versions: RecipeVersion[]): RecipeVersion | undefined => …
+```
+
+`null` survives only at the **boundaries**, where a protocol imposes it, and it is converted on the
+spot:
+
+| Boundary | Direction | Conversion |
+| --- | --- | --- |
+| GraphQL (`infrastructure/graphql/*.ts`) | out | `nullable: true` + `resolve: (v) => v.x ?? null` |
+| GraphQL inputs | in | `stripNulls` (`server/utils/input.ts`) drops the null keys |
+| Firestore (`infrastructure/repository.ts`) | both | `withoutAbsentFields` on write, `withoutStoredNulls` on read (`server/utils/firestore.ts`) |
+| Gemini JSON (`system/ai/primitives.ts`) | in | `nullAsAbsent` / Zod `.nullish()` transforms |
+
+Two Firestore consequences to keep in mind: a write must be a full `set` for a dropped key to
+**erase** the stored field (an omitted key in an `update`/`merge` leaves the old value untouched),
+and an array element cannot be absent — a positional hole (a plain step in `tmxSteps`) is encoded as
+a stored `null` and decoded back to `undefined` on read.
+
 ### No boolean derivable from another field
 
 Never store a boolean whose truth is already implied by another field (`toTest !== null` implies "has

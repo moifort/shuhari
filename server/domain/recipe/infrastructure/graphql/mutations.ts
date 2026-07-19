@@ -4,7 +4,7 @@ import { RecipeCommand } from '~/domain/recipe/command'
 import { RecipeUseCase } from '~/domain/recipe/use-case'
 import { builder } from '~/domain/shared/graphql/builder'
 import { domainError } from '~/domain/shared/graphql/errors'
-import { CreateRecipeInput, RecordAttemptInput, UpdateRecipeInput } from './inputs'
+import { CreateRecipeInput, looseSettings, RecordAttemptInput, UpdateRecipeInput } from './inputs'
 import { RecipeType, VersionType } from './types'
 
 builder.mutationField('createRecipe', (t) =>
@@ -43,7 +43,7 @@ builder.mutationField('createRecipe', (t) =>
           title: input.title,
           steps: input.steps,
           ingredients: input.ingredients ?? [],
-          tmxSteps: input.tmxSteps ? toTmxSettings(input.tmxSteps) : [],
+          tmxSteps: input.tmxSteps ? toTmxSettings(input.tmxSteps.map(looseSettings)) : [],
         },
         input.sourceLabel ?? undefined,
       ),
@@ -139,7 +139,6 @@ builder.mutationField('recordAttempt', (t) =>
         versionNumber: input.versionNumber,
         rating: input.rating,
         remarks: input.remarks,
-        photoPath: null,
       })
       return match(result)
         .with('not-found', domainError)

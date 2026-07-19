@@ -10,7 +10,7 @@ export type Proposal = {
   rationale: string
   ingredients: Ingredient[]
   steps: StepText[]
-  tmxSteps: (TmxSettings | null)[]
+  tmxSteps: (TmxSettings | undefined)[]
 }
 
 // The client-supplied proposal to accept: everything that becomes version n+1,

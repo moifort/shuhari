@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
 
   // Everything else (incl. /graphql): require a valid Firebase ID token.
   const auth = getHeader(event, 'authorization')
-  const token = auth?.startsWith('Bearer ') ? auth.slice(7) : null
+  const token = auth?.startsWith('Bearer ') ? auth.slice(7) : undefined
   if (!token) throw createError({ statusCode: 401, statusMessage: 'Missing bearer token' })
 
   try {

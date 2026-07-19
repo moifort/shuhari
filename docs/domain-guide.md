@@ -108,10 +108,10 @@ export const findAllByUser = (userId: UserId): Promise<Bean[]> =>
     return snap.docs.map((doc) => doc.data())
   })
 
-export const findBy = async (userId: UserId, id: BeanId): Promise<Bean | null> => {
+export const findBy = async (userId: UserId, id: BeanId): Promise<Bean | undefined> => {
   const doc = await beans().doc(id).get()
   const data = doc.data()
-  return data && data.userId === userId ? data : null
+  return data && data.userId === userId ? data : undefined
 }
 
 export const save = async (bean: Bean, batch?: WriteBatch): Promise<Bean> => {
@@ -296,19 +296,19 @@ From `recipe`:
 export const nextVersionNumber = (versionCount: VersionNumber) =>
   toVersionNumber(versionCount + 1)
 
-// The recipe's best attempt across its cooked versions, or null when none was ever
-// tried. Highest rating wins; a tie breaks toward the most recent version.
-export const bestRating = (versions: RecipeVersion[]): RecipeVersion | null =>
+// The recipe's best attempt across its cooked versions, or nothing when none was
+// ever tried. Highest rating wins; a tie breaks toward the most recent version.
+export const bestRating = (versions: RecipeVersion[]): RecipeVersion | undefined =>
   versions
     .filter(isRated)
-    .reduce<RatedVersion | null>(
+    .reduce<RatedVersion | undefined>(
       (best, version) =>
-        best === null ||
+        best === undefined ||
         version.rating > best.rating ||
         (version.rating === best.rating && version.number > best.number)
           ? version
           : best,
-      null,
+      undefined,
     )
 ```
 

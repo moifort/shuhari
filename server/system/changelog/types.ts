@@ -4,6 +4,6 @@ export type ChangelogVersion = Brand<string, 'ChangelogVersion'>
 
 export type ChangelogEntry = {
   version: ChangelogVersion
-  date: Date | null
+  date?: Date
   notes: string[]
 }

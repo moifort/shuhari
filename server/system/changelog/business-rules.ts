@@ -11,9 +11,9 @@ const datedPattern = /^(\d{4})\.(\d{2})\.(\d{2})$/
 const toUtcDate = (year: string, month: string, day: string): Date =>
   new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
 
-const parseHeading = (line: string): { version: string; date: Date | null } | null => {
+const parseHeading = (line: string): { version: string; date?: Date } | undefined => {
   const match = headingPattern.exec(line.trim())
-  if (!match) return null
+  if (!match) return undefined
   const text = match[1].trim()
   const versioned = versionedPattern.exec(text)
   if (versioned)
@@ -23,7 +23,8 @@ const parseHeading = (line: string): { version: string; date: Date | null } | nu
     }
   const dated = datedPattern.exec(text)
   if (dated) return { version: text, date: toUtcDate(dated[1], dated[2], dated[3]) }
-  return { version: text, date: null }
+  // A plain label such as "Unreleased" carries no date.
+  return { version: text }
 }
 
 const isHeading = (line: string) => line.trimStart().startsWith('## ')
@@ -32,7 +33,7 @@ export const parseChangelog = (markdown: string): ChangelogEntry[] => {
   const entries: ChangelogEntry[] = []
   const lines = markdown.split(/\r?\n/)
 
-  let current: ChangelogEntry | null = null
+  let current: ChangelogEntry | undefined
 
   for (const raw of lines) {
     const line = raw.trimEnd()
@@ -40,12 +41,12 @@ export const parseChangelog = (markdown: string): ChangelogEntry[] => {
       if (current) entries.push(current)
       const heading = parseHeading(line)
       if (!heading) {
-        current = null
+        current = undefined
         continue
       }
       current = {
         version: ChangelogVersion(heading.version),
-        date: heading.date,
+        ...(heading.date ? { date: heading.date } : {}),
         notes: [],
       }
       continue

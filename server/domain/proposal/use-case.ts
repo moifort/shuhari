@@ -30,16 +30,16 @@ import type { AcceptedProposal, Proposal } from './types'
 type BrandedContent = {
   ingredients: Ingredient[]
   steps: StepTextT[]
-  tmxSteps: (TmxSettings | null)[]
+  tmxSteps: (TmxSettings | undefined)[]
 }
 
-// Brand one step's raw AI tmx settings into the loose (still-nullable) shape the
-// shared `toTmxSettings` normalizer expects.
+// Brand one step's raw AI tmx settings into the loose shape the shared
+// `toTmxSettings` normalizer expects.
 const brandLooseTmx = (raw: ImportTmxSettings): LooseTmxSettings => ({
-  time: raw.time ? TmxTime(raw.time) : null,
-  temperature: raw.temperature ? TmxTemperature(raw.temperature) : null,
-  speed: raw.speed ? TmxSpeed(raw.speed) : null,
-  reverse: raw.reverse,
+  ...(raw.time ? { time: TmxTime(raw.time) } : {}),
+  ...(raw.temperature ? { temperature: TmxTemperature(raw.temperature) } : {}),
+  ...(raw.speed ? { speed: TmxSpeed(raw.speed) } : {}),
+  ...(raw.reverse ? { reverse: raw.reverse } : {}),
 })
 
 // Turn the untrusted AI proposal into branded domain shapes. tmxSteps are only
@@ -53,7 +53,7 @@ const brandProposal = (type: RecipeType, proposal: AiProposal): BrandedContent =
   const rawTmx = proposal.tmxSteps ?? []
   const tmxSteps =
     type === 'tmx'
-      ? alignedTmxSteps(steps, toTmxSettings(rawTmx.map((s) => (s ? brandLooseTmx(s) : null))))
+      ? alignedTmxSteps(steps, toTmxSettings(rawTmx.map((s) => (s ? brandLooseTmx(s) : undefined))))
       : []
   return { ingredients, steps, tmxSteps }
 }
@@ -75,7 +75,7 @@ export namespace ProposalUseCase {
     // The version carries its own outcome; feed it to the AI as the sole attempt (or
     // none when it has not been executed yet).
     const attempts =
-      version.executedAt !== null && version.rating !== null && version.remarks !== null
+      version.rating !== undefined && version.remarks !== undefined
         ? [{ rating: version.rating, remarks: version.remarks }]
         : []
 
@@ -89,13 +89,8 @@ export namespace ProposalUseCase {
       currentSteps: version.steps.map((s) => s as string),
       currentTmxSteps: version.tmxSteps.map((s) =>
         s
-          ? {
-              time: s.time ?? null,
-              temperature: s.temperature ?? null,
-              speed: s.speed ?? null,
-              reverse: s.reverse ?? null,
-            }
-          : null,
+          ? { time: s.time, temperature: s.temperature, speed: s.speed, reverse: s.reverse }
+          : undefined,
       ),
       attempts,
     })

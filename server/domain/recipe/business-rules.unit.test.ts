@@ -27,8 +27,8 @@ const rating = (n: number) => n as Rating
 const version = (number: number, opts: { rating?: number; basedOn?: number } = {}): RecipeVersion =>
   ({
     number: v(number),
-    rating: opts.rating === undefined ? null : rating(opts.rating),
-    basedOn: opts.basedOn === undefined ? null : v(opts.basedOn),
+    ...(opts.rating === undefined ? {} : { rating: rating(opts.rating) }),
+    ...(opts.basedOn === undefined ? {} : { basedOn: v(opts.basedOn) }),
   }) as RecipeVersion
 
 describe('categoryRank', () => {
@@ -57,9 +57,9 @@ describe('nextVersionNumber', () => {
 })
 
 describe('bestRating', () => {
-  test('returns null when no version was ever cooked', () => {
-    expect(bestRating([])).toBeNull()
-    expect(bestRating([version(1), version(2)])).toBeNull()
+  test('returns nothing when no version was ever cooked', () => {
+    expect(bestRating([])).toBeUndefined()
+    expect(bestRating([version(1), version(2)])).toBeUndefined()
   })
   test('returns the highest-rated version', () => {
     const v2 = version(2, { rating: 5 })
@@ -107,20 +107,23 @@ describe('alignedTmxSteps', () => {
   const settings: TmxSettings = { time: '5 min' as TmxTime, speed: '4' as TmxSpeed }
 
   test('keeps settings aligned with the steps', () => {
-    expect(alignedTmxSteps(steps, [settings, null])).toEqual([settings, null])
+    expect(alignedTmxSteps(steps, [settings, undefined])).toEqual([settings, undefined])
   })
   test('drops settings whose length differs from the steps', () => {
     expect(alignedTmxSteps(steps, [settings])).toEqual([])
   })
-  test('drops settings when every entry is null', () => {
-    expect(alignedTmxSteps(steps, [null, null])).toEqual([])
+  test('drops settings when every entry is absent', () => {
+    expect(alignedTmxSteps(steps, [undefined, undefined])).toEqual([])
   })
-  test('normalizes entries carrying no actual setting to null', () => {
-    expect(alignedTmxSteps(steps, [settings, { reverse: false }])).toEqual([settings, null])
+  test('normalizes entries carrying no actual setting to an absent entry', () => {
+    expect(alignedTmxSteps(steps, [settings, { reverse: false }])).toEqual([settings, undefined])
     expect(alignedTmxSteps(steps, [{}, { reverse: false }])).toEqual([])
   })
   test('keeps reverse alone as a setting when true', () => {
-    expect(alignedTmxSteps(steps, [{ reverse: true }, null])).toEqual([{ reverse: true }, null])
+    expect(alignedTmxSteps(steps, [{ reverse: true }, undefined])).toEqual([
+      { reverse: true },
+      undefined,
+    ])
   })
   test('returns [] for an empty list', () => {
     expect(alignedTmxSteps(steps, [])).toEqual([])
@@ -128,14 +131,12 @@ describe('alignedTmxSteps', () => {
 })
 
 describe('toTmxSettings', () => {
-  test('maps a null/undefined entry to a plain (null) step', () => {
-    expect(toTmxSettings([null, undefined])).toEqual([null, null])
+  test('maps an absent entry to a plain step', () => {
+    expect(toTmxSettings([undefined, undefined])).toEqual([undefined, undefined])
   })
-  test('drops absent and null fields', () => {
+  test('drops absent fields', () => {
     expect(
-      toTmxSettings([
-        { time: '5 min' as TmxTime, temperature: null, speed: undefined, reverse: null },
-      ]),
+      toTmxSettings([{ time: '5 min' as TmxTime, temperature: undefined, speed: undefined }]),
     ).toEqual([{ time: '5 min' as TmxTime }])
   })
   test('keeps reverse only when true (false carries no information)', () => {

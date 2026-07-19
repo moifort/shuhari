@@ -267,8 +267,9 @@ Reminder: all text values you produce must be written in French.`
 
   const hashSource = (source: ImportSource): ImportHashType => {
     // 'v7' salts the cache: bumped from 'v6' because the import prompt was
-    // rewritten in English and the category enum values changed, so
-    // previously-analysed sources re-run instead of serving a stale result.
+    // rewritten in English, the category enum values changed and an absent field
+    // is now a missing key rather than an explicit null — so previously-analysed
+    // sources re-run instead of serving a stale result.
     const material =
       source.kind === 'photos'
         ? `v7|${source.photos.join('|')}`
