@@ -30,32 +30,22 @@ type ChangelogEntry {
 }
 
 """
-Everything needed to save a brand-new recipe (its `v1`), once you have reviewed the import preview and confirmed it, e.g. `"Grandma’s lasagna"` with its ingredients and steps
+Everything needed to save a brand-new recipe (its `v1`), once you have reviewed the import preview and confirmed it, e.g. `"Grandma’s lasagna"` with its content
 """
 input CreateRecipeInput {
   """Its course, e.g. `MAIN` for lasagna, as detected during import"""
   category: DishCategory!
 
   """
-  The ingredient list, in order, e.g. `"Flour — 250 g"` then `"Eggs — 3"` (send `[]` when the recipe has nothing measurable)
+  The recipe body — provide exactly one of `dish` or `thermomix`, matching `type`
   """
-  ingredients: [IngredientInput!]!
+  content: VersionContentInput!
 
   """Where it came from, e.g. `"Marmiton"` or `"Mum"`"""
   sourceLabel: String
 
-  """
-  The method, one instruction per step, in order, e.g. `"Fold in the egg whites"`
-  """
-  steps: [StepText!]!
-
   """The recipe’s name, e.g. `"Grandma’s lasagna"`"""
   title: RecipeTitle!
-
-  """
-  Thermomix settings lined up with the steps above — one entry per step, e.g. `"10 min / 100°C / speed 2"`, an entry with every field left out for a step with no machine settings. Send `[]` for a non-Thermomix recipe.
-  """
-  tmxSteps: [ThermomixSettingsInput!]!
 
   """Cooked dish (`DISH`) or Thermomix recipe (`THERMOMIX`)"""
   type: RecipeType!
@@ -89,19 +79,46 @@ enum DishCategory {
   STARTER
 }
 
+"""
+The body of a cooked-dish version: its ingredient list and its plain-text method (no per-step machine settings).
+"""
+type DishContent {
+  """
+  The full ingredient list, in order, e.g. `"Flour — 250 g"` then `"Eggs — 3"` (empty list when it has none)
+  """
+  ingredients: [Ingredient!]!
+
+  """
+  The method, one short instruction per step, in order, e.g. `"Fold in the egg whites"`
+  """
+  steps: [StepText!]!
+}
+
+"""
+The body of a cooked-dish version: its ingredient list and plain-text steps.
+"""
+input DishContentInput {
+  """
+  The ingredient list, in order, e.g. `"Flour — 250 g"` then `"Eggs — 3"` (send `[]` when the recipe has nothing measurable)
+  """
+  ingredients: [IngredientInput!]!
+
+  """
+  The method, one instruction per step, in order, e.g. `"Fold in the egg whites"`
+  """
+  steps: [StepText!]!
+}
+
 """Structured recipe extracted from an import source (editable preview)"""
 type ImportAnalysis {
   """The dish category detected by the AI"""
   category: DishCategory!
   ingredients: [ImportIngredient!]!
   sourceLabel: String
-  steps: [String!]!
-  title: String!
 
-  """
-  Per-step Thermomix settings, aligned with steps (an entry with every field `null` = plain step; `[]` if not thermomix)
-  """
-  tmxSteps: [ImportThermomixSettings!]!
+  """The extracted steps, each carrying its own Thermomix settings"""
+  steps: [ImportStep!]!
+  title: String!
   type: RecipeType!
 }
 
@@ -120,6 +137,15 @@ type ImportResult {
 
   """How many versions (across all those recipes) were imported, e.g. `37`"""
   versions: Int!
+}
+
+"""
+A recipe step extracted by the AI (unvalidated preview): its text plus the Thermomix settings that go with it (every field `null` = a plain step).
+"""
+type ImportStep {
+  """The step’s Thermomix settings (every field `null` = a plain step)"""
+  settings: ImportThermomixSettings!
+  text: String!
 }
 
 """
@@ -173,8 +199,10 @@ type Mutation {
     basedOn: 2
     changeSummary: "Less sugar"
     rationale: "You noted it was too sweet"
-    ingredients: [{ name: "Sugar", quantity: "80 g" }]
-    steps: ["Rest the dough for 2 h", "Bake at 180°C"]
+    content: { dish: {
+      ingredients: [{ name: "Sugar", quantity: "80 g" }]
+      steps: ["Rest the dough for 2 h", "Bake at 180°C"]
+    } }
   }) {
     createdVersion
   }
@@ -212,8 +240,10 @@ type Mutation {
     type: DISH
     category: MAIN
     title: "Grandma's lasagna"
-    ingredients: [{ name: "Flour", quantity: "250 g" }]
-    steps: ["Layer the pasta", "Bake at 200°C"]
+    content: { dish: {
+      ingredients: [{ name: "Flour", quantity: "250 g" }]
+      steps: ["Layer the pasta", "Bake at 200°C"]
+    } }
   }) {
     id
     versionToOpen { number }
@@ -221,7 +251,7 @@ type Mutation {
   ```
   """
   createRecipe(
-    """The recipe to create — name, category, ingredients, steps…"""
+    """The recipe to create — name, category, and its content"""
     input: CreateRecipeInput!
   ): Recipe!
 
@@ -327,28 +357,18 @@ type Proposal {
   changeSummary: String!
 
   """
-  The complete ingredient list of the suggested version, e.g. `"Sugar — 80 g"` (not just what changed)
+  The complete body of the suggested version (not just what changed) — a `DishContent` or a `ThermomixContent` depending on the recipe type
   """
-  ingredients: [Ingredient!]!
+  content: VersionContent!
 
   """
   The AI’s reasoning — why it thinks this change will help, based on your last remarks, e.g. `"You noted it was too sweet, so cutting the sugar should balance it"`
   """
   rationale: String!
-
-  """
-  The complete method of the suggested version, e.g. `"Rest the dough for 2 h"` (not just what changed)
-  """
-  steps: [StepText!]!
-
-  """
-  Per-step Thermomix settings aligned with steps, e.g. `"10 min / 100°C / speed 2"` (an entry with every field `null` = plain step; `[]` if not thermomix)
-  """
-  tmxSteps: [ThermomixSettings!]!
 }
 
 """
-A complete next-version proposal to accept as an iteration, e.g. the AI’s `"Less sugar, longer resting time"` proposal. Send the FULL next version (omitted ingredients/steps wipe those lists).
+A complete next-version proposal to accept as an iteration, e.g. the AI’s `"Less sugar, longer resting time"` proposal. Send the FULL next version (an omitted ingredient/step wipes that list).
 """
 input ProposalInput {
   """
@@ -362,22 +382,12 @@ input ProposalInput {
   changeSummary: String!
 
   """
-  The complete ingredient list of the next version, e.g. `"Sugar — 80 g"`
+  The complete body of the next version — provide exactly one of `dish` or `thermomix`, matching the recipe type
   """
-  ingredients: [IngredientInput!]!
+  content: VersionContentInput!
 
   """The reasoning behind the change, e.g. `"You noted it was too sweet"`"""
   rationale: String!
-
-  """
-  The complete step list of the next version, e.g. `"Rest the dough for 2 h"`
-  """
-  steps: [StepText!]!
-
-  """
-  Per-step Thermomix settings, aligned with steps, e.g. `"10 min / 100°C / speed 2"` (an entry with every field left out = plain step). Send `[]` for a non-Thermomix recipe.
-  """
-  tmxSteps: [ThermomixSettingsInput!]!
 }
 
 type Query {
@@ -604,6 +614,28 @@ One instruction in the method, e.g. `"Fold in the egg whites"` (1 to 300 charact
 scalar StepText
 
 """
+The body of a Thermomix version: its ingredient list and its steps, each carrying its own Thermomix settings.
+"""
+type ThermomixContent {
+  """The full ingredient list, in order (empty list when it has none)"""
+  ingredients: [Ingredient!]!
+
+  """The method, each step carrying its own Thermomix settings"""
+  steps: [ThermomixStep!]!
+}
+
+"""
+The body of a Thermomix version: its ingredient list and its steps, each carrying its own Thermomix settings.
+"""
+input ThermomixContentInput {
+  """The ingredient list, in order (send `[]` when the recipe has none)"""
+  ingredients: [IngredientInput!]!
+
+  """The method, each step carrying its own Thermomix settings"""
+  steps: [ThermomixStepInput!]!
+}
+
+"""
 The Thermomix machine settings that go with one step (only for Thermomix recipes). Every field is optional — a step can set just a speed, or a full time + temperature + speed combo, e.g. `"10 min / 100°C / speed 2"`.
 """
 type ThermomixSettings {
@@ -651,6 +683,32 @@ The blade speed of a Thermomix step, e.g. `"5"`, `"pétrin"` (kneading) or `"tur
 scalar ThermomixSpeed
 
 """
+One Thermomix step: its instruction plus the machine settings that go with it. A plain step (no machine settings) carries an empty settings object.
+"""
+type ThermomixStep {
+  """
+  The Thermomix settings for this step, e.g. `"10 min / 100°C / speed 2"` (every field left out = a plain step)
+  """
+  settings: ThermomixSettings!
+
+  """The step instruction, e.g. `"Mix the onions"`"""
+  text: StepText!
+}
+
+"""
+One Thermomix step to save: its instruction plus the machine settings that go with it. Send `settings: {}` for a plain step (no machine settings).
+"""
+input ThermomixStepInput {
+  """
+  Its Thermomix settings, e.g. `"10 min / 100°C / speed 2"` (send `{}` for a plain step)
+  """
+  settings: ThermomixSettingsInput!
+
+  """The step instruction, e.g. `"Mix the onions"`"""
+  text: StepText!
+}
+
+"""
 The temperature of a Thermomix step, e.g. `"100°C"` or `"Varoma"` (its steam setting)
 """
 scalar ThermomixTemperature
@@ -690,6 +748,11 @@ type Version {
   change: String
 
   """
+  This version’s body — its ingredients and steps. A `DishContent` for a cooked dish (plain-text steps), a `ThermomixContent` for a Thermomix recipe (each step carrying its machine settings).
+  """
+  content: VersionContent!
+
+  """
   When this version was created (not when it was cooked — see executedAt), e.g. `"2026-07-18T14:30:00.000Z"`
   """
   createdAt: DateTime!
@@ -698,11 +761,6 @@ type Version {
   The day you actually cooked this version, e.g. `"2026-07-18T14:30:00.000Z"`. `null` means it is still a planned attempt (a to-do you have lined up but not tried yet).
   """
   executedAt: DateTime
-
-  """
-  This version’s full ingredient list, in order, e.g. `"Flour — 250 g"` then `"Eggs — 3"` (empty list when it has none)
-  """
-  ingredients: [Ingredient!]!
 
   """
   Its rank in the chain — `1` is the original import, `2` the first tweak, and so on
@@ -740,16 +798,6 @@ type Version {
   remarks: Remarks
 
   """
-  This version’s method, one short instruction per step, in order, e.g. `"Fold in the egg whites"`
-  """
-  steps: [StepText!]!
-
-  """
-  Per-step Thermomix settings aligned with steps, e.g. `"10 min / 100°C / speed 2"` (an entry with every field `null` = plain step; `[]` if not thermomix)
-  """
-  tmxSteps: [ThermomixSettings!]!
-
-  """
   The quick yes/no of the field above: `true` once you have cooked and rated it, `false` while it is still waiting to be tried
   """
   tried: Boolean!
@@ -758,6 +806,22 @@ type Version {
   The reason behind that change, e.g. `"The top was burning at 200°C"`. `null` when not given.
   """
   why: String
+}
+
+"""
+The body of a version, which depends on the recipe type: a `DishContent` for a cooked dish, a `ThermomixContent` for a Thermomix recipe.
+"""
+union VersionContent = DishContent | ThermomixContent
+
+"""
+The body of a version, tagged by recipe type: provide EXACTLY ONE of `dish` (a cooked dish) or `thermomix` (a Thermomix recipe).
+"""
+input VersionContentInput @oneOf {
+  """A cooked-dish body"""
+  dish: DishContentInput
+
+  """A Thermomix body"""
+  thermomix: ThermomixContentInput
 }
 
 """

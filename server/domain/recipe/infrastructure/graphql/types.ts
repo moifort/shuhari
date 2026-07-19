@@ -1,4 +1,7 @@
 import { bestRating, versionToOpen } from '~/domain/recipe/business-rules'
+import type { DishContent } from '~/domain/recipe/content/dish'
+import type { ThermomixContent, ThermomixStep } from '~/domain/recipe/content/thermomix'
+import type { VersionContent } from '~/domain/recipe/content/types'
 import { type RecipeLibraryPage, RecipeQuery } from '~/domain/recipe/query'
 import { builder } from '~/domain/shared/graphql/builder'
 import type { Ingredient, Recipe, RecipeVersion, ThermomixSettings } from '../../types'
@@ -54,6 +57,74 @@ export const ThermomixSettingsType = builder
       }),
     }),
   })
+
+export const DishContentType = builder.objectRef<DishContent>('DishContent').implement({
+  description:
+    'The body of a cooked-dish version: its ingredient list and its plain-text method (no ' +
+    'per-step machine settings).',
+  fields: (t) => ({
+    ingredients: t.field({
+      type: [IngredientType],
+      description:
+        'The full ingredient list, in order, e.g. `"Flour — 250 g"` then `"Eggs — 3"` (empty ' +
+        'list when it has none)',
+      resolve: (c) => c.ingredients,
+    }),
+    steps: t.expose('steps', {
+      type: ['StepText'],
+      description:
+        'The method, one short instruction per step, in order, e.g. `"Fold in the egg whites"`',
+    }),
+  }),
+})
+
+export const ThermomixStepType = builder.objectRef<ThermomixStep>('ThermomixStep').implement({
+  description:
+    'One Thermomix step: its instruction plus the machine settings that go with it. A plain ' +
+    'step (no machine settings) carries an empty settings object.',
+  fields: (t) => ({
+    text: t.expose('text', {
+      type: 'StepText',
+      description: 'The step instruction, e.g. `"Mix the onions"`',
+    }),
+    settings: t.field({
+      type: ThermomixSettingsType,
+      description:
+        'The Thermomix settings for this step, e.g. `"10 min / 100°C / speed 2"` (every field ' +
+        'left out = a plain step)',
+      resolve: (s) => s.settings,
+    }),
+  }),
+})
+
+export const ThermomixContentType = builder
+  .objectRef<ThermomixContent>('ThermomixContent')
+  .implement({
+    description:
+      'The body of a Thermomix version: its ingredient list and its steps, each carrying its ' +
+      'own Thermomix settings.',
+    fields: (t) => ({
+      ingredients: t.field({
+        type: [IngredientType],
+        description: 'The full ingredient list, in order (empty list when it has none)',
+        resolve: (c) => c.ingredients,
+      }),
+      steps: t.field({
+        type: [ThermomixStepType],
+        description: 'The method, each step carrying its own Thermomix settings',
+        resolve: (c) => c.steps,
+      }),
+    }),
+  })
+
+export const VersionContentUnion = builder.unionType('VersionContent', {
+  description:
+    'The body of a version, which depends on the recipe type: a `DishContent` for a cooked ' +
+    'dish, a `ThermomixContent` for a Thermomix recipe.',
+  types: [DishContentType, ThermomixContentType],
+  resolveType: (content: VersionContent) =>
+    content.kind === 'dish' ? 'DishContent' : 'ThermomixContent',
+})
 
 // A version is also an attempt: immutable content/lineage, plus its outcome fields
 // (rating/remarks/executedAt) written once when executed. `tried` derives from
@@ -115,25 +186,13 @@ export const VersionType = builder.objectRef<RecipeVersion>('Version').implement
         'given.',
       resolve: (v) => v.why ?? null,
     }),
-    ingredients: t.field({
-      type: [IngredientType],
+    content: t.field({
+      type: VersionContentUnion,
       description:
-        'This version’s full ingredient list, in order, e.g. `"Flour — 250 g"` then ' +
-        '`"Eggs — 3"` (empty list when it has none)',
-      resolve: (v) => v.ingredients,
-    }),
-    steps: t.expose('steps', {
-      type: ['StepText'],
-      description:
-        'This version’s method, one short instruction per step, in order, e.g. ' +
-        '`"Fold in the egg whites"`',
-    }),
-    tmxSteps: t.field({
-      type: [ThermomixSettingsType],
-      description:
-        'Per-step Thermomix settings aligned with steps, e.g. `"10 min / 100°C / speed 2"` ' +
-        '(an entry with every field `null` = plain step; `[]` if not thermomix)',
-      resolve: (v) => v.tmxSteps,
+        'This version’s body — its ingredients and steps. A `DishContent` for a cooked dish ' +
+        '(plain-text steps), a `ThermomixContent` for a Thermomix recipe (each step carrying its ' +
+        'machine settings).',
+      resolve: (v) => v.content,
     }),
     executedAt: t.field({
       type: 'DateTime',

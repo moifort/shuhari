@@ -2,8 +2,7 @@ import { GraphQLError } from 'graphql'
 import { match, P } from 'ts-pattern'
 import type { AcceptedProposal } from '~/domain/proposal/types'
 import { ProposalUseCase } from '~/domain/proposal/use-case'
-import { toThermomixSettings } from '~/domain/recipe/business-rules'
-import { looseSettings } from '~/domain/recipe/infrastructure/graphql/inputs'
+import { versionContentInput } from '~/domain/recipe/infrastructure/graphql/inputs'
 import { RecipeType } from '~/domain/recipe/infrastructure/graphql/types'
 import type { Recipe, VersionNumber } from '~/domain/recipe/types'
 import { builder } from '~/domain/shared/graphql/builder'
@@ -87,8 +86,10 @@ builder.mutationField('acceptProposal', (t) =>
       '  basedOn: 2',
       '  changeSummary: "Less sugar"',
       '  rationale: "You noted it was too sweet"',
-      '  ingredients: [{ name: "Sugar", quantity: "80 g" }]',
-      '  steps: ["Rest the dough for 2 h", "Bake at 180°C"]',
+      '  content: { dish: {',
+      '    ingredients: [{ name: "Sugar", quantity: "80 g" }]',
+      '    steps: ["Rest the dough for 2 h", "Bake at 180°C"]',
+      '  } }',
       '}) {',
       '  createdVersion',
       '}',
@@ -111,9 +112,7 @@ builder.mutationField('acceptProposal', (t) =>
         basedOn: proposal.basedOn,
         changeSummary: proposal.changeSummary,
         rationale: proposal.rationale,
-        ingredients: proposal.ingredients,
-        steps: proposal.steps,
-        tmxSteps: toThermomixSettings(proposal.tmxSteps.map(looseSettings)),
+        content: versionContentInput(proposal.content),
       }
       const result = await ProposalUseCase.accept(userId, recipeId, accepted)
       const recipe = ensureRecipe(result)
@@ -181,8 +180,9 @@ const pickSource = (
 }
 
 // Turn the use-case's discriminated error strings into GraphQL errors.
-const ensureRecipe = (result: Recipe | 'not-found') =>
+const ensureRecipe = (result: Recipe | 'not-found' | 'content-type-mismatch') =>
   match(result)
     .with('not-found', domainError)
+    .with('content-type-mismatch', domainError)
     .with(P.not(P.string), (recipe) => recipe)
     .exhaustive()

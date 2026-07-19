@@ -1,4 +1,5 @@
-import type { Ingredient, StepText, ThermomixSettings, VersionNumber } from '~/domain/recipe/types'
+import type { VersionContent } from '~/domain/recipe/content/types'
+import type { VersionNumber } from '~/domain/recipe/types'
 
 // An ephemeral next-version proposal, already validated into branded domain
 // shapes — either freshly branded from the AI (`fromAttempt`) or the user's inline
@@ -8,9 +9,7 @@ export type Proposal = {
   basedOn: VersionNumber
   changeSummary: string
   rationale: string
-  ingredients: Ingredient[]
-  steps: StepText[]
-  tmxSteps: ThermomixSettings[]
+  content: VersionContent
 }
 
 // The client-supplied proposal to accept: everything that becomes version n+1,

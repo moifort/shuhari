@@ -27,16 +27,18 @@ const versions = () =>
 const versionDocId = (recipeId: RecipeId, number: VersionNumber) => `${recipeId}_${number}`
 
 // Storage boundary, read side. Firestore (and any document written before the
-// attempt outcome moved onto the version) spells an absent field `null`, while
-// the domain spells it "absent" — so the `null`s are erased on the way in. The
-// arrays need no defaulting: they are total, a plain step being the empty
-// settings object `{}` Firestore stores verbatim.
+// attempt outcome moved onto the version) spells an absent envelope field `null`,
+// while the domain spells it "absent" — so the top-level `null`s are erased on the
+// way in. The nested `content` needs no defaulting: it is built total, a plain
+// Thermomix step being the empty settings object `{}` Firestore stores verbatim.
 const normalizeVersion = (stored: RecipeVersion): RecipeVersion => withoutStoredNulls(stored)
 
 // Storage boundary, write side. Every version write is a full `set` (never a
 // merge), so an omitted key erases the stored field — which is precisely what an
 // absent domain field means. Firestore rejects `undefined`, hence the pruning
-// (shallow: it never touches the empty objects inside the tmxSteps array).
+// (shallow: it only prunes absent envelope fields; the `content` object is written
+// verbatim, empty `settings: {}` steps included — it is built without any
+// `undefined`, so nothing nested needs pruning).
 const storedVersion = (version: RecipeVersion): RecipeVersion => withoutAbsentFields(version)
 
 const allCacheKey = (userId: UserId) => `recipes:all:${userId}`

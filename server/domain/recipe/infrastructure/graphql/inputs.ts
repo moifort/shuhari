@@ -1,18 +1,8 @@
-import type { LooseThermomixSettings } from '~/domain/recipe/business-rules'
-import type { ThermomixSpeed, ThermomixTemperature, ThermomixTime } from '~/domain/recipe/types'
+import type { VersionContent } from '~/domain/recipe/content/types'
+import { VersionContent as brandVersionContent } from '~/domain/recipe/primitives'
 import { builder } from '~/domain/shared/graphql/builder'
-import { stripNulls } from '~/utils/input'
+import { domainError } from '~/domain/shared/graphql/errors'
 import { DishCategoryEnum, RecipeTypeEnum } from './enums'
-
-// Boundary: a client spells "setting not set" as a `null` field — the domain
-// spells it "absent". A plain step is an entry with every field null, which
-// stripNulls turns into the empty settings object.
-export const looseSettings = (entry: {
-  time?: ThermomixTime | null
-  temperature?: ThermomixTemperature | null
-  speed?: ThermomixSpeed | null
-  reverse?: boolean | null
-}): LooseThermomixSettings => stripNulls(entry)
 
 export const IngredientInput = builder.inputType('IngredientInput', {
   description:
@@ -49,10 +39,97 @@ export const ThermomixSettingsInput = builder.inputType('ThermomixSettingsInput'
   }),
 })
 
+export const ThermomixStepInput = builder.inputType('ThermomixStepInput', {
+  description:
+    'One Thermomix step to save: its instruction plus the machine settings that go with it. ' +
+    'Send `settings: {}` for a plain step (no machine settings).',
+  fields: (t) => ({
+    text: t.field({
+      type: 'StepText',
+      required: true,
+      description: 'The step instruction, e.g. `"Mix the onions"`',
+    }),
+    settings: t.field({
+      type: ThermomixSettingsInput,
+      required: true,
+      description:
+        'Its Thermomix settings, e.g. `"10 min / 100°C / speed 2"` (send `{}` for a plain step)',
+    }),
+  }),
+})
+
+export const DishContentInput = builder.inputType('DishContentInput', {
+  description: 'The body of a cooked-dish version: its ingredient list and plain-text steps.',
+  fields: (t) => ({
+    ingredients: t.field({
+      type: [IngredientInput],
+      required: true,
+      description:
+        'The ingredient list, in order, e.g. `"Flour — 250 g"` then `"Eggs — 3"` (send `[]` ' +
+        'when the recipe has nothing measurable)',
+    }),
+    steps: t.field({
+      type: ['StepText'],
+      required: true,
+      description:
+        'The method, one instruction per step, in order, e.g. `"Fold in the egg whites"`',
+    }),
+  }),
+})
+
+export const ThermomixContentInput = builder.inputType('ThermomixContentInput', {
+  description:
+    'The body of a Thermomix version: its ingredient list and its steps, each carrying its own ' +
+    'Thermomix settings.',
+  fields: (t) => ({
+    ingredients: t.field({
+      type: [IngredientInput],
+      required: true,
+      description: 'The ingredient list, in order (send `[]` when the recipe has none)',
+    }),
+    steps: t.field({
+      type: [ThermomixStepInput],
+      required: true,
+      description: 'The method, each step carrying its own Thermomix settings',
+    }),
+  }),
+})
+
+// @oneOf: exactly one of `dish`/`thermomix` must be set, mirroring the recipe type
+// — the server rejects the version otherwise (`content-type-mismatch`).
+export const VersionContentInput = builder.inputType('VersionContentInput', {
+  description:
+    'The body of a version, tagged by recipe type: provide EXACTLY ONE of `dish` (a cooked ' +
+    'dish) or `thermomix` (a Thermomix recipe).',
+  isOneOf: true,
+  fields: (t) => ({
+    dish: t.field({ type: DishContentInput, required: false, description: 'A cooked-dish body' }),
+    thermomix: t.field({
+      type: ThermomixContentInput,
+      required: false,
+      description: 'A Thermomix body',
+    }),
+  }),
+})
+
+// Brand a `@oneOf` content input into the domain's discriminated `VersionContent`.
+// The GraphQL layer guarantees exactly one arm is set; the fallback guards the type.
+// The raw arms (branded scalars plus the client's `null`s on absent settings) are
+// re-validated and paired by the `VersionContent` constructor.
+type ContentArm = { ingredients: unknown[]; steps: unknown[] }
+export const versionContentInput = (input: {
+  dish?: ContentArm | null
+  thermomix?: ContentArm | null
+}): VersionContent => {
+  if (input.dish) return brandVersionContent({ kind: 'dish', ...input.dish })
+  if (input.thermomix) return brandVersionContent({ kind: 'thermomix', ...input.thermomix })
+  return domainError('invalid-content')
+}
+
 export const CreateRecipeInput = builder.inputType('CreateRecipeInput', {
   description:
     'Everything needed to save a brand-new recipe (its `v1`), once you have reviewed the import ' +
-    'preview and confirmed it, e.g. `"Grandma’s lasagna"` with its ingredients and steps',
+    'preview and confirmed it, e.g. `"Grandma’s lasagna"` with its content',
   fields: (t) => ({
     type: t.field({
       type: RecipeTypeEnum,
@@ -70,26 +147,11 @@ export const CreateRecipeInput = builder.inputType('CreateRecipeInput', {
       description: 'The recipe’s name, e.g. `"Grandma’s lasagna"`',
     }),
     sourceLabel: t.string({ description: 'Where it came from, e.g. `"Marmiton"` or `"Mum"`' }),
-    ingredients: t.field({
-      type: [IngredientInput],
+    content: t.field({
+      type: VersionContentInput,
       required: true,
       description:
-        'The ingredient list, in order, e.g. `"Flour — 250 g"` then `"Eggs — 3"` (send `[]` ' +
-        'when the recipe has nothing measurable)',
-    }),
-    steps: t.field({
-      type: ['StepText'],
-      required: true,
-      description:
-        'The method, one instruction per step, in order, e.g. `"Fold in the egg whites"`',
-    }),
-    tmxSteps: t.field({
-      type: [ThermomixSettingsInput],
-      required: true,
-      description:
-        'Thermomix settings lined up with the steps above — one entry per step, e.g. ' +
-        '`"10 min / 100°C / speed 2"`, an entry with every field left out for a step with no ' +
-        'machine settings. Send `[]` for a non-Thermomix recipe.',
+        'The recipe body — provide exactly one of `dish` or `thermomix`, matching `type`',
     }),
   }),
 })

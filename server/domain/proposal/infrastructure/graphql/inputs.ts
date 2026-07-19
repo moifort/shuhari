@@ -1,7 +1,4 @@
-import {
-  IngredientInput,
-  ThermomixSettingsInput,
-} from '~/domain/recipe/infrastructure/graphql/inputs'
+import { VersionContentInput } from '~/domain/recipe/infrastructure/graphql/inputs'
 import { builder } from '~/domain/shared/graphql/builder'
 
 // The full next-version proposal the client sends back on accept. It carries the
@@ -10,8 +7,8 @@ import { builder } from '~/domain/shared/graphql/builder'
 export const ProposalInput = builder.inputType('ProposalInput', {
   description:
     'A complete next-version proposal to accept as an iteration, e.g. the AI’s ' +
-    '`"Less sugar, longer resting time"` proposal. Send the FULL next version (omitted ' +
-    'ingredients/steps wipe those lists).',
+    '`"Less sugar, longer resting time"` proposal. Send the FULL next version (an omitted ' +
+    'ingredient/step wipes that list).',
   fields: (t) => ({
     basedOn: t.field({
       type: 'VersionNumber',
@@ -29,22 +26,12 @@ export const ProposalInput = builder.inputType('ProposalInput', {
       required: true,
       description: 'The reasoning behind the change, e.g. `"You noted it was too sweet"`',
     }),
-    ingredients: t.field({
-      type: [IngredientInput],
-      required: true,
-      description: 'The complete ingredient list of the next version, e.g. `"Sugar — 80 g"`',
-    }),
-    steps: t.field({
-      type: ['StepText'],
-      required: true,
-      description: 'The complete step list of the next version, e.g. `"Rest the dough for 2 h"`',
-    }),
-    tmxSteps: t.field({
-      type: [ThermomixSettingsInput],
+    content: t.field({
+      type: VersionContentInput,
       required: true,
       description:
-        'Per-step Thermomix settings, aligned with steps, e.g. `"10 min / 100°C / speed 2"` ' +
-        '(an entry with every field left out = plain step). Send `[]` for a non-Thermomix recipe.',
+        'The complete body of the next version — provide exactly one of `dish` or `thermomix`, ' +
+        'matching the recipe type',
     }),
   }),
 })

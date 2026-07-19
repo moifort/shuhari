@@ -1,0 +1,32 @@
+import type { VersionContent } from '~/domain/recipe/content/types'
+import type { Rating, RecipeId, Remarks, VersionNumber, VersionOrigin } from '~/domain/recipe/types'
+import type { UserId } from '~/domain/shared/types'
+
+// One entry in a recipe's linear lineage (v1 → v2 → …). The type-agnostic
+// versioning envelope: its lineage (origin/change/basedOn/why) and its `content`
+// (the discriminated recipe body) are immutable, but a version *is* an attempt —
+// it is a planned attempt while `executedAt` is absent, then carries its outcome
+// (rating/remarks/photo). The outcome is overwritable — recording again re-cooks
+// the same version in place rather than forcing a new one.
+export type RecipeVersion = {
+  userId: UserId
+  recipeId: RecipeId
+  number: VersionNumber
+  createdAt: Date
+  origin: VersionOrigin
+  change?: string // human summary of what changed ("Bouillon 700 → 650 ml"); absent on v1
+  // The version this one iterates on — set to the attempt it was proposed from
+  // (`versionToOpen` at proposal time); absent on the original v1, which iterates
+  // on nothing. Drives the "attempt in progress" branch of `versionToOpen`.
+  basedOn?: VersionNumber
+  why?: string // AI rationale, for proposed versions
+  // The recipe body, discriminated by `kind` (mirrors the recipe type): ingredients
+  // plus steps, plain-text for a dish, each carrying Thermomix settings otherwise.
+  content: VersionContent
+  // The attempt outcome, written once when the version is executed. All absent
+  // while the version is still a planned attempt (no `executedAt`).
+  executedAt?: Date
+  rating?: Rating
+  remarks?: Remarks
+  photoPath?: string // GCS object path; never exposed raw (see photoUrl)
+}

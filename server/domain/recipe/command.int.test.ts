@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test'
+import type { DishContent } from '~/domain/recipe/content/dish'
+import type { ThermomixContent } from '~/domain/recipe/content/thermomix'
 import type {
   Ingredient,
   IngredientName,
@@ -9,7 +11,6 @@ import type {
   RecipeTitle,
   Remarks,
   StepText,
-  ThermomixSettings,
   ThermomixSpeed,
   ThermomixTime,
   VersionNumber,
@@ -26,13 +27,19 @@ const ingredient = (n: string, q: string): Ingredient => ({
   name: n as IngredientName,
   quantity: q as IngredientQuantity,
 })
-const newInput = () => ({
-  type: 'dish' as const,
+const steps = (...s: string[]) => s.map((x) => x as StepText)
+
+const dishContent = (opts: { ingredients?: Ingredient[] } = {}): DishContent => ({
+  kind: 'dish',
+  ingredients: opts.ingredients ?? [],
+  steps: steps('Saisir', 'Mijoter'),
+})
+
+const newInput = (content: DishContent | ThermomixContent = dishContent()) => ({
+  type: content.kind,
   category: 'main' as const,
   title: 'Blanquette' as RecipeTitle,
-  steps: ['Saisir', 'Mijoter'] as StepText[],
-  ingredients: [] as Ingredient[],
-  tmxSteps: [] as ThermomixSettings[],
+  content,
 })
 
 let fake = resetFakeFirestore()
@@ -43,6 +50,7 @@ beforeEach(() => {
 describe('RecipeCommand.create', () => {
   test('creates a pointer recipe and its v1 (based on nothing) atomically', async () => {
     const recipe = await RecipeCommand.create(userId, newInput(), 'Un site')
+    if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
 
     expect(recipe.versionCount).toBe(1 as VersionNumber)
     expect(fake.snapshot('recipes').get(recipe.id as string)?.type).toBe('dish')
@@ -61,73 +69,77 @@ describe('RecipeCommand.create', () => {
     expect(fake.batches.length).toBe(1)
   })
 
-  test('persists per-step Thermomix settings when aligned with the steps', async () => {
-    const thermomix: ThermomixSettings = {
-      time: '5 min' as ThermomixTime,
-      speed: '4' as ThermomixSpeed,
-      reverse: true,
+  test('stores the version content verbatim, empty settings steps included', async () => {
+    const content: ThermomixContent = {
+      kind: 'thermomix',
+      ingredients: [ingredient('Gin', '50 ml')],
+      steps: [
+        {
+          text: 'Mixer' as StepText,
+          settings: { time: '5 min' as ThermomixTime, speed: '4' as ThermomixSpeed, reverse: true },
+        },
+        { text: 'Servir' as StepText, settings: {} },
+      ],
     }
-    const recipe = await RecipeCommand.create(userId, {
-      ...newInput(),
-      type: 'thermomix' as const,
-      tmxSteps: [thermomix, {}],
-    })
+    const recipe = await RecipeCommand.create(userId, newInput(content))
+    if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
 
-    // A plain step keeps its slot in the parallel array as the empty settings
-    // object — Firestore stores it verbatim, no `null` placeholder needed.
-    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.tmxSteps).toEqual([
-      thermomix,
-      {},
-    ])
+    // A plain step keeps its slot as the empty settings object — Firestore stores
+    // it verbatim, no `null` placeholder needed.
+    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.content).toEqual(content)
   })
 
-  test('stores [] tmxSteps when absent or misaligned', async () => {
-    const absent = await RecipeCommand.create(userId, newInput())
-    expect(fake.snapshot('recipe-versions').get(`${absent.id}_1`)?.tmxSteps).toEqual([])
-
-    const misaligned = await RecipeCommand.create(userId, {
-      ...newInput(),
-      type: 'thermomix' as const,
-      tmxSteps: [{ time: '5 min' as ThermomixTime }],
+  test('rejects content whose kind does not match the recipe type', async () => {
+    const mismatch = await RecipeCommand.create(userId, {
+      type: 'thermomix',
+      category: 'main' as const,
+      title: 'Blanquette' as RecipeTitle,
+      content: dishContent(),
     })
-    expect(fake.snapshot('recipe-versions').get(`${misaligned.id}_1`)?.tmxSteps).toEqual([])
-
-    const notThermomix = await RecipeCommand.create(userId, {
-      ...newInput(),
-      tmxSteps: [{ time: '5 min' as ThermomixTime }, {}],
-    })
-    expect(fake.snapshot('recipe-versions').get(`${notThermomix.id}_1`)?.tmxSteps).toEqual([])
+    expect(mismatch).toBe('content-type-mismatch')
+    // Nothing written on the rejected create.
+    expect(fake.batches.length).toBe(0)
+    expect(fake.directWrites).toEqual([])
   })
 
   test('persists ingredients on v1 and stores [] when absent', async () => {
     const ingredients = [ingredient('Gin', '50 ml'), ingredient('Vermouth rouge', '25 ml')]
-    const withIngredients = await RecipeCommand.create(userId, { ...newInput(), ingredients })
-    expect(fake.snapshot('recipe-versions').get(`${withIngredients.id}_1`)?.ingredients).toEqual(
-      ingredients,
+    const withIngredients = await RecipeCommand.create(
+      userId,
+      newInput(dishContent({ ingredients })),
+    )
+    if (typeof withIngredients === 'string') throw new Error('expected a recipe')
+    expect(fake.snapshot('recipe-versions').get(`${withIngredients.id}_1`)?.content).toEqual(
+      dishContent({ ingredients }),
     )
 
     const without = await RecipeCommand.create(userId, newInput())
-    expect(fake.snapshot('recipe-versions').get(`${without.id}_1`)?.ingredients).toEqual([])
+    if (typeof without === 'string') throw new Error('expected a recipe')
+    expect(fake.snapshot('recipe-versions').get(`${without.id}_1`)?.content).toEqual(dishContent())
   })
 })
 
 describe('RecipeCommand.addVersion', () => {
   test('appends v2, stamping its basedOn and bumping the version count', async () => {
-    const recipe = await RecipeCommand.create(userId, { ...newInput(), type: 'thermomix' as const })
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
 
+    const content: DishContent = {
+      kind: 'dish',
+      ingredients: [],
+      steps: steps('Saisir', 'Mijoter'),
+    }
     const withV2 = (await RecipeCommand.addVersion(userId, recipe.id, {
       change: 'Bouillon 700 → 650 ml',
       basedOn: 1 as VersionNumber,
-      steps: ['Saisir', 'Mijoter'] as StepText[],
-      ingredients: [],
-      tmxSteps: [{}, { speed: 'turbo' as ThermomixSpeed }],
+      content,
     })) as Recipe
 
     expect(withV2.versionCount).toBe(2 as VersionNumber)
     const v2 = fake.snapshot('recipe-versions').get(`${recipe.id}_2`)
     expect(v2?.change).toBe('Bouillon 700 → 650 ml')
     expect(v2?.basedOn).toBe(1 as VersionNumber)
-    expect(v2?.tmxSteps).toEqual([{}, { speed: 'turbo' }])
+    expect(v2?.content).toEqual(content)
     // A freshly appended version is a planned attempt: no outcome stored at all.
     expect(v2).not.toHaveProperty('executedAt')
     expect(v2).not.toHaveProperty('rating')
@@ -136,12 +148,20 @@ describe('RecipeCommand.addVersion', () => {
     expect(fake.directWrites).toEqual([])
   })
 
+  test('rejects content whose kind does not match the recipe type', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    const result = await RecipeCommand.addVersion(userId, recipe.id, {
+      change: 'x',
+      content: { kind: 'thermomix', ingredients: [], steps: [] },
+    })
+    expect(result).toBe('content-type-mismatch')
+  })
+
   test('returns not-found for an unknown recipe', async () => {
     const result = await RecipeCommand.addVersion(userId, 'nope' as RecipeId, {
       change: 'x',
-      steps: [],
-      ingredients: [],
-      tmxSteps: [],
+      content: { kind: 'dish', ingredients: [], steps: [] },
     })
     expect(result).toBe('not-found')
   })
@@ -150,6 +170,7 @@ describe('RecipeCommand.addVersion', () => {
 describe('RecipeCommand.recordAttempt', () => {
   test('folds the outcome onto v1 and returns the executed version', async () => {
     const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
     const batchesBefore = fake.batches.length
 
     const result = await RecipeCommand.recordAttempt(userId, {
@@ -163,6 +184,8 @@ describe('RecipeCommand.recordAttempt', () => {
     expect(result.rating).toBe(5 as Rating)
     expect(result.remarks).toBe('Parfait' as Remarks)
     expect(result.executedAt).toBeInstanceOf(Date)
+    // The content rides along untouched by the outcome write.
+    expect(result.content).toEqual(dishContent())
 
     const stored = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)
     expect(stored?.rating).toBe(5 as Rating)
@@ -174,6 +197,7 @@ describe('RecipeCommand.recordAttempt', () => {
 
   test('overwrites a previously recorded attempt on the same version', async () => {
     const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
     await RecipeCommand.recordAttempt(userId, {
       recipeId: recipe.id,
       versionNumber: 1 as VersionNumber,
@@ -198,6 +222,7 @@ describe('RecipeCommand.recordAttempt', () => {
 
   test('erases the previous photo when the re-cook carries none', async () => {
     const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
     await RecipeCommand.recordAttempt(userId, {
       recipeId: recipe.id,
       versionNumber: 1 as VersionNumber,
@@ -233,6 +258,7 @@ describe('RecipeCommand.recordAttempt', () => {
     expect(unknownRecipe).toBe('not-found')
 
     const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
     const unknownVersion = await RecipeCommand.recordAttempt(userId, {
       recipeId: recipe.id,
       versionNumber: 9 as VersionNumber,

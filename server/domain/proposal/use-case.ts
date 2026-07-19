@@ -1,68 +1,41 @@
-import {
-  alignedThermomixSteps,
-  type LooseThermomixSettings,
-  toThermomixSettings,
-} from '~/domain/recipe/business-rules'
 import { RecipeCommand } from '~/domain/recipe/command'
-import {
-  IngredientName,
-  IngredientQuantity,
-  StepText,
-  ThermomixSpeed,
-  ThermomixTemperature,
-  ThermomixTime,
-} from '~/domain/recipe/primitives'
+import type { VersionContent } from '~/domain/recipe/content/types'
+import { VersionContent as brandVersionContent } from '~/domain/recipe/primitives'
 import { RecipeQuery } from '~/domain/recipe/query'
-import type {
-  Ingredient,
-  RecipeId,
-  RecipeType,
-  StepText as StepTextT,
-  ThermomixSettings,
-  VersionNumber,
-} from '~/domain/recipe/types'
+import type { RecipeId, RecipeType, VersionNumber } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
 import { Ai } from '~/system/ai'
 import type {
   Proposal as AiProposal,
   ImportSource,
-  ImportThermomixSettings,
+  ImportStep,
+  ProposalContext,
 } from '~/system/ai/types'
 import type { AcceptedProposal, Proposal } from './types'
 
-// The content-only slice branded from the AI response.
-type BrandedContent = {
-  ingredients: Ingredient[]
-  steps: StepTextT[]
-  tmxSteps: ThermomixSettings[]
-}
+// Turn the untrusted AI proposal into branded, discriminated content. A dish keeps
+// plain-text steps; a Thermomix recipe keeps each step's settings, paired and
+// normalized by the shared `VersionContent` constructor (misaligned or empty
+// settings collapse to plain steps).
+const brandProposal = (type: RecipeType, proposal: AiProposal): VersionContent =>
+  type === 'thermomix'
+    ? brandVersionContent({
+        kind: 'thermomix',
+        ingredients: proposal.ingredients,
+        steps: proposal.steps,
+      })
+    : brandVersionContent({
+        kind: 'dish',
+        ingredients: proposal.ingredients,
+        steps: proposal.steps.map((s) => s.text),
+      })
 
-// Brand one step's raw AI thermomix settings into the loose shape the shared
-// `toThermomixSettings` normalizer expects.
-const brandLooseThermomix = (raw: ImportThermomixSettings): LooseThermomixSettings => ({
-  ...(raw.time ? { time: ThermomixTime(raw.time) } : {}),
-  ...(raw.temperature ? { temperature: ThermomixTemperature(raw.temperature) } : {}),
-  ...(raw.speed ? { speed: ThermomixSpeed(raw.speed) } : {}),
-  ...(raw.reverse ? { reverse: raw.reverse } : {}),
-})
-
-// Turn the untrusted AI proposal into branded domain shapes. tmxSteps are only
-// kept on a thermomix recipe and are realigned with the steps (dropped if misaligned).
-const brandProposal = (type: RecipeType, proposal: AiProposal): BrandedContent => {
-  const ingredients = proposal.ingredients.map((i) => ({
-    name: IngredientName(i.name),
-    quantity: IngredientQuantity(i.quantity),
-  }))
-  const steps = proposal.steps.map((s) => StepText(s))
-  const tmxSteps =
-    type === 'thermomix'
-      ? alignedThermomixSteps(
-          steps,
-          toThermomixSettings(proposal.tmxSteps.map(brandLooseThermomix)),
-        )
-      : []
-  return { ingredients, steps, tmxSteps }
-}
+// Rebuild the AI context steps from a stored version's content: a dish exposes
+// plain steps (empty settings), a Thermomix recipe its per-step settings.
+const contextSteps = (content: VersionContent): ImportStep[] =>
+  content.kind === 'thermomix'
+    ? content.steps.map((s) => ({ text: s.text as string, settings: s.settings }))
+    : content.steps.map((text) => ({ text: text as string, settings: {} }))
 
 export namespace ProposalUseCase {
   // Ask the AI for the next version after an attempt. Loads the tried version (and
@@ -85,31 +58,23 @@ export namespace ProposalUseCase {
         ? [{ rating: version.rating, remarks: version.remarks }]
         : []
 
-    const proposal = await Ai.proposeNext({
+    const context: ProposalContext = {
       type: recipe.type,
       category: recipe.category,
-      currentIngredients: version.ingredients.map((i) => ({
+      currentIngredients: version.content.ingredients.map((i) => ({
         name: i.name as string,
         quantity: i.quantity as string,
       })),
-      currentSteps: version.steps.map((s) => s as string),
-      currentThermomixSteps: version.tmxSteps.map((s) => ({
-        time: s.time,
-        temperature: s.temperature,
-        speed: s.speed,
-        reverse: s.reverse,
-      })),
+      currentSteps: contextSteps(version.content),
       attempts,
-    })
+    }
+    const proposal = await Ai.proposeNext(context)
 
-    const { ingredients, steps, tmxSteps } = brandProposal(recipe.type, proposal)
     const branded: Proposal = {
       basedOn: version.number,
       changeSummary: proposal.changeSummary,
       rationale: proposal.rationale,
-      ingredients,
-      steps,
-      tmxSteps,
+      content: brandProposal(recipe.type, proposal),
     }
     return branded
   }
@@ -130,8 +95,6 @@ export namespace ProposalUseCase {
       change: proposal.changeSummary,
       basedOn: proposal.basedOn,
       ...(proposal.rationale ? { why: proposal.rationale } : {}),
-      ingredients: proposal.ingredients,
-      steps: proposal.steps,
-      tmxSteps: proposal.tmxSteps,
+      content: proposal.content,
     })
 }

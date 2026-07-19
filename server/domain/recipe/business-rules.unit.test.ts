@@ -1,21 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 import {
-  alignedThermomixSteps,
   bestRating,
   categoryRank,
   nextVersionNumber,
-  toThermomixSettings,
   versionToOpen,
 } from '~/domain/recipe/business-rules'
 import {
   DISH_CATEGORY_VALUES,
   type Rating,
   type RecipeVersion,
-  type StepText,
-  type ThermomixSettings,
-  type ThermomixSpeed,
-  type ThermomixTemperature,
-  type ThermomixTime,
   type VersionNumber,
 } from '~/domain/recipe/types'
 
@@ -99,59 +92,5 @@ describe('versionToOpen', () => {
   test('propagates the best-rated tie-break to the attempt in progress', () => {
     const v3 = version(3, { basedOn: 2 })
     expect(versionToOpen([version(1, { rating: 4 }), version(2, { rating: 4 }), v3])).toBe(v3)
-  })
-})
-
-describe('alignedThermomixSteps', () => {
-  const steps = ['Mixer', 'Cuire'].map((s) => s as StepText)
-  const settings: ThermomixSettings = {
-    time: '5 min' as ThermomixTime,
-    speed: '4' as ThermomixSpeed,
-  }
-
-  test('keeps settings aligned with the steps', () => {
-    expect(alignedThermomixSteps(steps, [settings, {}])).toEqual([settings, {}])
-  })
-  test('drops settings whose length differs from the steps', () => {
-    expect(alignedThermomixSteps(steps, [settings])).toEqual([])
-  })
-  test('drops settings when every entry is empty', () => {
-    expect(alignedThermomixSteps(steps, [{}, {}])).toEqual([])
-  })
-  test('normalizes entries carrying no actual setting to the empty settings object', () => {
-    expect(alignedThermomixSteps(steps, [settings, { reverse: false }])).toEqual([settings, {}])
-    expect(alignedThermomixSteps(steps, [{}, { reverse: false }])).toEqual([])
-  })
-  test('keeps reverse alone as a setting when true', () => {
-    expect(alignedThermomixSteps(steps, [{ reverse: true }, {}])).toEqual([{ reverse: true }, {}])
-  })
-  test('returns [] for an empty list', () => {
-    expect(alignedThermomixSteps(steps, [])).toEqual([])
-  })
-})
-
-describe('toThermomixSettings', () => {
-  test('maps an entry with no field to the empty settings object (a plain step)', () => {
-    expect(toThermomixSettings([{}, {}])).toEqual([{}, {}])
-  })
-  test('drops absent fields', () => {
-    expect(
-      toThermomixSettings([
-        { time: '5 min' as ThermomixTime, temperature: undefined, speed: undefined },
-      ]),
-    ).toEqual([{ time: '5 min' as ThermomixTime }])
-  })
-  test('keeps reverse only when true (false carries no information)', () => {
-    expect(toThermomixSettings([{ reverse: true }])).toEqual([{ reverse: true }])
-    expect(toThermomixSettings([{ reverse: false }])).toEqual([{}])
-  })
-  test('assembles a fully-populated setting', () => {
-    const entry = {
-      time: '3 min' as ThermomixTime,
-      temperature: '100°C' as ThermomixTemperature,
-      speed: '4' as ThermomixSpeed,
-      reverse: true,
-    }
-    expect(toThermomixSettings([entry])).toEqual([entry])
   })
 })

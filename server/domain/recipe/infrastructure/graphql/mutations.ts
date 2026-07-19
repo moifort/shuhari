@@ -1,10 +1,14 @@
 import { match, P } from 'ts-pattern'
-import { toThermomixSettings } from '~/domain/recipe/business-rules'
 import { RecipeCommand } from '~/domain/recipe/command'
 import { RecipeUseCase } from '~/domain/recipe/use-case'
 import { builder } from '~/domain/shared/graphql/builder'
 import { domainError } from '~/domain/shared/graphql/errors'
-import { CreateRecipeInput, looseSettings, RecordAttemptInput, UpdateRecipeInput } from './inputs'
+import {
+  CreateRecipeInput,
+  RecordAttemptInput,
+  UpdateRecipeInput,
+  versionContentInput,
+} from './inputs'
 import { RecipeType, VersionType } from './types'
 
 builder.mutationField('createRecipe', (t) =>
@@ -19,8 +23,10 @@ builder.mutationField('createRecipe', (t) =>
       '  type: DISH',
       '  category: MAIN',
       '  title: "Grandma\'s lasagna"',
-      '  ingredients: [{ name: "Flour", quantity: "250 g" }]',
-      '  steps: ["Layer the pasta", "Bake at 200°C"]',
+      '  content: { dish: {',
+      '    ingredients: [{ name: "Flour", quantity: "250 g" }]',
+      '    steps: ["Layer the pasta", "Bake at 200°C"]',
+      '  } }',
       '}) {',
       '  id',
       '  versionToOpen { number }',
@@ -31,22 +37,25 @@ builder.mutationField('createRecipe', (t) =>
       input: t.arg({
         type: CreateRecipeInput,
         required: true,
-        description: 'The recipe to create — name, category, ingredients, steps…',
+        description: 'The recipe to create — name, category, and its content',
       }),
     },
-    resolve: async (_root, { input }, { userId }) =>
-      RecipeCommand.create(
+    resolve: async (_root, { input }, { userId }) => {
+      const result = await RecipeCommand.create(
         userId,
         {
           type: input.type,
           category: input.category,
           title: input.title,
-          steps: input.steps,
-          ingredients: input.ingredients,
-          tmxSteps: toThermomixSettings(input.tmxSteps.map(looseSettings)),
+          content: versionContentInput(input.content),
         },
         input.sourceLabel ?? undefined,
-      ),
+      )
+      return match(result)
+        .with('content-type-mismatch', domainError)
+        .with(P.not(P.string), (recipe) => recipe)
+        .exhaustive()
+    },
   }),
 )
 

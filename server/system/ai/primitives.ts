@@ -5,6 +5,7 @@ import { DISH_CATEGORY_VALUES, RECIPE_TYPE_VALUES } from '~/domain/recipe/types'
 import type {
   ImportAnalysis,
   ImportHash as ImportHashType,
+  ImportStep,
   ImportThermomixSettings,
   Proposal,
 } from '~/system/ai/types'
@@ -63,59 +64,47 @@ const ingredientSchema = z.object({
   quantity: clampedField(RECIPE_MAX.ingredientQuantity),
 })
 
-// A step comes back as an object carrying the text plus optional Thermomix
+// One step's nested Thermomix settings, normalized to the domain's "absent = no
+// key" convention. `reverse: false` carries no information — Gemini sometimes emits
+// it instead of nothing on plain steps, and it must not turn them into "Thermomix"
+// steps — so it is dropped, leaving a plain step the empty settings object `{}`.
+const settingsSchema = z
+  .object({
+    time: optionalClamped(RECIPE_MAX.thermomix),
+    temperature: optionalClamped(RECIPE_MAX.thermomix),
+    speed: optionalClamped(RECIPE_MAX.thermomix),
+    reverse: nullAsAbsent(z.boolean()),
+  })
+  .transform(
+    ({ time, temperature, speed, reverse }): ImportThermomixSettings => ({
+      ...(time ? { time } : {}),
+      ...(temperature ? { temperature } : {}),
+      ...(speed ? { speed } : {}),
+      ...(reverse ? { reverse } : {}),
+    }),
+  )
+
+// A step comes back as an object carrying the text plus its nested Thermomix
 // settings; a bare string (schema-less fallback) is tolerated as a plain step.
-// A plain step is the empty settings object `{}` — never a hole in the array.
+// A plain step is the empty settings object `{}` — never a hole in the list.
 const stepSchema = z.union([
-  clamped(RECIPE_MAX.stepText).transform((text) => ({
-    text,
-    tmx: {},
-  })),
+  clamped(RECIPE_MAX.stepText).transform((text): ImportStep => ({ text, settings: {} })),
   z
     .object({
       text: clampedField(RECIPE_MAX.stepText),
-      tmxTime: optionalClamped(RECIPE_MAX.thermomix),
-      tmxTemperature: optionalClamped(RECIPE_MAX.thermomix),
-      tmxSpeed: optionalClamped(RECIPE_MAX.thermomix),
-      tmxReverse: nullAsAbsent(z.boolean()),
+      settings: nullAsAbsent(settingsSchema),
     })
-    .transform(({ text, tmxTime, tmxTemperature, tmxSpeed, tmxReverse }) => ({
-      text,
-      // tmxReverse: false carries no information — Gemini sometimes emits it
-      // instead of nothing on plain steps, and it must not turn them into
-      // "Thermomix" steps.
-      tmx:
-        tmxTime === undefined &&
-        tmxTemperature === undefined &&
-        tmxSpeed === undefined &&
-        !tmxReverse
-          ? {}
-          : {
-              ...(tmxTime ? { time: tmxTime } : {}),
-              ...(tmxTemperature ? { temperature: tmxTemperature } : {}),
-              ...(tmxSpeed ? { speed: tmxSpeed } : {}),
-              ...(tmxReverse !== undefined ? { reverse: tmxReverse } : {}),
-            },
-    })),
+    .transform(({ text, settings }): ImportStep => ({ text, settings: settings ?? {} })),
 ])
 
 // Drop blank ingredients and cap the count. Shared by import and proposal.
 const foldIngredients = (raw: { name: string; quantity: string }[]) =>
   raw.filter((i) => i.name && i.quantity).slice(0, MAX_ITEMS)
 
-// Drop blank steps, cap the count, and split into aligned steps/tmxSteps arrays.
-// tmxSteps collapses to `[]` when no surviving step carries a setting. Shared by
-// import and proposal.
-const foldSteps = (
-  raw: { text: string; tmx: ImportThermomixSettings }[],
-): { steps: string[]; tmxSteps: ImportThermomixSettings[] } => {
-  const kept = raw.filter((s) => s.text.length > 0).slice(0, MAX_ITEMS)
-  const tmxSteps = kept.map((s) => s.tmx)
-  return {
-    steps: kept.map((s) => s.text),
-    tmxSteps: tmxSteps.some((s) => Object.keys(s).length > 0) ? tmxSteps : [],
-  }
-}
+// Drop blank steps and cap the count. Shared by import and proposal — each step
+// keeps its own settings, so there is no parallel array to align.
+const foldSteps = (raw: ImportStep[]): ImportStep[] =>
+  raw.filter((s) => s.text.length > 0).slice(0, MAX_ITEMS)
 
 // Gemini marks absent fields as explicit null (the prompt instructs it to), so
 // every optional field accepts null and normalizes it away — parsing the response
@@ -132,19 +121,17 @@ export const ImportAnalysisSchema = z
     ingredients: z.array(ingredientSchema).default([]),
     steps: z.array(stepSchema).default([]),
   })
-  .transform((raw): ImportAnalysis => {
-    const { steps, tmxSteps } = foldSteps(raw.steps)
-    return {
+  .transform(
+    (raw): ImportAnalysis => ({
       type: raw.type,
       category: raw.category,
       // Title is required downstream; never let a blank one through.
       title: raw.title || 'Recette importée',
       ...(raw.sourceLabel ? { sourceLabel: raw.sourceLabel } : {}),
       ingredients: foldIngredients(raw.ingredients),
-      steps,
-      tmxSteps,
-    }
-  })
+      steps: foldSteps(raw.steps),
+    }),
+  )
 
 export const ProposalSchema = z
   .object({
@@ -153,16 +140,14 @@ export const ProposalSchema = z
     ingredients: z.array(ingredientSchema).default([]),
     steps: z.array(stepSchema).default([]),
   })
-  .transform((raw): Proposal => {
-    const { steps, tmxSteps } = foldSteps(raw.steps)
-    return {
+  .transform(
+    (raw): Proposal => ({
       changeSummary: raw.changeSummary,
       rationale: raw.rationale,
       ingredients: foldIngredients(raw.ingredients),
-      steps,
-      tmxSteps,
-    }
-  })
+      steps: foldSteps(raw.steps),
+    }),
+  )
 
 // The model's explicit signal that the source holds no recipe. Checked before
 // the full schema so a `recipeFound: false` reply with everything else blank

@@ -44,7 +44,7 @@ export type Ingredient = { name: IngredientName; quantity: IngredientQuantity }
 // Thermomix settings for one step, display-oriented strings (no computation is
 // ever done on them — "Varoma" and "pétrin" are valid values, not numbers).
 // Every field absent (`{}`) means "this step carries no Thermomix setting" — the
-// single representation of a plain step inside the parallel `tmxSteps` array.
+// single representation of a plain step inside a `ThermomixStep`.
 export type ThermomixSettings = {
   time?: ThermomixTime // "3 min", "30 s", "1 h 10 min"
   temperature?: ThermomixTemperature // "100°C", "Varoma"
@@ -54,6 +54,10 @@ export type ThermomixSettings = {
 
 export type VersionOriginKind = 'import' | 'ai-proposal' | 'manual'
 export type VersionOrigin = { kind: VersionOriginKind; detail?: string }
+
+// The lineage entry lives in its own module (the type-agnostic versioning
+// envelope), re-exported here so callers keep a single recipe-domain import.
+export type { RecipeVersion } from '~/domain/recipe/version'
 
 // The aggregate root. A light pointer document: the heavy version data lives in
 // the satellite `recipe-versions` collection keyed `${recipeId}_${number}`. The
@@ -70,37 +74,4 @@ export type Recipe = {
   versionCount: VersionNumber // highest version number allocated so far
   createdAt: Date
   updatedAt: Date
-}
-
-// One entry in a recipe's linear lineage (v1 → v2 → …). Its content and lineage
-// (steps/ingredients/tmxSteps/origin/change/basedOn) are immutable, but a version
-// *is* an attempt: it is a planned attempt while `executedAt` is absent, then carries
-// its outcome (rating/remarks/photo). The outcome is overwritable — recording again
-// re-cooks the same version in place rather than forcing a new one.
-export type RecipeVersion = {
-  userId: UserId
-  recipeId: RecipeId
-  number: VersionNumber
-  createdAt: Date
-  origin: VersionOrigin
-  change?: string // human summary of what changed ("Bouillon 700 → 650 ml"); absent on v1
-  // The version this one iterates on — set to the attempt it was proposed from
-  // (`versionToOpen` at proposal time); absent on the original v1, which iterates
-  // on nothing. Drives the "attempt in progress" branch of `versionToOpen`.
-  basedOn?: VersionNumber
-  why?: string // AI rationale, for proposed versions
-  steps: StepText[]
-  // The recipe's components with quantities. `[]` when the recipe has nothing
-  // measurable.
-  ingredients: Ingredient[]
-  // Thermomix settings aligned with `steps` by index (an entry with every field
-  // absent — `{}` — = plain step). `[]` for non-thermomix recipes — "is Thermomix"
-  // is derived from `type === 'thermomix'`, never from the presence of this array.
-  tmxSteps: ThermomixSettings[]
-  // The attempt outcome, written once when the version is executed. All absent
-  // while the version is still a planned attempt (no `executedAt`).
-  executedAt?: Date
-  rating?: Rating
-  remarks?: Remarks
-  photoPath?: string // GCS object path; never exposed raw (see photoUrl)
 }

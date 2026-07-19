@@ -1,9 +1,9 @@
-import { alignedThermomixSteps, nextVersionNumber } from '~/domain/recipe/business-rules'
+import { nextVersionNumber } from '~/domain/recipe/business-rules'
+import type { VersionContent } from '~/domain/recipe/content/types'
 import * as repository from '~/domain/recipe/infrastructure/repository'
 import { randomRecipeId, VersionNumber } from '~/domain/recipe/primitives'
 import type {
   DishCategory,
-  Ingredient,
   Rating,
   Recipe,
   RecipeId,
@@ -11,8 +11,6 @@ import type {
   RecipeType,
   RecipeVersion,
   Remarks,
-  StepText,
-  ThermomixSettings,
   VersionNumber as VersionNumberT,
   VersionOrigin,
 } from '~/domain/recipe/types'
@@ -25,18 +23,14 @@ export type NewRecipeInput = {
   type: RecipeType
   category: DishCategory
   title: RecipeTitle
-  steps: StepText[]
-  ingredients: Ingredient[]
-  tmxSteps: ThermomixSettings[]
+  content: VersionContent
 }
 
 export type NewVersionInput = {
   change: string
   basedOn?: VersionNumberT
   why?: string
-  steps: StepText[]
-  ingredients: Ingredient[]
-  tmxSteps: ThermomixSettings[]
+  content: VersionContent
 }
 
 export type RecordAttemptInput = {
@@ -51,6 +45,9 @@ export namespace RecipeCommand {
   // Create → recipe + its v1, written atomically. v1 is the original planned attempt
   // (no `basedOn`, it iterates on nothing) and awaits its first cook.
   export const create = async (userId: UserId, input: NewRecipeInput, sourceLabel?: string) => {
+    // The body's discriminant must mirror the recipe type — a dish recipe cannot
+    // carry Thermomix content and vice versa. Enforced here, no throw.
+    if (input.content.kind !== input.type) return 'content-type-mismatch' as const
     const now = new Date()
     const recipe: Recipe = {
       id: randomRecipeId(),
@@ -79,9 +76,9 @@ export namespace RecipeCommand {
   export const addVersion = async (userId: UserId, recipeId: RecipeId, input: NewVersionInput) => {
     const recipe = await repository.findBy(userId, recipeId)
     if (!recipe) return 'not-found' as const
+    // The body's discriminant must mirror the recipe type (see `create`).
+    if (input.content.kind !== recipe.type) return 'content-type-mismatch' as const
     const number = nextVersionNumber(recipe.versionCount)
-    const tmxSteps =
-      recipe.type === 'thermomix' ? alignedThermomixSteps(input.steps, input.tmxSteps) : []
     const version: RecipeVersion = {
       userId,
       recipeId,
@@ -91,9 +88,7 @@ export namespace RecipeCommand {
       change: input.change,
       ...(input.basedOn !== undefined ? { basedOn: input.basedOn } : {}),
       ...(input.why ? { why: input.why } : {}),
-      steps: input.steps,
-      ingredients: input.ingredients,
-      tmxSteps,
+      content: input.content,
       // No outcome fields: a freshly appended version is a planned attempt, never
       // cooked yet (the full-document write leaves nothing of an older outcome).
     }
@@ -122,9 +117,9 @@ export namespace RecipeCommand {
     if (!version) return 'not-found' as const
     // Drop the previous photo before spreading: a re-cook without a photo must
     // erase the one the earlier attempt left behind, not inherit it.
-    const { photoPath: _replacedPhoto, ...content } = version
+    const { photoPath: _replacedPhoto, ...rest } = version
     const executed: RecipeVersion = {
-      ...content,
+      ...rest,
       executedAt: new Date(),
       rating: input.rating,
       remarks: input.remarks,
@@ -167,21 +162,18 @@ export namespace RecipeCommand {
     await bulkSave(versions, (version) => repository.saveVersion(version))
   }
 
-  const firstVersion = (recipe: Recipe, origin: VersionOrigin, input: NewRecipeInput) => {
-    // Thermomix settings only exist on thermomix recipes — [] for any other type.
-    const tmxSteps =
-      recipe.type === 'thermomix' ? alignedThermomixSteps(input.steps, input.tmxSteps) : []
-    return {
-      userId: recipe.userId,
-      recipeId: recipe.id,
-      number: FIRST_VERSION,
-      createdAt: recipe.createdAt,
-      origin,
-      // No `change`/`basedOn`: v1 is the original, it iterates on nothing and
-      // changes nothing. No outcome either — it awaits its first cook.
-      steps: input.steps,
-      ingredients: input.ingredients,
-      tmxSteps,
-    }
-  }
+  const firstVersion = (
+    recipe: Recipe,
+    origin: VersionOrigin,
+    input: NewRecipeInput,
+  ): RecipeVersion => ({
+    userId: recipe.userId,
+    recipeId: recipe.id,
+    number: FIRST_VERSION,
+    createdAt: recipe.createdAt,
+    origin,
+    // No `change`/`basedOn`: v1 is the original, it iterates on nothing and
+    // changes nothing. No outcome either — it awaits its first cook.
+    content: input.content,
+  })
 }

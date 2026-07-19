@@ -19,6 +19,11 @@ export type ImportThermomixSettings = {
   reverse?: boolean
 }
 
+// One extracted step: its text plus the Thermomix settings that go with it. Plain
+// strings — the domain layer validates and pairs them when the user confirms. An
+// empty settings object `{}` is a plain (non-machine) step.
+export type ImportStep = { text: string; settings: ImportThermomixSettings }
+
 // Raw structured recipe extracted by Gemini. Plain strings — the domain layer
 // validates them into branded types when the user confirms the import.
 export type ImportAnalysis = {
@@ -27,9 +32,7 @@ export type ImportAnalysis = {
   title: string
   sourceLabel?: string
   ingredients: { name: string; quantity: string }[]
-  steps: string[]
-  // Aligned with `steps` by index; `[]` when no step carries a setting.
-  tmxSteps: ImportThermomixSettings[]
+  steps: ImportStep[]
 }
 
 export type CachedImport = {
@@ -44,9 +47,8 @@ export type ProposalContext = {
   type: RecipeType
   category: DishCategory
   currentIngredients: { name: string; quantity: string }[]
-  currentSteps: string[]
-  // Aligned with `currentSteps` by index; an entry with no field is a plain step.
-  currentThermomixSteps: ImportThermomixSettings[]
+  // Each step carries its own Thermomix settings (an empty object is a plain step).
+  currentSteps: ImportStep[]
   attempts: {
     rating: number
     remarks: string
@@ -59,7 +61,5 @@ export type Proposal = {
   changeSummary: string
   rationale: string
   ingredients: { name: string; quantity: string }[]
-  steps: string[]
-  // Aligned with `steps` by index; `[]` when no step carries a setting.
-  tmxSteps: ImportThermomixSettings[]
+  steps: ImportStep[]
 }

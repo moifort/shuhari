@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test'
+import type { DishContent } from '~/domain/recipe/content/dish'
+import type { ThermomixContent } from '~/domain/recipe/content/thermomix'
 import type {
   Ingredient,
   IngredientName,
@@ -7,7 +9,6 @@ import type {
   RecipeId,
   RecipeTitle,
   StepText,
-  ThermomixSettings,
   ThermomixSpeed,
   ThermomixTemperature,
   ThermomixTime,
@@ -44,14 +45,24 @@ const ing = (name: string, quantity: string): Ingredient => ({
 const stepList = (...s: string[]) => s.map((x) => x as StepText)
 const PROPOSAL_INGREDIENTS = [ing('Veau', '800 g'), ing('Bouillon', '650 ml')]
 
-const recipeInput = (opts: { type?: 'dish' | 'thermomix' } = {}) => ({
-  type: opts.type ?? ('dish' as const),
-  category: 'main' as const,
-  title: 'Blanquette' as RecipeTitle,
-  steps: ['Saisir', 'Mijoter'] as StepText[],
+const dishContent = (): DishContent => ({
+  kind: 'dish',
   ingredients: [],
-  tmxSteps: [] as ThermomixSettings[],
+  steps: stepList('Saisir', 'Mijoter'),
 })
+
+const recipeInput = (opts: { type?: 'dish' | 'thermomix' } = {}) => {
+  const type = opts.type ?? ('dish' as const)
+  const content =
+    type === 'thermomix'
+      ? ({
+          kind: 'thermomix',
+          ingredients: [],
+          steps: stepList('Saisir', 'Mijoter').map((text) => ({ text, settings: {} })),
+        } as ThermomixContent)
+      : dishContent()
+  return { type, category: 'main' as const, title: 'Blanquette' as RecipeTitle, content }
+}
 
 const baseProposal = (): AiProposal => ({
   changeSummary: 'Bouillon 700 → 650 ml',
@@ -60,8 +71,10 @@ const baseProposal = (): AiProposal => ({
     { name: 'Veau', quantity: '800 g' },
     { name: 'Bouillon', quantity: '650 ml' },
   ],
-  steps: ['Saisir', 'Mijoter'],
-  tmxSteps: [],
+  steps: [
+    { text: 'Saisir', settings: {} },
+    { text: 'Mijoter', settings: {} },
+  ],
 })
 
 const baseAnalysis = (): ImportAnalysis => ({
@@ -70,8 +83,10 @@ const baseAnalysis = (): ImportAnalysis => ({
   title: 'Blanquette',
   sourceLabel: 'Grand-mère',
   ingredients: [{ name: 'Veau', quantity: '800 g' }],
-  steps: ['Saisir', 'Mijoter'],
-  tmxSteps: [],
+  steps: [
+    { text: 'Saisir', settings: {} },
+    { text: 'Mijoter', settings: {} },
+  ],
 })
 
 let fake = resetFakeFirestore()
@@ -88,6 +103,7 @@ describe('ProposalUseCase.fromAttempt', () => {
 
   test('returns not-found for an unknown version', async () => {
     const recipe = await RecipeCommand.create(userId, recipeInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
     expect(await ProposalUseCase.fromAttempt(userId, recipe.id, 9 as VersionNumber)).toBe(
       'not-found',
     )
@@ -95,6 +111,7 @@ describe('ProposalUseCase.fromAttempt', () => {
 
   test('returns the branded proposal based on the tried version, persisting nothing', async () => {
     const recipe = await RecipeCommand.create(userId, recipeInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
     const docReadsBefore = fake.docReads
     const queryReadsBefore = fake.queryReads
     const batchesBefore = fake.batches.length
@@ -104,8 +121,11 @@ describe('ProposalUseCase.fromAttempt', () => {
     expect(result.basedOn).toBe(V1)
     expect(result.changeSummary).toBe('Bouillon 700 → 650 ml')
     expect(result.rationale).toBe('Trop liquide')
-    expect(result.ingredients).toEqual(PROPOSAL_INGREDIENTS)
-    expect(result.steps).toEqual(stepList('Saisir', 'Mijoter'))
+    expect(result.content).toEqual({
+      kind: 'dish',
+      ingredients: PROPOSAL_INGREDIENTS,
+      steps: stepList('Saisir', 'Mijoter'),
+    })
 
     // Two keyed doc reads (the recipe pointer + the tried version, whose own outcome
     // feeds the AI) — no collection scan, no N+1, nothing written back.
@@ -114,28 +134,44 @@ describe('ProposalUseCase.fromAttempt', () => {
     expect(fake.batches.length).toBe(batchesBefore)
   })
 
-  test('aligns tmxSteps with the steps for a thermomix recipe, [] for a dish recipe', async () => {
+  test('pairs the steps with settings for a thermomix recipe, plain steps for a dish', async () => {
     proposal = {
       ...baseProposal(),
-      tmxSteps: [{ time: '5 min', temperature: '120°C', speed: '1' }, {}],
+      steps: [
+        { text: 'Saisir', settings: { time: '5 min', temperature: '120°C', speed: '1' } },
+        { text: 'Mijoter', settings: {} },
+      ],
     }
     const thermomix = await RecipeCommand.create(userId, recipeInput({ type: 'thermomix' }))
+    if (typeof thermomix === 'string') throw new Error('expected a recipe')
     const thermomixProposal = await ProposalUseCase.fromAttempt(userId, thermomix.id, V1)
     if (thermomixProposal === 'not-found') throw new Error('expected a proposal')
-    expect(thermomixProposal.tmxSteps).toEqual([
-      {
-        time: '5 min' as ThermomixTime,
-        temperature: '120°C' as ThermomixTemperature,
-        speed: '1' as ThermomixSpeed,
-      },
-      {},
-    ])
+    expect(thermomixProposal.content).toEqual({
+      kind: 'thermomix',
+      ingredients: PROPOSAL_INGREDIENTS,
+      steps: [
+        {
+          text: 'Saisir' as StepText,
+          settings: {
+            time: '5 min' as ThermomixTime,
+            temperature: '120°C' as ThermomixTemperature,
+            speed: '1' as ThermomixSpeed,
+          },
+        },
+        { text: 'Mijoter' as StepText, settings: {} },
+      ],
+    })
 
     // Same proposal on a dish recipe: Thermomix settings are dropped entirely.
     const dish = await RecipeCommand.create(userId, recipeInput())
+    if (typeof dish === 'string') throw new Error('expected a recipe')
     const dishProposal = await ProposalUseCase.fromAttempt(userId, dish.id, V1)
     if (dishProposal === 'not-found') throw new Error('expected a proposal')
-    expect(dishProposal.tmxSteps).toEqual([])
+    expect(dishProposal.content).toEqual({
+      kind: 'dish',
+      ingredients: PROPOSAL_INGREDIENTS,
+      steps: stepList('Saisir', 'Mijoter'),
+    })
   })
 })
 
@@ -159,15 +195,18 @@ describe('ProposalUseCase.fromPhoto', () => {
 describe('ProposalUseCase.accept', () => {
   test('appends version n+1 from the passed proposal, based on the threaded version', async () => {
     const recipe = await RecipeCommand.create(userId, recipeInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
     const queryReadsBefore = fake.queryReads
 
     const result = (await ProposalUseCase.accept(userId, recipe.id, {
       basedOn: V1,
       changeSummary: 'Bouillon 700 → 650 ml',
       rationale: 'Trop liquide',
-      ingredients: PROPOSAL_INGREDIENTS,
-      steps: stepList('Saisir', 'Mijoter'),
-      tmxSteps: [],
+      content: {
+        kind: 'dish',
+        ingredients: PROPOSAL_INGREDIENTS,
+        steps: stepList('Saisir', 'Mijoter'),
+      },
     })) as Recipe
     expect(result.versionCount).toBe(2 as VersionNumber)
 
@@ -176,8 +215,11 @@ describe('ProposalUseCase.accept', () => {
     expect(v2?.why).toBe('Trop liquide')
     // basedOn is threaded through the payload — no lineage rescan to recover it.
     expect(v2?.basedOn).toBe(1 as VersionNumber)
-    expect(v2?.ingredients).toEqual(PROPOSAL_INGREDIENTS)
-    expect(v2?.steps).toEqual(stepList('Saisir', 'Mijoter'))
+    expect(v2?.content).toEqual({
+      kind: 'dish',
+      ingredients: PROPOSAL_INGREDIENTS,
+      steps: stepList('Saisir', 'Mijoter'),
+    })
     expect(v2?.origin).toEqual({ kind: 'ai-proposal' })
     expect(fake.queryReads - queryReadsBefore).toBe(0)
   })
@@ -188,9 +230,7 @@ describe('ProposalUseCase.accept', () => {
         basedOn: V1,
         changeSummary: 'x',
         rationale: 'y',
-        ingredients: PROPOSAL_INGREDIENTS,
-        steps: stepList('Saisir'),
-        tmxSteps: [],
+        content: { kind: 'dish', ingredients: PROPOSAL_INGREDIENTS, steps: stepList('Saisir') },
       }),
     ).toBe('not-found')
   })

@@ -41,6 +41,38 @@ const ingredientsSchemaProperty = {
   },
 }
 
+// Nested Thermomix settings for one step. Every field is null on a step that is
+// not performed on the Thermomix (or on a non-Thermomix recipe).
+const thermomixSettingsSchemaProperty = {
+  type: 'object',
+  nullable: true,
+  description: 'Thermomix settings for this step; null (or every field null) when it has none',
+  properties: {
+    time: {
+      type: 'string',
+      nullable: true,
+      description: 'Thermomix time (e.g. "3 min", "30 s"); null when the step has none',
+    },
+    temperature: {
+      type: 'string',
+      nullable: true,
+      description: 'Thermomix temperature (e.g. "100°C", "Varoma"); null when the step has none',
+    },
+    speed: {
+      type: 'string',
+      nullable: true,
+      description:
+        'Thermomix speed (e.g. "5", "3,5", "pétrin", "mijotage", "turbo"); null when the step has none',
+    },
+    reverse: {
+      type: 'boolean',
+      nullable: true,
+      description: 'Reverse rotation enabled; null when the step has none',
+    },
+  },
+  propertyOrdering: ['time', 'temperature', 'speed', 'reverse'],
+}
+
 const stepsSchemaProperty = {
   type: 'array',
   description: 'Short, actionable steps in order, written in French',
@@ -51,32 +83,12 @@ const stepsSchemaProperty = {
         type: 'string',
         description: 'Short step text, in French, imperative mood, ≤300 characters',
       },
-      // Always return the step object; the tmx* settings are null on a step that
-      // is not performed on the Thermomix (never skip or drop the step itself).
-      tmxTime: {
-        type: 'string',
-        nullable: true,
-        description: 'Thermomix time (e.g. "3 min", "30 s"); null when the step has none',
-      },
-      tmxTemperature: {
-        type: 'string',
-        nullable: true,
-        description: 'Thermomix temperature (e.g. "100°C", "Varoma"); null when the step has none',
-      },
-      tmxSpeed: {
-        type: 'string',
-        nullable: true,
-        description:
-          'Thermomix speed (e.g. "5", "3,5", "pétrin", "mijotage", "turbo"); null when the step has none',
-      },
-      tmxReverse: {
-        type: 'boolean',
-        nullable: true,
-        description: 'Reverse rotation enabled; null when the step has none',
-      },
+      // Always return the step object; its settings are null on a step that is not
+      // performed on the Thermomix (never skip or drop the step itself).
+      settings: thermomixSettingsSchemaProperty,
     },
     required: ['text'],
-    propertyOrdering: ['text', 'tmxTime', 'tmxTemperature', 'tmxSpeed', 'tmxReverse'],
+    propertyOrdering: ['text', 'settings'],
   },
 }
 
@@ -145,7 +157,7 @@ Rules:
 - Determine the dish category: starter, main, dessert, soup, sauce or baking (pastry, bread, viennoiserie). When in doubt, pick main.
 - ingredients: the ORDERED list of the recipe's components with their quantity (e.g. Gin → 50 ml, Beurre → 170 g, Fraise → 3 pièces). Include EVERY ingredient visible in the source, each with its quantity and unit. This is the recipe's "shopping list". The NAME stays short: the ingredient alone, never its preparation ("Pommes de terre", not "Pommes de terre épluchées et coupées en rondelles" — the preparation belongs in the steps).
 - steps: short steps, imperative mood, in order. Precise settings (oven temperature, duration, ratio…) stay in the step text.
-- For a Thermomix recipe (type thermomix): for every step performed on the Thermomix, fill tmxTime, tmxTemperature, tmxSpeed and tmxReverse exactly as stated in the recipe (time "3 min" / "30 s" / "1 h 10 min"; temperature "100°C" or "Varoma"; speed "0,5" to "10", "pétrin", "mijotage" or "turbo"). ALWAYS return every step as an object: use null for every missing setting, and for ALL of these fields when the step is not done on the Thermomix or when the recipe is not of type thermomix — never omit or merge a step because it carries no setting.
+- For a Thermomix recipe (type thermomix): for every step performed on the Thermomix, fill the nested settings object (time, temperature, speed, reverse) exactly as stated in the recipe (time "3 min" / "30 s" / "1 h 10 min"; temperature "100°C" or "Varoma"; speed "0,5" to "10", "pétrin", "mijotage" or "turbo"). ALWAYS return every step as an object: use null for every missing setting, and set settings to null (or leave its fields null) when the step is not done on the Thermomix or when the recipe is not of type thermomix — never omit or merge a step because it carries no setting.
 - Be concise: every value stays short (ingredient name ≤120, quantity ≤60, step ≤300, title ≤200, Thermomix setting ≤20 characters).
 - If the source contains no usable recipe (unreadable image or one without a recipe, off-topic page or text), set recipeFound to false and leave every other field empty or null. Otherwise set recipeFound to true.
 - Use null for any missing information.
@@ -212,12 +224,14 @@ export namespace Ai {
   const cuisineIterationRule = (_type: ProposalContext['type']) =>
     'For a dish or a Thermomix recipe, you may adjust several coherent elements at once. Return the COMPLETE ingredient and step list of the next version (not only what changes), plus a short summary of the changes.'
 
-  const formatThermomix = (thermomix: ProposalContext['currentThermomixSteps'][number]): string => {
+  const formatThermomix = (
+    settings: ProposalContext['currentSteps'][number]['settings'],
+  ): string => {
     const parts = [
-      thermomix.time && `time ${thermomix.time}`,
-      thermomix.temperature && `temperature ${thermomix.temperature}`,
-      thermomix.speed && `speed ${thermomix.speed}`,
-      thermomix.reverse && 'reverse rotation',
+      settings.time && `time ${settings.time}`,
+      settings.temperature && `temperature ${settings.temperature}`,
+      settings.speed && `speed ${settings.speed}`,
+      settings.reverse && 'reverse rotation',
     ].filter(Boolean)
     return parts.length ? ` [Thermomix: ${parts.join(', ')}]` : ''
   }
@@ -227,12 +241,8 @@ export namespace Ai {
       context.currentIngredients.map((i) => `- ${i.name} : ${i.quantity}`).join('\n') || '—'
     const steps =
       context.currentSteps
-        .map((s, i) => {
-          const thermomix = context.currentThermomixSteps[i]
-          // The parallel array is total, but shorter than the steps on a dish
-          // recipe (it is simply `[]` there) — an unaligned index is a plain step.
-          return `${i + 1}. ${s}${thermomix ? formatThermomix(thermomix) : ''}`
-        })
+        // Each step carries its own settings — an empty settings object is a plain step.
+        .map((s, i) => `${i + 1}. ${s.text}${formatThermomix(s.settings)}`)
         .join('\n') || '—'
     const attempts =
       context.attempts
@@ -270,16 +280,15 @@ Reminder: all text values you produce must be written in French.`
   }
 
   const hashSource = (source: ImportSource): ImportHashType => {
-    // 'v7' salts the cache: bumped from 'v6' because the import prompt was
-    // rewritten in English, the category enum values changed and tmxSteps no
-    // longer encodes a plain step as a null — so previously-analysed sources
-    // re-run instead of serving a stale result.
+    // 'v8' salts the cache: bumped from 'v7' because the import step schema moved
+    // from flat tmx* fields to a nested settings object — so previously-analysed
+    // sources re-run instead of serving a stale result.
     const material =
       source.kind === 'photos'
-        ? `v7|${source.photos.join('|')}`
+        ? `v8|${source.photos.join('|')}`
         : source.kind === 'url'
-          ? `v7|url:${source.url}`
-          : `v7|text:${source.text}`
+          ? `v8|url:${source.url}`
+          : `v8|text:${source.text}`
     return ImportHash(createHash('sha256').update(material).digest('hex'))
   }
 }

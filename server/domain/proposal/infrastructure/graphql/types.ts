@@ -1,7 +1,7 @@
 import { DishCategoryEnum, RecipeTypeEnum } from '~/domain/recipe/infrastructure/graphql/enums'
-import { IngredientType, ThermomixSettingsType } from '~/domain/recipe/infrastructure/graphql/types'
+import { VersionContentUnion } from '~/domain/recipe/infrastructure/graphql/types'
 import { builder } from '~/domain/shared/graphql/builder'
-import type { ImportAnalysis, ImportThermomixSettings } from '~/system/ai/types'
+import type { ImportAnalysis, ImportStep, ImportThermomixSettings } from '~/system/ai/types'
 import type { Proposal } from '../../types'
 
 export const ProposalType = builder.objectRef<Proposal>('Proposal').implement({
@@ -26,25 +26,12 @@ export const ProposalType = builder.objectRef<Proposal>('Proposal').implement({
         'The AI’s reasoning — why it thinks this change will help, based on your last remarks, ' +
         'e.g. `"You noted it was too sweet, so cutting the sugar should balance it"`',
     }),
-    ingredients: t.field({
-      type: [IngredientType],
+    content: t.field({
+      type: VersionContentUnion,
       description:
-        'The complete ingredient list of the suggested version, e.g. `"Sugar — 80 g"` (not just ' +
-        'what changed)',
-      resolve: (d) => d.ingredients,
-    }),
-    steps: t.expose('steps', {
-      type: ['StepText'],
-      description:
-        'The complete method of the suggested version, e.g. `"Rest the dough for 2 h"` (not just ' +
-        'what changed)',
-    }),
-    tmxSteps: t.field({
-      type: [ThermomixSettingsType],
-      description:
-        'Per-step Thermomix settings aligned with steps, e.g. `"10 min / 100°C / speed 2"` ' +
-        '(an entry with every field `null` = plain step; `[]` if not thermomix)',
-      resolve: (d) => d.tmxSteps,
+        'The complete body of the suggested version (not just what changed) — a `DishContent` or ' +
+        'a `ThermomixContent` depending on the recipe type',
+      resolve: (d) => d.content,
     }),
   }),
 })
@@ -73,6 +60,20 @@ const ImportThermomixSettingsType = builder
     }),
   })
 
+const ImportStepType = builder.objectRef<ImportStep>('ImportStep').implement({
+  description:
+    'A recipe step extracted by the AI (unvalidated preview): its text plus the Thermomix ' +
+    'settings that go with it (every field `null` = a plain step).',
+  fields: (t) => ({
+    text: t.exposeString('text'),
+    settings: t.field({
+      type: ImportThermomixSettingsType,
+      description: 'The step’s Thermomix settings (every field `null` = a plain step)',
+      resolve: (s) => s.settings,
+    }),
+  }),
+})
+
 export const ImportAnalysisType = builder.objectRef<ImportAnalysis>('ImportAnalysis').implement({
   description: 'Structured recipe extracted from an import source (editable preview)',
   fields: (t) => ({
@@ -84,13 +85,10 @@ export const ImportAnalysisType = builder.objectRef<ImportAnalysis>('ImportAnaly
     title: t.exposeString('title'),
     sourceLabel: t.exposeString('sourceLabel', { nullable: true }),
     ingredients: t.field({ type: [ImportIngredientType], resolve: (a) => a.ingredients }),
-    steps: t.exposeStringList('steps'),
-    tmxSteps: t.field({
-      type: [ImportThermomixSettingsType],
-      description:
-        'Per-step Thermomix settings, aligned with steps (an entry with every field `null` = ' +
-        'plain step; `[]` if not thermomix)',
-      resolve: (a) => a.tmxSteps,
+    steps: t.field({
+      type: [ImportStepType],
+      description: 'The extracted steps, each carrying its own Thermomix settings',
+      resolve: (a) => a.steps,
     }),
   }),
 })

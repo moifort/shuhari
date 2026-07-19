@@ -1,5 +1,7 @@
 import { make } from 'ts-brand'
 import { z } from 'zod'
+import { type LooseThermomixSettings, thermomixSteps } from '~/domain/recipe/content/thermomix'
+import type { VersionContent as VersionContentType } from '~/domain/recipe/content/types'
 import { RECIPE_MAX } from '~/domain/recipe/limits'
 import {
   DISH_CATEGORY_VALUES,
@@ -91,3 +93,56 @@ export const Remarks = (value: unknown) => {
   const v = z.string().max(2000).parse(value)
   return make<RemarksType>()(v)
 }
+
+// Boundary branding for a whole version body — the single constructor both the
+// GraphQL client payload and the (untrusted) AI proposal pass through. Discriminated
+// on `kind`: a dish carries plain-text steps, a Thermomix recipe nested steps whose
+// loose settings are normalized and paired via `thermomixSteps`. Every scalar is
+// re-validated by its branded constructor, so a raw payload can never sneak past.
+const looseIngredientSchema = z.object({ name: z.unknown(), quantity: z.unknown() })
+
+const looseSettingsSchema = z.object({
+  time: z.string().nullish(),
+  temperature: z.string().nullish(),
+  speed: z.string().nullish(),
+  reverse: z.boolean().nullish(),
+})
+
+const dishContentSchema = z.object({
+  kind: z.literal('dish'),
+  ingredients: z.array(looseIngredientSchema),
+  steps: z.array(z.unknown()),
+})
+
+const thermomixContentSchema = z.object({
+  kind: z.literal('thermomix'),
+  ingredients: z.array(looseIngredientSchema),
+  steps: z.array(z.object({ text: z.unknown(), settings: looseSettingsSchema.nullish() })),
+})
+
+const brandIngredient = (i: { name: unknown; quantity: unknown }) => ({
+  name: IngredientName(i.name),
+  quantity: IngredientQuantity(i.quantity),
+})
+
+const brandLooseSettings = (s: z.infer<typeof looseSettingsSchema>): LooseThermomixSettings => ({
+  ...(s.time ? { time: ThermomixTime(s.time) } : {}),
+  ...(s.temperature ? { temperature: ThermomixTemperature(s.temperature) } : {}),
+  ...(s.speed ? { speed: ThermomixSpeed(s.speed) } : {}),
+  ...(s.reverse ? { reverse: s.reverse } : {}),
+})
+
+const versionContentSchema = z
+  .discriminatedUnion('kind', [dishContentSchema, thermomixContentSchema])
+  .transform((raw): VersionContentType => {
+    const ingredients = raw.ingredients.map(brandIngredient)
+    if (raw.kind === 'dish') {
+      return { kind: 'dish', ingredients, steps: raw.steps.map((s) => StepText(s)) }
+    }
+    const texts = raw.steps.map((s) => StepText(s.text))
+    const settings = raw.steps.map((s) => brandLooseSettings(s.settings ?? {}))
+    return { kind: 'thermomix', ingredients, steps: thermomixSteps(texts, settings) }
+  })
+
+export const VersionContent = (value: unknown): VersionContentType =>
+  versionContentSchema.parse(value)
