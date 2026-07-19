@@ -2,7 +2,7 @@ import SwiftUI
 
 /// A library row: type icon tile, title, a subtitle with the version count, and
 /// the recipe's best rating ("the highest star" across every version it ever cooked)
-/// as the trailing value. Designed as a List row — the List provides insets,
+/// as trailing stars. Designed as a List row — the List provides insets,
 /// separators and the navigation chevron.
 struct LibraryRow: View {
     let title: String
@@ -33,16 +33,9 @@ struct LibraryRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if let bestRating {
-                HStack(alignment: .firstTextBaseline, spacing: 1) {
-                    Text("\(bestRating)")
-                        .font(.title3.weight(.semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(Theme.Status.rating(bestRating))
-                    Text("/5")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
-                .accessibilityLabel("Meilleure note \(bestRating) sur 5")
+                RatingStars(rating: Double(bestRating))
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .accessibilityLabel("Meilleure note \(bestRating) sur 5")
             }
         }
         .accessibilityElement(children: .combine)
