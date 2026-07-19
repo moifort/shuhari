@@ -22,10 +22,12 @@ the one worth cooking next.
 ### How a recipe evolves
 
 1. **Import** a recipe — it becomes `v1`.
-2. **Cook** a version and **rate the attempt** (1 to 5 stars, plus remarks and a photo). The outcome
-   lives on the version itself, and re-cooking the same version simply overwrites it.
-3. If you wrote remarks, the **AI proposes the next version**. Accept it and it is appended as
-   `v2` — a straight line, never a fork.
+2. **Cook** a version and **rate the attempt** (1 to 5 stars, plus remarks and a photo). Rated
+   without remarks, the outcome lands on the version you cooked, and re-cooking it simply
+   overwrites it.
+3. Write remarks and the **AI proposes the next version** instead. Accept it and it is appended as
+   `v2` — a straight line, never a fork — carrying that attempt as its own outcome; the version you
+   cooked is left untouched. Nothing is saved until you accept.
 4. The app derives the rest: the **best rating** is the highest-rated attempt (most recent one wins a
    tie), and the recipe opens on the **attempt in progress** — the newest version built on that
    best-rated one — falling back to the best-rated version, then to the latest.
