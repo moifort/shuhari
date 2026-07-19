@@ -15,7 +15,6 @@ import SwiftUI
 /// the in-memory AI proposal, the ingredient and step lists taken from the
 /// form's current (possibly edited) state.
 struct ProposalPage: View {
-    let type: RecipeType
     let proposal: Proposal
     let nextVersionNumber: Int
     /// The base version's content, to highlight what the proposal changes.
@@ -43,7 +42,6 @@ struct ProposalPage: View {
     @State private var steps: [EditableStep]
 
     init(
-        type: RecipeType,
         proposal: Proposal,
         nextVersionNumber: Int,
         baseIngredients: [Ingredient],
@@ -52,7 +50,6 @@ struct ProposalPage: View {
         onClose: @escaping () -> Void,
         onValidate: @escaping (_ edited: ProposalEdit) -> Void
     ) {
-        self.type = type
         self.proposal = proposal
         self.nextVersionNumber = nextVersionNumber
         self.baseIngredients = baseIngredients
@@ -237,7 +234,6 @@ struct ProposalPage: View {
 #Preview {
     NavigationStack {
         ProposalPage(
-            type: .dish,
             proposal: Fixtures.proposal,
             nextVersionNumber: 5,
             baseIngredients: Fixtures.bourguignonV4.ingredients,

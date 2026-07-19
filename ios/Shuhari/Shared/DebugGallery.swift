@@ -54,7 +54,6 @@ struct DebugGallery: View {
         case "proposal":
             NavigationStack {
                 ProposalPage(
-                    type: .dish,
                     proposal: Fixtures.proposal,
                     nextVersionNumber: 5,
                     baseIngredients: Fixtures.bourguignonV4.ingredients,

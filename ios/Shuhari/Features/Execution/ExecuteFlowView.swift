@@ -92,7 +92,6 @@ struct ExecuteFlowView: View {
                 // fetch. The base is the version it iterates on (`basedOn`).
                 let base = recipe.version(proposal.basedOn)
                 ProposalPage(
-                    type: recipe.type,
                     proposal: proposal,
                     nextVersionNumber: recipe.nextVersionNumber,
                     baseIngredients: base?.ingredients ?? [],
