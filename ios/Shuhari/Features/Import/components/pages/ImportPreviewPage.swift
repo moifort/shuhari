@@ -39,7 +39,7 @@ struct ImportPreviewPage: View {
         self._ingredients = State(initialValue: analysis.ingredients.map {
             EditableIngredient(name: $0.name, quantity: $0.quantity)
         })
-        self._stepTexts = State(initialValue: analysis.steps)
+        self._stepTexts = State(initialValue: analysis.steps.map(\.text))
     }
 
     var body: some View {
@@ -177,34 +177,31 @@ struct ImportPreviewPage: View {
             VStack(alignment: .leading, spacing: 6) {
                 TextField("Étape", text: $stepTexts[index], axis: .vertical)
                     .lineLimit(1...6)
-                tmxBadges(at: index)
+                thermomixBadges(at: index)
             }
         }
     }
 
     @ViewBuilder
-    private func tmxBadges(at index: Int) -> some View {
-        if let settings = analysis.tmxSteps[safe: index], !settings.isEmpty {
-            TmxSettingBadges(
-                time: settings.time,
-                temperature: settings.temperature,
-                speed: settings.speed,
-                reverse: settings.reverse
+    private func thermomixBadges(at index: Int) -> some View {
+        if let step = analysis.steps[safe: index], !step.settings.isEmpty {
+            ThermomixSettingBadges(
+                time: step.settings.time,
+                temperature: step.settings.temperature,
+                speed: step.settings.speed,
+                reverse: step.settings.reverse
             )
         }
     }
 
     private var edited: ImportAnalysis {
-        // Drop blank steps (the server rejects empty StepText), keeping tmxSteps
-        // aligned by the same surviving indices.
+        // Drop blank steps (the server rejects empty StepText); each surviving step
+        // keeps its own settings (`.plain` when it has none).
         let trimmedSteps = stepTexts.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
         let keptIndices = trimmedSteps.indices.filter { !trimmedSteps[$0].isEmpty }
-        let steps = keptIndices.map { trimmedSteps[$0] }
-        // The parallel array is total: a surviving step with no setting keeps its
-        // slot as `.plain`, so `steps` and `tmxSteps` stay the same length.
-        let tmxSteps = analysis.tmxSteps.isEmpty
-            ? []
-            : keptIndices.map { analysis.tmxSteps[safe: $0] ?? .plain }
+        let steps = keptIndices.map { index in
+            ThermomixStep(text: trimmedSteps[index], settings: analysis.steps[safe: index]?.settings ?? .plain)
+        }
         return ImportAnalysis(
             title: title.trimmingCharacters(in: .whitespacesAndNewlines),
             type: type,
@@ -216,7 +213,6 @@ struct ImportPreviewPage: View {
                 return Ingredient(name: name, quantity: quantity)
             },
             steps: steps,
-            tmxSteps: tmxSteps,
             sourceLabel: analysis.sourceLabel
         )
     }
@@ -236,6 +232,6 @@ private extension Array {
 
 #Preview("Thermomix") {
     NavigationStack {
-        ImportPreviewPage(analysis: Fixtures.importAnalysisTmx, isSaving: false, onCancel: {}, onSave: { _ in })
+        ImportPreviewPage(analysis: Fixtures.importAnalysisThermomix, isSaving: false, onCancel: {}, onSave: { _ in })
     }
 }

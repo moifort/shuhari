@@ -12,11 +12,11 @@ struct ReferenceVersionSection: View {
     var body: some View {
         if !version.steps.isEmpty {
             Section {
-                let tmxItems = TmxStepsList.Item.zipped(steps: version.steps, tmxSteps: version.tmxSteps)
-                if !tmxItems.isEmpty {
-                    TmxStepsList(items: tmxItems, modified: modified)
-                } else {
-                    StepsList(steps: version.steps, modified: modified)
+                switch version.content {
+                case .dish(_, let steps):
+                    StepsList(steps: steps, modified: modified)
+                case .thermomix(_, let steps):
+                    ThermomixStepsList(steps: steps, modified: modified)
                 }
             } header: {
                 Text("Description")

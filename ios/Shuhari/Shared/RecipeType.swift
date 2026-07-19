@@ -5,14 +5,14 @@ import SwiftUI
 /// is cooking-only.)
 enum RecipeType: String, CaseIterable, Sendable, Identifiable {
     case dish
-    case tmx
+    case thermomix
 
     var id: String { rawValue }
 
     var label: String {
         switch self {
         case .dish: "Plat"
-        case .tmx: "Thermomix"
+        case .thermomix: "Thermomix"
         }
     }
 
@@ -21,7 +21,7 @@ enum RecipeType: String, CaseIterable, Sendable, Identifiable {
     var shortLabel: String {
         switch self {
         case .dish: "Plat"
-        case .tmx: "TMX"
+        case .thermomix: "TMX"
         }
     }
 
@@ -34,7 +34,7 @@ enum RecipeType: String, CaseIterable, Sendable, Identifiable {
     func iconImage(filled: Bool) -> Image {
         switch self {
         case .dish: Image(systemName: filled ? "frying.pan.fill" : "frying.pan")
-        case .tmx: Image(filled ? "thermomix.fill" : "thermomix")
+        case .thermomix: Image(filled ? "thermomix.fill" : "thermomix")
         }
     }
 

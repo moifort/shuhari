@@ -8,12 +8,14 @@ mutation AnalyzeImport($photos: [String!]!, $url: String, $text: String) {
       name
       quantity
     }
-    steps
-    tmxSteps {
-      time
-      temperature
-      speed
-      reverse
+    steps {
+      text
+      settings {
+        time
+        temperature
+        speed
+        reverse
+      }
     }
   }
 }

@@ -19,7 +19,7 @@ struct Ingredient: Identifiable, Sendable, Hashable {
 
 /// Thermomix settings for one step (display-oriented strings — "Varoma" and
 /// "pétrin" are valid values, no computation is ever done on them).
-struct TmxSettings: Sendable, Hashable {
+struct ThermomixSettings: Sendable, Hashable {
     let time: String?
     let temperature: String?
     let speed: String?
@@ -27,9 +27,43 @@ struct TmxSettings: Sendable, Hashable {
 
     var isEmpty: Bool { time == nil && temperature == nil && speed == nil && !reverse }
 
-    /// A step carrying no Thermomix setting. The single spelling of "plain step"
-    /// inside a `tmxSteps` array, which never has holes.
-    static let plain = TmxSettings(time: nil, temperature: nil, speed: nil, reverse: false)
+    /// A step carrying no Thermomix setting. The single spelling of "plain step" —
+    /// every Thermomix step always carries its settings, `.plain` when it has none.
+    static let plain = ThermomixSettings(time: nil, temperature: nil, speed: nil, reverse: false)
+}
+
+/// One Thermomix step: its instruction plus the machine settings that go with it
+/// (`.plain` for a plain step — the settings are total, never a hole).
+struct ThermomixStep: Sendable, Hashable {
+    let text: String
+    let settings: ThermomixSettings
+}
+
+// MARK: - Version content
+
+/// A version's body, tagged by recipe type: a cooked dish carries plain-text
+/// steps, a Thermomix recipe carries steps that each embed their machine
+/// settings. Adding a recipe type later is one more case here.
+enum VersionContent: Sendable, Hashable {
+    case dish(ingredients: [Ingredient], steps: [String])
+    case thermomix(ingredients: [Ingredient], steps: [ThermomixStep])
+
+    /// The ingredient list, whichever variant this is.
+    var ingredients: [Ingredient] {
+        switch self {
+        case .dish(let ingredients, _): ingredients
+        case .thermomix(let ingredients, _): ingredients
+        }
+    }
+
+    /// The plain step instructions, whichever variant this is (a Thermomix step's
+    /// machine settings are dropped — this is the text-only view of the method).
+    var stepTexts: [String] {
+        switch self {
+        case .dish(_, let steps): steps
+        case .thermomix(_, let steps): steps.map(\.text)
+        }
+    }
 }
 
 // MARK: - Version
@@ -42,9 +76,10 @@ enum VersionOriginKind: Sendable {
 }
 
 /// An entry in a recipe's linear lineage (v1 → v2 → …). Its content (ingredients +
-/// steps + per-step Thermomix settings) is immutable; its attempt outcome (`rating`,
-/// `remarks`, `executedAt`, `photoUrl`) is written once, when the version is tried.
-/// A version is a planned attempt until `executedAt != nil`.
+/// steps, with per-step Thermomix settings for a Thermomix recipe) is immutable;
+/// its attempt outcome (`rating`, `remarks`, `executedAt`, `photoUrl`) is written
+/// once, when the version is tried. A version is a planned attempt until
+/// `executedAt != nil`.
 struct RecipeVersion: Identifiable, Sendable {
     let number: Int
     /// The version this one iterates on — the attempt it was built from. nil on the
@@ -54,13 +89,10 @@ struct RecipeVersion: Identifiable, Sendable {
     let why: String?
     let originKind: VersionOriginKind
     let originDetail: String?
-    /// The recipe's components with quantities (empty when none/absent).
-    let ingredients: [Ingredient]
-    let steps: [String]
-    /// Per-step Thermomix settings, aligned with `steps` (an entry whose fields are
-    /// all nil — `isEmpty` — is a plain step). Empty for non-Thermomix recipes —
-    /// "is Thermomix" is derived from `type`.
-    let tmxSteps: [TmxSettings]
+    /// The version body: a dish (plain-text steps) or a Thermomix recipe (per-step
+    /// machine settings). "Is Thermomix" is carried by the content variant, mirroring
+    /// the recipe `type`.
+    let content: VersionContent
     /// The recipe this version belongs to.
     let recipeId: String
     /// The attempt rating (1..5), or nil while the version hasn't been executed yet.
@@ -75,6 +107,11 @@ struct RecipeVersion: Identifiable, Sendable {
 
     var id: Int { number }
 
+    /// The version's ingredients, whichever content variant it carries.
+    var ingredients: [Ingredient] { content.ingredients }
+    /// The version's plain step texts, whichever content variant it carries.
+    var steps: [String] { content.stepTexts }
+
     /// Whether this version has been executed (its attempt recorded).
     var tried: Bool { executedAt != nil }
 }
@@ -83,34 +120,27 @@ struct RecipeVersion: Identifiable, Sendable {
 
 /// An ephemeral AI proposal for the next version of a recipe. Generated on
 /// demand, held in memory and never persisted: it carries the COMPLETE next
-/// version (ingredients + steps + tmxSteps) plus a short human summary of what
-/// changed. `basedOn` is the version it iterates on (the one just cooked).
+/// version (its `content`) plus a short human summary of what changed. `basedOn`
+/// is the version it iterates on (the one just cooked).
 struct Proposal: Sendable {
     /// The version this proposal iterates on — echoed back on accept.
     let basedOn: Int
     /// A short human summary of what the next version changes.
     let changeSummary: String
     let rationale: String
-    /// The full ingredient list of the proposed next version.
-    let ingredients: [Ingredient]
-    /// The full step list of the proposed next version.
-    let steps: [String]
-    /// Per-step Thermomix settings aligned with `steps` (an `isEmpty` entry = plain
-    /// step; the whole list is empty when not a Thermomix recipe).
-    let tmxSteps: [TmxSettings]
+    /// The full body of the proposed next version (dish or Thermomix).
+    let content: VersionContent
 }
 
 /// The complete next-version proposal handed back from the proposal screen
-/// and sent to `acceptProposal`. Full-replacement semantics — the lists are
+/// and sent to `acceptProposal`. Full-replacement semantics — the `content` is
 /// complete, not partial; `basedOn`, `changeSummary` and `rationale` carry through
 /// from the AI proposal unchanged.
 struct ProposalEdit: Sendable {
     let basedOn: Int
     let changeSummary: String
     let rationale: String
-    let ingredients: [Ingredient]
-    let steps: [String]
-    let tmxSteps: [TmxSettings]
+    let content: VersionContent
 }
 
 // MARK: - Recipe
@@ -158,7 +188,9 @@ struct Recipe: Identifiable, Sendable {
 
 // MARK: - Import
 
-/// Structured recipe extracted from an import source (editable preview).
+/// Structured recipe extracted from an import source (editable preview). Its steps
+/// each carry their own Thermomix settings (`.plain` for a plain dish step), so
+/// they read the same whatever the detected `type`.
 struct ImportAnalysis: Sendable, Hashable {
     var title: String
     var type: RecipeType
@@ -166,9 +198,8 @@ struct ImportAnalysis: Sendable, Hashable {
     var category: DishCategory
     /// The recipe's components with quantities (empty when none).
     var ingredients: [Ingredient] = []
-    var steps: [String]
-    /// Per-step Thermomix settings, aligned with `steps` (an `isEmpty` entry = plain
-    /// step; empty when the recipe carries none).
-    var tmxSteps: [TmxSettings] = []
+    /// The extracted steps, each carrying its own Thermomix settings (`.plain` for a
+    /// plain step).
+    var steps: [ThermomixStep]
     var sourceLabel: String?
 }

@@ -14,15 +14,7 @@ fragment ProposalFields on Proposal {
   basedOn
   changeSummary
   rationale
-  ingredients {
-    name
-    quantity
-  }
-  steps
-  tmxSteps {
-    time
-    temperature
-    speed
-    reverse
+  content {
+    ...VersionContentFields
   }
 }

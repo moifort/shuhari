@@ -8,7 +8,7 @@
 import ApolloAPI
 
 extension ShuhariGraphQL {
-  /// Thermomix step speed, display-oriented (e.g. "5", "pétrin", "turbo")
-  typealias TmxSpeed = String
+  /// The temperature of a Thermomix step, e.g. `"100°C"` or `"Varoma"` (its steam setting)
+  typealias ThermomixTemperature = String
 
 }

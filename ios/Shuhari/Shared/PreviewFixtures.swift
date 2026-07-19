@@ -48,14 +48,37 @@ enum Fixtures {
         Ingredient(name: "Parmesan", quantity: "60 g"),
     ]
 
+    /// The Thermomix method: each step carrying its own machine settings (the last
+    /// one plain — a rest with no machine action).
+    static let risottoSteps = [
+        ThermomixStep(
+            text: "Mettre l’oignon et l’ail dans le bol, mixer.",
+            settings: ThermomixSettings(time: "5 s", temperature: nil, speed: "5", reverse: false)
+        ),
+        ThermomixStep(
+            text: "Ajouter l’huile d’olive, faire revenir.",
+            settings: ThermomixSettings(time: "3 min", temperature: "120 °C", speed: "1", reverse: false)
+        ),
+        ThermomixStep(
+            text: "Ajouter le riz et le vin, cuire sans le gobelet doseur.",
+            settings: ThermomixSettings(time: "2 min", temperature: "100 °C", speed: "1", reverse: true)
+        ),
+        ThermomixStep(
+            text: "Ajouter le bouillon, cuire.",
+            settings: ThermomixSettings(time: "14 min", temperature: "100 °C", speed: "1", reverse: true)
+        ),
+        ThermomixStep(
+            text: "Ajouter le parmesan, mélanger, laisser reposer 2 min.",
+            settings: .plain
+        ),
+    ]
+
     // MARK: - Bœuf bourguignon (dish, pending v4)
 
     static let bourguignonV1 = RecipeVersion(
         number: 1, basedOn: nil, change: nil, why: nil, originKind: .import,
         originDetail: "Importée par photo",
-        ingredients: bourguignonIngredientsEarly,
-        steps: bourguignonSteps,
-        tmxSteps: [],
+        content: .dish(ingredients: bourguignonIngredientsEarly, steps: bourguignonSteps),
         recipeId: "bourguignon", rating: 3,
         remarks: "Bon mais la sauce manque de corps.",
         executedAt: date.addingTimeInterval(-86_400 * 28), photoUrl: nil,
@@ -65,9 +88,7 @@ enum Fixtures {
     static let bourguignonV2 = RecipeVersion(
         number: 2, basedOn: 1, change: "Ajout d’un bouquet garni", why: "Manque d’arômes.",
         originKind: .aiProposal, originDetail: nil,
-        ingredients: bourguignonIngredientsEarly,
-        steps: bourguignonSteps,
-        tmxSteps: [],
+        content: .dish(ingredients: bourguignonIngredientsEarly, steps: bourguignonSteps),
         recipeId: "bourguignon", rating: 3,
         remarks: "Plus parfumé, encore un peu ferme.",
         executedAt: date.addingTimeInterval(-86_400 * 18), photoUrl: nil,
@@ -81,9 +102,7 @@ enum Fixtures {
         why: "La sauce manquait de corps.",
         originKind: .aiProposal,
         originDetail: nil,
-        ingredients: bourguignonIngredients,
-        steps: bourguignonSteps,
-        tmxSteps: [],
+        content: .dish(ingredients: bourguignonIngredients, steps: bourguignonSteps),
         recipeId: "bourguignon",
         rating: 4,
         remarks: "Sauce nappante, viande fondante.",
@@ -99,9 +118,7 @@ enum Fixtures {
         why: "Viande encore un peu ferme.",
         originKind: .aiProposal,
         originDetail: nil,
-        ingredients: bourguignonIngredients,
-        steps: bourguignonStepsV4,
-        tmxSteps: [],
+        content: .dish(ingredients: bourguignonIngredients, steps: bourguignonStepsV4),
         recipeId: "bourguignon",
         rating: nil,
         remarks: nil,
@@ -126,7 +143,7 @@ enum Fixtures {
     /// The tried versions of the bourguignon, most recent first — its attempt journal.
     static let bourguignonAttempts = bourguignon.attempts
 
-    // MARK: - Risotto (tmx, per-step machine settings)
+    // MARK: - Risotto (thermomix, per-step machine settings)
 
     static let risottoV2 = RecipeVersion(
         number: 2,
@@ -135,21 +152,7 @@ enum Fixtures {
         why: "Trop liquide en fin de cuisson.",
         originKind: .aiProposal,
         originDetail: nil,
-        ingredients: risottoIngredients,
-        steps: [
-            "Mettre l’oignon et l’ail dans le bol, mixer.",
-            "Ajouter l’huile d’olive, faire revenir.",
-            "Ajouter le riz et le vin, cuire sans le gobelet doseur.",
-            "Ajouter le bouillon, cuire.",
-            "Ajouter le parmesan, mélanger, laisser reposer 2 min.",
-        ],
-        tmxSteps: [
-            TmxSettings(time: "5 s", temperature: nil, speed: "5", reverse: false),
-            TmxSettings(time: "3 min", temperature: "120 °C", speed: "1", reverse: false),
-            TmxSettings(time: "2 min", temperature: "100 °C", speed: "1", reverse: true),
-            TmxSettings(time: "14 min", temperature: "100 °C", speed: "1", reverse: true),
-            .plain,
-        ],
+        content: .thermomix(ingredients: risottoIngredients, steps: risottoSteps),
         recipeId: "risotto",
         rating: 4,
         remarks: "Bonne texture, manque un peu de sel.",
@@ -161,7 +164,7 @@ enum Fixtures {
     static let risotto = Recipe(
         id: "risotto",
         title: "Risotto au parmesan",
-        type: .tmx,
+        type: .thermomix,
         category: .main,
         createdAt: date.addingTimeInterval(-86_400 * 12),
         updatedAt: date,
@@ -178,9 +181,7 @@ enum Fixtures {
     static let freshImportV1 = RecipeVersion(
         number: 1, basedOn: nil, change: nil, why: nil, originKind: .import,
         originDetail: "Importée par photo",
-        ingredients: bourguignonIngredients,
-        steps: bourguignonSteps,
-        tmxSteps: [],
+        content: .dish(ingredients: bourguignonIngredients, steps: bourguignonSteps),
         recipeId: "fresh-import",
         rating: nil,
         remarks: nil,
@@ -209,24 +210,25 @@ enum Fixtures {
         basedOn: 4,
         changeSummary: "Bouillon 50 → 40 cl, cuisson 3 h 30 → 4 h",
         rationale: "La sauce reste un peu liquide et la viande gagnerait à confire plus longtemps ; réduire le bouillon et allonger la cuisson devrait concentrer les arômes.",
-        ingredients: [
-            Ingredient(name: "Bœuf (paleron)", quantity: "1,2 kg"),
-            Ingredient(name: "Lardons", quantity: "200 g"),
-            Ingredient(name: "Oignons", quantity: "2"),
-            Ingredient(name: "Carottes", quantity: "3"),
-            Ingredient(name: "Vin rouge", quantity: "75 cl"),
-            Ingredient(name: "Bouillon", quantity: "40 cl"),
-            Ingredient(name: "Farine", quantity: "30 g"),
-            Ingredient(name: "Bouquet garni", quantity: "1"),
-        ],
-        steps: [
-            "Saisir le bœuf sur toutes les faces, réserver.",
-            "Faire revenir lardons, oignons et carottes.",
-            "Singer avec la farine, mélanger.",
-            "Mouiller au vin et au bouillon, ajouter le bouquet garni.",
-            "Cuire à couvert 4 h.",
-        ],
-        tmxSteps: []
+        content: .dish(
+            ingredients: [
+                Ingredient(name: "Bœuf (paleron)", quantity: "1,2 kg"),
+                Ingredient(name: "Lardons", quantity: "200 g"),
+                Ingredient(name: "Oignons", quantity: "2"),
+                Ingredient(name: "Carottes", quantity: "3"),
+                Ingredient(name: "Vin rouge", quantity: "75 cl"),
+                Ingredient(name: "Bouillon", quantity: "40 cl"),
+                Ingredient(name: "Farine", quantity: "30 g"),
+                Ingredient(name: "Bouquet garni", quantity: "1"),
+            ],
+            steps: [
+                "Saisir le bœuf sur toutes les faces, réserver.",
+                "Faire revenir lardons, oignons et carottes.",
+                "Singer avec la farine, mélanger.",
+                "Mouiller au vin et au bouillon, ajouter le bouquet garni.",
+                "Cuire à couvert 4 h.",
+            ]
+        )
     )
 
     static let importAnalysis = ImportAnalysis(
@@ -245,18 +247,16 @@ enum Fixtures {
             "Incorporer l’œuf puis les poudres.",
             "Ajouter les noix de pécan torréfiées.",
             "Cuire 12 min à 180 °C.",
-        ],
-        tmxSteps: [],
+        ].map { ThermomixStep(text: $0, settings: .plain) },
         sourceLabel: "Photo du livre « Biscuits »"
     )
 
-    static let importAnalysisTmx = ImportAnalysis(
+    static let importAnalysisThermomix = ImportAnalysis(
         title: "Risotto au parmesan",
-        type: .tmx,
+        type: .thermomix,
         category: .main,
         ingredients: risottoIngredients,
-        steps: risottoV2.steps,
-        tmxSteps: risottoV2.tmxSteps,
+        steps: risottoSteps,
         sourceLabel: "Photo du livre Thermomix"
     )
 
@@ -265,8 +265,8 @@ enum Fixtures {
     static let libraryRecipes = [
         LibraryRecipe(id: "bourguignon", title: "Bœuf bourguignon", type: .dish, category: .main, versionCount: 4, bestRating: 5, updatedAt: Date()),
         LibraryRecipe(id: "joues", title: "Joues de bœuf confites", type: .dish, category: .main, versionCount: 1, bestRating: 4, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
-        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .main, versionCount: 2, bestRating: 4, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
-        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soup, versionCount: 1, bestRating: nil, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
+        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .thermomix, category: .main, versionCount: 2, bestRating: 4, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .thermomix, category: .soup, versionCount: 1, bestRating: nil, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
     ]
 }
 #endif

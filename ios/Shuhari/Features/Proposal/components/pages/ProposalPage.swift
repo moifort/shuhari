@@ -34,9 +34,9 @@ struct ProposalPage: View {
     private struct EditableStep: Identifiable {
         let id = UUID()
         var text: String
-        /// Per-step Thermomix settings, read-only, aligned with this step
-        /// (`.plain` when the step carries none).
-        let tmx: TmxSettings
+        /// This step's read-only Thermomix settings (`.plain` for a dish step or a
+        /// Thermomix step with no machine settings).
+        let settings: ThermomixSettings
     }
 
     @State private var ingredients: [EditableIngredient]
@@ -60,12 +60,21 @@ struct ProposalPage: View {
         self.isWorking = isWorking
         self.onClose = onClose
         self.onValidate = onValidate
-        self._ingredients = State(initialValue: proposal.ingredients.map {
+        self._ingredients = State(initialValue: proposal.content.ingredients.map {
             EditableIngredient(name: $0.name, quantity: $0.quantity)
         })
-        self._steps = State(initialValue: proposal.steps.enumerated().map { index, text in
-            EditableStep(text: text, tmx: proposal.tmxSteps[safe: index] ?? .plain)
-        })
+        self._steps = State(initialValue: Self.editableSteps(from: proposal.content))
+    }
+
+    /// The proposal's steps as editable rows, each keeping its own settings — a dish
+    /// step (or a plain Thermomix step) carries `.plain`.
+    private static func editableSteps(from content: VersionContent) -> [EditableStep] {
+        switch content {
+        case .dish(_, let steps):
+            return steps.map { EditableStep(text: $0, settings: .plain) }
+        case .thermomix(_, let steps):
+            return steps.map { EditableStep(text: $0.text, settings: $0.settings) }
+        }
     }
 
     var body: some View {
@@ -155,12 +164,12 @@ struct ProposalPage: View {
                         TextField("Étape", text: $steps[index].text, axis: .vertical)
                             .lineLimit(1...6)
                             .accessibilityIdentifier("edit-step")
-                        if !step.tmx.isEmpty {
-                            TmxSettingBadges(
-                                time: step.tmx.time,
-                                temperature: step.tmx.temperature,
-                                speed: step.tmx.speed,
-                                reverse: step.tmx.reverse
+                        if !step.settings.isEmpty {
+                            ThermomixSettingBadges(
+                                time: step.settings.time,
+                                temperature: step.settings.temperature,
+                                speed: step.settings.speed,
+                                reverse: step.settings.reverse
                             )
                         }
                     }
@@ -195,37 +204,33 @@ struct ProposalPage: View {
     }
 
     /// The COMPLETE proposal to accept: the AI summary, rationale and `basedOn`
-    /// carried through unchanged, the ingredient and step lists from the form's
-    /// current state. The proposal always carries the COMPLETE lists, and steps
-    /// stay aligned with their per-step Thermomix settings.
+    /// carried through unchanged, the ingredients and steps from the form's current
+    /// state. The content arm mirrors the proposal's — a Thermomix step keeps its
+    /// own settings, so there is nothing to re-align.
     private var currentProposal: ProposalEdit {
-        // Drop emptied steps, carrying each surviving row's tmx settings so `steps`
-        // and `tmxSteps` keep the same length — a cleared step must not desync them
-        // (a length mismatch makes the backend drop ALL Thermomix settings).
-        let survivingSteps = steps.compactMap { row -> (text: String, tmx: TmxSettings)? in
+        // Drop emptied steps; each surviving row already carries its own settings.
+        let survivingSteps = steps.compactMap { row -> EditableStep? in
             let text = row.text.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !text.isEmpty else { return nil }
-            return (text, row.tmx)
+            return EditableStep(text: text, settings: row.settings)
         }
-        let editedSteps = survivingSteps.map(\.text)
-        // Empty for a non-Thermomix recipe (the proposal had no tmxSteps);
-        // otherwise aligned 1:1 with the surviving steps.
-        let editedTmxSteps: [TmxSettings] = proposal.tmxSteps.isEmpty ? [] : survivingSteps.map(\.tmx)
+        let content: VersionContent
+        switch proposal.content {
+        case .dish:
+            content = .dish(ingredients: currentIngredients, steps: survivingSteps.map(\.text))
+        case .thermomix:
+            content = .thermomix(
+                ingredients: currentIngredients,
+                steps: survivingSteps.map { ThermomixStep(text: $0.text, settings: $0.settings) }
+            )
+        }
 
         return ProposalEdit(
             basedOn: proposal.basedOn,
             changeSummary: proposal.changeSummary,
             rationale: proposal.rationale,
-            ingredients: currentIngredients,
-            steps: editedSteps,
-            tmxSteps: editedTmxSteps
+            content: content
         )
-    }
-}
-
-private extension Array {
-    subscript(safe index: Int) -> Element? {
-        indices.contains(index) ? self[index] : nil
     }
 }
 

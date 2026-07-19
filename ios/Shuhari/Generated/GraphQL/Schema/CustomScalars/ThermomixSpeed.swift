@@ -8,7 +8,7 @@
 import ApolloAPI
 
 extension ShuhariGraphQL {
-  /// Thermomix step duration, display-oriented (e.g. "3 min", "30 s")
-  typealias TmxTime = String
+  /// The blade speed of a Thermomix step, e.g. `"5"`, `"pétrin"` (kneading) or `"turbo"`
+  typealias ThermomixSpeed = String
 
 }

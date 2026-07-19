@@ -57,9 +57,7 @@ func mapVersion(_ v: ShuhariGraphQL.VersionFields) -> RecipeVersion {
         why: v.why,
         originKind: VersionOriginKind(graphql: v.originKind),
         originDetail: v.originDetail,
-        ingredients: v.ingredients.map { Ingredient(name: $0.name, quantity: $0.quantity) },
-        steps: v.steps,
-        tmxSteps: v.tmxSteps.map { TmxSettings(time: $0.time, temperature: $0.temperature, speed: $0.speed, reverse: $0.reverse ?? false) },
+        content: mapVersionContent(v.content.fragments.versionContentFields),
         recipeId: v.recipeId,
         rating: v.rating,
         remarks: v.remarks,
@@ -74,8 +72,35 @@ func mapProposal(_ d: ShuhariGraphQL.ProposalFields) -> Proposal {
         basedOn: d.basedOn,
         changeSummary: d.changeSummary,
         rationale: d.rationale,
-        ingredients: d.ingredients.map { Ingredient(name: $0.name, quantity: $0.quantity) },
-        steps: d.steps,
-        tmxSteps: d.tmxSteps.map { TmxSettings(time: $0.time, temperature: $0.temperature, speed: $0.speed, reverse: $0.reverse ?? false) }
+        content: mapVersionContent(d.content.fragments.versionContentFields)
     )
+}
+
+/// The version-body union → the Swift `VersionContent`. An unknown `__typename`
+/// (a content type the app doesn't know yet) maps to an empty dish, matching the
+/// lenient unknown-enum style in `RecipeType+GraphQL.swift`.
+func mapVersionContent(_ c: ShuhariGraphQL.VersionContentFields) -> VersionContent {
+    if let dish = c.asDishContent {
+        return .dish(
+            ingredients: dish.ingredients.map { Ingredient(name: $0.name, quantity: $0.quantity) },
+            steps: dish.dishSteps
+        )
+    }
+    if let thermomix = c.asThermomixContent {
+        return .thermomix(
+            ingredients: thermomix.ingredients.map { Ingredient(name: $0.name, quantity: $0.quantity) },
+            steps: thermomix.thermomixSteps.map { step in
+                ThermomixStep(
+                    text: step.text,
+                    settings: ThermomixSettings(
+                        time: step.settings.time,
+                        temperature: step.settings.temperature,
+                        speed: step.settings.speed,
+                        reverse: step.settings.reverse ?? false
+                    )
+                )
+            }
+        )
+    }
+    return .dish(ingredients: [], steps: [])
 }

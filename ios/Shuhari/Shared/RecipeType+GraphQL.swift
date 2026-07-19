@@ -8,7 +8,7 @@ extension RecipeType {
         case .case(let value):
             switch value {
             case .dish: self = .dish
-            case .tmx: self = .tmx
+            case .thermomix: self = .thermomix
             }
         case .unknown:
             self = .dish
@@ -18,7 +18,7 @@ extension RecipeType {
     var graphQLValue: GraphQLEnum<ShuhariGraphQL.RecipeType> {
         switch self {
         case .dish: .case(.dish)
-        case .tmx: .case(.tmx)
+        case .thermomix: .case(.thermomix)
         }
     }
 }

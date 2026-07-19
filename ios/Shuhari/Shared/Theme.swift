@@ -12,7 +12,7 @@ enum Theme {
         /// shares the attempt accent, since a modification is what an attempt is about.
         static let changed = Self.attempt
         /// Thermomix machine settings.
-        static let tmx = Color.teal
+        static let thermomix = Color.teal
 
         /// Attempt rating thresholds: ≥ 4 high, 3 medium, ≤ 2 low.
         static func rating(_ rating: Int) -> Color {

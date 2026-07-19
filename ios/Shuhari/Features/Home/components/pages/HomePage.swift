@@ -144,7 +144,7 @@ private struct HomePagePreview: View {
                 libraryHasMore: false,
                 libraryLoadMoreFailed: false,
                 title: "Cuisine",
-                typeFilter: .init(options: [.dish, .tmx], selection: $selectedType),
+                typeFilter: .init(options: [.dish, .thermomix], selection: $selectedType),
                 sort: $sort,
                 categoryFilter: $category,
                 onSettings: {}

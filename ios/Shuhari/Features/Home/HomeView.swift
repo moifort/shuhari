@@ -17,7 +17,7 @@ struct HomeView: View {
     /// Multi-type tabs (cooking) offer a segmented type filter; single-type tabs don't.
     private var isMultiType: Bool { categoryTypes.count > 1 }
 
-    /// The type segments in design order — e.g. `[.dish, .tmx]` for cooking.
+    /// The type segments in design order — e.g. `[.dish, .thermomix]` for cooking.
     private var filterOptions: [RecipeType] {
         RecipeType.allCases.filter { categoryTypes.contains($0) }
     }
@@ -103,5 +103,5 @@ struct HomeView: View {
 }
 
 #Preview {
-    HomeView(title: "Cuisine", categoryTypes: [.dish, .tmx], importedRecipe: .constant(nil))
+    HomeView(title: "Cuisine", categoryTypes: [.dish, .thermomix], importedRecipe: .constant(nil))
 }

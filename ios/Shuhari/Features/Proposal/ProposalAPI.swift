@@ -7,14 +7,11 @@ enum ProposalAPI {
     /// next version — the lists are complete, not partial. `basedOn` is echoed back
     /// so the new version records what it was built from.
     static func accept(recipeId: String, proposal: ProposalEdit) async throws {
-        let tmxSteps = proposal.tmxSteps.map { GraphQLHelpers.tmxSettingsInput($0) }
         let input = ShuhariGraphQL.ProposalInput(
             basedOn: proposal.basedOn,
             changeSummary: proposal.changeSummary,
-            ingredients: proposal.ingredients.map { ShuhariGraphQL.IngredientInput(name: $0.name, quantity: $0.quantity) },
-            rationale: proposal.rationale,
-            steps: proposal.steps,
-            tmxSteps: tmxSteps
+            content: GraphQLHelpers.versionContentInput(proposal.content),
+            rationale: proposal.rationale
         )
 
         _ = try await GraphQLHelpers.perform(

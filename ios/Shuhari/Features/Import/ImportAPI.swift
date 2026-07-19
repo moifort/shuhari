@@ -42,23 +42,37 @@ enum ImportAPI {
             type: RecipeType(graphql: analysis.type),
             category: DishCategory(graphql: analysis.category),
             ingredients: analysis.ingredients.map { Ingredient(name: $0.name, quantity: $0.quantity) },
-            steps: analysis.steps,
-            tmxSteps: analysis.tmxSteps.map { TmxSettings(time: $0.time, temperature: $0.temperature, speed: $0.speed, reverse: $0.reverse ?? false) },
+            steps: analysis.steps.map { step in
+                ThermomixStep(
+                    text: step.text,
+                    settings: ThermomixSettings(
+                        time: step.settings.time,
+                        temperature: step.settings.temperature,
+                        speed: step.settings.speed,
+                        reverse: step.settings.reverse ?? false
+                    )
+                )
+            },
             sourceLabel: analysis.sourceLabel
         )
     }
 
     /// Create a recipe and its v1 from a confirmed preview. Returns the recipe id.
+    /// The content arm mirrors the detected type: a dish keeps plain-text steps, a
+    /// Thermomix recipe keeps each step's machine settings.
     static func create(_ analysis: ImportAnalysis) async throws -> String {
-        let tmxSteps = analysis.tmxSteps.map { GraphQLHelpers.tmxSettingsInput($0) }
-        let ingredients = analysis.ingredients.map { ShuhariGraphQL.IngredientInput(name: $0.name, quantity: $0.quantity) }
+        let content: VersionContent
+        switch analysis.type {
+        case .dish:
+            content = .dish(ingredients: analysis.ingredients, steps: analysis.steps.map(\.text))
+        case .thermomix:
+            content = .thermomix(ingredients: analysis.ingredients, steps: analysis.steps)
+        }
         let input = ShuhariGraphQL.CreateRecipeInput(
             category: analysis.category.graphQLValue,
-            ingredients: ingredients,
+            content: GraphQLHelpers.versionContentInput(content),
             sourceLabel: GraphQLHelpers.graphQLNullable(analysis.sourceLabel),
-            steps: analysis.steps,
             title: analysis.title,
-            tmxSteps: tmxSteps,
             type: analysis.type.graphQLValue
         )
         let data = try await GraphQLHelpers.perform(

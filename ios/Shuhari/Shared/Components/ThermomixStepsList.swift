@@ -4,7 +4,7 @@ import SwiftUI
 /// machine settings (time / temperature / speed / reverse blade).
 /// Renders one row per step (List/Form-friendly), like `StepsList`; `big`
 /// enlarges everything for the hands-busy execution mode.
-struct TmxStepsList: View {
+struct ThermomixStepsList: View {
     struct Item {
         let text: String
         let time: String?
@@ -58,7 +58,7 @@ struct TmxStepsList: View {
     }
 
     private func badges(_ item: Item) -> some View {
-        TmxSettingBadges(
+        ThermomixSettingBadges(
             time: item.time,
             temperature: item.temperature,
             speed: item.speed,
@@ -68,11 +68,29 @@ struct TmxStepsList: View {
     }
 }
 
+extension ThermomixStepsList {
+    /// Feed the list straight from the nested `ThermomixStep` model — each step
+    /// already carries its own settings, so there is nothing to re-align.
+    init(steps: [ThermomixStep], big: Bool = false, modified: Set<Int> = []) {
+        self.items = steps.map {
+            Item(
+                text: $0.text,
+                time: $0.settings.time,
+                temperature: $0.settings.temperature,
+                speed: $0.settings.speed,
+                reverse: $0.settings.reverse
+            )
+        }
+        self.big = big
+        self.modified = modified
+    }
+}
+
 /// Read-only capsule badges for one step's Thermomix settings (time / temperature
-/// / speed / reverse), tinted `Theme.Status.tmx`. Shared by the read-only
-/// `TmxStepsList` and the editable import preview (where step text is editable
-/// but the machine settings stay read-only).
-struct TmxSettingBadges: View {
+/// / speed / reverse), tinted `Theme.Status.thermomix`. Shared by the read-only
+/// `ThermomixStepsList` and the editable import preview (where step text is
+/// editable but the machine settings stay read-only).
+struct ThermomixSettingBadges: View {
     let time: String?
     let temperature: String?
     let speed: String?
@@ -107,36 +125,17 @@ struct TmxSettingBadges: View {
         }
         .font((big ? Font.subheadline : .caption).weight(.semibold))
         .monospacedDigit()
-        .foregroundStyle(Theme.Status.tmx)
+        .foregroundStyle(Theme.Status.thermomix)
         .padding(.horizontal, big ? 10 : 8)
         .padding(.vertical, big ? 5 : 3)
-        .background(Theme.Status.tmx.opacity(0.12), in: Capsule())
+        .background(Theme.Status.thermomix.opacity(0.12), in: Capsule())
         .accessibilityElement(children: .combine)
-    }
-}
-
-extension TmxStepsList.Item {
-    /// Builds the rows only when the settings usably mirror the steps: same
-    /// count and at least one step actually carrying a setting. Returns `[]`
-    /// otherwise — callers fall back to the plain `StepsList`.
-    static func zipped(steps: [String], tmxSteps: [TmxSettings]) -> [TmxStepsList.Item] {
-        guard tmxSteps.count == steps.count,
-              tmxSteps.contains(where: { !$0.isEmpty }) else { return [] }
-        return zip(steps, tmxSteps).map { text, settings in
-            TmxStepsList.Item(
-                text: text,
-                time: settings.time,
-                temperature: settings.temperature,
-                speed: settings.speed,
-                reverse: settings.reverse
-            )
-        }
     }
 }
 
 #Preview {
     List {
-        TmxStepsList(items: [
+        ThermomixStepsList(items: [
             .init(
                 text: "Mettre l'oignon et l'ail dans le bol, mixer.",
                 time: "5 s", temperature: nil, speed: "5", reverse: false

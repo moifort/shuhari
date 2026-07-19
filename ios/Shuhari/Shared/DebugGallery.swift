@@ -16,7 +16,7 @@ struct DebugGallery: View {
             CuisineGalleryScreen()
         case "recipe":
             RecipeDetailGalleryScreen(recipe: Fixtures.bourguignon)
-        case "recipe-tmx":
+        case "recipe-thermomix":
             RecipeDetailGalleryScreen(recipe: Fixtures.risotto)
         case "recipe-fresh":
             RecipeDetailGalleryScreen(recipe: Fixtures.freshImport)
@@ -36,7 +36,7 @@ struct DebugGallery: View {
                     onDone: {}
                 )
             }
-        case "execute-tmx":
+        case "execute-thermomix":
             NavigationStack {
                 ExecutePage(
                     recipeTitle: Fixtures.risotto.title,
@@ -68,9 +68,9 @@ struct DebugGallery: View {
             NavigationStack {
                 ImportPreviewPage(analysis: Fixtures.importAnalysis, isSaving: false, onCancel: {}, onSave: { _ in })
             }
-        case "import-preview-tmx":
+        case "import-preview-thermomix":
             NavigationStack {
-                ImportPreviewPage(analysis: Fixtures.importAnalysisTmx, isSaving: false, onCancel: {}, onSave: { _ in })
+                ImportPreviewPage(analysis: Fixtures.importAnalysisThermomix, isSaving: false, onCancel: {}, onSave: { _ in })
             }
         case "ai-thinking":
             AIThinkingCard(message: "Analyse IA…")
@@ -80,7 +80,7 @@ struct DebugGallery: View {
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : cuisine, recipe, recipe-tmx, recipe-fresh, history, attempt, attempt-pending, execute, execute-tmx, capture, proposal, import-preview, import-preview-tmx, ai-thinking, import-nothing-found")
+                description: Text("Écrans : cuisine, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found")
             )
         }
     }
@@ -106,12 +106,12 @@ private struct RecipeDetailGalleryScreen: View {
 /// library — needs local state for the selected filter, so it lives in its own
 /// view. Defaults to Thermomix to show the outlined custom symbol in the list.
 private struct CuisineGalleryScreen: View {
-    @State private var selected: RecipeType = .tmx
+    @State private var selected: RecipeType = .thermomix
 
     private let library = [
         LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .dish, category: .main, versionCount: 4, bestRating: 5, updatedAt: Date()),
-        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .main, versionCount: 3, bestRating: 4, updatedAt: Date()),
-        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soup, versionCount: 1, bestRating: nil, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .thermomix, category: .main, versionCount: 3, bestRating: 4, updatedAt: Date()),
+        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .thermomix, category: .soup, versionCount: 1, bestRating: nil, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
     ]
 
     var body: some View {
@@ -123,7 +123,7 @@ private struct CuisineGalleryScreen: View {
                 libraryHasMore: false,
                 libraryLoadMoreFailed: false,
                 title: selected.label,
-                typeFilter: .init(options: [.dish, .tmx], selection: $selected),
+                typeFilter: .init(options: [.dish, .thermomix], selection: $selected),
                 sort: .constant(.lastModified),
                 categoryFilter: .constant(nil),
                 onSettings: {}

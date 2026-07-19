@@ -18,11 +18,11 @@ struct ExecutePage: View {
                     if !version.ingredients.isEmpty {
                         Divider()
                     }
-                    let tmxItems = TmxStepsList.Item.zipped(steps: version.steps, tmxSteps: version.tmxSteps)
-                    if !tmxItems.isEmpty {
-                        TmxStepsList(items: tmxItems, big: true)
-                    } else {
-                        StepsList(steps: version.steps, big: true)
+                    switch version.content {
+                    case .dish(_, let steps):
+                        StepsList(steps: steps, big: true)
+                    case .thermomix(_, let steps):
+                        ThermomixStepsList(steps: steps, big: true)
                     }
                 }
             }

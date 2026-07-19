@@ -1,3 +1,29 @@
+fragment VersionContentFields on VersionContent {
+  __typename
+  ... on DishContent {
+    ingredients {
+      name
+      quantity
+    }
+    dishSteps: steps
+  }
+  ... on ThermomixContent {
+    ingredients {
+      name
+      quantity
+    }
+    thermomixSteps: steps {
+      text
+      settings {
+        time
+        temperature
+        speed
+        reverse
+      }
+    }
+  }
+}
+
 fragment VersionFields on Version {
   number
   basedOn
@@ -5,16 +31,8 @@ fragment VersionFields on Version {
   why
   originKind
   originDetail
-  ingredients {
-    name
-    quantity
-  }
-  steps
-  tmxSteps {
-    time
-    temperature
-    speed
-    reverse
+  content {
+    ...VersionContentFields
   }
   recipeId
   rating

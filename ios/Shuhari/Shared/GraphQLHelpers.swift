@@ -85,15 +85,35 @@ enum GraphQLHelpers {
     }
 
     /// One step's Thermomix settings as the API spells them. A plain step is an
-    /// input with every field absent — the parallel `tmxSteps` array is total, it
-    /// never carries holes (see docs/code-style.md, "Arrays never optional").
-    static func tmxSettingsInput(_ settings: TmxSettings) -> ShuhariGraphQL.TmxSettingsInput {
-        ShuhariGraphQL.TmxSettingsInput(
+    /// input with every field absent (`{}`) — the settings are total, never a hole
+    /// (see docs/code-style.md, "Arrays never optional").
+    static func thermomixSettingsInput(_ settings: ThermomixSettings) -> ShuhariGraphQL.ThermomixSettingsInput {
+        ShuhariGraphQL.ThermomixSettingsInput(
             reverse: settings.reverse ? .some(true) : .none,
             speed: graphQLNullable(settings.speed),
             temperature: graphQLNullable(settings.temperature),
             time: graphQLNullable(settings.time)
         )
+    }
+
+    /// A version body as the `content` oneOf input: EXACTLY ONE arm is set,
+    /// matching the recipe type — `dish` for plain-text steps, `thermomix` for
+    /// steps carrying their machine settings.
+    static func versionContentInput(_ content: VersionContent) -> ShuhariGraphQL.VersionContentInput {
+        switch content {
+        case .dish(let ingredients, let steps):
+            return .dish(ShuhariGraphQL.DishContentInput(
+                ingredients: ingredients.map { ShuhariGraphQL.IngredientInput(name: $0.name, quantity: $0.quantity) },
+                steps: steps
+            ))
+        case .thermomix(let ingredients, let steps):
+            return .thermomix(ShuhariGraphQL.ThermomixContentInput(
+                ingredients: ingredients.map { ShuhariGraphQL.IngredientInput(name: $0.name, quantity: $0.quantity) },
+                steps: steps.map {
+                    ShuhariGraphQL.ThermomixStepInput(settings: thermomixSettingsInput($0.settings), text: $0.text)
+                }
+            ))
+        }
     }
 }
 
