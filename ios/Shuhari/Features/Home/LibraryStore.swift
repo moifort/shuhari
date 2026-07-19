@@ -28,6 +28,12 @@ final class LibraryStore {
         didSet { if oldValue != type { scheduleReload() } }
     }
 
+    /// Server-side favourites facet: `true` keeps only the recipes marked as
+    /// favourites, every type mixed. Any change reloads.
+    var favorite = false {
+        didSet { if oldValue != favorite { scheduleReload() } }
+    }
+
     /// Server-side dish-category facet. `nil` = every category. Any change reloads.
     /// When set, the server coerces the ordering to updatedAt desc (ranking within a
     /// single course is meaningless) regardless of `sort`.
@@ -116,6 +122,13 @@ final class LibraryStore {
     }
 
     private func fetchPage(after: String?) async throws -> RecipePage {
-        try await LibraryAPI.list(type: type, category: category, sort: sort, limit: pageSize, after: after)
+        try await LibraryAPI.list(
+            type: type,
+            category: category,
+            favorite: favorite,
+            sort: sort,
+            limit: pageSize,
+            after: after
+        )
     }
 }

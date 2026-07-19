@@ -17,6 +17,9 @@ export type RecipeLibraryPage = { items: Recipe[]; hasMore: boolean; totalCount:
 export type RecipeLibraryCriteria = {
   type?: RecipeType
   category?: DishCategory
+  // Facet: keep only the favourites. The favourites lens mixes every type, so it is
+  // never combined with `type` in practice.
+  favorite?: true
   sort: RecipeSort
   order: SortOrder
   limit: number

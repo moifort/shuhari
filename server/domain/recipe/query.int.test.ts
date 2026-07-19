@@ -19,7 +19,13 @@ beforeEach(() => {
 // facet, sort keys). categoryRank mirrors what the repository stamps on save.
 const seedRecipe = (
   id: string,
-  fields: { type?: RecipeType; category: DishCategory; updatedAt: number; owner?: UserId },
+  fields: {
+    type?: RecipeType
+    category: DishCategory
+    updatedAt: number
+    owner?: UserId
+    favorite?: true
+  },
 ) => {
   fake.seed('recipes', id, {
     id,
@@ -27,6 +33,8 @@ const seedRecipe = (
     type: fields.type ?? 'dish',
     category: fields.category,
     categoryRank: categoryRank(fields.category),
+    // Absent unless marked, exactly as the aggregate stores it.
+    ...(fields.favorite ? { favorite: true } : {}),
     updatedAt: new Date(fields.updatedAt),
   })
 }
@@ -137,6 +145,35 @@ describe('RecipeQuery.library — type filter', () => {
     })
     // starter(0) before dessert(2)
     expect(ids(page)).toEqual(['thermomix-b', 'thermomix-a'])
+  })
+})
+
+describe('RecipeQuery.library — favourites lens', () => {
+  beforeEach(() => {
+    seedRecipe('fav-dish', { type: 'dish', category: 'main', updatedAt: 1000, favorite: true })
+    seedRecipe('plain-dish', { type: 'dish', category: 'starter', updatedAt: 2000 })
+    seedRecipe('fav-thermomix', {
+      type: 'thermomix',
+      category: 'dessert',
+      updatedAt: 3000,
+      favorite: true,
+    })
+  })
+
+  test('keeps only the favourites, every type mixed, in course order', async () => {
+    const page = await RecipeQuery.library(userId, {
+      favorite: true,
+      sort: 'category',
+      order: 'desc',
+      limit: 10,
+    })
+    // main(1) before dessert(2); the un-favourited starter is out despite ranking first.
+    expect(ids(page)).toEqual(['fav-dish', 'fav-thermomix'])
+  })
+
+  test('without the facet the library still returns everything', async () => {
+    const page = await RecipeQuery.library(userId, { sort: 'updatedAt', order: 'desc', limit: 10 })
+    expect(ids(page)).toEqual(['fav-thermomix', 'plain-dish', 'fav-dish'])
   })
 })
 

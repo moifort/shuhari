@@ -1,6 +1,7 @@
 query RecipeList(
   $type: RecipeType
   $category: DishCategory
+  $favorite: Boolean
   $sort: RecipeSort
   $order: SortOrder
   $limit: Int
@@ -9,6 +10,7 @@ query RecipeList(
   recipes(
     type: $type
     category: $category
+    favorite: $favorite
     sort: $sort
     order: $order
     limit: $limit
@@ -19,6 +21,7 @@ query RecipeList(
       title
       type
       category
+      favorite
       updatedAt
       versionCount
       bestRating

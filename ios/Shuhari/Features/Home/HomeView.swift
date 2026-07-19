@@ -12,14 +12,15 @@ struct HomeView: View {
     @State private var library = LibraryStore()
     @State private var path = NavigationPath()
     @State private var showSettings = false
-    @State private var selectedType: RecipeType = .dish
+    @State private var lens: LibraryLens = .type(.dish)
 
-    /// Multi-type tabs (cooking) offer a segmented type filter; single-type tabs don't.
+    /// Multi-type tabs (cooking) offer the lens picker; single-type tabs don't.
     private var isMultiType: Bool { categoryTypes.count > 1 }
 
-    /// The type segments in design order — e.g. `[.dish, .thermomix]` for cooking.
-    private var filterOptions: [RecipeType] {
-        RecipeType.allCases.filter { categoryTypes.contains($0) }
+    /// The lenses in design order — the tab's types, then the favourites, which cut
+    /// across all of them.
+    private var lensOptions: [LibraryLens] {
+        RecipeType.allCases.filter { categoryTypes.contains($0) }.map(LibraryLens.type) + [.favorites]
     }
 
     var body: some View {
@@ -44,9 +45,9 @@ struct HomeView: View {
                         libraryLoading: library.isLoading,
                         libraryHasMore: library.hasMore,
                         libraryLoadMoreFailed: library.loadMoreFailed,
-                        title: isMultiType ? selectedType.label : title,
-                        typeFilter: isMultiType
-                            ? .init(options: filterOptions, selection: $selectedType)
+                        title: isMultiType ? lens.label : title,
+                        lensPicker: isMultiType
+                            ? .init(options: lensOptions, selection: $lens)
                             : nil,
                         sort: $library.sort,
                         categoryFilter: $library.category,
@@ -64,10 +65,8 @@ struct HomeView: View {
             await loadLibraryIfNeeded()
         }
         .refreshable { await reloadAll() }
-        .onChange(of: selectedType) { _, newValue in
-            // On a single-type tab the filter is fixed to the tab's own types;
-            // on notebook it drives the server-side `type` facet (its didSet reloads).
-            library.type = isMultiType ? newValue : nil
+        .onChange(of: lens) { _, newValue in
+            apply(newValue)
         }
         .sheet(isPresented: $showSettings) {
             SettingsHomeView(onDataReplaced: { await reloadAll() })
@@ -76,13 +75,20 @@ struct HomeView: View {
         .onAppear { navigateToImportedIfNeeded() }
     }
 
-    /// Kick off the first library page. Setting `type` reloads via its `didSet` when
-    /// it changes; on an unchanged type (e.g. a single-type tab), load explicitly.
+    /// Point the library at a lens: its facets, and the order it opens on. On a
+    /// single-type tab there is no lens picker, and the tab's own types apply.
+    private func apply(_ lens: LibraryLens) {
+        library.favorite = lens == .favorites
+        library.type = isMultiType ? lens.recipeType : nil
+        library.sort = lens.defaultSort
+    }
+
+    /// Kick off the first library page. The facets reload via their `didSet` when they
+    /// change; on an unchanged lens (e.g. a single-type tab), load explicitly.
     private func loadLibraryIfNeeded() async {
-        let wanted: RecipeType? = isMultiType ? selectedType : nil
-        if library.type != wanted {
-            library.type = wanted
-        } else if library.items.isEmpty {
+        let before = (library.type, library.favorite, library.sort)
+        apply(lens)
+        if (library.type, library.favorite, library.sort) == before, library.items.isEmpty {
             await library.load()
         }
     }
@@ -97,7 +103,7 @@ struct HomeView: View {
     /// that mounts on selection right after the import (`onAppear`).
     private func navigateToImportedIfNeeded() {
         guard let recipe = importedRecipe, categoryTypes.contains(recipe.type) else { return }
-        if isMultiType { selectedType = recipe.type }
+        if isMultiType { lens = .type(recipe.type) }
         path.append(RecipeRoute.recipe(id: recipe.id))
         importedRecipe = nil
         Task { await reloadAll() }

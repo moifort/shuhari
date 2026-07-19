@@ -172,6 +172,8 @@ struct Recipe: Identifiable, Sendable {
     let type: RecipeType
     /// The dish course — fixed at import, shared across all versions.
     let category: DishCategory
+    /// Marked as a favourite by the cook — what the library's favourites lens lists.
+    let favorite: Bool
     let createdAt: Date
     let updatedAt: Date
     /// The full lineage, oldest first.

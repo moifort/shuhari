@@ -273,6 +273,12 @@ RecipeType.implement({
         'When anything last changed on it (a new version, a rating…), e.g. ' +
         '`"2026-07-18T14:30:00.000Z"`. Drives library sort.',
     }),
+    favorite: t.boolean({
+      description:
+        'Whether you marked it as a favourite, e.g. `true` for the risotto you keep coming back ' +
+        'to. Drives the library’s favourites lens (see the `favorite` argument on `recipes`).',
+      resolve: (recipe) => recipe.favorite === true,
+    }),
     versionCount: t.expose('versionCount', {
       type: 'VersionNumber',
       description:

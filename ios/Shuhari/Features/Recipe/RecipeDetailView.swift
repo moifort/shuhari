@@ -149,6 +149,21 @@ struct RecipeDetailView: View {
 
     @ToolbarContentBuilder
     private func toolbar(recipe: Recipe) -> some ToolbarContent {
+        // Top-right: the favourite toggle, then the more menu — with a spacer between
+        // them so the two read as separate controls on Liquid Glass instead of merging
+        // into one capsule.
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                Task { await toggleFavorite(recipe) }
+            } label: {
+                Image(systemName: recipe.favorite ? "heart.fill" : "heart")
+            }
+            .tint(recipe.favorite ? .accentColor : .primary)
+            .accessibilityIdentifier("favorite-recipe-button")
+            .accessibilityLabel(recipe.favorite ? "Retirer des favoris" : "Ajouter aux favoris")
+        }
+        ToolbarSpacer(.fixed, placement: .topBarTrailing)
+
         // Top-right: the more menu (edit / delete).
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
@@ -189,6 +204,17 @@ struct RecipeDetailView: View {
     /// attempt version when set, otherwise the recipe's `versionToOpen`.
     private func displayedVersion(_ recipe: Recipe) -> RecipeVersion {
         focusVersionNumber.flatMap { recipe.version($0) } ?? recipe.versionToOpen
+    }
+
+    /// Flip the favourite and reload — the sheet redraws its heart, and the library
+    /// behind refreshes so the favourites lens gains or loses the recipe.
+    private func toggleFavorite(_ recipe: Recipe) async {
+        await actionError.run {
+            try await RecipeAPI.updateRecipe(id: recipeId, favorite: !recipe.favorite)
+        } onSuccess: {
+            onReload()
+            Task { await viewModel.load() }
+        }
     }
 
     private func presentRecordAttempt(versionNumber: Int) {

@@ -71,6 +71,10 @@ export type Recipe = {
   // changes across versions (unlike the versioned recipe content).
   category: DishCategory
   title: RecipeTitle
+  // Marked as a favourite by the cook. Aggregate-level like `category`, and absent
+  // rather than false when it is not one — the library's favourites lens filters on
+  // its presence.
+  favorite?: true
   versionCount: VersionNumber // highest version number allocated so far
   createdAt: Date
   updatedAt: Date

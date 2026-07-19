@@ -32,6 +32,11 @@ builder.queryField('recipes', (t) =>
           'updatedAt desc — the sort/order args are ignored (ranking within one ' +
           'category is meaningless, and it keeps the composite-index surface bounded)',
       }),
+      favorite: t.arg.boolean({
+        description:
+          'Facet: keep only the recipes you marked as favourites, e.g. `true`. Mixes every type — ' +
+          'pair it with the category sort to read them course by course',
+      }),
       sort: t.arg({
         type: RecipeSortEnum,
         defaultValue: 'updatedAt',
@@ -55,6 +60,7 @@ builder.queryField('recipes', (t) =>
       RecipeQuery.library(userId, {
         type: args.type ?? undefined,
         category: args.category ?? undefined,
+        ...(args.favorite ? { favorite: true as const } : {}),
         sort: args.sort ?? 'updatedAt',
         order: args.order ?? 'desc',
         limit: args.limit ?? 20,

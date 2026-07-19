@@ -85,6 +85,7 @@ export type RecipePage = { recipes: Recipe[]; hasMore: boolean }
 export type RecipePageArgs = {
   type?: RecipeType
   category?: DishCategory
+  favorite?: true
   sort: RecipeSort
   order: SortOrder
   limit: number
@@ -99,6 +100,9 @@ export const findPage = async (userId: UserId, args: RecipePageArgs): Promise<Re
   let query = recipes().where('userId', '==', userId)
   if (args.type) query = query.where('type', '==', args.type)
   if (args.category) query = query.where('category', '==', args.category)
+  // Favourites are marked by the field's presence, so equality on `true` is also
+  // what excludes every recipe that never carried it.
+  if (args.favorite) query = query.where('favorite', '==', true)
   query =
     args.sort === 'category'
       ? query.orderBy('categoryRank', 'asc').orderBy('updatedAt', 'desc')

@@ -49,6 +49,7 @@ query Recipe($id: RecipeId!) {
     title
     type
     category
+    favorite
     createdAt
     updatedAt
     bestRating

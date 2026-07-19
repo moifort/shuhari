@@ -5,12 +5,12 @@ import SwiftUI
 /// server-sorted, infinitely scrolling page (`library` + the `library*` flags and
 /// callbacks).
 struct HomePage: View {
-    /// The type filter offered on a multi-type tab (notebook), rendered as round
-    /// glass toolbar buttons — one per type ("Plat" / "Thermomix"). `nil` on a
+    /// The lens picker offered on a multi-type tab (notebook), rendered as round
+    /// glass toolbar buttons — one per recipe type, then the favourites. `nil` on a
     /// single-type tab, which needs no selector.
-    struct TypeFilter {
-        let options: [RecipeType]
-        let selection: Binding<RecipeType>
+    struct LensPicker {
+        let options: [LibraryLens]
+        let selection: Binding<LibraryLens>
     }
 
     let library: [LibraryRecipe]
@@ -20,7 +20,7 @@ struct HomePage: View {
     let libraryHasMore: Bool
     let libraryLoadMoreFailed: Bool
     let title: String
-    let typeFilter: TypeFilter?
+    let lensPicker: LensPicker?
     let sort: Binding<RecipeSortOption>
     /// Server-side dish-category facet, driven from the filter+sort menu. `nil` =
     /// every category.
@@ -40,22 +40,22 @@ struct HomePage: View {
                     .accessibilityIdentifier("home-settings-button")
                     .accessibilityLabel("Réglages")
                 }
-                if let filter = typeFilter {
+                if let picker = lensPicker {
                     ToolbarItemGroup(placement: .topBarTrailing) {
-                        ForEach(filter.options) { type in
-                            let isSelected = filter.selection.wrappedValue == type
+                        ForEach(picker.options) { lens in
+                            let isSelected = picker.selection.wrappedValue == lens
                             Button {
-                                filter.selection.wrappedValue = type
+                                picker.selection.wrappedValue = lens
                             } label: {
-                                type.iconImage(filled: false)
+                                lens.iconImage(filled: isSelected)
                             }
                             .tint(isSelected ? .accentColor : .primary)
-                            .accessibilityLabel(type.label)
-                            .accessibilityIdentifier("home-type-filter-\(type.rawValue)")
+                            .accessibilityLabel(lens.label)
+                            .accessibilityIdentifier("home-lens-\(lens.id)")
                         }
                     }
-                    // Break out of the type-filter capsule so the filter+sort menu
-                    // reads as its own control on Liquid Glass (otherwise they merge).
+                    // Break out of the lens capsule so the filter+sort menu reads as
+                    // its own control on Liquid Glass (otherwise they merge).
                     ToolbarSpacer(.fixed, placement: .topBarTrailing)
                 }
                 // The combined filter + sort menu, detached from the type filter.
@@ -94,7 +94,10 @@ struct HomePage: View {
         if categoryFilter.wrappedValue != nil {
             return "Aucune recette dans cette catégorie pour l’instant."
         }
-        if typeFilter != nil {
+        if lensPicker?.selection.wrappedValue == .favorites {
+            return "Aucun favori pour l’instant — ajoute-les depuis la fiche d’une recette."
+        }
+        if lensPicker != nil {
             return "Aucune recette de ce type pour l’instant."
         }
         return "Importe ta première recette depuis l’onglet Importer — photo, texte ou lien."
@@ -129,12 +132,14 @@ struct HomePage: View {
 }
 
 private struct HomePagePreview: View {
-    @State private var selectedType: RecipeType = .dish
+    @State private var lens: LibraryLens = .type(.dish)
     @State private var sort: RecipeSortOption = .lastModified
     @State private var category: DishCategory?
 
     var body: some View {
-        let library = Fixtures.libraryRecipes.filter { $0.type == selectedType }
+        let library = Fixtures.libraryRecipes.filter { recipe in
+            lens == .favorites ? recipe.favorite : recipe.type == lens.recipeType
+        }
         NavigationStack {
             HomePage(
                 library: library,
@@ -143,7 +148,7 @@ private struct HomePagePreview: View {
                 libraryHasMore: false,
                 libraryLoadMoreFailed: false,
                 title: "Cuisine",
-                typeFilter: .init(options: [.dish, .thermomix], selection: $selectedType),
+                lensPicker: .init(options: [.type(.dish), .type(.thermomix), .favorites], selection: $lens),
                 sort: $sort,
                 categoryFilter: $category,
                 onSettings: {}
@@ -165,7 +170,7 @@ private struct HomePagePreview: View {
             libraryHasMore: true,
             libraryLoadMoreFailed: false,
             title: "Cuisine",
-            typeFilter: nil,
+            lensPicker: nil,
             sort: .constant(.lastModified),
             categoryFilter: .constant(nil),
             onSettings: {}

@@ -63,25 +63,31 @@ builder.mutationField('updateRecipe', (t) =>
   t.field({
     type: RecipeType,
     description: [
-      'Rename a recipe — change its title. Returns the updated recipe.',
+      'Retouch a recipe: rename it, mark it as a favourite, or both. Returns the updated recipe.',
       '',
       '```graphql',
-      'updateRecipe(id: "9f1c-a3b2", input: { title: "Nonna\'s lasagna" }) {',
+      'updateRecipe(id: "9f1c-a3b2", input: { title: "Nonna\'s lasagna", favorite: true }) {',
       '  id',
       '  title',
+      '  favorite',
       '}',
       '```',
     ].join('\n'),
     args: {
-      id: t.arg({ type: 'RecipeId', required: true, description: 'Which recipe to rename' }),
+      id: t.arg({ type: 'RecipeId', required: true, description: 'Which recipe to update' }),
       input: t.arg({
         type: UpdateRecipeInput,
         required: true,
-        description: 'The new title (leave it out to change nothing)',
+        description: 'What to change (leave a field out to change nothing)',
       }),
     },
     resolve: async (_root, { id, input }, { userId }) => {
-      const result = await RecipeCommand.rename(userId, id, input.title ?? undefined)
+      const result = await RecipeCommand.update(userId, id, {
+        ...(input.title ? { title: input.title } : {}),
+        ...(input.favorite !== null && input.favorite !== undefined
+          ? { favorite: input.favorite }
+          : {}),
+      })
       return match(result)
         .with('not-found', domainError)
         .with(P.not(P.string), (recipe) => recipe)

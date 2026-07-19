@@ -16,6 +16,8 @@ struct DebugGallery: View {
             CuisineGalleryScreen()
         case "cuisine-course":
             CuisineGalleryScreen(sort: .dishCategory)
+        case "cuisine-favorites":
+            CuisineGalleryScreen(lens: .favorites)
         case "recipe":
             RecipeDetailGalleryScreen(recipe: Fixtures.bourguignon)
         case "recipe-thermomix":
@@ -94,7 +96,7 @@ struct DebugGallery: View {
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : cuisine, cuisine-course, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found")
+                description: Text("Écrans : cuisine, cuisine-course, cuisine-favorites, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found")
             )
         }
     }
@@ -121,29 +123,35 @@ private struct RecipeDetailGalleryScreen: View {
 /// own view. Defaults to Thermomix to show the outlined custom symbol in the list;
 /// the sort picker is live, so both section axes (month, course) are reachable.
 private struct CuisineGalleryScreen: View {
-    @State private var selected: RecipeType = .thermomix
+    @State private var lens: LibraryLens
     @State private var sort: RecipeSortOption
 
-    init(sort: RecipeSortOption = .lastModified) {
-        self._sort = State(initialValue: sort)
+    init(lens: LibraryLens = .type(.thermomix), sort: RecipeSortOption? = nil) {
+        self._lens = State(initialValue: lens)
+        self._sort = State(initialValue: sort ?? lens.defaultSort)
     }
 
     private let library = [
-        LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .dish, category: .main, versionCount: 4, bestRating: 5, updatedAt: Date()),
-        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .thermomix, category: .main, versionCount: 3, bestRating: 4, updatedAt: Date()),
-        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .thermomix, category: .soup, versionCount: 1, bestRating: nil, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+        LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .dish, category: .main, favorite: true, versionCount: 4, bestRating: 5, updatedAt: Date()),
+        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .thermomix, category: .main, favorite: false, versionCount: 3, bestRating: 4, updatedAt: Date()),
+        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .thermomix, category: .soup, favorite: true, versionCount: 1, bestRating: nil, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
     ]
 
     var body: some View {
         NavigationStack {
             HomePage(
-                library: library.filter { $0.type == selected },
+                library: library.filter { recipe in
+                    lens == .favorites ? recipe.favorite : recipe.type == lens.recipeType
+                },
                 libraryGrouping: sort == .lastModified ? .month : .course,
                 libraryLoading: false,
                 libraryHasMore: false,
                 libraryLoadMoreFailed: false,
-                title: selected.label,
-                typeFilter: .init(options: [.dish, .thermomix], selection: $selected),
+                title: lens.label,
+                lensPicker: .init(
+                    options: [.type(.dish), .type(.thermomix), .favorites],
+                    selection: $lens
+                ),
                 sort: $sort,
                 categoryFilter: .constant(nil),
                 onSettings: {}

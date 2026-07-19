@@ -44,6 +44,13 @@ export type NewVersionInput = {
   attempt?: Attempt
 }
 
+// What can be retouched on the aggregate after creation. Anything left out stays as
+// it was; `favorite: false` un-favourites.
+export type UpdateRecipeInput = {
+  title?: RecipeTitle
+  favorite?: boolean
+}
+
 export type RecordAttemptInput = {
   recipeId: RecipeId
   versionNumber: VersionNumberT
@@ -157,12 +164,21 @@ export namespace RecipeCommand {
     })
   }
 
-  export const rename = async (userId: UserId, recipeId: RecipeId, title?: RecipeTitle) => {
+  // The two touches a cook can make to the aggregate itself: its name and whether it
+  // is a favourite. Each is optional — what is left out stays as it was. `favorite:
+  // false` drops the field entirely (the full-document write erases it), so absence
+  // is the single spelling of "not a favourite".
+  export const update = async (userId: UserId, recipeId: RecipeId, input: UpdateRecipeInput) => {
     const recipe = await repository.findBy(userId, recipeId)
     if (!recipe) return 'not-found' as const
+    // Spread without the flag, then put it back only if it holds — otherwise the
+    // rewritten document simply has no `favorite` field.
+    const { favorite: _dropped, ...rest } = recipe
+    const favorite = input.favorite ?? recipe.favorite === true
     const updated: Recipe = {
-      ...recipe,
-      ...(title ? { title } : {}),
+      ...rest,
+      ...(input.title ? { title: input.title } : {}),
+      ...(favorite ? { favorite: true as const } : {}),
       updatedAt: new Date(),
     }
     return repository.save(updated)

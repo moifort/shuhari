@@ -7,6 +7,7 @@ struct LibraryRecipe: Identifiable, Sendable {
     let title: String
     let type: RecipeType
     let category: DishCategory
+    let favorite: Bool
     let versionCount: Int
     let bestRating: Int?
     let updatedAt: Date

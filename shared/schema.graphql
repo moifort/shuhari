@@ -338,20 +338,21 @@ type Mutation {
   ): Proposal!
 
   """
-  Rename a recipe — change its title. Returns the updated recipe.
+  Retouch a recipe: rename it, mark it as a favourite, or both. Returns the updated recipe.
   
   ```graphql
-  updateRecipe(id: "9f1c-a3b2", input: { title: "Nonna's lasagna" }) {
+  updateRecipe(id: "9f1c-a3b2", input: { title: "Nonna's lasagna", favorite: true }) {
     id
     title
+    favorite
   }
   ```
   """
   updateRecipe(
-    """Which recipe to rename"""
+    """Which recipe to update"""
     id: RecipeId!
 
-    """The new title (leave it out to change nothing)"""
+    """What to change (leave a field out to change nothing)"""
     input: UpdateRecipeInput!
   ): Recipe!
 }
@@ -479,6 +480,11 @@ type Query {
     """
     category: DishCategory
 
+    """
+    Facet: keep only the recipes you marked as favourites, e.g. `true`. Mixes every type — pair it with the category sort to read them course by course
+    """
+    favorite: Boolean
+
     """Maximum recipes returned in the page, e.g. `20`"""
     limit: Int = 20
 
@@ -516,6 +522,11 @@ type Recipe {
 
   """When the recipe was first imported, e.g. `"2026-07-18T14:30:00.000Z"`"""
   createdAt: DateTime!
+
+  """
+  Whether you marked it as a favourite, e.g. `true` for the risotto you keep coming back to. Drives the library’s favourites lens (see the `favorite` argument on `recipes`).
+  """
+  favorite: Boolean!
 
   """Its unique identifier, e.g. `"9f1c…-a3b2"`"""
   id: RecipeId!
@@ -750,9 +761,14 @@ How long a Thermomix step runs, written as you would read it, e.g. `"3 min"` or 
 scalar ThermomixTime
 
 """
-Fields to rename a recipe, e.g. set title to `"Nonna’s lasagna"`. Send only what you want to change — anything you leave out stays as it was.
+What you can retouch on a recipe: its name and whether it is a favourite. Send only what you want to change — anything you leave out stays as it was.
 """
 input UpdateRecipeInput {
+  """
+  `true` marks it as a favourite, `false` un-marks it, e.g. `true` for the risotto you keep coming back to (leave out to keep it as it is)
+  """
+  favorite: Boolean
+
   """
   The new name, e.g. `"Nonna’s lasagna"` (leave out to keep the current one)
   """

@@ -22,8 +22,11 @@ enum RecipeAPI {
         )
     }
 
-    static func updateRecipe(id: String, title: String?) async throws {
+    /// Retouch the aggregate: rename it, mark it a favourite, or both. A field left
+    /// nil is left alone.
+    static func updateRecipe(id: String, title: String? = nil, favorite: Bool? = nil) async throws {
         let input = ShuhariGraphQL.UpdateRecipeInput(
+            favorite: GraphQLHelpers.graphQLNullable(favorite),
             title: GraphQLHelpers.graphQLNullable(title)
         )
         _ = try await GraphQLHelpers.perform(
@@ -41,6 +44,7 @@ func mapRecipe(_ r: ShuhariGraphQL.RecipeQuery.Data.Recipe) -> Recipe {
         title: r.title,
         type: RecipeType(graphql: r.type),
         category: DishCategory(graphql: r.category),
+        favorite: r.favorite,
         createdAt: GraphQLHelpers.parseISO8601(r.createdAt) ?? Date(),
         updatedAt: GraphQLHelpers.parseISO8601(r.updatedAt) ?? Date(),
         versions: r.versions.map { mapVersion($0.fragments.versionFields) },

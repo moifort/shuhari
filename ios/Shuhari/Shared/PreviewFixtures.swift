@@ -132,6 +132,7 @@ enum Fixtures {
         title: "Bœuf bourguignon",
         type: .dish,
         category: .main,
+        favorite: false,
         createdAt: date.addingTimeInterval(-86_400 * 30),
         updatedAt: date,
         versions: [bourguignonV1, bourguignonV2, bourguignonV3, bourguignonV4],
@@ -163,6 +164,7 @@ enum Fixtures {
         title: "Risotto au parmesan",
         type: .thermomix,
         category: .main,
+        favorite: true,
         createdAt: date.addingTimeInterval(-86_400 * 12),
         updatedAt: date,
         versions: [risottoV2],
@@ -192,6 +194,7 @@ enum Fixtures {
         title: "Daube provençale",
         type: .dish,
         category: .main,
+        favorite: false,
         createdAt: date,
         updatedAt: date,
         versions: [freshImportV1],
@@ -284,10 +287,10 @@ enum Fixtures {
     /// A page of library rows spanning both cooking types and a couple of months —
     /// backs the paginated notebook list in previews and the debug gallery.
     static let libraryRecipes = [
-        LibraryRecipe(id: "bourguignon", title: "Bœuf bourguignon", type: .dish, category: .main, versionCount: 4, bestRating: 5, updatedAt: Date()),
-        LibraryRecipe(id: "joues", title: "Joues de bœuf confites", type: .dish, category: .main, versionCount: 1, bestRating: 4, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
-        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .thermomix, category: .main, versionCount: 2, bestRating: 4, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
-        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .thermomix, category: .soup, versionCount: 1, bestRating: nil, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
+        LibraryRecipe(id: "bourguignon", title: "Bœuf bourguignon", type: .dish, category: .main, favorite: true, versionCount: 4, bestRating: 5, updatedAt: Date()),
+        LibraryRecipe(id: "joues", title: "Joues de bœuf confites", type: .dish, category: .main, favorite: false, versionCount: 1, bestRating: 4, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
+        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .thermomix, category: .main, favorite: false, versionCount: 2, bestRating: 4, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .thermomix, category: .soup, favorite: true, versionCount: 1, bestRating: nil, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
     ]
 }
 #endif

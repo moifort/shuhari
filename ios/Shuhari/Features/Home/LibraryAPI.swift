@@ -15,6 +15,7 @@ enum LibraryAPI {
     static func list(
         type: RecipeType?,
         category: DishCategory?,
+        favorite: Bool,
         sort: RecipeSortOption,
         limit: Int,
         after: String?
@@ -22,6 +23,7 @@ enum LibraryAPI {
         let query = ShuhariGraphQL.RecipeListQuery(
             type: type.map { .some($0.graphQLValue) } ?? .none,
             category: category.map { .some($0.graphQLValue) } ?? .none,
+            favorite: favorite ? .some(true) : .none,
             sort: .some(.case(gqlSort(sort))),
             order: .some(.case(gqlOrder(sort))),
             limit: .some(limit),
@@ -36,6 +38,7 @@ enum LibraryAPI {
                     title: recipe.title,
                     type: RecipeType(graphql: recipe.type),
                     category: DishCategory(graphql: recipe.category),
+                    favorite: recipe.favorite,
                     versionCount: recipe.versionCount,
                     bestRating: recipe.bestRating,
                     updatedAt: GraphQLHelpers.parseISO8601(recipe.updatedAt) ?? Date.distantPast
