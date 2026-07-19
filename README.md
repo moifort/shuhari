@@ -33,7 +33,7 @@ the one worth cooking next.
 There is no "promote a version" step and no variations: nothing is flagged by hand, everything is
 derived from the ratings.
 
-Recipes come in two kinds — **dish** and **tmx** (Thermomix, where each step also carries time,
+Recipes come in two kinds — **dish** and **thermomix** (where each step also carries time,
 temperature, speed and reverse rotation) — and one of six courses (starter, main, dessert, soup,
 sauce, baking) detected at import. The library is paginated, filterable by kind and sortable by
 course or by last edit.
