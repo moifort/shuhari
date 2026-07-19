@@ -1,7 +1,7 @@
 import XCTest
 
 /// Import loop: raw text → AI analysis → editable preview → createRecipe (v1) →
-/// the new recipe's fiche.
+/// the new recipe's recipe sheet.
 final class ImportFlowTest: BaseUITest {
 
     func testImportFromText() async throws {

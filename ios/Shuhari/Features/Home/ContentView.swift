@@ -1,18 +1,18 @@
 import SwiftUI
 
-/// Root once authenticated. A single content tab, "Carnet" (all cuisine recipes —
-/// plats & Thermomix), plus an "Importer" entry pinned to the trailing side of the
+/// Root once authenticated. A single content tab, "Carnet" (all cooking recipes —
+/// dishes & Thermomix), plus an "Importer" entry pinned to the trailing side of the
 /// tab bar (`.search`/`.prominent` role — the only system affordance that keeps a
 /// tab separated and visible while the bar minimises). Selecting it opens the
-/// camera-first import full-screen; closing that cover restores the Carnet tab, so
+/// camera-first import full-screen; closing that cover restores the notebook tab, so
 /// the tab bar never lingers on the import entry's empty content. On success the
-/// new recipe is routed to the Carnet, which navigates to its fiche.
+/// new recipe is routed to the notebook, which navigates to its recipe sheet.
 struct ContentView: View {
     enum RootTab: Hashable {
-        case carnet, importer
+        case notebook, importEntry
     }
 
-    @State private var selectedTab: RootTab = .carnet
+    @State private var selectedTab: RootTab = .notebook
     @State private var showImport = false
     /// Set when the camera hands off a picked photo / capture / text: it closes
     /// the camera cover, then `onDismiss` presents the review sheet over the
@@ -38,12 +38,12 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            Tab("Carnet", image: "toque", value: RootTab.carnet) {
+            Tab("Carnet", image: "toque", value: RootTab.notebook) {
                 HomeView(title: "Carnet", categoryTypes: [.dish, .tmx], importedRecipe: $importedRecipe)
             }
-            .accessibilityIdentifier("tab-carnet")
+            .accessibilityIdentifier("tab-notebook")
 
-            Tab(value: RootTab.importer, role: importerTabRole) {
+            Tab(value: RootTab.importEntry, role: importerTabRole) {
                 Color.clear
             } label: {
                 Label("Importer", systemImage: "camera")
@@ -52,7 +52,7 @@ struct ContentView: View {
         }
         .tabBarMinimizeBehavior(.onScrollDown)
         .onChange(of: selectedTab) { _, newValue in
-            if newValue == .importer {
+            if newValue == .importEntry {
                 showImport = true
             }
         }
@@ -67,7 +67,7 @@ struct ContentView: View {
                 input: job.input,
                 onCreated: { recipeId, type in
                     importedRecipe = ImportedRecipe(id: recipeId, type: type)
-                    selectedTab = .carnet
+                    selectedTab = .notebook
                     reviewJob = nil
                 },
                 onCancel: { reviewJob = nil }
@@ -76,11 +76,11 @@ struct ContentView: View {
         }
     }
 
-    /// When the camera cover closes: restore the Carnet tab, then — if the user
+    /// When the camera cover closes: restore the notebook tab, then — if the user
     /// picked a photo / captured / typed — present the review sheet over it, so
     /// the camera is fully gone rather than lingering behind the sheet.
     private func onImportCoverDismiss() {
-        if selectedTab == .importer { selectedTab = .carnet }
+        if selectedTab == .importEntry { selectedTab = .notebook }
         if let input = pendingImport {
             pendingImport = nil
             reviewJob = ImportJob(input: input)

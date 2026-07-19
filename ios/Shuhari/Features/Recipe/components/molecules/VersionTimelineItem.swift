@@ -11,7 +11,7 @@ struct VersionTimelineItem: View {
     let rating: Int?
     let tried: Bool
     let date: Date
-    /// The version to open — "celle sur laquelle je travaille" — highlighted.
+    /// The version to open — the one being worked on — highlighted.
     let isFocus: Bool
     var isLast: Bool = false
 

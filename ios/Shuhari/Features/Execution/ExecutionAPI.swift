@@ -28,11 +28,11 @@ enum ExecutionAPI {
 
     /// Ask the AI to analyze the cooked version and propose the next one.
     @discardableResult
-    static func requestProposition(recipeId: String, versionNumber: Int) async throws -> Proposition {
+    static func requestProposal(recipeId: String, versionNumber: Int) async throws -> Proposal {
         let data = try await GraphQLHelpers.perform(
             GraphQLClient.shared.apollo,
             mutation: ShuhariGraphQL.RequestProposalMutation(recipeId: recipeId, versionNumber: versionNumber)
         )
-        return mapProposition(data.requestProposal.fragments.proposalFields)
+        return mapProposal(data.requestProposal.fragments.proposalFields)
     }
 }

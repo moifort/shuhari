@@ -1,6 +1,6 @@
 import Foundation
 
-/// The paginated library read-model, backing the Carnet's recipe list. Accumulates
+/// The paginated library read-model, backing the notebook's recipe list. Accumulates
 /// server pages of the `recipes(...)` query and reloads page 0 whenever the sort or
 /// the type filter changes. Mirrors the vinarium `WineListViewModel` pattern:
 /// generation token against stale responses, prefetch threshold for infinite scroll,
@@ -23,7 +23,7 @@ final class LibraryStore {
         didSet { if oldValue != sort { scheduleReload() } }
     }
 
-    /// Server-side type facet (Plat / Thermomix). `nil` = both. Any change reloads.
+    /// Server-side type facet ("Plat" / "Thermomix"). `nil` = both. Any change reloads.
     var type: RecipeType? {
         didSet { if oldValue != type { scheduleReload() } }
     }

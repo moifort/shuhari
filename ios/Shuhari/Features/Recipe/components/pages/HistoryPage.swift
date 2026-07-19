@@ -12,7 +12,7 @@ struct HistoryPage: View {
         List {
             Section {
                 ForEach(orderedVersions, id: \.number) { version in
-                    // Any version is cookable — tapping a row opens its fiche.
+                    // Any version is cookable — tapping a row opens its recipe sheet.
                     NavigationLink(value: RecipeRoute.attempt(recipeId: recipe.id, versionNumber: version.number)) {
                         VersionTimelineItem(
                             number: version.number,

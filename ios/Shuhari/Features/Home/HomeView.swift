@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// The Carnet content tab (cuisine — plats & Thermomix). Owns the
-/// NavigationStack, the settings sheet and the recipe flow (fiche → historique →
-/// attempt → proposition + execution cover), and a `LibraryStore` for the paginated,
+/// The notebook content tab (cooking — dishes & Thermomix). Owns the
+/// NavigationStack, the settings sheet and the recipe flow (recipe sheet → history →
+/// attempt → proposal + execution cover), and a `LibraryStore` for the paginated,
 /// server-sorted recipe library that fills the screen.
 struct HomeView: View {
     let title: String
@@ -14,10 +14,10 @@ struct HomeView: View {
     @State private var showSettings = false
     @State private var selectedType: RecipeType = .dish
 
-    /// Multi-type tabs (Cuisine) offer a segmented type filter; single-type tabs don't.
+    /// Multi-type tabs (cooking) offer a segmented type filter; single-type tabs don't.
     private var isMultiType: Bool { categoryTypes.count > 1 }
 
-    /// The type segments in design order — e.g. `[.dish, .tmx]` for Cuisine.
+    /// The type segments in design order — e.g. `[.dish, .tmx]` for cooking.
     private var filterOptions: [RecipeType] {
         RecipeType.allCases.filter { categoryTypes.contains($0) }
     }
@@ -64,7 +64,7 @@ struct HomeView: View {
         .refreshable { await reloadAll() }
         .onChange(of: selectedType) { _, newValue in
             // On a single-type tab the filter is fixed to the tab's own types;
-            // on Carnet it drives the server-side `type` facet (its didSet reloads).
+            // on notebook it drives the server-side `type` facet (its didSet reloads).
             library.type = isMultiType ? newValue : nil
         }
         .sheet(isPresented: $showSettings) {
@@ -90,7 +90,7 @@ struct HomeView: View {
         await library.load()
     }
 
-    /// Push the freshly imported recipe's fiche — but only in the tab that owns
+    /// Push the freshly imported recipe's recipe sheet — but only in the tab that owns
     /// its type. Handles both the already-mounted tab (`onChange`) and the tab
     /// that mounts on selection right after the import (`onAppear`).
     private func navigateToImportedIfNeeded() {

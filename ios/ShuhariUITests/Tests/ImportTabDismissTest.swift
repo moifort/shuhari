@@ -23,14 +23,14 @@ final class ImportTabDismissTest: XCTestCase {
         let tabBar = app.tabBars.firstMatch
         try tabBar.waitOrFail()
 
-        // Start on Carnet (the default tab).
+        // Start on notebook (the default tab).
         XCTAssertTrue(app.tabBars.buttons["Carnet"].isSelected, "Carnet should be selected on launch")
 
         // Open the camera import cover, then close it with the X.
         try app.tabBars.buttons["Importer"].tapOrFail()
         try app.buttons["scan-close-button"].tapOrFail()
 
-        // Back on the tab bar: the Carnet tab must still be selected, and the
+        // Back on the tab bar: the notebook tab must still be selected, and the
         // "Importer" entry must never appear selected (its content is empty).
         try tabBar.waitOrFail()
         XCTAssertFalse(app.tabBars.buttons["Importer"].isSelected, "Importer must not stay selected after closing the cover")

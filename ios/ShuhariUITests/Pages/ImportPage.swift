@@ -42,7 +42,7 @@ struct ImportPreviewPage {
         try app.textFields["import-title-field"].waitOrFail()
     }
 
-    /// The cuisine-only preview surfaces a dish-category Picker (Entrée, Plat, …)
+    /// The cooking-only preview surfaces a dish-category Picker (Entrée, Plat, …)
     /// the AI pre-selects; assert it is present so the model change is covered.
     func verifyCategoryPicker() throws {
         // A Form Picker surfaces as a button (menu) or an otherElement depending

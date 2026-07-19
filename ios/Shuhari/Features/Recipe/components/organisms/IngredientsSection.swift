@@ -1,12 +1,12 @@
 import SwiftUI
 
-/// The recipe's shopping list, inline in the fiche: name + quantity rows through
+/// The recipe's shopping list, inline in the recipe sheet: name + quantity rows through
 /// a small dedicated grid. Renders nothing when there are no ingredients (never
 /// an empty section). Composes as a `Section` directly inside a `List`.
 struct IngredientsSection: View {
     let ingredients: [Ingredient]
     /// Names of ingredients changed vs the previous version — flagged with an
-    /// orange dot. Empty (the default) renders exactly like the plain fiche.
+    /// orange dot. Empty (the default) renders exactly like the plain recipe sheet.
     var modified: Set<String> = []
 
     var body: some View {
@@ -14,7 +14,7 @@ struct IngredientsSection: View {
             Section {
                 IngredientsGrid(items: ingredients.map { ($0.name, $0.quantity) }, modified: modified)
             } header: {
-                // Trim the header's built-in top padding so the fiche stays compact.
+                // Trim the header's built-in top padding so the recipe sheet stays compact.
                 Text("Ingrédients")
                     .padding(.top, -14)
             }
@@ -27,7 +27,7 @@ struct IngredientsSection: View {
 /// pairs, no domain struct.
 struct IngredientsGrid: View {
     let items: [(name: String, quantity: String)]
-    /// Names to flag as changed. Empty (the default) keeps the exact plain-fiche
+    /// Names to flag as changed. Empty (the default) keeps the exact plain-recipe-sheet
     /// `LabeledContent` layout — no leading dot, no shift.
     var modified: Set<String> = []
 

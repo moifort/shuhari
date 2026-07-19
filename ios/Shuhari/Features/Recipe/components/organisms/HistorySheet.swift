@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The full version history, presented as a sheet from the fiche's bottom bar:
+/// The full version history, presented as a sheet from the recipe sheet's bottom bar:
 /// every version and the attempt journal. Hosts its own navigation stack so attempt
 /// links stay tappable inside the sheet.
 struct HistorySheet: View {

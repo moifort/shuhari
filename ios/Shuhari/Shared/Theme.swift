@@ -5,7 +5,7 @@ import SwiftUI
 /// two different colours across screens.
 enum Theme {
     enum Status {
-        /// The attempt domain accent — the version in progress, AI propositions and
+        /// The attempt domain accent — the version in progress, AI proposals and
         /// the modifications they carry.
         static let attempt = Color.orange
         /// A value that differs from the reference (diffs, deviations, highlights) —

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Push destinations inside the Carnet `NavigationStack`.
+/// Push destinations inside the notebook `NavigationStack`.
 enum RecipeRoute: Hashable {
     case recipe(id: String)
     case history(id: String)
@@ -9,7 +9,7 @@ enum RecipeRoute: Hashable {
 
 /// A request to run the execution flow (presented as a full-screen cover).
 /// `startAtCapture` skips the step-by-step `ExecutePage` and opens the attempt
-/// capture directly — the fiche already shows the recipe, so re-displaying it
+/// capture directly — the recipe sheet already shows the recipe, so re-displaying it
 /// would be redundant.
 struct ExecutionRequest: Identifiable, Hashable {
     let recipeId: String
@@ -25,7 +25,7 @@ struct RecipeIdWrapper: Identifiable {
 }
 
 /// A freshly imported recipe handed from the import flow to its category tab,
-/// which then navigates to the new fiche. The `type` picks the destination tab.
+/// which then navigates to the new recipe sheet. The `type` picks the destination tab.
 struct ImportedRecipe: Equatable {
     let id: String
     let type: RecipeType

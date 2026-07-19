@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The two culinary experiment domains, with their design tokens (icon + label):
 /// a cooked dish or a Thermomix recipe. (Café and cocktail were retired — the app
-/// is cuisine-only.)
+/// is cooking-only.)
 enum RecipeType: String, CaseIterable, Sendable, Identifiable {
     case dish
     case tmx

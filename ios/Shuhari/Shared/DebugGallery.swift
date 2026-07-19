@@ -51,11 +51,11 @@ struct DebugGallery: View {
                     onSave: { _, _, _ in }
                 )
             }
-        case "proposition":
+        case "proposal":
             NavigationStack {
-                PropositionPage(
+                ProposalPage(
                     type: .dish,
-                    proposition: Fixtures.proposition,
+                    proposal: Fixtures.proposal,
                     nextVersionNumber: 5,
                     baseIngredients: Fixtures.bourguignonV4.ingredients,
                     baseSteps: Fixtures.bourguignonV4.steps,
@@ -80,13 +80,13 @@ struct DebugGallery: View {
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : cuisine, recipe, recipe-tmx, recipe-fresh, history, attempt, attempt-pending, execute, execute-tmx, capture, proposition, import-preview, import-preview-tmx, ai-thinking, import-nothing-found")
+                description: Text("Écrans : cuisine, recipe, recipe-tmx, recipe-fresh, history, attempt, attempt-pending, execute, execute-tmx, capture, proposal, import-preview, import-preview-tmx, ai-thinking, import-nothing-found")
             )
         }
     }
 }
 
-/// The full recipe fiche coordinator (`RecipeDetailView`) over a fixture, so the
+/// The full recipe sheet coordinator (`RecipeDetailView`) over a fixture, so the
 /// gallery can exercise the floating action bar and its sheets offline. Owns the
 /// navigation path the coordinator writes into.
 private struct RecipeDetailGalleryScreen: View {
@@ -102,7 +102,7 @@ private struct RecipeDetailGalleryScreen: View {
     }
 }
 
-/// The multi-type Cuisine tab with its round type-filter CTAs and month-grouped
+/// The multi-type cooking tab with its round type-filter CTAs and month-grouped
 /// library — needs local state for the selected filter, so it lives in its own
 /// view. Defaults to Thermomix to show the outlined custom symbol in the list.
 private struct CuisineGalleryScreen: View {

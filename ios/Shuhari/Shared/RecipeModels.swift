@@ -79,14 +79,14 @@ struct RecipeVersion: Identifiable, Sendable {
     var tried: Bool { executedAt != nil }
 }
 
-// MARK: - Proposition
+// MARK: - Proposal
 
-/// An ephemeral AI proposition for the next version of a recipe. Generated on
+/// An ephemeral AI proposal for the next version of a recipe. Generated on
 /// demand, held in memory and never persisted: it carries the COMPLETE next
 /// version (ingredients + steps + tmxSteps) plus a short human summary of what
 /// changed. `basedOn` is the version it iterates on (the one just cooked).
-struct Proposition: Sendable {
-    /// The version this proposition iterates on — echoed back on accept.
+struct Proposal: Sendable {
+    /// The version this proposal iterates on — echoed back on accept.
     let basedOn: Int
     /// A short human summary of what the next version changes.
     let changeSummary: String
@@ -100,11 +100,11 @@ struct Proposition: Sendable {
     let tmxSteps: [TmxSettings]
 }
 
-/// The complete next-version proposition handed back from the proposition screen
-/// and sent to `acceptProposition`. Full-replacement semantics — the lists are
+/// The complete next-version proposal handed back from the proposal screen
+/// and sent to `acceptProposal`. Full-replacement semantics — the lists are
 /// complete, not partial; `basedOn`, `changeSummary` and `rationale` carry through
-/// from the AI proposition unchanged.
-struct PropositionEdit: Sendable {
+/// from the AI proposal unchanged.
+struct ProposalEdit: Sendable {
     let basedOn: Int
     let changeSummary: String
     let rationale: String
@@ -129,7 +129,7 @@ struct Recipe: Identifiable, Sendable {
     /// The best rating across every executed version, computed server-side. nil
     /// when no version has been cooked yet. Drives the recipe's display rating.
     let bestRating: Int?
-    /// The version to show first when the fiche opens: the attempt in progress (the
+    /// The version to show first when the recipe sheet opens: the attempt in progress (the
     /// most recent version built on the best-rated one), else that best-rated
     /// version, else the latest. Never nil — a recipe always has at least its v1.
     let versionToOpen: RecipeVersion

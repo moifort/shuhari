@@ -20,11 +20,11 @@ final class ScreenshotTest: XCTestCase {
         let tabBar = TabBarPage(app: app)
         try tabBar.verify()
 
-        // 1. Home (Carnet tab)
-        let home = try tabBar.goToCarnet().verify()
+        // 1. Home (notebook tab)
+        let home = try tabBar.goToNotebook().verify()
         saveScreenshot("home")
 
-        // 2. First recipe fiche, if any
+        // 2. First recipe sheet, if any
         let firstRow = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "recipe-row-")).firstMatch
         if firstRow.waitForExistence(timeout: 4) {
             firstRow.tap()

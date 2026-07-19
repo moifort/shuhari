@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Resolves a `RecipeRoute` push into its screen. Shared by every tab that hosts
-/// the recipe flow (Carnet and Importer), so navigation behaves identically.
+/// the recipe flow (notebook and Importer), so navigation behaves identically.
 struct RecipeRouteView: View {
     let route: RecipeRoute
     @Binding var path: NavigationPath
@@ -14,7 +14,7 @@ struct RecipeRouteView: View {
         case .history(let id):
             HistoryView(recipeId: id)
         case .attempt(let recipeId, let versionNumber):
-            // The attempt reuses the recipe fiche, focused on the version: same
+            // The attempt reuses the recipe sheet, focused on the version: same
             // title, sections and CTAs, plus an orange banner and change dots.
             RecipeDetailView(recipeId: recipeId, focusVersionNumber: versionNumber, path: $path, onReload: onReload)
         }

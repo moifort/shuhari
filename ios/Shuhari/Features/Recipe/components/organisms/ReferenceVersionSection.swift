@@ -1,12 +1,12 @@
 import SwiftUI
 
-/// The fiche's reference version — "la mieux notée": its steps (with per-step
-/// Thermomix settings when present). The ingredients are shown inline above by
+/// The recipe sheet's reference version — the best-rated one: its steps (with
+/// per-step Thermomix settings when present). The ingredients are shown inline above by
 /// `IngredientsSection`. Composes as a `Section` directly inside a `List`.
 struct ReferenceVersionSection: View {
     let version: RecipeVersion
     /// Step indices changed vs the previous version — flagged with an orange dot.
-    /// Empty (the default) renders exactly like the plain fiche.
+    /// Empty (the default) renders exactly like the plain recipe sheet.
     var modified: Set<Int> = []
 
     var body: some View {

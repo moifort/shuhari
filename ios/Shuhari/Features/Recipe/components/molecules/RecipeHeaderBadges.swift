@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The fiche's header badges, in the iOS Photos "CINÉMATIQUE" style: a capsule
+/// The recipe sheet's header badges, in the iOS Photos "CINÉMATIQUE" style: a capsule
 /// carrying the recipe type (icon + short uppercase label), then the displayed
 /// version and the attempt count. Primitive-first: no domain struct.
 struct RecipeHeaderBadges: View {

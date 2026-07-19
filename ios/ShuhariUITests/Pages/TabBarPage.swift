@@ -10,9 +10,9 @@ struct TabBarPage {
         return self
     }
 
-    /// Tap the single content tab — the "Carnet" (all cuisine recipes: plats & Thermomix).
+    /// Tap the single content tab — the "Carnet" (all cooking recipes: dishes & Thermomix).
     @discardableResult
-    func goToCarnet() throws -> HomePage {
+    func goToNotebook() throws -> HomePage {
         try app.tabBars.buttons["Carnet"].tapOrFail()
         return HomePage(app: app, title: "Carnet")
     }

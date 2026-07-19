@@ -15,9 +15,9 @@ struct RecipeDetailPage {
         try app.staticTexts.matching(predicate).firstMatch.waitOrFail(timeout: 4, "recipe title '\(title)' not shown")
     }
 
-    /// The fiche opens on a server-derived version; its header badge carries a
+    /// The recipe sheet opens on a server-derived version; its header badge carries a
     /// "Version N" accessibility label. Any version is cookable and there is no
-    /// promotion — a freshly appended version simply becomes the one the fiche shows.
+    /// promotion — a freshly appended version simply becomes the one the recipe sheet shows.
     func verifyVersion(_ number: Int) throws {
         let predicate = NSPredicate(format: "label CONTAINS %@", "Version \(number)")
         try app.descendants(matching: .any).matching(predicate).firstMatch

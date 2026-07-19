@@ -6,7 +6,7 @@ struct StepsList: View {
     let steps: [String]
     var big: Bool = false
     /// Step indices changed vs the previous version — flagged with a leading
-    /// orange dot. Empty (the default) renders exactly like the plain fiche.
+    /// orange dot. Empty (the default) renders exactly like the plain recipe sheet.
     var modified: Set<Int> = []
 
     var body: some View {

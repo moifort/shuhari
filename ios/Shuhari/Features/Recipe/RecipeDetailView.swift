@@ -1,11 +1,11 @@
 import SwiftUI
 
-/// Coordinator for the recipe fiche: loads the recipe, wires the execute cover
+/// Coordinator for the recipe sheet: loads the recipe, wires the execute cover
 /// (through the binding owned by `HomeView`), the rename sheet, and deletion.
 struct RecipeDetailView: View {
     let recipeId: String
-    /// When set, the fiche focuses this version (the attempt view): orange banner +
-    /// per-row change dots. Nil renders the plain fiche.
+    /// When set, the recipe sheet focuses this version (the attempt view): orange banner +
+    /// per-row change dots. Nil renders the plain recipe sheet.
     let focusVersionNumber: Int?
     @Binding var path: NavigationPath
     let onReload: () -> Void
@@ -50,11 +50,11 @@ struct RecipeDetailView: View {
             if let recipe = viewModel.recipe {
                 detailPage(recipe: recipe)
                 .toolbar { toolbar(recipe: recipe) }
-                // The fiche is a focused, Photos-style detail: hide the tab bar so the
+                // The recipe sheet is a focused, Photos-style detail: hide the tab bar so the
                 // floating action bar owns the bottom edge.
                 .toolbar(.hidden, for: .tabBar)
                 // The record-attempt flow as a half-screen sheet: capture at .medium,
-                // grows to .large for the AI proposition.
+                // grows to .large for the AI proposal.
                 .sheet(item: $recordRequest) { request in
                     ExecuteFlowView(request: request, presentation: .sheet) {
                         onReload()
@@ -96,9 +96,9 @@ struct RecipeDetailView: View {
         .task { if viewModel.recipe == nil { await viewModel.load() } }
     }
 
-    /// The fiche, focused on a version when `focusVersionNumber` is set (attempt
+    /// The recipe sheet, focused on a version when `focusVersionNumber` is set (attempt
     /// view: orange banner + per-row change dots vs the previous version), or the
-    /// plain best-rated fiche otherwise.
+    /// plain best-rated recipe sheet otherwise.
     @ViewBuilder
     private func detailPage(recipe: Recipe) -> some View {
         if let number = focusVersionNumber, let focus = recipe.version(number) {
@@ -180,7 +180,7 @@ struct RecipeDetailView: View {
         }
     }
 
-    /// The version the fiche presents (and the record CTA targets): the focused
+    /// The version the recipe sheet presents (and the record CTA targets): the focused
     /// attempt version when set, otherwise the recipe's `versionToOpen`.
     private func displayedVersion(_ recipe: Recipe) -> RecipeVersion {
         focusVersionNumber.flatMap { recipe.version($0) } ?? recipe.versionToOpen

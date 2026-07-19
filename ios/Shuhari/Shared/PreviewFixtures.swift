@@ -4,8 +4,8 @@ import Foundation
 /// Deterministic domain fixtures shared by `#Preview`s and the debug gallery.
 /// One realistic recipe per shape the UI must handle: a plated dish mid-iteration
 /// (Bœuf bourguignon), a Thermomix dish with per-step machine settings (Risotto),
-/// and the transient models (AI proposition, import analysis, library rows)
-/// around them. Cuisine-only — no params, no café/cocktail.
+/// and the transient models (AI proposal, import analysis, library rows)
+/// around them. Cooking-only — no params, no café/cocktail.
 enum Fixtures {
     static let date = Date(timeIntervalSince1970: 1_752_300_000)
 
@@ -48,7 +48,7 @@ enum Fixtures {
         Ingredient(name: "Parmesan", quantity: "60 g"),
     ]
 
-    // MARK: - Bœuf bourguignon (plat, pending v4)
+    // MARK: - Bœuf bourguignon (dish, pending v4)
 
     static let bourguignonV1 = RecipeVersion(
         number: 1, basedOn: nil, change: nil, why: nil, originKind: .import,
@@ -172,7 +172,7 @@ enum Fixtures {
 
     // MARK: - Fresh import (nothing rated yet, v1 never tried)
 
-    /// A just-imported recipe: a single untried v1, nothing rated yet. The fiche
+    /// A just-imported recipe: a single untried v1, nothing rated yet. The recipe sheet
     /// must still render (via `versionToOpen`, which falls back to the latest
     /// version) and keep its record CTA.
     static let freshImportV1 = RecipeVersion(
@@ -203,9 +203,9 @@ enum Fixtures {
 
     // MARK: - Transient models
 
-    /// The full proposition of v5: the base v4 lists with a longer cooking time and
+    /// The full proposal of v5: the base v4 lists with a longer cooking time and
     /// a touch less bouillon — a couple of rows differ from the base for the diff.
-    static let proposition = Proposition(
+    static let proposal = Proposal(
         basedOn: 4,
         changeSummary: "Bouillon 50 → 40 cl, cuisson 3 h 30 → 4 h",
         rationale: "La sauce reste un peu liquide et la viande gagnerait à confire plus longtemps ; réduire le bouillon et allonger la cuisson devrait concentrer les arômes.",
@@ -260,8 +260,8 @@ enum Fixtures {
         sourceLabel: "Photo du livre Thermomix"
     )
 
-    /// A page of library rows spanning both cuisine types and a couple of months —
-    /// backs the paginated Carnet list in previews and the debug gallery.
+    /// A page of library rows spanning both cooking types and a couple of months —
+    /// backs the paginated notebook list in previews and the debug gallery.
     static let libraryRecipes = [
         LibraryRecipe(id: "bourguignon", title: "Bœuf bourguignon", type: .dish, category: .main, versionCount: 4, bestRating: 5, updatedAt: Date()),
         LibraryRecipe(id: "joues", title: "Joues de bœuf confites", type: .dish, category: .main, versionCount: 1, bestRating: 4, updatedAt: Date().addingTimeInterval(-3 * 86_400)),

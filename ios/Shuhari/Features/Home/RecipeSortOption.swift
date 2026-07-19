@@ -6,8 +6,8 @@ import Foundation
 enum RecipeSortOption: String, CaseIterable, Identifiable, Sendable {
     /// Most recently modified first (`UPDATED_AT` / `DESC`) — the default.
     case lastModified
-    /// Fixed dish-course order (`CATEGORY`) — Entrée → Plat → Dessert → Soupe →
-    /// Sauce → Boulangerie, most recently modified first within a course.
+    /// Fixed dish-course order (`CATEGORY`) — starter → main → dessert → soup →
+    /// sauce → baking, most recently modified first within a course.
     case dishCategory
 
     var id: String { rawValue }

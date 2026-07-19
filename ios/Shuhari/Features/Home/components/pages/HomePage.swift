@@ -1,12 +1,12 @@
 import SwiftUI
 
-/// The Carnet home screen: the paginated recipe library. Pure presentation —
+/// The notebook home screen: the paginated recipe library. Pure presentation —
 /// navigation, pagination and API calls are owned by `HomeView`. The library is a
 /// server-sorted, infinitely scrolling page (`library` + the `library*` flags and
 /// callbacks).
 struct HomePage: View {
-    /// The type filter offered on a multi-type tab (Carnet), rendered as round
-    /// glass toolbar buttons — one per type (Plat / Thermomix). `nil` on a
+    /// The type filter offered on a multi-type tab (notebook), rendered as round
+    /// glass toolbar buttons — one per type ("Plat" / "Thermomix"). `nil` on a
     /// single-type tab, which needs no selector.
     struct TypeFilter {
         let options: [RecipeType]
@@ -88,9 +88,9 @@ struct HomePage: View {
             }
     }
 
-    /// Empty-carnet copy. A filter that yields nothing (a type segment or a dish
+    /// Empty-notebook copy. A filter that yields nothing (a type segment or a dish
     /// category) isn't a first-run state — the tab may well hold other recipes — so
-    /// only the genuinely empty, unfiltered carnet nudges the user to import.
+    /// only the genuinely empty, unfiltered notebook nudges the user to import.
     private var emptyStateMessage: String {
         if categoryFilter.wrappedValue != nil {
             return "Aucune recette dans cette catégorie pour l’instant."

@@ -1,10 +1,10 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Export the whole carnet to a JSON file, or replace it with an imported one.
+/// Export the whole notebook to a JSON file, or replace it with an imported one.
 struct ImportExportSettingsView: View {
     /// Called after a successful "replace all data" import so the caller can refresh
-    /// its recipe list — the whole carnet was just overwritten.
+    /// its recipe list — the whole notebook was just overwritten.
     var onDataReplaced: () async -> Void = {}
     @State private var isExporting = false
     @State private var isImporting = false

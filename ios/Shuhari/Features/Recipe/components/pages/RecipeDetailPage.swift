@@ -1,23 +1,23 @@
 import SwiftUI
 
-/// The recipe fiche, iOS Photos style: header badges (type + version), the
+/// The recipe sheet, iOS Photos style: header badges (type + version), the
 /// ingredients and the best-rated version step by step. Attempts live in the
 /// history. Navigation and mutations are owned by `RecipeDetailView`.
 struct RecipeDetailPage: View {
     let recipe: Recipe
-    /// When set, the fiche renders THIS version instead of the best-rated one —
-    /// the attempt view. Nil (the default) keeps the fiche strictly unchanged.
+    /// When set, the recipe sheet renders THIS version instead of the best-rated one —
+    /// the attempt view. Nil (the default) keeps the recipe sheet strictly unchanged.
     var focusVersion: RecipeVersion? = nil
     /// Ingredient names changed vs the previous version → orange dot.
     var modifiedIngredients: Set<String> = []
     /// Step indices changed vs the previous version → orange dot.
     var modifiedSteps: Set<Int> = []
     /// The change summary and rationale of the focused version, shown in the
-    /// orange banner atop an attempt fiche.
+    /// orange banner atop an attempt recipe sheet.
     var change: String? = nil
     var why: String? = nil
 
-    /// The version the fiche presents: the focused attempt version when set,
+    /// The version the recipe sheet presents: the focused attempt version when set,
     /// otherwise the recipe's `versionToOpen`.
     private var displayedVersion: RecipeVersion {
         focusVersion ?? recipe.versionToOpen

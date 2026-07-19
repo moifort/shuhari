@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// A single proposed parameter change: the param name and its `DiffValue` —
-/// the highlighted diff on the proposition screen.
+/// the highlighted diff on the proposal screen.
 struct DiffRow: View {
     let key: String
     let from: String?
