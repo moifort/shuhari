@@ -5,9 +5,11 @@ import type {
   Ingredient,
   IngredientName,
   IngredientQuantity,
+  Rating,
   Recipe,
   RecipeId,
   RecipeTitle,
+  Remarks,
   StepText,
   ThermomixSpeed,
   ThermomixTemperature,
@@ -36,6 +38,9 @@ const { ProposalUseCase } = await import('~/domain/proposal/use-case')
 
 const userId = 'user-1' as UserId
 const V1 = 1 as VersionNumber
+// The cook that asks for a proposal: it lives in the request until the proposal is
+// accepted, never in storage beforehand.
+const ATTEMPT = { rating: 3 as Rating, remarks: 'Trop liquide' as Remarks }
 
 // Branded expected values (the fake snapshot is typed to the domain shapes).
 const ing = (name: string, quantity: string): Ingredient => ({
@@ -98,13 +103,15 @@ beforeEach(() => {
 
 describe('ProposalUseCase.fromAttempt', () => {
   test('returns not-found for an unknown recipe', async () => {
-    expect(await ProposalUseCase.fromAttempt(userId, 'nope' as RecipeId, V1)).toBe('not-found')
+    expect(await ProposalUseCase.fromAttempt(userId, 'nope' as RecipeId, V1, ATTEMPT)).toBe(
+      'not-found',
+    )
   })
 
   test('returns not-found for an unknown version', async () => {
     const recipe = await RecipeCommand.create(userId, recipeInput())
     if (typeof recipe === 'string') throw new Error('expected a recipe')
-    expect(await ProposalUseCase.fromAttempt(userId, recipe.id, 9 as VersionNumber)).toBe(
+    expect(await ProposalUseCase.fromAttempt(userId, recipe.id, 9 as VersionNumber, ATTEMPT)).toBe(
       'not-found',
     )
   })
@@ -115,7 +122,7 @@ describe('ProposalUseCase.fromAttempt', () => {
     const docReadsBefore = fake.docReads
     const queryReadsBefore = fake.queryReads
     const batchesBefore = fake.batches.length
-    const result = await ProposalUseCase.fromAttempt(userId, recipe.id, V1)
+    const result = await ProposalUseCase.fromAttempt(userId, recipe.id, V1, ATTEMPT)
     if (result === 'not-found') throw new Error('expected a proposal')
 
     expect(result.basedOn).toBe(V1)
@@ -127,8 +134,9 @@ describe('ProposalUseCase.fromAttempt', () => {
       steps: stepList('Saisir', 'Mijoter'),
     })
 
-    // Two keyed doc reads (the recipe pointer + the tried version, whose own outcome
-    // feeds the AI) — no collection scan, no N+1, nothing written back.
+    // Two keyed doc reads (the recipe pointer + the cooked version) — the attempt
+    // itself comes from the caller, so there is no collection scan, no N+1, and
+    // nothing written back.
     expect(fake.docReads - docReadsBefore).toBe(2)
     expect(fake.queryReads - queryReadsBefore).toBe(0)
     expect(fake.batches.length).toBe(batchesBefore)
@@ -144,7 +152,7 @@ describe('ProposalUseCase.fromAttempt', () => {
     }
     const thermomix = await RecipeCommand.create(userId, recipeInput({ type: 'thermomix' }))
     if (typeof thermomix === 'string') throw new Error('expected a recipe')
-    const thermomixProposal = await ProposalUseCase.fromAttempt(userId, thermomix.id, V1)
+    const thermomixProposal = await ProposalUseCase.fromAttempt(userId, thermomix.id, V1, ATTEMPT)
     if (thermomixProposal === 'not-found') throw new Error('expected a proposal')
     expect(thermomixProposal.content).toEqual({
       kind: 'thermomix',
@@ -165,7 +173,7 @@ describe('ProposalUseCase.fromAttempt', () => {
     // Same proposal on a dish recipe: Thermomix settings are dropped entirely.
     const dish = await RecipeCommand.create(userId, recipeInput())
     if (typeof dish === 'string') throw new Error('expected a recipe')
-    const dishProposal = await ProposalUseCase.fromAttempt(userId, dish.id, V1)
+    const dishProposal = await ProposalUseCase.fromAttempt(userId, dish.id, V1, ATTEMPT)
     if (dishProposal === 'not-found') throw new Error('expected a proposal')
     expect(dishProposal.content).toEqual({
       kind: 'dish',
@@ -202,6 +210,7 @@ describe('ProposalUseCase.accept', () => {
       basedOn: V1,
       changeSummary: 'Bouillon 700 → 650 ml',
       rationale: 'Trop liquide',
+      attempt: ATTEMPT,
       content: {
         kind: 'dish',
         ingredients: PROPOSAL_INGREDIENTS,
@@ -230,6 +239,7 @@ describe('ProposalUseCase.accept', () => {
         basedOn: V1,
         changeSummary: 'x',
         rationale: 'y',
+        attempt: ATTEMPT,
         content: { kind: 'dish', ingredients: PROPOSAL_INGREDIENTS, steps: stepList('Saisir') },
       }),
     ).toBe('not-found')

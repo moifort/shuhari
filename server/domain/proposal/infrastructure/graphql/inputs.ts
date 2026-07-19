@@ -33,5 +33,23 @@ export const ProposalInput = builder.inputType('ProposalInput', {
         'The complete body of the next version — provide exactly one of `dish` or `thermomix`, ' +
         'matching the recipe type',
     }),
+    // The cook that asked for this version. Recorded on the version being created,
+    // never on the one it iterates on.
+    rating: t.field({
+      type: 'Rating',
+      required: true,
+      description: 'How the cook that asked for this version turned out, `1` to `5`, e.g. `3`',
+    }),
+    remarks: t.field({
+      type: 'Remarks',
+      required: true,
+      description:
+        'What you noticed on that cook, e.g. `"Still a touch too sweet"` — the remarks this ' +
+        'version answers',
+    }),
+    // Placeholder, same as RecordAttemptInput.photo: accepted but not yet stored.
+    photo: t.string({
+      description: 'Base64 JPEG of that cook, e.g. `"/9j/4AAQSkZJRg…"` (optional; not yet stored)',
+    }),
   }),
 })

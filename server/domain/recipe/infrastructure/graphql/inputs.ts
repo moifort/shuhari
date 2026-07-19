@@ -189,10 +189,12 @@ export const RecordAttemptInput = builder.inputType('RecordAttemptInput', {
       required: true,
       description: 'Your rating, `1` to `5`, e.g. `4`',
     }),
+    // Optional: a bare rating ends the flow. Remarks are what asks for a next
+    // version, and those go through requestProposal/acceptProposal instead — they
+    // are recorded on the version they give birth to, not on this one.
     remarks: t.field({
       type: 'Remarks',
-      required: true,
-      description: 'Your remarks on how it turned out, e.g. `"Still a touch too sweet"`',
+      description: 'Your remarks on how it turned out, e.g. `"Still a touch too sweet"` (optional)',
     }),
     // Placeholder: accepted but not yet persisted — recordAttempt never stores a
     // photoPath and photoUrl resolves null until GCS photo storage is

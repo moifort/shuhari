@@ -192,13 +192,15 @@ scalar IngredientQuantity
 
 type Mutation {
   """
-  Accept an AI suggestion (optionally after editing it). It becomes the next version in the chain, ready to cook.
+  Accept an AI suggestion (optionally after editing it). It becomes the next version in the chain, ready to cook, and it carries the attempt that asked for it — the rating, remarks and photo of the cook you just did. The version it iterates on is left exactly as it was.
   
   ```graphql
   acceptProposal(recipeId: "9f1c-a3b2", proposal: {
     basedOn: 2
     changeSummary: "Less sugar"
     rationale: "You noted it was too sweet"
+    rating: 3
+    remarks: "Still a touch too sweet"
     content: { dish: {
       ingredients: [{ name: "Sugar", quantity: "80 g" }]
       steps: ["Rest the dough for 2 h", "Bake at 180°C"]
@@ -283,14 +285,13 @@ type Mutation {
   ): ImportResult!
 
   """
-  Save what happened when you cooked a version: its rating and your remarks. Overwritable — recording again on the same version simply updates it. Fast and does not call the AI. If the rating is low and you want a suggested improvement, ask for a proposal separately (see requestProposal). Returns the version, now updated with its outcome.
+  Save what happened when you cooked a version: its rating, optionally a photo. Overwritable — recording again on the same version simply updates it. Fast and does not call the AI. Use this when the cook asks for nothing more. To iterate on what you noticed, ask for a proposal instead (see requestProposal): your remarks then land on the version they produce, and this one is left untouched. Returns the version, now updated with its outcome.
   
   ```graphql
   recordAttempt(input: {
     recipeId: "9f1c-a3b2"
     versionNumber: 2
     rating: 4
-    remarks: "Still a touch too sweet, but the texture is spot on"
   }) {
     number
     rating
@@ -298,15 +299,20 @@ type Mutation {
   ```
   """
   recordAttempt(
-    """The attempt to record — which version, the rating, the remarks"""
+    """The attempt to record — which version, the rating, optionally a photo"""
     input: RecordAttemptInput!
   ): Version!
 
   """
-  Ask the AI for a suggested next version. It looks at the version you just cooked (its rating and remarks) and proposes one improvement. Nothing is saved yet — you get a proposal to review.
+  Ask the AI for a suggested next version. It looks at the version you just cooked and at how the cook went — the rating and remarks you send here — and proposes one improvement. Nothing is saved yet, not even your rating: it is recorded on the new version when you accept the proposal (see acceptProposal).
   
   ```graphql
-  requestProposal(recipeId: "9f1c-a3b2", versionNumber: 2) {
+  requestProposal(
+    recipeId: "9f1c-a3b2"
+    versionNumber: 2
+    rating: 3
+    remarks: "Still a touch too sweet"
+  ) {
     basedOn
     changeSummary
     rationale
@@ -314,10 +320,18 @@ type Mutation {
   ```
   """
   requestProposal(
+    """How that cook turned out, `1` to `5`, e.g. `3`"""
+    rating: Rating!
+
     """
     The recipe to get a suggestion for, e.g. the id of `"Grandma’s lasagna"`
     """
     recipeId: RecipeId!
+
+    """
+    What you noticed and want fixed, e.g. `"Still a touch too sweet"` — this is what the proposal answers
+    """
+    remarks: Remarks!
 
     """The version you just cooked and want to iterate on, e.g. `2`"""
     versionNumber: VersionNumber!
@@ -386,8 +400,23 @@ input ProposalInput {
   """
   content: VersionContentInput!
 
+  """
+  Base64 JPEG of that cook, e.g. `"/9j/4AAQSkZJRg…"` (optional; not yet stored)
+  """
+  photo: String
+
+  """
+  How the cook that asked for this version turned out, `1` to `5`, e.g. `3`
+  """
+  rating: Rating!
+
   """The reasoning behind the change, e.g. `"You noted it was too sweet"`"""
   rationale: String!
+
+  """
+  What you noticed on that cook, e.g. `"Still a touch too sweet"` — the remarks this version answers
+  """
+  remarks: Remarks!
 }
 
 type Query {
@@ -587,8 +616,10 @@ input RecordAttemptInput {
   """Which recipe you cooked, e.g. the id of `"Grandma’s lasagna"`"""
   recipeId: RecipeId!
 
-  """Your remarks on how it turned out, e.g. `"Still a touch too sweet"`"""
-  remarks: Remarks!
+  """
+  Your remarks on how it turned out, e.g. `"Still a touch too sweet"` (optional)
+  """
+  remarks: Remarks
 
   """Which version of it you tried, e.g. `2`"""
   versionNumber: VersionNumber!

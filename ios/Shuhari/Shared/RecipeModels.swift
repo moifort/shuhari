@@ -153,6 +153,16 @@ struct ProposalEdit: Sendable {
     let content: VersionContent
 }
 
+/// A cook: how it was rated, what was noticed, what it looked like. When it carries
+/// remarks it asks for a next version, and it is held in memory through the proposal
+/// step — recorded on the version the proposal creates, never on the version cooked.
+/// A remark-less cook goes straight onto the version cooked (`recordAttempt`).
+struct Attempt: Sendable {
+    let rating: Int
+    let remarks: String
+    let photoBase64: String?
+}
+
 // MARK: - Recipe
 
 /// A recipe under experimentation, with its version lineage.

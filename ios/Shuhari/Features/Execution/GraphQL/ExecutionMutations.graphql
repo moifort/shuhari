@@ -4,8 +4,18 @@ mutation RecordAttempt($input: RecordAttemptInput!) {
   }
 }
 
-mutation RequestProposal($recipeId: RecipeId!, $versionNumber: VersionNumber!) {
-  requestProposal(recipeId: $recipeId, versionNumber: $versionNumber) {
+mutation RequestProposal(
+  $recipeId: RecipeId!
+  $versionNumber: VersionNumber!
+  $rating: Rating!
+  $remarks: Remarks!
+) {
+  requestProposal(
+    recipeId: $recipeId
+    versionNumber: $versionNumber
+    rating: $rating
+    remarks: $remarks
+  ) {
     ...ProposalFields
   }
 }

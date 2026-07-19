@@ -1,10 +1,16 @@
 import SwiftUI
 
-/// The execution flow: execute → capture → record → next step. A written remark
-/// asks the AI for the next version to try; a blank remark just records the rating
-/// and finishes. Presented as a `fullScreenCover` (`.cover`) from Home/replay, or
-/// as a half-screen `.sheet` from the recipe sheet's record CTA; on completion it
-/// dismisses and asks the caller to refresh.
+/// The execution flow: execute → capture → record → next step.
+///
+/// Where the cook lands depends on the remark. A blank remark asks for nothing: the
+/// rating (and photo) is recorded on the version cooked, and the flow ends. A written
+/// remark asks the AI for the next version to try, and the cook goes with it — it is
+/// recorded on the version the accepted proposal creates, leaving the version cooked
+/// untouched. Nothing is saved before that: closing the proposal saves nothing.
+///
+/// Presented as a `fullScreenCover` (`.cover`) from Home/replay, or as a half-screen
+/// `.sheet` from the recipe sheet's record CTA; on completion it dismisses and asks
+/// the caller to refresh.
 struct ExecuteFlowView: View {
     /// How the flow is hosted. `.sheet` sizes the capture at `.medium` and grows to
     /// `.large` for the AI proposal; `.cover` is the full-screen presentation.
@@ -26,6 +32,9 @@ struct ExecuteFlowView: View {
     @State private var errorPresenter = ErrorPresenter()
     /// The ephemeral AI proposal, held in memory while the `.proposal` step is shown.
     @State private var proposal: Proposal?
+    /// The cook that asked for that proposal — held here, unwritten, until the
+    /// proposal is accepted and it lands on the version it created.
+    @State private var pendingAttempt: Attempt?
     @State private var isAcceptingProposal = false
 
     private enum Step: Hashable { case capture, proposal }
@@ -121,47 +130,63 @@ struct ExecuteFlowView: View {
         }
     }
 
+    // A written remark is the request to iterate: nothing is recorded here, the cook
+    // rides along to the proposal and lands on the version it creates. A blank remark
+    // is a cook that asks for nothing — it goes straight onto the version cooked.
     private func save(rating: Int, remarks: String, photo: String?) async {
+        guard !remarks.isEmpty else {
+            await recordBareAttempt(rating: rating, photo: photo)
+            return
+        }
+        pendingAttempt = Attempt(rating: rating, remarks: remarks, photoBase64: photo)
+        // Grow first so the Siri loader fills the sheet.
+        detent = .large
+        analyzing = true
+        defer { analyzing = false }
+        do {
+            proposal = try await ExecutionAPI.requestProposal(
+                recipeId: request.recipeId,
+                versionNumber: request.versionNumber,
+                rating: rating,
+                remarks: remarks
+            )
+            path.append(.proposal)
+        } catch {
+            errorPresenter.message = reportError(error)
+        }
+    }
+
+    private func recordBareAttempt(rating: Int, photo: String?) async {
         isSaving = true
-        // A written remark is the request to iterate; blank input stays a dash
-        // in the journal but skips the AI.
-        let hasRemarks = !remarks.isEmpty
+        defer { isSaving = false }
         do {
             try await ExecutionAPI.recordAttempt(
                 recipeId: request.recipeId,
                 versionNumber: request.versionNumber,
                 rating: rating,
-                remarks: hasRemarks ? remarks : "—",
                 photoBase64: photo
             )
-            isSaving = false
-            if hasRemarks {
-                // Remarks written → let the AI propose the next version to try, built
-                // on the version just cooked, whatever the rating. Grow first so the
-                // Siri loader fills the sheet.
-                detent = .large
-                analyzing = true
-                defer { analyzing = false }
-                proposal = try await ExecutionAPI.requestProposal(
-                    recipeId: request.recipeId,
-                    versionNumber: request.versionNumber
-                )
-                path.append(.proposal)
-            } else {
-                finish()
-            }
+            finish()
         } catch {
-            isSaving = false
-            analyzing = false
             errorPresenter.message = reportError(error)
         }
     }
 
+    // Accepting is what writes the cook down: it lands on the version being created,
+    // and the version it iterates on stays as it was. Closing the proposal instead
+    // records nothing at all.
     private func acceptProposal(_ edited: ProposalEdit) async {
+        // Always set: the `.proposal` step is only ever reached through `save` with
+        // remarks, which stores the cook before asking the AI.
+        guard let pendingAttempt else { return }
         isAcceptingProposal = true
         defer { isAcceptingProposal = false }
         do {
-            try await ProposalAPI.accept(recipeId: request.recipeId, proposal: edited)
+            try await ProposalAPI.accept(
+                recipeId: request.recipeId,
+                proposal: edited,
+                attempt: pendingAttempt
+            )
             finish()
         } catch {
             errorPresenter.message = reportError(error)

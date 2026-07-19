@@ -118,17 +118,17 @@ builder.mutationField('recordAttempt', (t) =>
   t.field({
     type: VersionType,
     description: [
-      'Save what happened when you cooked a version: its rating and your remarks. Overwritable ' +
+      'Save what happened when you cooked a version: its rating, optionally a photo. Overwritable ' +
         '— recording again on the same version simply updates it. Fast and does not call the AI. ' +
-        'If the rating is low and you want a suggested improvement, ask for a proposal ' +
-        'separately (see requestProposal). Returns the version, now updated with its outcome.',
+        'Use this when the cook asks for nothing more. To iterate on what you noticed, ask for a ' +
+        'proposal instead (see requestProposal): your remarks then land on the version they ' +
+        'produce, and this one is left untouched. Returns the version, now updated with its outcome.',
       '',
       '```graphql',
       'recordAttempt(input: {',
       '  recipeId: "9f1c-a3b2"',
       '  versionNumber: 2',
       '  rating: 4',
-      '  remarks: "Still a touch too sweet, but the texture is spot on"',
       '}) {',
       '  number',
       '  rating',
@@ -139,7 +139,7 @@ builder.mutationField('recordAttempt', (t) =>
       input: t.arg({
         type: RecordAttemptInput,
         required: true,
-        description: 'The attempt to record — which version, the rating, the remarks',
+        description: 'The attempt to record — which version, the rating, optionally a photo',
       }),
     },
     resolve: async (_root, { input }, { userId }) => {
@@ -147,7 +147,7 @@ builder.mutationField('recordAttempt', (t) =>
         recipeId: input.recipeId,
         versionNumber: input.versionNumber,
         rating: input.rating,
-        remarks: input.remarks,
+        ...(input.remarks ? { remarks: input.remarks } : {}),
       })
       return match(result)
         .with('not-found', domainError)

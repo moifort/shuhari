@@ -329,25 +329,33 @@ import { RecipeQuery } from '~/domain/recipe/query'
 import { Ai } from '~/system/ai'
 
 export namespace ProposalUseCase {
-  // Ask the AI for the next version after an attempt. Reads the tried version through
-  // the recipe domain's public Query, feeds it to the AI engine and brands the
-  // result — a cross-boundary orchestration (recipe + ai) that persists nothing.
+  // Ask the AI for the next version after an attempt. The attempt itself comes from
+  // the caller — nothing is written until the proposal is accepted, so that cook
+  // exists only in the request. Reads the cooked version through the recipe domain's
+  // public Query, feeds both to the AI engine and brands the result — a
+  // cross-boundary orchestration (recipe + ai) that persists nothing.
   export const fromAttempt = async (
     userId: UserId,
     recipeId: RecipeId,
     versionNumber: VersionNumber,
+    attempt: { rating: Rating; remarks: Remarks },
   ) => {
     const recipe = await RecipeQuery.byId(userId, recipeId)
     if (recipe === 'not-found') return 'not-found'
     const version = await RecipeQuery.versionBy(recipeId, versionNumber)
     if (version === 'not-found') return 'not-found'
-    const proposal = await Ai.proposeNext(/* recipe + version + its attempt outcome */)
+    const proposal = await Ai.proposeNext(/* recipe + version + the attempt */)
     return brandProposal(recipe.type, proposal)
   }
 
-  // Accepting a proposal threads `basedOn` back into the recipe domain's command.
+  // Accepting a proposal threads `basedOn` back into the recipe domain's command,
+  // along with the attempt that asked for it — recorded on the version being
+  // created, never on the one it iterates on.
   export const accept = (userId: UserId, recipeId: RecipeId, proposal: AcceptedProposal) =>
-    RecipeCommand.addVersion(userId, recipeId, { basedOn: proposal.basedOn /* …content */ })
+    RecipeCommand.addVersion(userId, recipeId, {
+      basedOn: proposal.basedOn,
+      attempt: proposal.attempt /* …content */,
+    })
 }
 ```
 

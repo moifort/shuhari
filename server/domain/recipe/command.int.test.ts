@@ -148,6 +148,29 @@ describe('RecipeCommand.addVersion', () => {
     expect(fake.directWrites).toEqual([])
   })
 
+  test('records the attempt that produced v2 on v2, leaving v1 untouched', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+
+    await RecipeCommand.addVersion(userId, recipe.id, {
+      change: 'Bouillon 700 → 650 ml',
+      basedOn: 1 as VersionNumber,
+      content: { kind: 'dish', ingredients: [], steps: steps('Saisir') },
+      attempt: { rating: 3 as Rating, remarks: 'Trop liquide' as Remarks },
+    })
+
+    // The cook that asked for v2 is v2's own outcome.
+    const v2 = fake.snapshot('recipe-versions').get(`${recipe.id}_2`)
+    expect(v2?.rating).toBe(3 as Rating)
+    expect(v2?.remarks).toBe('Trop liquide' as Remarks)
+    expect(v2?.executedAt).toBeInstanceOf(Date)
+    // The version it iterates on keeps no trace of it.
+    const v1 = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)
+    expect(v1).not.toHaveProperty('executedAt')
+    expect(v1).not.toHaveProperty('rating')
+    expect(v1).not.toHaveProperty('remarks')
+  })
+
   test('rejects content whose kind does not match the recipe type', async () => {
     const recipe = await RecipeCommand.create(userId, newInput())
     if (typeof recipe === 'string') throw new Error('expected a recipe')
@@ -193,6 +216,35 @@ describe('RecipeCommand.recordAttempt', () => {
     // Outcome + recipe bump land in a single batch (all-or-nothing).
     expect(fake.directWrites).toEqual([])
     expect(fake.batches.length).toBe(batchesBefore + 1)
+  })
+
+  test('records a bare rating, and a re-cook without remarks erases the earlier ones', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+
+    const rated = await RecipeCommand.recordAttempt(userId, {
+      recipeId: recipe.id,
+      versionNumber: 1 as VersionNumber,
+      rating: 4 as Rating,
+    })
+    if (typeof rated === 'string') throw new Error(`expected a result, got ${rated}`)
+    expect(rated.rating).toBe(4 as Rating)
+    expect(rated).not.toHaveProperty('remarks')
+
+    await RecipeCommand.recordAttempt(userId, {
+      recipeId: recipe.id,
+      versionNumber: 1 as VersionNumber,
+      rating: 2 as Rating,
+      remarks: 'Trop cuit' as Remarks,
+    })
+    const bare = await RecipeCommand.recordAttempt(userId, {
+      recipeId: recipe.id,
+      versionNumber: 1 as VersionNumber,
+      rating: 5 as Rating,
+    })
+    if (typeof bare === 'string') throw new Error(`expected a result, got ${bare}`)
+    expect(bare).not.toHaveProperty('remarks')
+    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)).not.toHaveProperty('remarks')
   })
 
   test('overwrites a previously recorded attempt on the same version', async () => {

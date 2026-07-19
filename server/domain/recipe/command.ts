@@ -26,18 +26,31 @@ export type NewRecipeInput = {
   content: VersionContent
 }
 
+// The cook that produced a version: the rating, remarks and photo of the attempt
+// whose remarks the AI answered. It rides along with the version it gave birth to.
+export type Attempt = {
+  rating: Rating
+  remarks: Remarks
+  photoPath?: string
+}
+
 export type NewVersionInput = {
   change: string
   basedOn?: VersionNumberT
   why?: string
   content: VersionContent
+  // The attempt that produced this version — absent when the version is appended
+  // without a cook behind it, in which case it starts as a planned attempt.
+  attempt?: Attempt
 }
 
 export type RecordAttemptInput = {
   recipeId: RecipeId
   versionNumber: VersionNumberT
   rating: Rating
-  remarks: Remarks
+  // Absent when the cook was rated without a word written about it — a bare rating
+  // ends the flow, it never asks the AI for anything.
+  remarks?: Remarks
   photoPath?: string
 }
 
@@ -72,7 +85,9 @@ export namespace RecipeCommand {
 
   // Accepted AI iteration → append version n+1 to the lineage, stamping the version
   // it was proposed from (`basedOn`). No reference/pending pointer to maintain: the
-  // recipe just bumps its `versionCount` and `updatedAt`.
+  // recipe just bumps its `versionCount` and `updatedAt`. The attempt that asked for
+  // this version lands on it, never on the version it iterates on — that one is left
+  // exactly as it was.
   export const addVersion = async (userId: UserId, recipeId: RecipeId, input: NewVersionInput) => {
     const recipe = await repository.findBy(userId, recipeId)
     if (!recipe) return 'not-found' as const
@@ -89,8 +104,16 @@ export namespace RecipeCommand {
       ...(input.basedOn !== undefined ? { basedOn: input.basedOn } : {}),
       ...(input.why ? { why: input.why } : {}),
       content: input.content,
-      // No outcome fields: a freshly appended version is a planned attempt, never
-      // cooked yet (the full-document write leaves nothing of an older outcome).
+      // The outcome of the attempt that produced it, when there was one; without it
+      // the version is a planned attempt, awaiting its cook.
+      ...(input.attempt
+        ? {
+            executedAt: new Date(),
+            rating: input.attempt.rating,
+            remarks: input.attempt.remarks,
+            ...(input.attempt.photoPath ? { photoPath: input.attempt.photoPath } : {}),
+          }
+        : {}),
     }
     const updated: Recipe = {
       ...recipe,
@@ -104,9 +127,10 @@ export namespace RecipeCommand {
     })
   }
 
-  // Record the attempt outcome onto a version — overwritable: re-cooking the same
-  // version simply rewrites its rating/remarks/executedAt in place. The outcome and
-  // the recipe's `updatedAt` bump land in one batch (all-or-nothing).
+  // Record the attempt outcome onto a version — the cook that asks for nothing more
+  // (a rating, maybe a photo, no remarks). Overwritable: re-cooking the same version
+  // simply rewrites its rating/remarks/executedAt in place. The outcome and the
+  // recipe's `updatedAt` bump land in one batch (all-or-nothing).
   export const recordAttempt = async (
     userId: UserId,
     input: RecordAttemptInput,
@@ -115,14 +139,14 @@ export namespace RecipeCommand {
     if (!recipe) return 'not-found' as const
     const version = await repository.findVersion(input.recipeId, input.versionNumber)
     if (!version) return 'not-found' as const
-    // Drop the previous photo before spreading: a re-cook without a photo must
-    // erase the one the earlier attempt left behind, not inherit it.
-    const { photoPath: _replacedPhoto, ...rest } = version
+    // Drop the previous photo and remarks before spreading: a re-cook that leaves
+    // them out must erase what the earlier attempt left behind, not inherit it.
+    const { photoPath: _replacedPhoto, remarks: _replacedRemarks, ...rest } = version
     const executed: RecipeVersion = {
       ...rest,
       executedAt: new Date(),
       rating: input.rating,
-      remarks: input.remarks,
+      ...(input.remarks ? { remarks: input.remarks } : {}),
       ...(input.photoPath ? { photoPath: input.photoPath } : {}),
     }
     const updatedRecipe: Recipe = { ...recipe, updatedAt: new Date() }
