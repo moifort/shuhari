@@ -1,24 +1,22 @@
 import SwiftUI
 
-/// A library row: type icon tile, title, a subtitle with the version count, and
+/// A library row: the course icon, the title, a subtitle with the version count, and
 /// the recipe's best rating ("the highest star" across every version it ever cooked)
-/// as trailing stars. Designed as a List row — the List provides insets,
-/// separators and the navigation chevron.
+/// as trailing stars. The icon and the stars sit on the title's line. Designed as a
+/// List row — the List provides insets and separators.
 struct LibraryRow: View {
     let title: String
-    let type: RecipeType
+    let category: DishCategory
     let versionCount: Int
     let bestRating: Int?
 
-    @ScaledMetric(relativeTo: .body) private var tileSize: CGFloat = 34
-
     var body: some View {
         HStack(spacing: Theme.Spacing.m) {
-            type.iconImage(filled: false)
+            category.iconImage
                 .font(.body)
                 .foregroundStyle(.secondary)
-                .frame(width: tileSize, height: tileSize)
-                .background(Color(.systemFill), in: RoundedRectangle(cornerRadius: Theme.Radius.control))
+                .frame(maxHeight: .infinity, alignment: .top)
+                .accessibilityLabel(category.label)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -48,8 +46,8 @@ struct LibraryRow: View {
 
 #Preview {
     List {
-        LibraryRow(title: "Bœuf bourguignon", type: .dish, versionCount: 4, bestRating: 5)
-        LibraryRow(title: "Joues de bœuf confites", type: .dish, versionCount: 1, bestRating: 3)
-        LibraryRow(title: "Risotto au parmesan", type: .thermomix, versionCount: 2, bestRating: nil)
+        LibraryRow(title: "Bœuf bourguignon", category: .main, versionCount: 4, bestRating: 5)
+        LibraryRow(title: "Tarte au citron meringuée", category: .dessert, versionCount: 1, bestRating: 3)
+        LibraryRow(title: "Velouté de courge", category: .soup, versionCount: 2, bestRating: nil)
     }
 }

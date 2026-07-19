@@ -2,8 +2,8 @@ import SwiftUI
 
 /// The paginated library. When sorted by last modification the rows are grouped by
 /// month ("Juillet 2026"); when sorted by dish course the server already orders them
-/// (Entrée → … → Boulangerie) so they render as a flat list. Each row is a
-/// NavigationLink into the recipe sheet and prefetches the next page as it appears; a
+/// (Entrée → … → Boulangerie) so they render as a flat list. Each row navigates into
+/// the recipe sheet and prefetches the next page as it appears; a
 /// `LoadMoreRow` sentinel closes the list while more pages remain. Composes as
 /// `Section`s / rows directly inside a `List`.
 struct LibrarySection: View {
@@ -46,10 +46,13 @@ struct LibrarySection: View {
 
     @ViewBuilder
     private func row(_ recipe: LibraryRecipe) -> some View {
-        NavigationLink(value: RecipeRoute.recipe(id: recipe.id)) {
+        ZStack {
+            // A zero-opacity link keeps the row tappable without the List's chevron.
+            NavigationLink(value: RecipeRoute.recipe(id: recipe.id)) { EmptyView() }
+                .opacity(0)
             LibraryRow(
                 title: recipe.title,
-                type: recipe.type,
+                category: recipe.category,
                 versionCount: recipe.versionCount,
                 bestRating: recipe.bestRating
             )
