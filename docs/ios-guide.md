@@ -353,7 +353,7 @@ Regenerate after the SDL changes:
 
 ```bash
 bun run generate:graphql            # backend: regenerate shared/schema.graphql
-cd ios && apollo-ios-cli generate   # iOS: regenerate Generated/GraphQL
+bun run generate:ios                # iOS: regenerate Generated/GraphQL
 ```
 
 ## UI Testing — Page Object pattern

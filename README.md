@@ -47,7 +47,7 @@ The app is single-user but uses real authentication: Firebase Auth with Sign in 
 | [Bun](https://bun.sh/) | Runs the backend server (never use `npm`/`npx` here) | `curl -fsSL https://bun.sh/install \| bash` |
 | [Xcode 26](https://developer.apple.com/xcode/) | Builds the iOS app (iOS 26 SDK) | Mac App Store |
 | [gcloud CLI](https://cloud.google.com/sdk/docs/install) | Talks to Google Cloud when provisioning | `brew install --cask google-cloud-sdk` |
-| [Apollo iOS CLI](https://www.apollographql.com/docs/ios/code-generation/codegen-cli) | Regenerates the app's typed GraphQL code (only needed when the schema changes) | See the Apollo iOS codegen CLI docs |
+| [Apollo iOS CLI](https://www.apollographql.com/docs/ios/code-generation/codegen-cli) | Regenerates the app's typed GraphQL code (only needed when the schema changes) | Nothing to install — SwiftPM ships it with the Xcode project; run `bun run generate:ios` |
 
 You also need a Google Cloud billing account and an Apple Developer account (for Sign in with Apple)
 if you intend to deploy. Running the backend locally needs neither.

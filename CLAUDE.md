@@ -21,7 +21,7 @@ The **only** French in the repo is user-facing copy — `CHANGELOG.fr.md` (the c
 - **Test coverage**: `bun run test:coverage`
 - **Linter**: `bun run lint` (`bunx biome check`); autofix with `bun run lint:fix`
 - **Runtime**: always use `bun`/`bunx`, never `npm`/`npx`
-- **GraphQL codegen** (if the schema changed): `bun run generate:graphql` (regenerates `shared/schema.graphql`), then `cd ios && apollo-ios-cli generate`
+- **GraphQL codegen** (if the schema changed): `bun run generate:graphql` (regenerates `shared/schema.graphql`), then `bun run generate:ios`
 - **iOS build**:
   ```
   DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project ios/Shuhari.xcodeproj -scheme Shuhari -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.2' build
@@ -44,7 +44,7 @@ The **only** French in the repo is user-facing copy — `CHANGELOG.fr.md` (the c
 1. **Re-analyze & reshape the pending commits** (`git log origin/<branch>..HEAD`): squash/regroup related ones, rewrite messages, and **elide undone work** — a feature + its revert must collapse and leave no trace on the remote.
 2. **Biome autofix**: run `bun run lint:fix`, confirm `bun run lint` is clean, and commit any changes — CI's `biome check` lints everything (incl. asset-catalog JSON), and local `bun test` doesn't cover it.
 3. **README** (`README.md`): update the features / tech-stack sections if the pushed work changed them.
-4. **iOS GraphQL API** (if the schema changed): run `bun run generate:graphql`, then `cd ios && apollo-ios-cli generate`, and commit the regenerated `shared/schema.graphql` + `ios/Shuhari/**/Generated` so the app's typed operations stay in sync with the deployed schema.
+4. **iOS GraphQL API** (if the schema changed): run `bun run generate:graphql`, then `bun run generate:ios`, and commit the regenerated `shared/schema.graphql` + `ios/Shuhari/**/Generated` so the app's typed operations stay in sync with the deployed schema.
 5. Push.
 6. **Analyze the CI**: a push to `main` fires **Unit Tests** + **Deploy** — watch them (`gh run watch`, or `gh run list --branch main` + `gh run view <id> --log-failed` on failure). Not done until CI is green; fix any failure with a follow-up commit + push.
 

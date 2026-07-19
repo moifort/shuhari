@@ -299,7 +299,7 @@ The SDL is the contract shared with the iOS app (`shared/schema.graphql`).
 
 ```bash
 bun run generate:graphql            # regenerate shared/schema.graphql
-cd ios && apollo-ios-cli generate   # regenerate Generated/GraphQL from the SDL
+bun run generate:ios                # regenerate Generated/GraphQL from the SDL
 ```
 
 Order of changes: **domain first** (types/primitives) → GraphQL slice → regenerate SDL → iOS

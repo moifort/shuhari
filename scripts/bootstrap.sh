@@ -136,7 +136,7 @@ cat <<EOF
                  FIXME_DSN, ADMIN_TOKEN
        Vars    : GCP_PROJECT_ID (= ${PROJECT_ID}), GCP_ORG_ID
   3. In Xcode, add the SPM packages (Apollo iOS, Firebase iOS), enable the
-     Sign in with Apple capability, and run apollo-ios-cli generate.
+     Sign in with Apple capability, and run bun run generate:ios.
   4. Push to main — the deploy workflow will redeploy the Cloud Function on
      every commit.
 

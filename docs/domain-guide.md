@@ -253,7 +253,7 @@ Then regenerate the SDL and the iOS types:
 
 ```bash
 bun run generate:graphql            # regenerates shared/schema.graphql
-cd ios && apollo-ios-cli generate   # regenerates Generated/GraphQL
+bun run generate:ios                # regenerates Generated/GraphQL
 ```
 
 ## 9. Write Tests
@@ -366,6 +366,6 @@ domain that imports `~/system/ai`, and it depends one-way on `recipe` (never the
 - [ ] Satellite fields (if any) resolved through a loader in `shared/graphql/loaders.ts`
 - [ ] Side-effect imports added to `shared/graphql/schema.ts`
 - [ ] Tests co-located (`.int.test.ts` with read-budget assertions; `.unit.test.ts` for rules)
-- [ ] `bun run generate:graphql` + `apollo-ios-cli generate` if the schema changed
+- [ ] `bun run generate:graphql` + `bun run generate:ios` if the schema changed
 - [ ] `bun run prepare && bun tsc --noEmit` passes; `bun test` green
 - [ ] (optional) `business-rules.ts` (pure/sync, 100% coverage) / `use-case.ts` (no repo access)

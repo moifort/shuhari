@@ -76,7 +76,7 @@ by hand, then commit the removal; that pain is exactly why one-task-one-commit m
 3. **README** (`README.md`): update the features / tech-stack sections if the pushed work
    changed them.
 4. **iOS GraphQL API** (only if the GraphQL schema changed): run `bun run generate:graphql`,
-   then `cd ios && apollo-ios-cli generate`, and commit the regenerated `shared/schema.graphql`
+   then `bun run generate:ios`, and commit the regenerated `shared/schema.graphql`
    and the generated Apollo operations so the app's typed operations stay in sync with the
    deployed schema.
 5. **Push.**

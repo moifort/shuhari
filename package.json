@@ -11,6 +11,7 @@
     "lint:fix": "bunx biome check --write",
     "generate:assets": "bun scripts/generate-changelog-asset.ts",
     "generate:graphql": "bun scripts/export-graphql-schema.ts",
+    "generate:ios": "./scripts/apollo-codegen.sh",
     "generate": "bun run generate:assets && bun run generate:graphql",
     "bootstrap": "./scripts/bootstrap.sh",
     "destroy": "./scripts/teardown.sh",
