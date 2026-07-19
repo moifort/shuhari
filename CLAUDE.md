@@ -6,7 +6,11 @@ propose the next iteration, and open the best-rated version by default.
 
 ## Language
 
-Everything versioned and technical is written in **English**: commit messages, code, code comments, and documentation (README, this file). This includes `CHANGELOG.md`, the English source of truth. The **only** French in the repo is user-facing copy — `CHANGELOG.fr.md` (the copy served to the app) and the iOS app's on-screen text. Never mix languages in a commit message or a comment.
+Everything versioned and technical is written in **English**: commit messages, code, code comments, and documentation (`README.md`, `docs/`, this file). This includes `CHANGELOG.md`, the English source of truth. That covers identifiers, folder and file names, GraphQL descriptions, AI prompts, test names, and — on iOS — accessibility *identifiers*.
+
+**Enum values, unions and discriminants are English technical symbols** (`DISH`/`dish`, `STARTER`/`starter`, `ai-proposal`): the schema never speaks the user's language, the app translates them (`RecipeType.swift` maps `.dish` to the label "Plat").
+
+The **only** French in the repo is user-facing copy — `CHANGELOG.fr.md` (the copy served to the app, plus its generated asset `server/system/changelog-content.ts`) and the iOS app's on-screen text (`Text`, `label`, `navigationTitle`, `accessibilityLabel`, preview names) — and French **data values** quoted as examples in code/prompts (Thermomix speeds, ingredient names) plus the import fallback title. Never mix languages in a commit message or a comment. Control: `grep -rnP '[\x{00C0}-\x{00FF}]' server/` (the accented-letter range) must only return those exceptions. Full rules: [docs/code-style.md](docs/code-style.md#language).
 
 ## Build & Verification Commands
 
@@ -75,11 +79,13 @@ Everything versioned and technical is written in **English**: commit messages, c
 
 ## Key Business Rules
 
-- **Two recipe types** (`RECIPE_TYPE_VALUES`): `plat`, `tmx` (Thermomix). Notes are `1..5`.
-- **Linear lineage**: a recipe owns a chain of `RecipeVersion`s (`v1 → v2 → v3 …`). `RecipeVersion.basedOn` is the `VersionNumber` a version was iterated from (`null` for v1). No forks, no variations, no `derivedFrom`.
-- **Attempt = one overwritable outcome per version**: `RecipeCommand.recordAttempt` records `rating` (1..5), `remarks`, `executedAt`, `photoPath` onto *any* version and rewrites them in place on a re-cook. An attempt is not an entity — it lives on the version. A never-cooked version has no rating (`rating: null`).
-- **No promotion — everything derived** (`recipe/business-rules.ts`): `bestRating` = the recipe's best attempt rating across its cooked versions (highest rating; tie → most recent version), driving the displayed rating. `versionToOpen` = the version the fiche opens on: the most recent one `basedOn` the best-rated version (the attempt in progress), else the best-rated version, else the latest.
-- **Iteration**: an attempt with remarks feeds the AI (`ProposalUseCase.fromAttempt`); accepting the proposal appends version `n+1` via `RecipeCommand.addVersion`, threading `basedOn = the tried version`. An attempt without remarks is a rating only — no AI. Import confirmation persists a fresh recipe + v1 via `RecipeCommand.create` (the `createRecipe` mutation).
+- **Two recipe types** (`RECIPE_TYPE_VALUES`): `dish`, `tmx` (Thermomix). Ratings are `1..5`.
+- **Dish category** (`DISH_CATEGORY_VALUES`): `starter`, `main`, `dessert`, `soup`, `sauce`, `baking`. Detected by the AI at import, fixed on the aggregate (never versioned); the array order IS the library's sort rank, denormalized via `categoryRank`.
+- **Linear lineage**: a recipe owns a chain of `RecipeVersion`s (`v1 → v2 → v3 …`). `RecipeVersion.basedOn` is the `VersionNumber` a version was iterated from (**absent** on v1, which iterates on nothing). No forks, no variations, no `derivedFrom`.
+- **A version *is* an attempt**: its content and lineage (`steps`/`ingredients`/`tmxSteps`/`origin`/`change`/`basedOn`) are immutable; its outcome is overwritable. `RecipeCommand.recordAttempt` writes `rating` (1..5), `remarks`, `executedAt`, `photoPath` onto *any* version and rewrites them in place on a re-cook (dropping the previous photo). An attempt is not an entity. A never-cooked version is a *planned* attempt: no `executedAt`, no `rating` (the fields are **absent**, never `null`).
+- **No promotion — everything derived** (`recipe/business-rules.ts`): `bestRating` = the recipe's best-rated cooked version (highest rating; tie → most recent version), `undefined` when nothing was ever cooked; it drives the displayed rating. `versionToOpen` = the version the recipe sheet opens on: the most recent one `basedOn` the best-rated version (the attempt in progress), else the best-rated version, else the latest.
+- **Iteration**: an attempt feeds the AI (`ProposalUseCase.fromAttempt` → `Proposal`, ephemeral, never stored); accepting it (`ProposalUseCase.accept`) appends version `n+1` via `RecipeCommand.addVersion` with `origin.kind = 'ai-proposal'`, threading `basedOn = the tried version`. The app only asks for a proposal when remarks were written — a bare rating ends the flow. Import confirmation persists a fresh recipe + v1 (`origin.kind = 'import'`) via `RecipeCommand.create` (the `createRecipe` mutation).
+- **Style rules that bite here** (see [code-style](docs/code-style.md)): no `null` in the domain (absence is `field?: T` / `undefined`, converted only at the GraphQL, Firestore and AI boundaries); arrays and their items are never optional (`[T!]!` in GraphQL, `{}` for a plain step in `tmxSteps`); enum/union values are English technical symbols (`dish`, `starter`, `ai-proposal`) that the app translates.
 
 ## Database Migrations
 

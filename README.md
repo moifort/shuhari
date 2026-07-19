@@ -1,150 +1,233 @@
 # Shuhari
 
-守破離 — *Shu* (suivre la règle), *Ha* (la casser), *Ri* (la transcender).
+守破離 — *Shu* (follow the rule), *Ha* (break it), *Ri* (transcend it).
 
-Un carnet d'expérimentation culinaire qui applique une boucle scientifique à la
-cuisine : on importe une recette, on l'exécute, on note l'essai, puis l'IA
-propose l'itération suivante. Chaque recette progresse version après version
-jusqu'à trouver la meilleure.
+A culinary experimentation notebook: import a recipe, cook a version, rate the attempt, and let the
+AI propose the next iteration. Each recipe grows as a chain of versions, and the app always opens on
+the one worth cooking next.
 
-## Le concept
+## What's in the box
 
-Deux types d'expérimentations culinaires : **plat** et **tmx** (Thermomix) — le
-café et le cocktail reviendront plus tard, chacun dans son propre domaine. Chaque
-recette porte une **catégorie de plat** (entrée, plat, dessert, soupe, sauce,
-boulangerie). La boucle est toujours la même :
+- An **iOS app** to browse your recipe library, cook a version step by step, rate the attempt out of
+  5, and review the AI's next proposal
+- **AI import** — snap a photo of a recipe, paste a link or some text, and get the title, dish
+  category, ingredients and steps extracted for you (Thermomix settings included)
+- **AI iteration** — after an attempt with remarks, get a full draft of the next version (what
+  changes, why, plus the new ingredients and steps) that you can edit before accepting it
+- A **backend server** that stores each recipe and its version chain, and works out on its own which
+  version is the best-rated and which one to open
+- **Export & import** of all your data, so the notebook is yours to take away
+- **Error monitoring** with Sentry (optional)
 
-1. **Importer** une recette depuis une photo (prise sur le vif avec l'appareil
-   photo ou choisie dans la bibliothèque), un lien ou du texte — l'IA (Gemini)
-   en extrait les **ingrédients** et les **étapes**, et **détecte la catégorie
-   de plat**. Pour une recette Thermomix, elle relève aussi les réglages de
-   chaque étape (temps, température, vitesse, sens inverse), affichés en badges
-   dédiés.
-2. **Exécuter** la version courante — ses ingrédients et ses étapes — et
-   **noter** l'essai de **1 à 5 étoiles** (remarques et photos à l'appui).
-3. **Itérer** — l'IA propose la version suivante sous forme de **brouillon
-   complet** (résumé du changement, justification, ingrédients et étapes), que
-   l'on peut **modifier avant de l'accepter**.
-4. **Valider** la proposition en **itération** (nouvelle version de la même
-   recette) ou en **variation** (nouvelle recette dérivée, avec sa propre
-   lignée).
-5. **Promouvoir** — dès qu'un essai atteint **4 étoiles ou plus**, la version
-   testée devient la nouvelle référence.
+### How a recipe evolves
 
-Le carnet rassemble toutes les recettes dans une **bibliothèque paginée**,
-triable par **catégorie de plat** ou par **dernière modification**, avec un
-filtre Plat / Thermomix.
+1. **Import** a recipe — it becomes `v1`.
+2. **Cook** a version and **rate the attempt** (1 to 5 stars, plus remarks and a photo). The outcome
+   lives on the version itself, and re-cooking the same version simply overwrites it.
+3. If you wrote remarks, the **AI proposes the next version**. Accept it and it is appended as
+   `v2` — a straight line, never a fork.
+4. The app derives the rest: the **best rating** is the highest-rated attempt (most recent one wins a
+   tie), and the recipe opens on the **attempt in progress** — the newest version built on that
+   best-rated one — falling back to the best-rated version, then to the latest.
 
-Application mono-utilisateur, mais avec une vraie authentification Firebase +
-Sign in with Apple.
+There is no "promote a version" step and no variations: nothing is flagged by hand, everything is
+derived from the ratings.
 
-## Architecture
+Recipes come in two kinds — **dish** and **tmx** (Thermomix, where each step also carries time,
+temperature, speed and reverse rotation) — and one of six courses (starter, main, dessert, soup,
+sauce, baking) detected at import. The library is paginated, filterable by kind and sortable by
+course or by last edit.
 
-| Couche   | Stack                                                                            |
-| -------- | -------------------------------------------------------------------------------- |
-| iOS      | SwiftUI, Swift 6, iOS 26, MVVM `@Observable`, Apollo iOS, style Liquid Glass     |
-| Backend  | Bun + Nitro 2.13 (Firebase Cloud Functions Gen 2, nodejs22, europe-west3)        |
-| API      | Apollo Server 5 + Pothos 4 — endpoint GraphQL unique `POST /graphql`             |
-| Stockage | Firestore natif (firebase-admin), isolé par `userId`                             |
-| IA       | Gemini 2.5 Flash (import de recettes + propositions d'itérations)                |
-| Infra    | Terraform sur GCP (projet `shuhari-polyforms`), déploiement CI via WIF           |
+The app is single-user but uses real authentication: Firebase Auth with Sign in with Apple.
 
-Le backend suit une architecture **DDD/CQRS** stricte. Domaines dans
-`server/domain/` : `recipe` (la recette et sa lignée de versions — chaque
-version porte son essai noté), `draft` (les brouillons d'itération de l'IA,
-éphémères), `home` (l'agrégation d'accueil), `portability` (export/import des
-données), `changelog`. Les concerns transverses sont dans `server/system/`
-(`ai`, `firebase`, `config`, `migration`, `request-cache`).
+## Prerequisites
 
-## Documentation
+| Tool | What it does | Install |
+|------|--------------|---------|
+| [Bun](https://bun.sh/) | Runs the backend server (never use `npm`/`npx` here) | `curl -fsSL https://bun.sh/install \| bash` |
+| [Xcode 26](https://developer.apple.com/xcode/) | Builds the iOS app (iOS 26 SDK) | Mac App Store |
+| [gcloud CLI](https://cloud.google.com/sdk/docs/install) | Talks to Google Cloud when provisioning | `brew install --cask google-cloud-sdk` |
+| [Apollo iOS CLI](https://www.apollographql.com/docs/ios/code-generation/codegen-cli) | Regenerates the app's typed GraphQL code (only needed when the schema changes) | See the Apollo iOS codegen CLI docs |
 
-Les guides techniques détaillés vivent dans `docs/` (en anglais, comme le reste du code) :
+You also need a Google Cloud billing account and an Apple Developer account (for Sign in with Apple)
+if you intend to deploy. Running the backend locally needs neither.
 
-| Guide | Ce qu'il couvre |
-| ----- | --------------- |
-| [Architecture](docs/architecture.md) | Organisation du backend : DDD/CQRS, Firestore, couches, plomberie GraphQL |
-| [Domain Guide](docs/domain-guide.md) | Ajouter un domaine pas à pas (types, repository, command/query, GraphQL, tests) |
-| [GraphQL Patterns](docs/graphql-patterns.md) | Schéma Pothos par domaine, scalars branded, loaders anti-N+1, mapping des erreurs |
-| [Branded Types](docs/branded-types.md) | Types nominaux `ts-brand` + validation Zod dans `primitives.ts` |
-| [Code Style](docs/code-style.md) | Conventions TypeScript/Swift, règles imposées par le test d'architecture |
-| [Error Handling](docs/error-handling.md) | Sentinelles string, `match().exhaustive()`, `throw` pour les états impossibles |
-| [Migrations](docs/migrations.md) | Migrations Firestore forward-only via `POST /admin/migrate` |
-| [iOS Guide](docs/ios-guide.md) | App SwiftUI : GraphQL/Apollo, Firebase Auth, design atomique, previews |
-| [Git Workflow](docs/git-workflow.md) | Règles de commits et de push : une tâche = un commit, rollback, remodelage au push |
-| [README Guide](docs/readme-guide.md) | Écrire et maintenir ce README : structure, clés, liens vers les guides |
+## Installation
 
-Voir aussi [docs/apple-sign-in.md](docs/apple-sign-in.md) pour la configuration Sign in with Apple.
+1. Clone the repository and install the dependencies:
 
-## Développement local
+   ```bash
+   bun install
+   ```
+
+2. Create your environment file from the template:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Fill in the keys — see [Setting up keys](#setting-up-keys) below.
+
+4. Generate the local build artefacts (the changelog asset and Nitro's types):
+
+   ```bash
+   bun run prepare
+   ```
+
+5. For the iOS app, create the local secrets file:
+
+   ```bash
+   cp ios/Shuhari/Shared/Secrets.swift.example ios/Shuhari/Shared/Secrets.swift
+   ```
+
+   `Secrets.swift` is gitignored and only holds an optional admin token — the app authenticates
+   against the API with the Firebase ID token, so `REPLACE-ME` is fine to leave as is.
+
+## Setting up keys
+
+### Gemini API key
+
+**What it does:** powers recipe import and the AI iteration proposals (Gemini 2.5 Flash). Without
+it, the server runs but importing and proposing fail.
+
+**How to get it:** create one in [Google AI Studio](https://aistudio.google.com/apikey) →
+**Get API key** → **Create API key**.
+
+**Where to put it:**
+
+| File | Variable |
+|------|----------|
+| `.env` | `NITRO_GOOGLE_API_KEY=your-key-here` |
+
+### Admin token
+
+**What it does:** gates `POST /admin/migrate`, the endpoint that applies the Firestore migrations.
+Anyone with this token can run them, so pick a long random string.
+
+**How to get it:** generate one, e.g. `openssl rand -hex 32`.
+
+**Where to put it:**
+
+| File | Variable |
+|------|----------|
+| `.env` | `NITRO_ADMIN_TOKEN=your-token-here` |
+
+### Sentry DSN (optional)
+
+**What it does:** reports server errors to [Sentry](https://sentry.io). Leave it empty to disable
+reporting entirely.
+
+**How to get it:** in Sentry, **Settings** → **Projects** → your project → **Client Keys (DSN)**.
+
+**Where to put it:**
+
+| File | Variable |
+|------|----------|
+| `.env` | `NITRO_SENTRY_DSN=https://…` |
+
+### Firebase configuration (iOS)
+
+**What it does:** tells the app which Firebase project to authenticate against.
+
+**How to get it:** `bun run bootstrap` generates a `GoogleService-Info.plist` (see
+[Deployment](#deployment)); you can also download it from the Firebase console under **Project
+settings** → **Your apps**.
+
+**Where to put it:** drop it into the `Shuhari` target in Xcode (it belongs at
+`ios/Shuhari/GoogleService-Info.plist`).
+
+In production, none of these live in a file: they are stored in GCP Secret Manager (project
+`shuhari-polyforms`) and wired in by the infrastructure. Never commit a key.
+
+## Running the project
+
+### Start the backend
 
 ```bash
-cp .env.example .env   # renseigner les clés
-bun install
-bun run prepare        # generate:assets + nitro prepare
-bun run dev            # http://localhost:3000 — GraphQL sur POST /graphql
+bun run dev
 ```
 
-Avec la suite d'émulateurs Firebase (Auth + Firestore) :
+The server starts at `http://localhost:3000`. GraphQL — with the Apollo Sandbox in dev — is at
+`POST /graphql`. To check it works, open the sandbox and run:
+
+```graphql
+query {
+  recipes(limit: 5) {
+    items {
+      title
+      bestRating
+      versionToOpen { number }
+    }
+    hasMore
+  }
+}
+```
+
+An empty `items` list means the server is talking to Firestore correctly. In dev the user is faked
+(`NITRO_DEV_USER_ID`, default `dev-user`), so no login is needed.
+
+To run against the Firebase emulators instead of the real project:
 
 ```bash
 firebase emulators:start --only auth,firestore,functions
 ```
 
-Variables d'environnement (`.env`) :
+### Run the iOS app
 
-```
-NITRO_GOOGLE_API_KEY=...   # clé Gemini (obligatoire pour l'IA)
-NITRO_ADMIN_TOKEN=...      # protège POST /admin/migrate
-NITRO_SENTRY_DSN=          # optionnel — reporting d'erreurs Sentry
-```
+1. Open the project: `open ios/Shuhari.xcodeproj`
+2. Set your Development Team under **Signing & Capabilities** for the `Shuhari` target.
+3. If the GraphQL schema changed, regenerate the typed operations: `cd ios && apollo-ios-cli generate`
+4. Pick the **iPhone 17 (iOS 26.2)** simulator and hit **Run**.
 
-### Commandes utiles
+You should land on the sign-in screen; after Sign in with Apple, the recipe library appears (empty
+on a fresh install).
 
-```bash
-bun tsc --noEmit           # typecheck backend
-bun test                   # tests unitaires (*.unit.test.ts, bun:test)
-bun run test:coverage      # couverture
-bun run lint               # Biome (lint + format) ; --fix : bun run lint:fix
-bun run generate:graphql   # régénère shared/schema.graphql
-```
-
-## Infrastructure
-
-Toute la stack GCP — projet, Firebase, Firestore (règles + index), Identity
-Platform avec Sign in with Apple, Cloud Function Gen 2, secrets, enregistrement
-de l'app iOS — est provisionnée par Terraform.
+### Useful commands
 
 ```bash
-bun run bootstrap   # provisionne l'infra de bout en bout
-bun run infra:plan  # diff Terraform sans appliquer
-bun run infra:apply # applique le plan
-bun run destroy     # supprime les ressources
+bun tsc --noEmit           # typecheck the backend
+bun test                   # unit tests
+bun run test:coverage      # unit tests with coverage
+bun run lint               # Biome check (bun run lint:fix to autofix)
+bun run generate:graphql   # regenerate shared/schema.graphql from the Pothos schema
 ```
 
-Le bootstrap construit le bundle Nitro (`nitro build`, preset firebase), lance
-`terraform apply`, puis déclenche `POST /admin/migrate` pour appliquer les
-migrations Firestore. Les déploiements suivants se font en poussant sur `main`
-(GitHub Actions, authentification par Workload Identity Federation).
+## Deployment
 
-> `terraform` est téléchargé automatiquement (version épinglée) dans
-> `infra/.bin/` via `scripts/tf` au premier `infra:*` / `bootstrap`.
+The whole Google Cloud stack — project, Firebase, Firestore rules and indexes, Identity Platform with
+Sign in with Apple, the Cloud Function (Gen 2, `europe-west3`), the secrets and the iOS app
+registration — is described as Terraform code in `infra/`.
 
-## Prérequis
+```bash
+bun run bootstrap    # provision everything, end to end
+bun run infra:plan   # show the Terraform diff without applying it
+bun run infra:apply  # apply it
+bun run destroy      # tear the resources down
+```
 
-- **Bun** (jamais `npm`/`npx`)
-- **Xcode 26** (SDK iOS 26) pour l'app
-- `gcloud` authentifié en **Application Default Credentials** :
-  `gcloud auth application-default login`
-- Un compte Apple Developer (Service ID + Sign in with Apple + clé `.p8`) et un
-  compte de facturation GCP pour le provisioning de l'infra
+`bun run bootstrap` builds the Nitro bundle (`preset firebase`), runs `terraform apply`, then calls
+`POST /admin/migrate` with your admin token to apply the Firestore migrations.
 
-## App iOS
+Terraform itself is downloaded automatically (pinned version) into `infra/.bin/` by `scripts/tf` on
+the first `infra:*` or `bootstrap` run.
 
-1. Ouvrir `ios/Shuhari.xcodeproj` dans Xcode.
-2. Après `bun run bootstrap`, glisser le `GoogleService-Info.plist` généré dans
-   la target `Shuhari`.
-3. Régénérer les opérations GraphQL typées : depuis `ios/`, lancer
-   `apollo-ios-cli generate` (à partir de `shared/schema.graphql`).
-4. Build & run sur le simulateur iPhone 17 (iOS 26.2).
+Afterwards, deployments happen by pushing to `main`: GitHub Actions authenticates to GCP through
+Workload Identity Federation, deploys the function and runs the migration endpoint.
 
-Bundle : `com.polyforms.shuhari.app` · Team : `46C337T7YN`.
+## Documentation
+
+| Guide | What it covers |
+|-------|----------------|
+| [Architecture](docs/architecture.md) | How the backend is organized, and where each kind of code lives |
+| [Domain guide](docs/domain-guide.md) | How to add a new domain, step by step |
+| [GraphQL patterns](docs/graphql-patterns.md) | How the GraphQL layer is built and kept fast |
+| [Branded types](docs/branded-types.md) | How values are validated once and stay trustworthy |
+| [Code style](docs/code-style.md) | The conventions the code follows, and which ones the tests enforce |
+| [Error handling](docs/error-handling.md) | How failures are represented and surfaced to the app |
+| [Migrations](docs/migrations.md) | How to change the shape of stored data safely |
+| [iOS guide](docs/ios-guide.md) | How to add screens to the iOS app |
+| [Git workflow](docs/git-workflow.md) | How commits and pushes are handled |
+| [README guide](docs/readme-guide.md) | How to write and maintain this file |
+| [Sign in with Apple](docs/apple-sign-in.md) | How the Apple authentication is configured |
+
+App bundle id: `com.polyforms.shuhari.app` · Apple team: `46C337T7YN`.

@@ -78,7 +78,7 @@ String-literal unions live as a `const` tuple in `types.ts` and are parsed (not 
 
 ```ts
 // types.ts
-export const RECIPE_TYPE_VALUES = ['cafe', 'cocktail', 'plat', 'tmx'] as const
+export const RECIPE_TYPE_VALUES = ['dish', 'tmx'] as const
 export type RecipeType = (typeof RECIPE_TYPE_VALUES)[number]
 
 // primitives.ts

@@ -27,7 +27,7 @@ ios/
     │   ├── Fragments/                  # VersionFields, ProposalFields
     │   └── Schema/                     # CustomScalars (RecipeId, Rating, …), Enums, Objects, InputObjects
     ├── Features/
-    │   ├── Auth/  Home/  Recipe/  Proposition/  Execution/  Import/  Settings/
+    │   ├── Auth/  Home/  Recipe/  Proposal/  Execution/  Import/  Settings/
     │   └── {Feature}/
     │       ├── {Feature}Store.swift    # ViewModel (@MainActor @Observable) — or {Feature}ViewModel
     │       ├── {Feature}API.swift      # maps generated types → model structs
@@ -36,7 +36,7 @@ ios/
     │       ├── GraphQL/*.graphql       # hand-written operations for this feature
     │       └── components/{pages,organisms,molecules}/
     └── Shared/
-        ├── Components/                 # shared atoms (Chip, RatingBadge, ParamsGrid, …)
+        ├── Components/                 # shared atoms (Chip, RatingBadge, TmxStepsList, …)
         ├── GraphQLClient.swift         # singleton ApolloClient
         ├── GraphQLHelpers.swift        # async fetch/perform bridges + nullable helpers
         ├── APIClient.swift             # base-URL resolver only

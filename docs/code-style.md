@@ -22,8 +22,7 @@ Runtime is always `bun`/`bunx`, never `npm`/`npx`.
 
 Let TypeScript infer — the annotation duplicates what the body already proves, and drifts from it.
 This includes command outcomes: the discriminated union follows from the `as const` sentinels and
-the returned entity, so `promote` infers `Promise<Recipe | 'not-found' | 'nothing-to-test'>` on its
-own.
+the returned entity, so `addVersion` infers `Promise<Recipe | 'not-found'>` on its own.
 
 ```ts
 // Bad
@@ -172,9 +171,9 @@ states, and lives outside these two files. See [error-handling.md](./error-handl
 
 Exported names in `query.ts` / `command.ts` / `business-rules.ts` may not start with
 `get`/`compute`/`handle`/`process`/`manage`/`perform`/`fetch` + a capital. Reads read as `all`,
-`byId`, `versionsOf`; writes as the action (`importRecipe`, `promote`, `deriveVariation`); rules as
-the concept (`readyToPromote`, `nextVersionNumber`). `findAll`/`findBy` stay — that is the
-repository idiom.
+`byId`, `versionsOf`; writes as the action (`create`, `addVersion`, `recordAttempt`); rules as
+the concept (`bestRating`, `versionToOpen`, `nextVersionNumber`). `findAll`/`findBy` stay — that is
+the repository idiom.
 
 ### ⛔ `business-rules.ts` is pure — no `async`, no storage
 
@@ -203,7 +202,7 @@ import { domainError } from '~/domain/shared/graphql/errors'
 
 match(result)
   .with('not-found', domainError)
-  .with('nothing-to-test', domainError)
+  .with('no-recipe-found', domainError)
   .with(P.not(P.string), (recipe) => recipe)
   .exhaustive()
 ```
@@ -248,6 +247,74 @@ All code, comments, commit messages, and documentation are in **English** — in
 the source of truth. The only French in the repo is user-facing copy (`CHANGELOG.fr.md`, the copy
 served to the app, and the iOS app's on-screen text).
 
+### The whole backend is English
+
+Identifiers, folder and file names, comments, GraphQL descriptions, AI prompts, test names: not one
+French word. A reader of `server/` should never need to know French to read the model.
+
+```ts
+// Bad
+export const noterEssai = async (userId: UserId, input: EssaiInput) => …
+// Good
+export const recordAttempt = async (userId: UserId, input: RecordAttemptInput) => …
+```
+
+### Enum values, unions and discriminants are English technical symbols
+
+> **Evans:** Ubiquitous Language — but the language of the *domain model*, not of the *reader*.
+> A schema value is an identity, not a label; the moment it doubles as a label it can never be
+> translated, renamed or reused.
+
+Enum members (`DISH`, `STARTER`, `AI_PROPOSAL`), their backing values (`dish`, `starter`,
+`ai-proposal`) and every discriminant (`origin.kind`, `'not-found'`) are English symbols. The
+front-end owns the wording: `RecipeType.DISH` travels over the wire, and
+`ios/Shuhari/Shared/RecipeType.swift` maps `.dish` to the on-screen label "Plat". The schema never
+speaks the user's language.
+
+```ts
+// Bad — the label leaks into the schema; the day the app speaks English, the data is wrong
+export const RECIPE_TYPE_VALUES = ['plat', 'tmx'] as const
+// Good — a symbol the app translates
+export const RECIPE_TYPE_VALUES = ['dish', 'tmx'] as const
+```
+
+### Same rule on iOS — French is display copy only
+
+Identifiers, file names, comments and accessibility **identifiers** (`"home-settings-button"`) are
+English. French is reserved for the copy the user actually reads: `Text`, `label`,
+`navigationTitle`, `accessibilityLabel`, and Xcode preview names (`#Preview("Plat")`) — the previews
+are a developer-facing gallery of the French UI, so they are named in the UI's language.
+
+```swift
+// Bad
+button.accessibilityIdentifier = "bouton-reglages"
+// Good — English identifier, French label
+Button("Historique") { … }.accessibilityIdentifier("recipe-history-button")
+```
+
+### The deliberate exceptions
+
+Everything below is French **on purpose** — nothing else is:
+
+- `CHANGELOG.fr.md` (the copy served to the app) and its generated asset
+  `server/system/changelog-content.ts`.
+- French **data values** quoted as examples in code, comments, GraphQL descriptions and AI prompts:
+  the Thermomix speed vocabulary (`"mijotage"`, `"Varoma"`, the accented kneading speed),
+  ingredient names (`"Pommes de terre"`), quantities. The AI must produce them verbatim — they are
+  user data, not vocabulary of the model.
+- The French fallback title used when an import yields no title
+  (`server/system/ai/primitives.ts`, `raw.title || …`) — user-visible copy the server produces.
+- Test fixtures that simulate user data (recipe titles, ingredient names, step text).
+
+The control is a grep for accented letters (the Latin-1 range, so the command itself stays ASCII),
+which must return only the above:
+
+```bash
+grep -rnP '[\x{00C0}-\x{00FF}]' server/
+```
+
+It is a smoke test, not a proof: `plat`, `essai` or `note` carry no accent — read the names too.
+
 ## Swift Rules
 
 See [ios-guide.md](./ios-guide.md) for the full iOS conventions. In short:
@@ -257,5 +324,5 @@ See [ios-guide.md](./ios-guide.md) for the full iOS conventions. In short:
 - Model types are `Sendable` (Swift 6 strict concurrency).
 - Leaf views take **primitives**, never domain structs.
 - Arrays are never optional (same rule as TypeScript).
-- Write actual UTF-8 characters in strings (`"Série"`, not `"S\u{00E9}rie"`).
+- Write accented French copy as actual UTF-8 characters, never as `"\u{00E9}"`-style escapes.
 - Every component below page level is previewable (`#Preview`).
