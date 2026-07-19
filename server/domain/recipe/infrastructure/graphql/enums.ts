@@ -5,8 +5,8 @@ export const RecipeTypeEnum = builder.enumType('RecipeType', {
     'The kind of culinary experiment. Fixed at import, it decides how a version is displayed ' +
     'and how the AI is allowed to iterate on it.',
   values: {
-    PLAT: {
-      value: 'plat',
+    DISH: {
+      value: 'dish',
       description: 'A cooked dish — steps are plain text, e.g. `"Grandma’s lasagna"`',
     },
     TMX: {
@@ -23,12 +23,12 @@ export const DishCategoryEnum = builder.enumType('DishCategory', {
     'The course a dish belongs to. Detected once at import, shared by every version, and used ' +
     'to group and sort the library.',
   values: {
-    ENTREE: { value: 'entree', description: 'Starter, e.g. `"Goat cheese salad"`' },
-    PLAT: { value: 'plat', description: 'Main course, e.g. `"Grandma’s lasagna"`' },
+    STARTER: { value: 'starter', description: 'Starter, e.g. `"Goat cheese salad"`' },
+    MAIN: { value: 'main', description: 'Main course, e.g. `"Grandma’s lasagna"`' },
     DESSERT: { value: 'dessert', description: 'Dessert, e.g. `"Tarte tatin"`' },
-    SOUPE: { value: 'soupe', description: 'Soup, e.g. `"Pumpkin velouté"`' },
+    SOUP: { value: 'soup', description: 'Soup, e.g. `"Pumpkin velouté"`' },
     SAUCE: { value: 'sauce', description: 'Sauce or condiment, e.g. `"Béchamel"`' },
-    BOULANGERIE: { value: 'boulangerie', description: 'Bread and bakery, e.g. `"Sourdough loaf"`' },
+    BAKING: { value: 'baking', description: 'Bread and bakery, e.g. `"Sourdough loaf"`' },
   } as const,
 })
 
@@ -42,7 +42,7 @@ export const RecipeSortEnum = builder.enumType('RecipeSort', {
     CATEGORY: {
       value: 'category',
       description:
-        'Dish course order (`ENTREE → PLAT → DESSERT → SOUPE → SAUCE → BOULANGERIE`), ' +
+        'Dish course order (`STARTER → MAIN → DESSERT → SOUP → SAUCE → BAKING`), ' +
         'most recently modified first within a course',
     },
   } as const,

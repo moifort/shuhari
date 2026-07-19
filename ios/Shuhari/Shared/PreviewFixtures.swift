@@ -113,8 +113,8 @@ enum Fixtures {
     static let bourguignon = Recipe(
         id: "bourguignon",
         title: "Bœuf bourguignon",
-        type: .plat,
-        category: .plat,
+        type: .dish,
+        category: .main,
         createdAt: date.addingTimeInterval(-86_400 * 30),
         updatedAt: date,
         versions: [bourguignonV1, bourguignonV2, bourguignonV3, bourguignonV4],
@@ -162,7 +162,7 @@ enum Fixtures {
         id: "risotto",
         title: "Risotto au parmesan",
         type: .tmx,
-        category: .plat,
+        category: .main,
         createdAt: date.addingTimeInterval(-86_400 * 12),
         updatedAt: date,
         versions: [risottoV2],
@@ -192,8 +192,8 @@ enum Fixtures {
     static let freshImport = Recipe(
         id: "fresh-import",
         title: "Daube provençale",
-        type: .plat,
-        category: .plat,
+        type: .dish,
+        category: .main,
         createdAt: date,
         updatedAt: date,
         versions: [freshImportV1],
@@ -231,7 +231,7 @@ enum Fixtures {
 
     static let importAnalysis = ImportAnalysis(
         title: "Cookies aux noix de pécan",
-        type: .plat,
+        type: .dish,
         category: .dessert,
         ingredients: [
             Ingredient(name: "Beurre", quantity: "170 g"),
@@ -253,7 +253,7 @@ enum Fixtures {
     static let importAnalysisTmx = ImportAnalysis(
         title: "Risotto au parmesan",
         type: .tmx,
-        category: .plat,
+        category: .main,
         ingredients: risottoIngredients,
         steps: risottoV2.steps,
         tmxSteps: risottoV2.tmxSteps,
@@ -263,10 +263,10 @@ enum Fixtures {
     /// A page of library rows spanning both cuisine types and a couple of months —
     /// backs the paginated Carnet list in previews and the debug gallery.
     static let libraryRecipes = [
-        LibraryRecipe(id: "bourguignon", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestRating: 5, updatedAt: Date()),
-        LibraryRecipe(id: "joues", title: "Joues de bœuf confites", type: .plat, category: .plat, versionCount: 1, bestRating: 4, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
-        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 2, bestRating: 4, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
-        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestRating: nil, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
+        LibraryRecipe(id: "bourguignon", title: "Bœuf bourguignon", type: .dish, category: .main, versionCount: 4, bestRating: 5, updatedAt: Date()),
+        LibraryRecipe(id: "joues", title: "Joues de bœuf confites", type: .dish, category: .main, versionCount: 1, bestRating: 4, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
+        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .main, versionCount: 2, bestRating: 4, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soup, versionCount: 1, bestRating: nil, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
     ]
 }
 #endif

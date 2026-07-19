@@ -12,12 +12,12 @@ struct HomeView: View {
     @State private var library = LibraryStore()
     @State private var path = NavigationPath()
     @State private var showSettings = false
-    @State private var selectedType: RecipeType = .plat
+    @State private var selectedType: RecipeType = .dish
 
     /// Multi-type tabs (Cuisine) offer a segmented type filter; single-type tabs don't.
     private var isMultiType: Bool { categoryTypes.count > 1 }
 
-    /// The type segments in design order — e.g. `[.plat, .tmx]` for Cuisine.
+    /// The type segments in design order — e.g. `[.dish, .tmx]` for Cuisine.
     private var filterOptions: [RecipeType] {
         RecipeType.allCases.filter { categoryTypes.contains($0) }
     }
@@ -103,5 +103,5 @@ struct HomeView: View {
 }
 
 #Preview {
-    HomeView(title: "Cuisine", categoryTypes: [.plat, .tmx], importedRecipe: .constant(nil))
+    HomeView(title: "Cuisine", categoryTypes: [.dish, .tmx], importedRecipe: .constant(nil))
 }

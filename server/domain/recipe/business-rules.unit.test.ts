@@ -33,16 +33,16 @@ const version = (number: number, opts: { rating?: number; basedOn?: number } = {
 
 describe('categoryRank', () => {
   test('ranks the courses in business order, not alphabetically', () => {
-    expect(categoryRank('entree')).toBe(0)
-    expect(categoryRank('plat')).toBe(1)
+    expect(categoryRank('starter')).toBe(0)
+    expect(categoryRank('main')).toBe(1)
     expect(categoryRank('dessert')).toBe(2)
-    expect(categoryRank('soupe')).toBe(3)
+    expect(categoryRank('soup')).toBe(3)
     expect(categoryRank('sauce')).toBe(4)
-    expect(categoryRank('boulangerie')).toBe(5)
+    expect(categoryRank('baking')).toBe(5)
   })
-  test('an entrée outranks a dessert which outranks a boulangerie (non-alphabetical)', () => {
-    expect(categoryRank('entree')).toBeLessThan(categoryRank('dessert'))
-    expect(categoryRank('dessert')).toBeLessThan(categoryRank('boulangerie'))
+  test('a starter outranks a dessert which outranks baking (non-alphabetical)', () => {
+    expect(categoryRank('starter')).toBeLessThan(categoryRank('dessert'))
+    expect(categoryRank('dessert')).toBeLessThan(categoryRank('baking'))
   })
   test('assigns a distinct rank to every category', () => {
     const ranks = DISH_CATEGORY_VALUES.map(categoryRank)

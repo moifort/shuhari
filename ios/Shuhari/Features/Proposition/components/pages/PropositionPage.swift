@@ -231,7 +231,7 @@ private extension Array {
 #Preview {
     NavigationStack {
         PropositionPage(
-            type: .plat,
+            type: .dish,
             proposition: Fixtures.proposition,
             nextVersionNumber: 5,
             baseIngredients: Fixtures.bourguignonV4.ingredients,

@@ -4,14 +4,14 @@ import SwiftUI
 /// a cooked dish or a Thermomix recipe. (Café and cocktail were retired — the app
 /// is cuisine-only.)
 enum RecipeType: String, CaseIterable, Sendable, Identifiable {
-    case plat
+    case dish
     case tmx
 
     var id: String { rawValue }
 
     var label: String {
         switch self {
-        case .plat: "Plat"
+        case .dish: "Plat"
         case .tmx: "Thermomix"
         }
     }
@@ -20,7 +20,7 @@ enum RecipeType: String, CaseIterable, Sendable, Identifiable {
     /// onto several lines.
     var shortLabel: String {
         switch self {
-        case .plat: "Plat"
+        case .dish: "Plat"
         case .tmx: "TMX"
         }
     }
@@ -33,7 +33,7 @@ enum RecipeType: String, CaseIterable, Sendable, Identifiable {
     /// with the font and tint just like SF Symbols.
     func iconImage(filled: Bool) -> Image {
         switch self {
-        case .plat: Image(systemName: filled ? "frying.pan.fill" : "frying.pan")
+        case .dish: Image(systemName: filled ? "frying.pan.fill" : "frying.pan")
         case .tmx: Image(filled ? "thermomix.fill" : "thermomix")
         }
     }

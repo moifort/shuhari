@@ -2,41 +2,41 @@ import SwiftUI
 
 /// The course a dish belongs to — an aggregate-level identity set once at import
 /// (shared across every version), and the axis the library sorts on. Distinct
-/// from `RecipeType` (plat vs Thermomix): a Thermomix soup and a plated soup are
-/// both `.soupe`.
+/// from `RecipeType` (dish vs Thermomix): a Thermomix soup and a plated soup are
+/// both `.soup`.
 enum DishCategory: String, CaseIterable, Sendable, Identifiable {
-    case entree
-    case plat
+    case starter
+    case main
     case dessert
-    case soupe
+    case soup
     case sauce
-    case boulangerie
+    case baking
 
     var id: String { rawValue }
 
     var label: String {
         switch self {
-        case .entree: "Entrée"
-        case .plat: "Plat"
+        case .starter: "Entrée"
+        case .main: "Plat"
         case .dessert: "Dessert"
-        case .soupe: "Soupe"
+        case .soup: "Soupe"
         case .sauce: "Sauce"
-        case .boulangerie: "Boulangerie"
+        case .baking: "Boulangerie"
         }
     }
 
     /// An SF Symbol standing in for the course — used on badges and the import
     /// category picker — outline forms throughout, matching the unfilled `RecipeType`
     /// icon every screen pairs these with. SF Symbols ships no bowl and no bread
-    /// glyph, so soup borrows the steaming cup and boulangerie the oven.
+    /// glyph, so soup borrows the steaming cup and baking the oven.
     var iconName: String {
         switch self {
-        case .entree: "leaf"
-        case .plat: "fork.knife"
+        case .starter: "leaf"
+        case .main: "fork.knife"
         case .dessert: "birthday.cake"
-        case .soupe: "cup.and.heat.waves"
+        case .soup: "cup.and.heat.waves"
         case .sauce: "drop"
-        case .boulangerie: "oven"
+        case .baking: "oven"
         }
     }
 

@@ -191,7 +191,7 @@ RecipeType.implement({
     }),
     type: t.expose('type', {
       type: RecipeTypeEnum,
-      description: 'Whether it is a cooked dish (`PLAT`) or a Thermomix recipe (`TMX`)',
+      description: 'Whether it is a cooked dish (`DISH`) or a Thermomix recipe (`TMX`)',
     }),
     category: t.expose('category', {
       type: DishCategoryEnum,

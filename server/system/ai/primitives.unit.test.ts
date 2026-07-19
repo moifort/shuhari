@@ -48,7 +48,7 @@ describe('parseImportResponse — Thermomix steps', () => {
   test('collapses tmxSteps to null when no step carries a setting', () => {
     const result = parsedImport({
       ...base,
-      type: 'plat',
+      type: 'dish',
       steps: [{ text: 'Émincer' }, { text: 'Saisir', tmxTime: null, tmxReverse: false }],
     })
 
@@ -67,7 +67,7 @@ describe('parseImportResponse — Thermomix steps', () => {
 describe('parseImportResponse — dish category', () => {
   test('parses a valid detected category', () => {
     const result = parsedImport({
-      type: 'plat',
+      type: 'dish',
       category: 'dessert',
       title: 'Tarte',
       steps: ['Cuire'],
@@ -76,28 +76,28 @@ describe('parseImportResponse — dish category', () => {
     expect(result.category).toBe('dessert')
   })
 
-  test('falls back to plat on an invalid category', () => {
+  test('falls back to main on an invalid category', () => {
     const result = parsedImport({
-      type: 'plat',
+      type: 'dish',
       category: 'boisson',
       title: 'Soupe',
       steps: ['Cuire'],
     })
 
-    expect(result.category).toBe('plat')
+    expect(result.category).toBe('main')
   })
 
-  test('falls back to plat when the category is missing', () => {
-    const result = parsedImport({ type: 'plat', title: 'Soupe', steps: ['Cuire'] })
+  test('falls back to main when the category is missing', () => {
+    const result = parsedImport({ type: 'dish', title: 'Soupe', steps: ['Cuire'] })
 
-    expect(result.category).toBe('plat')
+    expect(result.category).toBe('main')
   })
 })
 
 describe('parseImportResponse — ingredients', () => {
   test('parses the ingredient list with names and quantities', () => {
     const result = parsedImport({
-      type: 'plat',
+      type: 'dish',
       title: 'Ratatouille',
       ingredients: [
         { name: 'Aubergine', quantity: '2 pièces' },
@@ -115,7 +115,7 @@ describe('parseImportResponse — ingredients', () => {
 
   test('defaults to an empty ingredient list when the field is absent', () => {
     // A lone step keeps this a real recipe (no ingredients + no steps is a miss).
-    const result = parsedImport({ type: 'plat', title: 'Soupe', steps: ['Cuire'] })
+    const result = parsedImport({ type: 'dish', title: 'Soupe', steps: ['Cuire'] })
 
     expect(result.ingredients).toEqual([])
   })
@@ -169,7 +169,7 @@ describe('parseImportResponse — drops blank items instead of failing', () => {
 
   test('drops items whose required field is absent or null instead of throwing', () => {
     const result = parsedImport({
-      type: 'plat',
+      type: 'dish',
       title: 'Soupe',
       ingredients: [{ name: 'Eau', quantity: '1 L' }, { quantity: '2' }, { name: null }],
       steps: [{ tmxTime: '5 s' }, 'Servir'],
@@ -181,18 +181,18 @@ describe('parseImportResponse — drops blank items instead of failing', () => {
 
   test('falls back to a default title when the AI returns a blank or null one', () => {
     // A step keeps each payload a real recipe so the title fallback is reached.
-    expect(parsedImport({ type: 'plat', title: '   ', steps: ['Cuire'] }).title).toBe(
+    expect(parsedImport({ type: 'dish', title: '   ', steps: ['Cuire'] }).title).toBe(
       'Recette importée',
     )
-    expect(parsedImport({ type: 'plat', title: null, steps: ['Cuire'] }).title).toBe(
+    expect(parsedImport({ type: 'dish', title: null, steps: ['Cuire'] }).title).toBe(
       'Recette importée',
     )
-    expect(parsedImport({ type: 'plat', steps: ['Cuire'] }).title).toBe('Recette importée')
+    expect(parsedImport({ type: 'dish', steps: ['Cuire'] }).title).toBe('Recette importée')
   })
 
   test('caps runaway arrays at 100 items', () => {
     const many = Array.from({ length: 150 }, (_, i) => ({ name: `Ing ${i}`, quantity: '1' }))
-    const result = parsedImport({ type: 'plat', title: 'Grosse recette', ingredients: many })
+    const result = parsedImport({ type: 'dish', title: 'Grosse recette', ingredients: many })
 
     expect(result.ingredients).toHaveLength(100)
   })
@@ -205,12 +205,12 @@ describe('parseImportResponse — no recipe found', () => {
 
   test('returns the sentinel when a found recipe has no ingredients and no steps', () => {
     expect(
-      parseImportResponse(JSON.stringify({ recipeFound: true, type: 'plat', title: 'Vide' })),
+      parseImportResponse(JSON.stringify({ recipeFound: true, type: 'dish', title: 'Vide' })),
     ).toBe('no-recipe-found')
   })
 
   test('parses normally when recipeFound is absent (tolerated) and a recipe is present', () => {
-    const result = parsedImport({ type: 'plat', title: 'Soupe', steps: ['Cuire'] })
+    const result = parsedImport({ type: 'dish', title: 'Soupe', steps: ['Cuire'] })
 
     expect(result.title).toBe('Soupe')
     expect(result.steps).toEqual(['Cuire'])
@@ -219,7 +219,7 @@ describe('parseImportResponse — no recipe found', () => {
   test('parses normally when recipeFound is true and a recipe is present', () => {
     const result = parsedImport({
       recipeFound: true,
-      type: 'plat',
+      type: 'dish',
       title: 'Ratatouille',
       ingredients: [{ name: 'Aubergine', quantity: '2 pièces' }],
       steps: ['Cuire'],

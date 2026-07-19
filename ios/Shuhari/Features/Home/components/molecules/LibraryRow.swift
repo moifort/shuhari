@@ -55,8 +55,8 @@ struct LibraryRow: View {
 
 #Preview {
     List {
-        LibraryRow(title: "Bœuf bourguignon", type: .plat, versionCount: 4, bestRating: 5)
-        LibraryRow(title: "Joues de bœuf confites", type: .plat, versionCount: 1, bestRating: 3)
+        LibraryRow(title: "Bœuf bourguignon", type: .dish, versionCount: 4, bestRating: 5)
+        LibraryRow(title: "Joues de bœuf confites", type: .dish, versionCount: 1, bestRating: 3)
         LibraryRow(title: "Risotto au parmesan", type: .tmx, versionCount: 2, bestRating: nil)
     }
 }

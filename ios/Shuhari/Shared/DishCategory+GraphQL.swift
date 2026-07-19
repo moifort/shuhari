@@ -2,33 +2,33 @@ import ApolloAPI
 
 /// Bridges the generated `ShuhariGraphQL.DishCategory` enum and the design-facing
 /// `DishCategory` (which carries labels and icons). Kept separate from the
-/// `RecipeType` bridge on purpose: `DishCategory.plat` and `RecipeType.plat` are
+/// `RecipeType` bridge on purpose: `DishCategory.main` and `RecipeType.dish` are
 /// distinct enums that must never share a helper.
 extension DishCategory {
     init(graphql: GraphQLEnum<ShuhariGraphQL.DishCategory>) {
         switch graphql {
         case .case(let value):
             switch value {
-            case .entree: self = .entree
-            case .plat: self = .plat
+            case .starter: self = .starter
+            case .main: self = .main
             case .dessert: self = .dessert
-            case .soupe: self = .soupe
+            case .soup: self = .soup
             case .sauce: self = .sauce
-            case .boulangerie: self = .boulangerie
+            case .baking: self = .baking
             }
         case .unknown:
-            self = .plat
+            self = .main
         }
     }
 
     var graphQLValue: GraphQLEnum<ShuhariGraphQL.DishCategory> {
         switch self {
-        case .entree: .case(.entree)
-        case .plat: .case(.plat)
+        case .starter: .case(.starter)
+        case .main: .case(.main)
         case .dessert: .case(.dessert)
-        case .soupe: .case(.soupe)
+        case .soup: .case(.soup)
         case .sauce: .case(.sauce)
-        case .boulangerie: .case(.boulangerie)
+        case .baking: .case(.baking)
         }
     }
 }

@@ -130,7 +130,7 @@ struct HomePage: View {
 }
 
 private struct HomePagePreview: View {
-    @State private var selectedType: RecipeType = .plat
+    @State private var selectedType: RecipeType = .dish
     @State private var sort: RecipeSortOption = .lastModified
     @State private var category: DishCategory?
 
@@ -144,7 +144,7 @@ private struct HomePagePreview: View {
                 libraryHasMore: false,
                 libraryLoadMoreFailed: false,
                 title: "Cuisine",
-                typeFilter: .init(options: [.plat, .tmx], selection: $selectedType),
+                typeFilter: .init(options: [.dish, .tmx], selection: $selectedType),
                 sort: $sort,
                 categoryFilter: $category,
                 onSettings: {}

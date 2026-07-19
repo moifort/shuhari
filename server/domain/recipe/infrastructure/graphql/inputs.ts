@@ -41,12 +41,12 @@ export const CreateRecipeInput = builder.inputType('CreateRecipeInput', {
     type: t.field({
       type: RecipeTypeEnum,
       required: true,
-      description: 'Cooked dish (`PLAT`) or Thermomix recipe (`TMX`)',
+      description: 'Cooked dish (`DISH`) or Thermomix recipe (`TMX`)',
     }),
     category: t.field({
       type: DishCategoryEnum,
       required: true,
-      description: 'Its course, e.g. `PLAT` for lasagna, as detected during import',
+      description: 'Its course, e.g. `MAIN` for lasagna, as detected during import',
     }),
     title: t.field({
       type: 'RecipeTitle',

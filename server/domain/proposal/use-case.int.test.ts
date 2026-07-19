@@ -44,9 +44,9 @@ const ing = (name: string, quantity: string): Ingredient => ({
 const stepList = (...s: string[]) => s.map((x) => x as StepText)
 const PROPOSAL_INGREDIENTS = [ing('Veau', '800 g'), ing('Bouillon', '650 ml')]
 
-const recipeInput = (opts: { type?: 'plat' | 'tmx' } = {}) => ({
-  type: opts.type ?? ('plat' as const),
-  category: 'plat' as const,
+const recipeInput = (opts: { type?: 'dish' | 'tmx' } = {}) => ({
+  type: opts.type ?? ('dish' as const),
+  category: 'main' as const,
   title: 'Blanquette' as RecipeTitle,
   steps: ['Saisir', 'Mijoter'] as StepText[],
   ingredients: [],
@@ -65,8 +65,8 @@ const baseProposal = (): AiProposal => ({
 })
 
 const baseAnalysis = (): ImportAnalysis => ({
-  type: 'plat',
-  category: 'plat',
+  type: 'dish',
+  category: 'main',
   title: 'Blanquette',
   sourceLabel: 'Grand-mère',
   ingredients: [{ name: 'Veau', quantity: '800 g' }],
@@ -114,7 +114,7 @@ describe('ProposalUseCase.fromAttempt', () => {
     expect(fake.batches.length).toBe(batchesBefore)
   })
 
-  test('aligns tmxSteps with the steps for a tmx recipe, [] for a plat recipe', async () => {
+  test('aligns tmxSteps with the steps for a tmx recipe, [] for a dish recipe', async () => {
     proposal = {
       ...baseProposal(),
       tmxSteps: [{ time: '5 min', temperature: '120°C', speed: '1', reverse: null }, null],
@@ -127,11 +127,11 @@ describe('ProposalUseCase.fromAttempt', () => {
       null,
     ])
 
-    // Same proposal on a plat recipe: Thermomix settings are dropped entirely.
-    const plat = await RecipeCommand.create(userId, recipeInput())
-    const platProposal = await ProposalUseCase.fromAttempt(userId, plat.id, V1)
-    if (platProposal === 'not-found') throw new Error('expected a proposal')
-    expect(platProposal.tmxSteps).toEqual([])
+    // Same proposal on a dish recipe: Thermomix settings are dropped entirely.
+    const dish = await RecipeCommand.create(userId, recipeInput())
+    const dishProposal = await ProposalUseCase.fromAttempt(userId, dish.id, V1)
+    if (dishProposal === 'not-found') throw new Error('expected a proposal')
+    expect(dishProposal.tmxSteps).toEqual([])
   })
 })
 

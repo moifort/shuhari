@@ -33,7 +33,7 @@ type ChangelogEntry {
 Everything needed to save a brand-new recipe (its `v1`), once you have reviewed the import preview and confirmed it, e.g. `"Grandma’s lasagna"` with its ingredients and steps
 """
 input CreateRecipeInput {
-  """Its course, e.g. `PLAT` for lasagna, as detected during import"""
+  """Its course, e.g. `MAIN` for lasagna, as detected during import"""
   category: DishCategory!
 
   """
@@ -57,7 +57,7 @@ input CreateRecipeInput {
   """
   tmxSteps: [TmxSettingsInput]
 
-  """Cooked dish (`PLAT`) or Thermomix recipe (`TMX`)"""
+  """Cooked dish (`DISH`) or Thermomix recipe (`TMX`)"""
   type: RecipeType!
 }
 
@@ -71,22 +71,22 @@ The course a dish belongs to. Detected once at import, shared by every version, 
 """
 enum DishCategory {
   """Bread and bakery, e.g. `"Sourdough loaf"`"""
-  BOULANGERIE
+  BAKING
 
   """Dessert, e.g. `"Tarte tatin"`"""
   DESSERT
 
-  """Starter, e.g. `"Goat cheese salad"`"""
-  ENTREE
-
   """Main course, e.g. `"Grandma’s lasagna"`"""
-  PLAT
+  MAIN
 
   """Sauce or condiment, e.g. `"Béchamel"`"""
   SAUCE
 
   """Soup, e.g. `"Pumpkin velouté"`"""
-  SOUPE
+  SOUP
+
+  """Starter, e.g. `"Goat cheese salad"`"""
+  STARTER
 }
 
 """Structured recipe extracted from an import source (editable preview)"""
@@ -205,8 +205,8 @@ type Mutation {
   
   ```graphql
   createRecipe(input: {
-    type: PLAT
-    category: PLAT
+    type: DISH
+    category: MAIN
     title: "Grandma's lasagna"
     ingredients: [{ name: "Flour", quantity: "250 g" }]
     steps: ["Layer the pasta", "Bake at 200°C"]
@@ -480,7 +480,7 @@ type Recipe {
   """Its name, e.g. `"Grandma’s lasagna"`"""
   title: RecipeTitle!
 
-  """Whether it is a cooked dish (`PLAT`) or a Thermomix recipe (`TMX`)"""
+  """Whether it is a cooked dish (`DISH`) or a Thermomix recipe (`TMX`)"""
   type: RecipeType!
 
   """
@@ -510,7 +510,7 @@ scalar RecipeId
 """Field the paginated recipe library is ordered by, e.g. `UPDATED_AT`"""
 enum RecipeSort {
   """
-  Dish course order (`ENTREE → PLAT → DESSERT → SOUPE → SAUCE → BOULANGERIE`), most recently modified first within a course
+  Dish course order (`STARTER → MAIN → DESSERT → SOUP → SAUCE → BAKING`), most recently modified first within a course
   """
   CATEGORY
 
@@ -528,7 +528,7 @@ The kind of culinary experiment. Fixed at import, it decides how a version is di
 """
 enum RecipeType {
   """A cooked dish — steps are plain text, e.g. `"Grandma’s lasagna"`"""
-  PLAT
+  DISH
 
   """
   A Thermomix recipe — each step also carries machine settings, e.g. `"10 min / 100°C / speed 2"`

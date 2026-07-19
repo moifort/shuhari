@@ -39,7 +39,7 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab("Carnet", image: "toque", value: RootTab.carnet) {
-                HomeView(title: "Carnet", categoryTypes: [.plat, .tmx], importedRecipe: $importedRecipe)
+                HomeView(title: "Carnet", categoryTypes: [.dish, .tmx], importedRecipe: $importedRecipe)
             }
             .accessibilityIdentifier("tab-carnet")
 

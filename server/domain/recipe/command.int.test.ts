@@ -27,8 +27,8 @@ const ingredient = (n: string, q: string): Ingredient => ({
   quantity: q as IngredientQuantity,
 })
 const newInput = () => ({
-  type: 'plat' as const,
-  category: 'plat' as const,
+  type: 'dish' as const,
+  category: 'main' as const,
   title: 'Blanquette' as RecipeTitle,
   steps: ['Saisir', 'Mijoter'] as StepText[],
   ingredients: [] as Ingredient[],
@@ -45,7 +45,7 @@ describe('RecipeCommand.create', () => {
     const recipe = await RecipeCommand.create(userId, newInput(), 'Un site')
 
     expect(recipe.versionCount).toBe(1 as VersionNumber)
-    expect(fake.snapshot('recipes').get(recipe.id as string)?.type).toBe('plat')
+    expect(fake.snapshot('recipes').get(recipe.id as string)?.type).toBe('dish')
     const v1 = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)
     expect(v1?.origin).toEqual({ kind: 'import', detail: 'Un site' })
     // v1 iterates on nothing and starts as a planned attempt: no outcome yet.

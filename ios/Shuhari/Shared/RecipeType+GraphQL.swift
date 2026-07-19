@@ -7,17 +7,17 @@ extension RecipeType {
         switch graphql {
         case .case(let value):
             switch value {
-            case .plat: self = .plat
+            case .dish: self = .dish
             case .tmx: self = .tmx
             }
         case .unknown:
-            self = .plat
+            self = .dish
         }
     }
 
     var graphQLValue: GraphQLEnum<ShuhariGraphQL.RecipeType> {
         switch self {
-        case .plat: .case(.plat)
+        case .dish: .case(.dish)
         case .tmx: .case(.tmx)
         }
     }

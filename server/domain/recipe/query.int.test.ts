@@ -24,7 +24,7 @@ const seedRecipe = (
   fake.seed('recipes', id, {
     id,
     userId: fields.owner ?? userId,
-    type: fields.type ?? 'plat',
+    type: fields.type ?? 'dish',
     category: fields.category,
     categoryRank: categoryRank(fields.category),
     updatedAt: new Date(fields.updatedAt),
@@ -35,9 +35,9 @@ const ids = (page: { items: { id: RecipeId }[] }) => page.items.map((r) => Strin
 
 describe('RecipeQuery.library — updatedAt sort & cursor pagination', () => {
   beforeEach(() => {
-    seedRecipe('r1', { category: 'plat', updatedAt: 1000 })
-    seedRecipe('r2', { category: 'plat', updatedAt: 2000 })
-    seedRecipe('r3', { category: 'plat', updatedAt: 3000 })
+    seedRecipe('r1', { category: 'main', updatedAt: 1000 })
+    seedRecipe('r2', { category: 'main', updatedAt: 2000 })
+    seedRecipe('r3', { category: 'main', updatedAt: 3000 })
   })
 
   test('orders by updatedAt desc and reports hasMore on a full page', async () => {
@@ -66,9 +66,9 @@ describe('RecipeQuery.library — updatedAt sort & cursor pagination', () => {
   test('breaks equal-updatedAt ties by id in the sort direction (desc)', async () => {
     // Same updatedAt across all three: the implicit id tie-break must follow the
     // last orderBy direction (desc), so ids come back descending, not ascending.
-    seedRecipe('a', { category: 'plat', updatedAt: 5000 })
-    seedRecipe('b', { category: 'plat', updatedAt: 5000 })
-    seedRecipe('c', { category: 'plat', updatedAt: 5000 })
+    seedRecipe('a', { category: 'main', updatedAt: 5000 })
+    seedRecipe('b', { category: 'main', updatedAt: 5000 })
+    seedRecipe('c', { category: 'main', updatedAt: 5000 })
     const page = await RecipeQuery.library(userId, { sort: 'updatedAt', order: 'desc', limit: 3 })
     expect(ids(page)).toEqual(['c', 'b', 'a'])
   })
@@ -80,30 +80,30 @@ describe('RecipeQuery.library — updatedAt sort & cursor pagination', () => {
   })
 
   test('excludes other users’ recipes', async () => {
-    seedRecipe('foreign', { category: 'plat', updatedAt: 9000, owner: 'user-2' as UserId })
+    seedRecipe('foreign', { category: 'main', updatedAt: 9000, owner: 'user-2' as UserId })
     const page = await RecipeQuery.library(userId, { sort: 'updatedAt', order: 'desc', limit: 10 })
     expect(ids(page)).toEqual(['r3', 'r2', 'r1'])
   })
 })
 
 describe('RecipeQuery.library — category business order', () => {
-  test('sorts by course order (entrée → … → boulangerie), not alphabetically', async () => {
+  test('sorts by course order (starter → … → baking), not alphabetically', async () => {
     // Seeded in a deliberately scrambled, non-alphabetical order.
-    seedRecipe('boul', { category: 'boulangerie', updatedAt: 1000 })
-    seedRecipe('entr', { category: 'entree', updatedAt: 1000 })
+    seedRecipe('boul', { category: 'baking', updatedAt: 1000 })
+    seedRecipe('entr', { category: 'starter', updatedAt: 1000 })
     seedRecipe('dess', { category: 'dessert', updatedAt: 1000 })
     seedRecipe('sauc', { category: 'sauce', updatedAt: 1000 })
 
     const page = await RecipeQuery.library(userId, { sort: 'category', order: 'desc', limit: 10 })
-    // entree(0) < dessert(2) < sauce(4) < boulangerie(5) — 'boul' is NOT first
+    // starter(0) < dessert(2) < sauce(4) < baking(5) — 'boul' is NOT first
     // despite being alphabetically before the others.
     expect(ids(page)).toEqual(['entr', 'dess', 'sauc', 'boul'])
   })
 
   test('breaks category ties by updatedAt desc', async () => {
-    seedRecipe('old', { category: 'plat', updatedAt: 1000 })
-    seedRecipe('new', { category: 'plat', updatedAt: 3000 })
-    seedRecipe('mid', { category: 'plat', updatedAt: 2000 })
+    seedRecipe('old', { category: 'main', updatedAt: 1000 })
+    seedRecipe('new', { category: 'main', updatedAt: 3000 })
+    seedRecipe('mid', { category: 'main', updatedAt: 2000 })
 
     const page = await RecipeQuery.library(userId, { sort: 'category', order: 'desc', limit: 10 })
     expect(ids(page)).toEqual(['new', 'mid', 'old'])
@@ -112,9 +112,9 @@ describe('RecipeQuery.library — category business order', () => {
 
 describe('RecipeQuery.library — type filter', () => {
   beforeEach(() => {
-    seedRecipe('plat-a', { type: 'plat', category: 'plat', updatedAt: 1000 })
+    seedRecipe('dish-a', { type: 'dish', category: 'main', updatedAt: 1000 })
     seedRecipe('tmx-a', { type: 'tmx', category: 'dessert', updatedAt: 2000 })
-    seedRecipe('tmx-b', { type: 'tmx', category: 'entree', updatedAt: 3000 })
+    seedRecipe('tmx-b', { type: 'tmx', category: 'starter', updatedAt: 3000 })
   })
 
   test('keeps only the requested type, combined with the sort', async () => {
@@ -135,16 +135,16 @@ describe('RecipeQuery.library — type filter', () => {
       order: 'desc',
       limit: 10,
     })
-    // entree(0) before dessert(2)
+    // starter(0) before dessert(2)
     expect(ids(page)).toEqual(['tmx-b', 'tmx-a'])
   })
 })
 
 describe('RecipeQuery.library — category filter', () => {
   beforeEach(() => {
-    seedRecipe('plat-old', { type: 'plat', category: 'plat', updatedAt: 1000 })
-    seedRecipe('dessert-a', { type: 'plat', category: 'dessert', updatedAt: 2000 })
-    seedRecipe('plat-new', { type: 'tmx', category: 'plat', updatedAt: 3000 })
+    seedRecipe('dish-old', { type: 'dish', category: 'main', updatedAt: 1000 })
+    seedRecipe('dessert-a', { type: 'dish', category: 'dessert', updatedAt: 2000 })
+    seedRecipe('dish-new', { type: 'tmx', category: 'main', updatedAt: 3000 })
     seedRecipe('dessert-b', { type: 'tmx', category: 'dessert', updatedAt: 4000 })
   })
 
@@ -162,12 +162,12 @@ describe('RecipeQuery.library — category filter', () => {
   test('combines a type facet with the category filter', async () => {
     const page = await RecipeQuery.library(userId, {
       type: 'tmx',
-      category: 'plat',
+      category: 'main',
       sort: 'updatedAt',
       order: 'desc',
       limit: 10,
     })
-    expect(ids(page)).toEqual(['plat-new'])
+    expect(ids(page)).toEqual(['dish-new'])
   })
 
   test('pins the order to updatedAt desc even when an ascending sort is requested', async () => {
@@ -186,7 +186,7 @@ describe('RecipeQuery.library — category filter', () => {
   test('paginates within a category via the cursor', async () => {
     // A third dessert so a limit-2 page leaves a remainder to fetch. Ordered
     // updatedAt desc: dessert-b(4000), dessert-c(3000), dessert-a(2000).
-    seedRecipe('dessert-c', { type: 'plat', category: 'dessert', updatedAt: 3000 })
+    seedRecipe('dessert-c', { type: 'dish', category: 'dessert', updatedAt: 3000 })
     const page1 = await RecipeQuery.library(userId, {
       category: 'dessert',
       sort: 'updatedAt',
@@ -210,7 +210,7 @@ describe('RecipeQuery.library — category filter', () => {
 
 describe('RecipeQuery.library — limit clamp', () => {
   beforeEach(() => {
-    for (let i = 0; i < 3; i++) seedRecipe(`r${i}`, { category: 'plat', updatedAt: 1000 + i })
+    for (let i = 0; i < 3; i++) seedRecipe(`r${i}`, { category: 'main', updatedAt: 1000 + i })
   })
 
   test('clamps a non-positive limit up to 1', async () => {
@@ -226,7 +226,7 @@ describe('RecipeQuery.library — limit clamp', () => {
   })
 
   test('caps the page at 50 recipes whatever the requested limit', async () => {
-    for (let i = 3; i < 51; i++) seedRecipe(`r${i}`, { category: 'plat', updatedAt: 1000 + i })
+    for (let i = 3; i < 51; i++) seedRecipe(`r${i}`, { category: 'main', updatedAt: 1000 + i })
     const page = await RecipeQuery.library(userId, { sort: 'updatedAt', order: 'desc', limit: 999 })
     expect(page.items.length).toBe(50)
     expect(page.hasMore).toBe(true)

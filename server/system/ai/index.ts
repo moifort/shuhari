@@ -87,12 +87,12 @@ const importResponseSchema = {
     type: {
       type: 'string',
       enum: RECIPE_TYPE_ENUM,
-      description: "Type d'expérimentation : plat (recette cuisinée) ou tmx (Thermomix)",
+      description: "Type d'expérimentation : dish (recette cuisinée) ou tmx (Thermomix)",
     },
     category: {
       type: 'string',
       enum: DISH_CATEGORY_VALUES,
-      description: 'Catégorie du plat : entree, plat, dessert, soupe, sauce ou boulangerie',
+      description: 'Catégorie du plat : starter, main, dessert, soup, sauce ou baking',
     },
     title: { type: 'string', description: 'Nom de la recette (concis, ≤200 caractères)' },
     sourceLabel: {
@@ -134,8 +134,8 @@ const proposalResponseSchema = {
 const IMPORT_INSTRUCTIONS = `Tu es l'assistant d'un carnet d'expérimentation culinaire. À partir de la source fournie (photos, page web ou texte d'une recette), extrais une recette STRUCTURÉE et REPRODUCTIBLE.
 
 Règles :
-- Détermine le type : plat (recette cuisinée) ou tmx (recette Thermomix).
-- Détermine la catégorie du plat : entree, plat, dessert, soupe, sauce ou boulangerie (pâtisserie, pain, viennoiserie). En cas de doute, choisis plat.
+- Détermine le type : dish (recette cuisinée) ou tmx (recette Thermomix).
+- Détermine la catégorie du plat : starter, main, dessert, soup, sauce ou baking (pâtisserie, pain, viennoiserie). En cas de doute, choisis main.
 - ingredients : liste ORDONNÉE des composants de la recette avec leur quantité (ex : Gin → 50 ml, Beurre → 170 g, Fraise → 3 pièces). Mets TOUS les ingrédients visibles sur la source, chacun avec sa quantité et son unité. C'est la « liste de courses » de la recette. Le NOM reste court : l'ingrédient seul, jamais sa préparation (« Pommes de terre », pas « Pommes de terre épluchées et coupées en rondelles » — la préparation va dans les étapes).
 - steps : étapes courtes, à l'impératif, dans l'ordre. Les réglages précis (température du four, durée, ratio…) restent dans le texte de l'étape.
 - Pour une recette Thermomix (type tmx) : pour chaque étape exécutée au Thermomix, renseigne tmxTime, tmxTemperature, tmxSpeed et tmxReverse tels qu'indiqués dans la recette (durée « 3 min » / « 30 s » / « 1 h 10 min » ; température « 100°C » ou « Varoma » ; vitesse « 0,5 » à « 10 », « pétrin », « mijotage » ou « turbo »). Mets null pour chaque réglage absent, et pour TOUS ces champs quand l'étape ne se fait pas au Thermomix ou que la recette n'est pas de type tmx.
@@ -198,7 +198,7 @@ export namespace Ai {
     return [{ text: `${IMPORT_INSTRUCTIONS}\n\nTexte de la recette :\n${source.text}` }]
   }
 
-  // Cuisine-scoped iteration rule (plat + tmx). Café/cocktail will get their own
+  // Cuisine-scoped iteration rule (dish + tmx). Café/cocktail will get their own
   // rules later — no speculative abstraction here.
   const cuisineIterationRule = (_type: ProposalContext['type']) =>
     'Pour un plat ou une recette Thermomix, tu peux ajuster plusieurs éléments cohérents à la fois. Renvoie la liste COMPLÈTE des ingrédients et des étapes de la prochaine version (pas seulement ce qui change), plus un résumé court des changements.'

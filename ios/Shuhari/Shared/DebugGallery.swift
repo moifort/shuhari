@@ -54,7 +54,7 @@ struct DebugGallery: View {
         case "proposition":
             NavigationStack {
                 PropositionPage(
-                    type: .plat,
+                    type: .dish,
                     proposition: Fixtures.proposition,
                     nextVersionNumber: 5,
                     baseIngredients: Fixtures.bourguignonV4.ingredients,
@@ -109,9 +109,9 @@ private struct CuisineGalleryScreen: View {
     @State private var selected: RecipeType = .tmx
 
     private let library = [
-        LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .plat, category: .plat, versionCount: 4, bestRating: 5, updatedAt: Date()),
-        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .plat, versionCount: 3, bestRating: 4, updatedAt: Date()),
-        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soupe, versionCount: 1, bestRating: nil, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+        LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .dish, category: .main, versionCount: 4, bestRating: 5, updatedAt: Date()),
+        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .tmx, category: .main, versionCount: 3, bestRating: 4, updatedAt: Date()),
+        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .tmx, category: .soup, versionCount: 1, bestRating: nil, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
     ]
 
     var body: some View {
@@ -123,7 +123,7 @@ private struct CuisineGalleryScreen: View {
                 libraryHasMore: false,
                 libraryLoadMoreFailed: false,
                 title: selected.label,
-                typeFilter: .init(options: [.plat, .tmx], selection: $selected),
+                typeFilter: .init(options: [.dish, .tmx], selection: $selected),
                 sort: .constant(.lastModified),
                 categoryFilter: .constant(nil),
                 onSettings: {}

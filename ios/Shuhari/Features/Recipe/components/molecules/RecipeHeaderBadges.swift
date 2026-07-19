@@ -54,7 +54,7 @@ struct RecipeHeaderBadges: View {
         ForEach(RecipeType.allCases) { type in
             RecipeHeaderBadges(type: type, versionNumber: 3, attemptCount: 2)
         }
-        RecipeHeaderBadges(type: .plat, versionNumber: nil)
+        RecipeHeaderBadges(type: .dish, versionNumber: nil)
     }
     .padding()
 }

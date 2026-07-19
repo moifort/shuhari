@@ -1,20 +1,21 @@
 import type { Brand } from 'ts-brand'
 import type { UserId } from '~/domain/shared/types'
 
-// The culinary experiment domains. Drives colour/icon in the app. `plat` is a
+// The culinary experiment domains. Drives colour/icon in the app. `dish` is a
 // cooked dish, `tmx` a Thermomix recipe.
-export const RECIPE_TYPE_VALUES = ['plat', 'tmx'] as const
+export const RECIPE_TYPE_VALUES = ['dish', 'tmx'] as const
 export type RecipeType = (typeof RECIPE_TYPE_VALUES)[number]
 
 // The course a dish belongs to. Detected by the AI at import and drives sorting
-// in the library (Entrée → Plat → Dessert → Soupe → Sauce → Boulangerie).
+// in the library (starter → main → dessert → soup → sauce → baking). The array
+// order IS the business rank — see `categoryRank`.
 export const DISH_CATEGORY_VALUES = [
-  'entree',
-  'plat',
+  'starter',
+  'main',
   'dessert',
-  'soupe',
+  'soup',
   'sauce',
-  'boulangerie',
+  'baking',
 ] as const
 export type DishCategory = (typeof DISH_CATEGORY_VALUES)[number]
 

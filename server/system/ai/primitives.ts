@@ -107,8 +107,8 @@ const foldSteps = (
 export const ImportAnalysisSchema = z
   .object({
     type: z.enum(RECIPE_TYPE_VALUES),
-    // Best-effort detection: an unknown/missing category defaults to 'plat'.
-    category: z.enum(DISH_CATEGORY_VALUES).catch('plat'),
+    // Best-effort detection: an unknown/missing category defaults to 'main'.
+    category: z.enum(DISH_CATEGORY_VALUES).catch('main'),
     title: clampedField(RECIPE_MAX.title),
     sourceLabel: optionalClamped(SOURCE_LABEL_MAX),
     ingredients: z.array(ingredientSchema).default([]),
