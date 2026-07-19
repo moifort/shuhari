@@ -12,7 +12,7 @@ struct RecipeHeaderBadges: View {
         HStack(spacing: Theme.Spacing.s) {
             capsule {
                 type.iconImage(filled: false)
-                Text(type.shortLabel.uppercased())
+                Text(type.label.uppercased())
             }
             .accessibilityLabel("Type \(type.label)")
 
