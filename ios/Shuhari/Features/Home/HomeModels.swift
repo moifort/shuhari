@@ -12,6 +12,33 @@ struct LibraryRecipe: Identifiable, Sendable {
     let updatedAt: Date
 }
 
+/// How the library cuts its rows into sections — one axis per sort: the month of
+/// the last update, or the dish course.
+enum LibraryGrouping: Sendable {
+    case month
+    case course
+}
+
+/// One course's worth of library recipes — the library is grouped by dish course
+/// ("Entrée", "Plat", …) when sorted by "Type de plat".
+struct LibraryCourseGroup: Identifiable, Sendable {
+    let id: String
+    let label: String
+    let recipes: [LibraryRecipe]
+
+    /// Cut accumulated (already server-sorted) recipes into course sections. The
+    /// section order is the course order itself — `DishCategory.allCases` mirrors the
+    /// server's `categoryRank` — and within a course the server's order (most
+    /// recently updated first) is kept as is. Empty courses have no section.
+    static func grouping(_ recipes: [LibraryRecipe]) -> [LibraryCourseGroup] {
+        DishCategory.allCases.compactMap { course in
+            let rows = recipes.filter { $0.category == course }
+            guard !rows.isEmpty else { return nil }
+            return LibraryCourseGroup(id: course.rawValue, label: course.label, recipes: rows)
+        }
+    }
+}
+
 /// One month's worth of library recipes — the library is grouped by the month of
 /// each recipe's last update (e.g. "Juillet 2026") instead of by type.
 struct LibraryMonthGroup: Identifiable, Sendable {

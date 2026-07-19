@@ -14,6 +14,8 @@ struct DebugGallery: View {
             ContentView()
         case "cuisine":
             CuisineGalleryScreen()
+        case "cuisine-course":
+            CuisineGalleryScreen(sort: .dishCategory)
         case "recipe":
             RecipeDetailGalleryScreen(recipe: Fixtures.bourguignon)
         case "recipe-thermomix":
@@ -91,7 +93,7 @@ struct DebugGallery: View {
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : cuisine, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found")
+                description: Text("Écrans : cuisine, cuisine-course, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found")
             )
         }
     }
@@ -113,11 +115,17 @@ private struct RecipeDetailGalleryScreen: View {
     }
 }
 
-/// The multi-type cooking tab with its round type-filter CTAs and month-grouped
-/// library — needs local state for the selected filter, so it lives in its own
-/// view. Defaults to Thermomix to show the outlined custom symbol in the list.
+/// The multi-type cooking tab with its round type-filter CTAs and sectioned
+/// library — needs local state for the selected filter and sort, so it lives in its
+/// own view. Defaults to Thermomix to show the outlined custom symbol in the list;
+/// the sort picker is live, so both section axes (month, course) are reachable.
 private struct CuisineGalleryScreen: View {
     @State private var selected: RecipeType = .thermomix
+    @State private var sort: RecipeSortOption
+
+    init(sort: RecipeSortOption = .lastModified) {
+        self._sort = State(initialValue: sort)
+    }
 
     private let library = [
         LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .dish, category: .main, versionCount: 4, bestRating: 5, updatedAt: Date()),
@@ -129,13 +137,13 @@ private struct CuisineGalleryScreen: View {
         NavigationStack {
             HomePage(
                 library: library.filter { $0.type == selected },
-                libraryGrouped: true,
+                libraryGrouping: sort == .lastModified ? .month : .course,
                 libraryLoading: false,
                 libraryHasMore: false,
                 libraryLoadMoreFailed: false,
                 title: selected.label,
                 typeFilter: .init(options: [.dish, .thermomix], selection: $selected),
-                sort: .constant(.lastModified),
+                sort: $sort,
                 categoryFilter: .constant(nil),
                 onSettings: {}
             )

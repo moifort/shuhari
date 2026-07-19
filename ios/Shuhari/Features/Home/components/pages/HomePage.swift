@@ -14,9 +14,8 @@ struct HomePage: View {
     }
 
     let library: [LibraryRecipe]
-    /// `true` when the library is sorted by last modification (month sections);
-    /// `false` for the dish-course sort (flat list).
-    let libraryGrouped: Bool
+    /// The library section axis: month of last update, or dish course.
+    let libraryGrouping: LibraryGrouping
     let libraryLoading: Bool
     let libraryHasMore: Bool
     let libraryLoadMoreFailed: Bool
@@ -117,7 +116,7 @@ struct HomePage: View {
             List {
                 LibrarySection(
                     recipes: library,
-                    grouped: libraryGrouped,
+                    grouping: libraryGrouping,
                     hasMore: libraryHasMore,
                     loadMoreFailed: libraryLoadMoreFailed,
                     onPrefetch: onPrefetch,
@@ -139,7 +138,7 @@ private struct HomePagePreview: View {
         NavigationStack {
             HomePage(
                 library: library,
-                libraryGrouped: sort == .lastModified,
+                libraryGrouping: sort == .lastModified ? .month : .course,
                 libraryLoading: false,
                 libraryHasMore: false,
                 libraryLoadMoreFailed: false,
@@ -161,7 +160,7 @@ private struct HomePagePreview: View {
     NavigationStack {
         HomePage(
             library: Fixtures.libraryRecipes,
-            libraryGrouped: true,
+            libraryGrouping: .month,
             libraryLoading: false,
             libraryHasMore: true,
             libraryLoadMoreFailed: false,

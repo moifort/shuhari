@@ -1,37 +1,30 @@
 import SwiftUI
 
-/// The paginated library. When sorted by last modification the rows are grouped by
-/// month ("Juillet 2026"); when sorted by dish course the server already orders them
-/// (Entrée → … → Boulangerie) so they render as a flat list. Each row navigates into
-/// the recipe sheet and prefetches the next page as it appears; a
+/// The paginated library, always cut into sections along the axis it is sorted on:
+/// the month of the last update ("Juillet 2026") or the dish course ("Entrée",
+/// "Plat", …), the server ordering the rows within a section either way. Each row
+/// navigates into the recipe sheet and prefetches the next page as it appears; a
 /// `LoadMoreRow` sentinel closes the list while more pages remain. Composes as
 /// `Section`s / rows directly inside a `List`.
 struct LibrarySection: View {
     let recipes: [LibraryRecipe]
-    /// `true` for the "Dernière modification" sort (month sections); `false` for the
-    /// "Type de plat" sort (flat, server-ordered).
-    let grouped: Bool
+    /// The section axis: `.month` for the "Dernière modification" sort, `.course`
+    /// for the "Type de plat" sort.
+    let grouping: LibraryGrouping
     var hasMore: Bool = false
     var loadMoreFailed: Bool = false
     var onPrefetch: (String) -> Void = { _ in }
     var onLoadMore: () async -> Void = {}
 
     var body: some View {
-        if grouped {
+        switch grouping {
+        case .month:
             ForEach(LibraryMonthGroup.grouping(recipes)) { group in
-                Section {
-                    ForEach(group.recipes) { recipe in
-                        row(recipe)
-                    }
-                } header: {
-                    Text(group.label)
-                }
+                section(group.label, group.recipes)
             }
-        } else {
-            Section {
-                ForEach(recipes) { recipe in
-                    row(recipe)
-                }
+        case .course:
+            ForEach(LibraryCourseGroup.grouping(recipes)) { group in
+                section(group.label, group.recipes)
             }
         }
 
@@ -41,6 +34,16 @@ struct LibrarySection: View {
                 loadingLabel: "Chargement d’autres recettes",
                 onLoadMore: onLoadMore
             )
+        }
+    }
+
+    private func section(_ label: String, _ recipes: [LibraryRecipe]) -> some View {
+        Section {
+            ForEach(recipes) { recipe in
+                row(recipe)
+            }
+        } header: {
+            Text(label)
         }
     }
 
@@ -65,7 +68,7 @@ struct LibrarySection: View {
 #Preview("Par mois") {
     NavigationStack {
         List {
-            LibrarySection(recipes: Fixtures.libraryRecipes, grouped: true, hasMore: true)
+            LibrarySection(recipes: Fixtures.libraryRecipes, grouping: .month, hasMore: true)
         }
     }
 }
@@ -73,7 +76,7 @@ struct LibrarySection: View {
 #Preview("Par type de plat") {
     NavigationStack {
         List {
-            LibrarySection(recipes: Fixtures.libraryRecipes, grouped: false)
+            LibrarySection(recipes: Fixtures.libraryRecipes, grouping: .course)
         }
     }
 }

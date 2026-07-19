@@ -37,8 +37,10 @@ struct HomeView: View {
                         // Month sections apply whenever the effective order is
                         // chronological — that includes an active category filter,
                         // which the server coerces to updatedAt desc regardless of
-                        // `sort` (so a dish-category sort request there still groups).
-                        libraryGrouped: library.sort == .lastModified || library.category != nil,
+                        // `sort` (and leaves a single course to section anyway).
+                        libraryGrouping: library.sort == .lastModified || library.category != nil
+                            ? .month
+                            : .course,
                         libraryLoading: library.isLoading,
                         libraryHasMore: library.hasMore,
                         libraryLoadMoreFailed: library.loadMoreFailed,
