@@ -113,7 +113,7 @@ builder.mutationField('acceptProposal', (t) =>
         rationale: proposal.rationale,
         ingredients: proposal.ingredients,
         steps: proposal.steps,
-        tmxSteps: proposal.tmxSteps ? toTmxSettings(proposal.tmxSteps.map(looseSettings)) : [],
+        tmxSteps: toTmxSettings(proposal.tmxSteps.map(looseSettings)),
       }
       const result = await ProposalUseCase.accept(userId, recipeId, accepted)
       const recipe = ensureRecipe(result)
@@ -133,7 +133,11 @@ builder.mutationField('analyzeImport', (t) =>
     description:
       'Analyze an import source (photos, a URL or raw text) into a structured recipe preview. Exactly one source must be provided. Results are cached server-side by SHA-256.',
     args: {
-      photos: t.arg.stringList({ description: 'Base64 JPEGs (no data-URL prefix)' }),
+      photos: t.arg.stringList({
+        required: true,
+        defaultValue: [],
+        description: 'Base64 JPEGs (no data-URL prefix) — `[]` when importing from a URL or text',
+      }),
       url: t.arg.string({ description: 'A recipe web page to read' }),
       text: t.arg.string({ description: 'Raw recipe text' }),
     },
@@ -155,17 +159,17 @@ builder.mutationField('analyzeImport', (t) =>
 )
 
 const pickSource = (
-  photos: string[] | null | undefined,
+  photos: string[],
   url: string | null | undefined,
   text: string | null | undefined,
 ): ImportSource => {
   const provided = [
-    photos?.length ? 'photos' : null,
+    photos.length ? 'photos' : null,
     url ? 'url' : null,
     text ? 'text' : null,
   ].filter(Boolean)
   if (provided.length !== 1) throw badInput('Provide exactly one of photos, url or text')
-  if (photos?.length) {
+  if (photos.length) {
     if (photos.length > MAX_IMPORT_PHOTOS)
       throw badInput(`At most ${MAX_IMPORT_PHOTOS} photos are allowed`)
     if (!photos.every((photo) => imageWithinSizeLimit(photo.length)))

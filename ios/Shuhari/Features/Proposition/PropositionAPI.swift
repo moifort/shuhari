@@ -7,18 +7,7 @@ enum PropositionAPI {
     /// next version — the lists are complete, not partial. `basedOn` is echoed back
     /// so the new version records what it was built from.
     static func accept(recipeId: String, proposition: PropositionEdit) async throws {
-        let tmxSteps: GraphQLNullable<[ShuhariGraphQL.TmxSettingsInput?]> = proposition.tmxSteps.isEmpty
-            ? .none
-            : .some(proposition.tmxSteps.map { settings in
-                settings.map {
-                    ShuhariGraphQL.TmxSettingsInput(
-                        reverse: $0.reverse ? .some(true) : .none,
-                        speed: GraphQLHelpers.graphQLNullable($0.speed),
-                        temperature: GraphQLHelpers.graphQLNullable($0.temperature),
-                        time: GraphQLHelpers.graphQLNullable($0.time)
-                    )
-                }
-            })
+        let tmxSteps = proposition.tmxSteps.map { GraphQLHelpers.tmxSettingsInput($0) }
         let input = ShuhariGraphQL.ProposalInput(
             basedOn: proposition.basedOn,
             changeSummary: proposition.changeSummary,

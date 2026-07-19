@@ -128,12 +128,10 @@ export const VersionType = builder.objectRef<RecipeVersion>('Version').implement
     }),
     tmxSteps: t.field({
       type: [TmxSettingsType],
-      nullable: { list: false, items: true },
       description:
         'Per-step Thermomix settings aligned with steps, e.g. `"10 min / 100°C / speed 2"` ' +
-        '(`null` = plain step; `[]` if not tmx)',
-      // Boundary: the domain leaves a plain step's slot absent, GraphQL spells it `null`.
-      resolve: (v) => v.tmxSteps.map((settings) => settings ?? null),
+        '(an entry with every field `null` = plain step; `[]` if not tmx)',
+      resolve: (v) => v.tmxSteps,
     }),
     executedAt: t.field({
       type: 'DateTime',

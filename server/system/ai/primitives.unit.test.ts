@@ -39,15 +39,15 @@ describe('parseImportResponse — Thermomix steps', () => {
 
     expect(result.steps).toEqual(['Mixer les oignons', 'Servir', 'Cuire'])
     // The AI's explicit nulls are normalized away at the parse boundary: an
-    // absent setting is an absent key, a plain step an absent entry.
+    // absent setting is an absent key, a plain step an entry with no key at all.
     expect(result.tmxSteps).toEqual([
       { time: '5 s', speed: '5' },
-      undefined,
+      {},
       { time: '14 min', temperature: '100°C', speed: '1', reverse: true },
     ])
   })
 
-  test('drops tmxSteps entirely when no step carries a setting', () => {
+  test('collapses tmxSteps to [] when no step carries a setting', () => {
     const result = parsedImport({
       ...base,
       type: 'dish',
@@ -55,14 +55,14 @@ describe('parseImportResponse — Thermomix steps', () => {
     })
 
     expect(result.steps).toEqual(['Émincer', 'Saisir'])
-    expect(result.tmxSteps).toBeUndefined()
+    expect(result.tmxSteps).toEqual([])
   })
 
   test('tolerates bare string steps as plain steps', () => {
     const result = parsedImport({ ...base, steps: ['Mixer', 'Servir'] })
 
     expect(result.steps).toEqual(['Mixer', 'Servir'])
-    expect(result.tmxSteps).toBeUndefined()
+    expect(result.tmxSteps).toEqual([])
   })
 })
 
@@ -136,7 +136,7 @@ describe('parseImportResponse — clamps oversized AI strings to domain limits',
     expect(result.ingredients[0].name.length).toBe(RECIPE_MAX.ingredientName)
     expect(result.ingredients[0].quantity.length).toBe(RECIPE_MAX.ingredientQuantity)
     expect(result.steps[0].length).toBe(RECIPE_MAX.stepText)
-    expect(result.tmxSteps?.[0]?.time?.length).toBe(RECIPE_MAX.tmx)
+    expect(result.tmxSteps[0]?.time?.length).toBe(RECIPE_MAX.tmx)
 
     // Backstop against drift: the clamped values pass the domain constructors,
     // so createRecipe can never 400 on these lengths.
@@ -144,7 +144,7 @@ describe('parseImportResponse — clamps oversized AI strings to domain limits',
     expect(() => IngredientName(result.ingredients[0].name)).not.toThrow()
     expect(() => IngredientQuantity(result.ingredients[0].quantity)).not.toThrow()
     expect(() => StepText(result.steps[0])).not.toThrow()
-    expect(() => TmxTime(result.tmxSteps?.[0]?.time ?? '')).not.toThrow()
+    expect(() => TmxTime(result.tmxSteps[0]?.time ?? '')).not.toThrow()
   })
 })
 
@@ -163,7 +163,7 @@ describe('parseImportResponse — drops blank items instead of failing', () => {
     expect(result.ingredients).toEqual([{ name: 'Gin', quantity: '30 ml' }])
     // Blank step dropped; tmxSteps stays aligned with the surviving steps.
     expect(result.steps).toEqual(['Mixer', 'Servir'])
-    expect(result.tmxSteps).toEqual([{ time: '5 s' }, undefined])
+    expect(result.tmxSteps).toEqual([{ time: '5 s' }, {}])
   })
 
   test('drops items whose required field is absent or null instead of throwing', () => {
@@ -253,10 +253,7 @@ describe('parseProposalResponse — full next-version proposal', () => {
       { name: 'Bouillon', quantity: '650 ml' },
     ])
     expect(result.steps).toEqual(['Saisir', 'Mijoter'])
-    expect(result.tmxSteps).toEqual([
-      { time: '5 min', temperature: '120°C', speed: '1' },
-      undefined,
-    ])
+    expect(result.tmxSteps).toEqual([{ time: '5 min', temperature: '120°C', speed: '1' }, {}])
   })
 
   test('clamps the change summary to the domain limit', () => {
@@ -287,6 +284,6 @@ describe('parseProposalResponse — full next-version proposal', () => {
 
     expect(result.ingredients).toEqual([{ name: 'Sel', quantity: '5 g' }])
     expect(result.steps).toEqual(['Saler'])
-    expect(result.tmxSteps).toBeUndefined()
+    expect(result.tmxSteps).toEqual([])
   })
 })

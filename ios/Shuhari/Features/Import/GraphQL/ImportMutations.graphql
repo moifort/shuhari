@@ -1,4 +1,4 @@
-mutation AnalyzeImport($photos: [String!], $url: String, $text: String) {
+mutation AnalyzeImport($photos: [String!]!, $url: String, $text: String) {
   analyzeImport(photos: $photos, url: $url, text: $text) {
     title
     type

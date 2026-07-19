@@ -148,7 +148,7 @@ enum Fixtures {
             TmxSettings(time: "3 min", temperature: "120 °C", speed: "1", reverse: false),
             TmxSettings(time: "2 min", temperature: "100 °C", speed: "1", reverse: true),
             TmxSettings(time: "14 min", temperature: "100 °C", speed: "1", reverse: true),
-            nil,
+            .plain,
         ],
         recipeId: "risotto",
         rating: 4,
@@ -246,7 +246,7 @@ enum Fixtures {
             "Ajouter les noix de pécan torréfiées.",
             "Cuire 12 min à 180 °C.",
         ],
-        tmxSteps: nil,
+        tmxSteps: [],
         sourceLabel: "Photo du livre « Biscuits »"
     )
 

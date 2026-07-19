@@ -12,7 +12,8 @@ struct ReferenceVersionSection: View {
     var body: some View {
         if !version.steps.isEmpty {
             Section {
-                if let tmxItems = TmxStepsList.Item.zipped(steps: version.steps, tmxSteps: version.tmxSteps) {
+                let tmxItems = TmxStepsList.Item.zipped(steps: version.steps, tmxSteps: version.tmxSteps)
+                if !tmxItems.isEmpty {
                     TmxStepsList(items: tmxItems, modified: modified)
                 } else {
                     StepsList(steps: version.steps, modified: modified)

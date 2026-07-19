@@ -38,10 +38,10 @@ export const ProposalInput = builder.inputType('ProposalInput', {
     }),
     tmxSteps: t.field({
       type: [TmxSettingsInput],
-      required: { list: false, items: false },
+      required: true,
       description:
         'Per-step Thermomix settings, aligned with steps, e.g. `"10 min / 100°C / speed 2"` ' +
-        '(`null` = plain step)',
+        '(an entry with every field left out = plain step). Send `[]` for a non-TMX recipe.',
     }),
   }),
 })

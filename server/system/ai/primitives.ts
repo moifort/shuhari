@@ -65,10 +65,11 @@ const ingredientSchema = z.object({
 
 // A step comes back as an object carrying the text plus optional Thermomix
 // settings; a bare string (schema-less fallback) is tolerated as a plain step.
+// A plain step is the empty settings object `{}` — never a hole in the array.
 const stepSchema = z.union([
   clamped(RECIPE_MAX.stepText).transform((text) => ({
     text,
-    tmx: undefined as ImportTmxSettings | undefined,
+    tmx: {},
   })),
   z
     .object({
@@ -88,7 +89,7 @@ const stepSchema = z.union([
         tmxTemperature === undefined &&
         tmxSpeed === undefined &&
         !tmxReverse
-          ? undefined
+          ? {}
           : {
               ...(tmxTime ? { time: tmxTime } : {}),
               ...(tmxTemperature ? { temperature: tmxTemperature } : {}),
@@ -103,16 +104,16 @@ const foldIngredients = (raw: { name: string; quantity: string }[]) =>
   raw.filter((i) => i.name && i.quantity).slice(0, MAX_ITEMS)
 
 // Drop blank steps, cap the count, and split into aligned steps/tmxSteps arrays.
-// tmxSteps drops out entirely when no surviving step carries a setting. Shared by
+// tmxSteps collapses to `[]` when no surviving step carries a setting. Shared by
 // import and proposal.
 const foldSteps = (
-  raw: { text: string; tmx: ImportTmxSettings | undefined }[],
-): { steps: string[]; tmxSteps?: (ImportTmxSettings | undefined)[] } => {
+  raw: { text: string; tmx: ImportTmxSettings }[],
+): { steps: string[]; tmxSteps: ImportTmxSettings[] } => {
   const kept = raw.filter((s) => s.text.length > 0).slice(0, MAX_ITEMS)
   const tmxSteps = kept.map((s) => s.tmx)
   return {
     steps: kept.map((s) => s.text),
-    ...(tmxSteps.some((s) => s !== undefined) ? { tmxSteps } : {}),
+    tmxSteps: tmxSteps.some((s) => Object.keys(s).length > 0) ? tmxSteps : [],
   }
 }
 
@@ -141,7 +142,7 @@ export const ImportAnalysisSchema = z
       ...(raw.sourceLabel ? { sourceLabel: raw.sourceLabel } : {}),
       ingredients: foldIngredients(raw.ingredients),
       steps,
-      ...(tmxSteps ? { tmxSteps } : {}),
+      tmxSteps,
     }
   })
 
@@ -159,7 +160,7 @@ export const ProposalSchema = z
       rationale: raw.rationale,
       ingredients: foldIngredients(raw.ingredients),
       steps,
-      ...(tmxSteps ? { tmxSteps } : {}),
+      tmxSteps,
     }
   })
 

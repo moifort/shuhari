@@ -66,11 +66,12 @@ export const versionToOpen = (versions: RecipeVersion[]): RecipeVersion => {
 // at least one step actually carries a setting; anything else is dropped so the
 // stored version never holds a misaligned or empty parallel array. Entries
 // without any actual setting (reverse alone carries none when false) are
-// normalized to an absent entry (a plain step).
-export const alignedTmxSteps = (steps: StepText[], tmxSteps: (TmxSettings | undefined)[]) => {
+// normalized to the empty settings object `{}` — the single spelling of a plain
+// step, which keeps the array itself free of holes.
+export const alignedTmxSteps = (steps: StepText[], tmxSteps: TmxSettings[]): TmxSettings[] => {
   if (tmxSteps.length !== steps.length) return []
-  const normalized = tmxSteps.map((s) => (s && !emptySettings(s) ? s : undefined))
-  return normalized.some((s) => s !== undefined) ? normalized : []
+  const normalized = tmxSteps.map((s) => (emptySettings(s) ? {} : s))
+  return normalized.some((s) => !emptySettings(s)) ? normalized : []
 }
 
 const emptySettings = (s: TmxSettings) =>
@@ -78,7 +79,7 @@ const emptySettings = (s: TmxSettings) =>
 
 // One step's Thermomix settings as they arrive from a GraphQL input or a branded
 // AI proposal: each field may be present or absent (the boundaries strip the
-// `null`s their clients speak). An absent entry stands for a plain
+// `null`s their clients speak). An entry with no field at all stands for a plain
 // (non-Thermomix) step.
 export type LooseTmxSettings = {
   time?: TmxTime
@@ -92,16 +93,10 @@ export type LooseTmxSettings = {
 // only "setting" is reverse:false is not a Thermomix step). The single home for
 // this rule so the GraphQL and AI-proposal paths can never diverge;
 // `alignedTmxSteps` then decides whether the parallel array is kept at all.
-export const toTmxSettings = (
-  entries: (LooseTmxSettings | undefined)[],
-): (TmxSettings | undefined)[] =>
-  entries.map((entry) =>
-    entry
-      ? {
-          ...(entry.time ? { time: entry.time } : {}),
-          ...(entry.temperature ? { temperature: entry.temperature } : {}),
-          ...(entry.speed ? { speed: entry.speed } : {}),
-          ...(entry.reverse ? { reverse: entry.reverse } : {}),
-        }
-      : undefined,
-  )
+export const toTmxSettings = (entries: LooseTmxSettings[]): TmxSettings[] =>
+  entries.map((entry) => ({
+    ...(entry.time ? { time: entry.time } : {}),
+    ...(entry.temperature ? { temperature: entry.temperature } : {}),
+    ...(entry.speed ? { speed: entry.speed } : {}),
+    ...(entry.reverse ? { reverse: entry.reverse } : {}),
+  }))

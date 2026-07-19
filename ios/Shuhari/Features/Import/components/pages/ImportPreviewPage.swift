@@ -184,7 +184,7 @@ struct ImportPreviewPage: View {
 
     @ViewBuilder
     private func tmxBadges(at index: Int) -> some View {
-        if let settings = (analysis.tmxSteps?[safe: index]) ?? nil, !settings.isEmpty {
+        if let settings = analysis.tmxSteps[safe: index], !settings.isEmpty {
             TmxSettingBadges(
                 time: settings.time,
                 temperature: settings.temperature,
@@ -200,9 +200,11 @@ struct ImportPreviewPage: View {
         let trimmedSteps = stepTexts.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
         let keptIndices = trimmedSteps.indices.filter { !trimmedSteps[$0].isEmpty }
         let steps = keptIndices.map { trimmedSteps[$0] }
-        let tmxSteps = analysis.tmxSteps.map { list in
-            keptIndices.map { index in index < list.count ? list[index] : nil }
-        }
+        // The parallel array is total: a surviving step with no setting keeps its
+        // slot as `.plain`, so `steps` and `tmxSteps` stay the same length.
+        let tmxSteps = analysis.tmxSteps.isEmpty
+            ? []
+            : keptIndices.map { analysis.tmxSteps[safe: $0] ?? .plain }
         return ImportAnalysis(
             title: title.trimmingCharacters(in: .whitespacesAndNewlines),
             type: type,

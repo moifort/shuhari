@@ -26,6 +26,10 @@ struct TmxSettings: Sendable, Hashable {
     let reverse: Bool
 
     var isEmpty: Bool { time == nil && temperature == nil && speed == nil && !reverse }
+
+    /// A step carrying no Thermomix setting. The single spelling of "plain step"
+    /// inside a `tmxSteps` array, which never has holes.
+    static let plain = TmxSettings(time: nil, temperature: nil, speed: nil, reverse: false)
 }
 
 // MARK: - Version
@@ -53,9 +57,10 @@ struct RecipeVersion: Identifiable, Sendable {
     /// The recipe's components with quantities (empty when none/absent).
     let ingredients: [Ingredient]
     let steps: [String]
-    /// Per-step Thermomix settings, aligned with `steps` (nil entry = plain step).
-    /// Empty for non-Thermomix recipes — "is Thermomix" is derived from `type`.
-    let tmxSteps: [TmxSettings?]
+    /// Per-step Thermomix settings, aligned with `steps` (an entry whose fields are
+    /// all nil — `isEmpty` — is a plain step). Empty for non-Thermomix recipes —
+    /// "is Thermomix" is derived from `type`.
+    let tmxSteps: [TmxSettings]
     /// The recipe this version belongs to.
     let recipeId: String
     /// The attempt rating (1..5), or nil while the version hasn't been executed yet.
@@ -90,9 +95,9 @@ struct Proposition: Sendable {
     let ingredients: [Ingredient]
     /// The full step list of the proposed next version.
     let steps: [String]
-    /// Per-step Thermomix settings aligned with `steps` (nil = plain step; empty
-    /// when not a Thermomix recipe).
-    let tmxSteps: [TmxSettings?]
+    /// Per-step Thermomix settings aligned with `steps` (an `isEmpty` entry = plain
+    /// step; the whole list is empty when not a Thermomix recipe).
+    let tmxSteps: [TmxSettings]
 }
 
 /// The complete next-version proposition handed back from the proposition screen
@@ -105,7 +110,7 @@ struct PropositionEdit: Sendable {
     let rationale: String
     let ingredients: [Ingredient]
     let steps: [String]
-    let tmxSteps: [TmxSettings?]
+    let tmxSteps: [TmxSettings]
 }
 
 // MARK: - Recipe
@@ -162,7 +167,8 @@ struct ImportAnalysis: Sendable, Hashable {
     /// The recipe's components with quantities (empty when none).
     var ingredients: [Ingredient] = []
     var steps: [String]
-    /// Per-step Thermomix settings, aligned with `steps` (nil entry = plain step).
-    var tmxSteps: [TmxSettings?]? = nil
+    /// Per-step Thermomix settings, aligned with `steps` (an `isEmpty` entry = plain
+    /// step; empty when the recipe carries none).
+    var tmxSteps: [TmxSettings] = []
     var sourceLabel: String?
 }

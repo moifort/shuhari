@@ -2,14 +2,12 @@ import type { WriteBatch } from 'firebase-admin/firestore'
 import { categoryRank } from '~/domain/recipe/business-rules'
 import type {
   DishCategory,
-  Ingredient,
   Recipe,
   RecipeId,
   RecipeSort,
   RecipeType,
   RecipeVersion,
   SortOrder,
-  TmxSettings,
   VersionNumber,
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
@@ -22,40 +20,24 @@ import {
   withoutStoredNulls,
 } from '~/utils/firestore'
 
-// How a version is spelled in Firestore, as opposed to in the domain: an absent
-// field is a missing key, a plain step is a `null` placeholder in the parallel
-// tmxSteps array, and the always-present arrays may be missing altogether on
-// documents written before they existed.
-type StoredVersion = Omit<RecipeVersion, 'ingredients' | 'tmxSteps'> & {
-  ingredients?: Ingredient[]
-  tmxSteps?: (TmxSettings | null)[]
-}
-
 const recipes = () => db().collection('recipes').withConverter(genericDataConverter<Recipe>())
 const versions = () =>
-  db().collection('recipe-versions').withConverter(genericDataConverter<StoredVersion>())
+  db().collection('recipe-versions').withConverter(genericDataConverter<RecipeVersion>())
 
 const versionDocId = (recipeId: RecipeId, number: VersionNumber) => `${recipeId}_${number}`
 
 // Storage boundary, read side. Firestore (and any document written before the
 // attempt outcome moved onto the version) spells an absent field `null`, while
-// the domain spells it "absent" — so the `null`s are erased on the way in, and
-// the always-present arrays are defaulted so the invariant holds on read.
-const normalizeVersion = (stored: StoredVersion): RecipeVersion => ({
-  ...withoutStoredNulls(stored),
-  ingredients: stored.ingredients ?? [],
-  tmxSteps: (stored.tmxSteps ?? []).map((settings) => settings ?? undefined),
-})
+// the domain spells it "absent" — so the `null`s are erased on the way in. The
+// arrays need no defaulting: they are total, a plain step being the empty
+// settings object `{}` Firestore stores verbatim.
+const normalizeVersion = (stored: RecipeVersion): RecipeVersion => withoutStoredNulls(stored)
 
 // Storage boundary, write side. Every version write is a full `set` (never a
 // merge), so an omitted key erases the stored field — which is precisely what an
-// absent domain field means. Firestore rejects `undefined`, hence the pruning,
-// and the per-step "plain step" hole is encoded as the `null` placeholder an
-// array needs.
-const storedVersion = (version: RecipeVersion): StoredVersion => ({
-  ...withoutAbsentFields(version),
-  tmxSteps: version.tmxSteps.map((settings) => settings ?? null),
-})
+// absent domain field means. Firestore rejects `undefined`, hence the pruning
+// (shallow: it never touches the empty objects inside the tmxSteps array).
+const storedVersion = (version: RecipeVersion): RecipeVersion => withoutAbsentFields(version)
 
 const allCacheKey = (userId: UserId) => `recipes:all:${userId}`
 const allVersionsCacheKey = (userId: UserId) => `recipe-versions:all:${userId}`

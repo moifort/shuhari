@@ -30,7 +30,7 @@ import type { AcceptedProposal, Proposal } from './types'
 type BrandedContent = {
   ingredients: Ingredient[]
   steps: StepTextT[]
-  tmxSteps: (TmxSettings | undefined)[]
+  tmxSteps: TmxSettings[]
 }
 
 // Brand one step's raw AI tmx settings into the loose shape the shared
@@ -50,10 +50,9 @@ const brandProposal = (type: RecipeType, proposal: AiProposal): BrandedContent =
     quantity: IngredientQuantity(i.quantity),
   }))
   const steps = proposal.steps.map((s) => StepText(s))
-  const rawTmx = proposal.tmxSteps ?? []
   const tmxSteps =
     type === 'tmx'
-      ? alignedTmxSteps(steps, toTmxSettings(rawTmx.map((s) => (s ? brandLooseTmx(s) : undefined))))
+      ? alignedTmxSteps(steps, toTmxSettings(proposal.tmxSteps.map(brandLooseTmx)))
       : []
   return { ingredients, steps, tmxSteps }
 }
@@ -87,11 +86,12 @@ export namespace ProposalUseCase {
         quantity: i.quantity as string,
       })),
       currentSteps: version.steps.map((s) => s as string),
-      currentTmxSteps: version.tmxSteps.map((s) =>
-        s
-          ? { time: s.time, temperature: s.temperature, speed: s.speed, reverse: s.reverse }
-          : undefined,
-      ),
+      currentTmxSteps: version.tmxSteps.map((s) => ({
+        time: s.time,
+        temperature: s.temperature,
+        speed: s.speed,
+        reverse: s.reverse,
+      })),
       attempts,
     })
 

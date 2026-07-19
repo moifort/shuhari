@@ -37,9 +37,9 @@ input CreateRecipeInput {
   category: DishCategory!
 
   """
-  The ingredient list, in order, e.g. `"Flour — 250 g"` then `"Eggs — 3"`
+  The ingredient list, in order, e.g. `"Flour — 250 g"` then `"Eggs — 3"` (send `[]` when the recipe has nothing measurable)
   """
-  ingredients: [IngredientInput!]
+  ingredients: [IngredientInput!]!
 
   """Where it came from, e.g. `"Marmiton"` or `"Mum"`"""
   sourceLabel: String
@@ -53,9 +53,9 @@ input CreateRecipeInput {
   title: RecipeTitle!
 
   """
-  Thermomix settings lined up with the steps above — one entry per step, e.g. `"10 min / 100°C / speed 2"`, `null` for a step with no machine settings (only for TMX recipes)
+  Thermomix settings lined up with the steps above — one entry per step, e.g. `"10 min / 100°C / speed 2"`, an entry with every field left out for a step with no machine settings. Send `[]` for a non-TMX recipe.
   """
-  tmxSteps: [TmxSettingsInput]
+  tmxSteps: [TmxSettingsInput!]!
 
   """Cooked dish (`DISH`) or Thermomix recipe (`TMX`)"""
   type: RecipeType!
@@ -98,8 +98,10 @@ type ImportAnalysis {
   steps: [String!]!
   title: String!
 
-  """Per-step Thermomix settings, aligned with steps (null = plain step)"""
-  tmxSteps: [ImportTmxSettings]
+  """
+  Per-step Thermomix settings, aligned with steps (an entry with every field `null` = plain step; `[]` if not tmx)
+  """
+  tmxSteps: [ImportTmxSettings!]!
   type: RecipeType!
 }
 
@@ -190,8 +192,10 @@ type Mutation {
   Analyze an import source (photos, a URL or raw text) into a structured recipe preview. Exactly one source must be provided. Results are cached server-side by SHA-256.
   """
   analyzeImport(
-    """Base64 JPEGs (no data-URL prefix)"""
-    photos: [String!]
+    """
+    Base64 JPEGs (no data-URL prefix) — `[]` when importing from a URL or text
+    """
+    photos: [String!]! = []
 
     """Raw recipe text"""
     text: String
@@ -338,9 +342,9 @@ type Proposal {
   steps: [StepText!]!
 
   """
-  Per-step Thermomix settings aligned with steps, e.g. `"10 min / 100°C / speed 2"` (`null` = plain step; `[]` if not tmx)
+  Per-step Thermomix settings aligned with steps, e.g. `"10 min / 100°C / speed 2"` (an entry with every field `null` = plain step; `[]` if not tmx)
   """
-  tmxSteps: [TmxSettings]!
+  tmxSteps: [TmxSettings!]!
 }
 
 """
@@ -371,9 +375,9 @@ input ProposalInput {
   steps: [StepText!]!
 
   """
-  Per-step Thermomix settings, aligned with steps, e.g. `"10 min / 100°C / speed 2"` (`null` = plain step)
+  Per-step Thermomix settings, aligned with steps, e.g. `"10 min / 100°C / speed 2"` (an entry with every field left out = plain step). Send `[]` for a non-TMX recipe.
   """
-  tmxSteps: [TmxSettingsInput]
+  tmxSteps: [TmxSettingsInput!]!
 }
 
 type Query {
@@ -739,9 +743,9 @@ type Version {
   steps: [StepText!]!
 
   """
-  Per-step Thermomix settings aligned with steps, e.g. `"10 min / 100°C / speed 2"` (`null` = plain step; `[]` if not tmx)
+  Per-step Thermomix settings aligned with steps, e.g. `"10 min / 100°C / speed 2"` (an entry with every field `null` = plain step; `[]` if not tmx)
   """
-  tmxSteps: [TmxSettings]!
+  tmxSteps: [TmxSettings!]!
 
   """
   The quick yes/no of the field above: `true` once you have cooked and rated it, `false` while it is still waiting to be tried

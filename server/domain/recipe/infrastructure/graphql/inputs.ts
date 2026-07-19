@@ -4,19 +4,15 @@ import { builder } from '~/domain/shared/graphql/builder'
 import { stripNulls } from '~/utils/input'
 import { DishCategoryEnum, RecipeTypeEnum } from './enums'
 
-// Boundary: a client spells "plain step" as a `null` entry in the parallel array
-// and "setting not set" as a `null` field — the domain spells both "absent".
-export const looseSettings = (
-  entry:
-    | {
-        time?: TmxTime | null
-        temperature?: TmxTemperature | null
-        speed?: TmxSpeed | null
-        reverse?: boolean | null
-      }
-    | null
-    | undefined,
-): LooseTmxSettings | undefined => (entry ? stripNulls(entry) : undefined)
+// Boundary: a client spells "setting not set" as a `null` field — the domain
+// spells it "absent". A plain step is an entry with every field null, which
+// stripNulls turns into the empty settings object.
+export const looseSettings = (entry: {
+  time?: TmxTime | null
+  temperature?: TmxTemperature | null
+  speed?: TmxSpeed | null
+  reverse?: boolean | null
+}): LooseTmxSettings => stripNulls(entry)
 
 export const IngredientInput = builder.inputType('IngredientInput', {
   description:
@@ -73,8 +69,10 @@ export const CreateRecipeInput = builder.inputType('CreateRecipeInput', {
     sourceLabel: t.string({ description: 'Where it came from, e.g. `"Marmiton"` or `"Mum"`' }),
     ingredients: t.field({
       type: [IngredientInput],
-      required: { list: false, items: true },
-      description: 'The ingredient list, in order, e.g. `"Flour — 250 g"` then `"Eggs — 3"`',
+      required: true,
+      description:
+        'The ingredient list, in order, e.g. `"Flour — 250 g"` then `"Eggs — 3"` (send `[]` ' +
+        'when the recipe has nothing measurable)',
     }),
     steps: t.field({
       type: ['StepText'],
@@ -84,11 +82,11 @@ export const CreateRecipeInput = builder.inputType('CreateRecipeInput', {
     }),
     tmxSteps: t.field({
       type: [TmxSettingsInput],
-      required: { list: false, items: false },
+      required: true,
       description:
         'Thermomix settings lined up with the steps above — one entry per step, e.g. ' +
-        '`"10 min / 100°C / speed 2"`, `null` for a step with no machine settings (only for TMX ' +
-        'recipes)',
+        '`"10 min / 100°C / speed 2"`, an entry with every field left out for a step with no ' +
+        'machine settings. Send `[]` for a non-TMX recipe.',
     }),
   }),
 })

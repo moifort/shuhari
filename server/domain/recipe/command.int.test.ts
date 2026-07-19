@@ -32,7 +32,7 @@ const newInput = () => ({
   title: 'Blanquette' as RecipeTitle,
   steps: ['Saisir', 'Mijoter'] as StepText[],
   ingredients: [] as Ingredient[],
-  tmxSteps: [] as (TmxSettings | undefined)[],
+  tmxSteps: [] as TmxSettings[],
 })
 
 let fake = resetFakeFirestore()
@@ -66,12 +66,12 @@ describe('RecipeCommand.create', () => {
     const recipe = await RecipeCommand.create(userId, {
       ...newInput(),
       type: 'tmx' as const,
-      tmxSteps: [tmx, undefined],
+      tmxSteps: [tmx, {}],
     })
 
-    // A plain step keeps its slot in the parallel array as the stored `null`
-    // placeholder — Firestore has no way to spell an absent array element.
-    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.tmxSteps).toEqual([tmx, null])
+    // A plain step keeps its slot in the parallel array as the empty settings
+    // object — Firestore stores it verbatim, no `null` placeholder needed.
+    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.tmxSteps).toEqual([tmx, {}])
   })
 
   test('stores [] tmxSteps when absent or misaligned', async () => {
@@ -87,7 +87,7 @@ describe('RecipeCommand.create', () => {
 
     const notTmx = await RecipeCommand.create(userId, {
       ...newInput(),
-      tmxSteps: [{ time: '5 min' as TmxTime }, undefined],
+      tmxSteps: [{ time: '5 min' as TmxTime }, {}],
     })
     expect(fake.snapshot('recipe-versions').get(`${notTmx.id}_1`)?.tmxSteps).toEqual([])
   })
@@ -113,14 +113,14 @@ describe('RecipeCommand.addVersion', () => {
       basedOn: 1 as VersionNumber,
       steps: ['Saisir', 'Mijoter'] as StepText[],
       ingredients: [],
-      tmxSteps: [undefined, { speed: 'turbo' as TmxSpeed }],
+      tmxSteps: [{}, { speed: 'turbo' as TmxSpeed }],
     })) as Recipe
 
     expect(withV2.versionCount).toBe(2 as VersionNumber)
     const v2 = fake.snapshot('recipe-versions').get(`${recipe.id}_2`)
     expect(v2?.change).toBe('Bouillon 700 → 650 ml')
     expect(v2?.basedOn).toBe(1 as VersionNumber)
-    expect(v2?.tmxSteps).toEqual([null, { speed: 'turbo' }])
+    expect(v2?.tmxSteps).toEqual([{}, { speed: 'turbo' }])
     // A freshly appended version is a planned attempt: no outcome stored at all.
     expect(v2).not.toHaveProperty('executedAt')
     expect(v2).not.toHaveProperty('rating')

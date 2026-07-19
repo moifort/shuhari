@@ -1,34 +1,22 @@
-import type { CachedImport, ImportAnalysis, ImportHash, ImportTmxSettings } from '~/system/ai/types'
+import type { CachedImport, ImportHash } from '~/system/ai/types'
 import { db } from '~/system/firebase'
 import { genericDataConverter, withoutStoredNulls } from '~/utils/firestore'
 
-// How a cached analysis is spelled in Firestore: the parallel tmxSteps array is
-// positional, so a plain step — absent in the domain — keeps its slot as the
-// `null` placeholder Firestore accepts (it rejects `undefined` outright).
-type StoredImport = Omit<CachedImport, 'result'> & {
-  result: Omit<ImportAnalysis, 'tmxSteps'> & { tmxSteps?: (ImportTmxSettings | null)[] }
-}
-
+// The analysis is stored as-is: every array is total (a plain step is the empty
+// settings object `{}`, which Firestore stores verbatim), so no positional
+// placeholder is needed and the stored shape IS the domain shape.
 const cache = () =>
-  db().collection('import-cache').withConverter(genericDataConverter<StoredImport>())
+  db().collection('import-cache').withConverter(genericDataConverter<CachedImport>())
 
 export const findBy = async (importHash: ImportHash): Promise<CachedImport | undefined> => {
   const stored = (await cache().doc(importHash).get()).data()
   if (!stored) return undefined
-  const { tmxSteps, ...result } = withoutStoredNulls(stored.result)
-  return {
-    ...stored,
-    result: { ...result, ...(tmxSteps ? { tmxSteps: tmxSteps.map((s) => s ?? undefined) } : {}) },
-  }
+  // Storage boundary: an optional field left `null` by an older write comes back
+  // as an absent key, the way the domain spells absence.
+  return { ...stored, result: withoutStoredNulls(stored.result) }
 }
 
 export const save = async (entry: CachedImport): Promise<CachedImport> => {
-  const { tmxSteps, ...result } = entry.result
-  await cache()
-    .doc(entry.importHash)
-    .set({
-      ...entry,
-      result: { ...result, ...(tmxSteps ? { tmxSteps: tmxSteps.map((s) => s ?? null) } : {}) },
-    })
+  await cache().doc(entry.importHash).set(entry)
   return entry
 }

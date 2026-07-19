@@ -14,11 +14,12 @@ enum ImportAPI {
 
     /// Analyze an import source into a structured, editable recipe preview.
     static func analyze(_ source: Source) async throws -> ImportAnalysis {
-        var photos: GraphQLNullable<[String]> = .none
+        // The photo list is total: a URL/text import sends `[]`, never a null.
+        var photos: [String] = []
         var url: GraphQLNullable<String> = .none
         var text: GraphQLNullable<String> = .none
         switch source {
-        case .photos(let list): photos = .some(list)
+        case .photos(let list): photos = list
         case .url(let value): url = GraphQLHelpers.graphQLNullable(value)
         case .text(let value): text = GraphQLHelpers.graphQLNullable(value)
         }
@@ -42,31 +43,15 @@ enum ImportAPI {
             category: DishCategory(graphql: analysis.category),
             ingredients: analysis.ingredients.map { Ingredient(name: $0.name, quantity: $0.quantity) },
             steps: analysis.steps,
-            tmxSteps: analysis.tmxSteps.map { list in
-                list.map { $0.map { TmxSettings(time: $0.time, temperature: $0.temperature, speed: $0.speed, reverse: $0.reverse ?? false) } }
-            },
+            tmxSteps: analysis.tmxSteps.map { TmxSettings(time: $0.time, temperature: $0.temperature, speed: $0.speed, reverse: $0.reverse ?? false) },
             sourceLabel: analysis.sourceLabel
         )
     }
 
     /// Create a recipe and its v1 from a confirmed preview. Returns the recipe id.
     static func create(_ analysis: ImportAnalysis) async throws -> String {
-        let tmxSteps: GraphQLNullable<[ShuhariGraphQL.TmxSettingsInput?]> = analysis.tmxSteps
-            .map { list in
-                .some(list.map { settings in
-                    settings.map {
-                        ShuhariGraphQL.TmxSettingsInput(
-                            reverse: $0.reverse ? .some(true) : .none,
-                            speed: GraphQLHelpers.graphQLNullable($0.speed),
-                            temperature: GraphQLHelpers.graphQLNullable($0.temperature),
-                            time: GraphQLHelpers.graphQLNullable($0.time)
-                        )
-                    }
-                })
-            } ?? .none
-        let ingredients: GraphQLNullable<[ShuhariGraphQL.IngredientInput]> = analysis.ingredients.isEmpty
-            ? .none
-            : .some(analysis.ingredients.map { ShuhariGraphQL.IngredientInput(name: $0.name, quantity: $0.quantity) })
+        let tmxSteps = analysis.tmxSteps.map { GraphQLHelpers.tmxSettingsInput($0) }
+        let ingredients = analysis.ingredients.map { ShuhariGraphQL.IngredientInput(name: $0.name, quantity: $0.quantity) }
         let input = ShuhariGraphQL.CreateRecipeInput(
             category: analysis.category.graphQLValue,
             ingredients: ingredients,

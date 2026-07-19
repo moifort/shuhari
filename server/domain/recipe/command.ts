@@ -27,7 +27,7 @@ export type NewRecipeInput = {
   title: RecipeTitle
   steps: StepText[]
   ingredients: Ingredient[]
-  tmxSteps: (TmxSettings | undefined)[]
+  tmxSteps: TmxSettings[]
 }
 
 export type NewVersionInput = {
@@ -36,7 +36,7 @@ export type NewVersionInput = {
   why?: string
   steps: StepText[]
   ingredients: Ingredient[]
-  tmxSteps: (TmxSettings | undefined)[]
+  tmxSteps: TmxSettings[]
 }
 
 export type RecordAttemptInput = {

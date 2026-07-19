@@ -83,6 +83,18 @@ enum GraphQLHelpers {
         else { return .none }
         return .some(value)
     }
+
+    /// One step's Thermomix settings as the API spells them. A plain step is an
+    /// input with every field absent — the parallel `tmxSteps` array is total, it
+    /// never carries holes (see docs/code-style.md, "Arrays never optional").
+    static func tmxSettingsInput(_ settings: TmxSettings) -> ShuhariGraphQL.TmxSettingsInput {
+        ShuhariGraphQL.TmxSettingsInput(
+            reverse: settings.reverse ? .some(true) : .none,
+            speed: graphQLNullable(settings.speed),
+            temperature: graphQLNullable(settings.temperature),
+            time: graphQLNullable(settings.time)
+        )
+    }
 }
 
 enum APIError: LocalizedError {

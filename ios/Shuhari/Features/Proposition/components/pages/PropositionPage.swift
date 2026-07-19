@@ -34,8 +34,9 @@ struct PropositionPage: View {
     private struct EditableStep: Identifiable {
         let id = UUID()
         var text: String
-        /// Per-step Thermomix settings, read-only, aligned with this step.
-        let tmx: TmxSettings?
+        /// Per-step Thermomix settings, read-only, aligned with this step
+        /// (`.plain` when the step carries none).
+        let tmx: TmxSettings
     }
 
     @State private var ingredients: [EditableIngredient]
@@ -63,7 +64,7 @@ struct PropositionPage: View {
             EditableIngredient(name: $0.name, quantity: $0.quantity)
         })
         self._steps = State(initialValue: proposition.steps.enumerated().map { index, text in
-            EditableStep(text: text, tmx: proposition.tmxSteps[safe: index] ?? nil)
+            EditableStep(text: text, tmx: proposition.tmxSteps[safe: index] ?? .plain)
         })
     }
 
@@ -154,12 +155,12 @@ struct PropositionPage: View {
                         TextField("Étape", text: $steps[index].text, axis: .vertical)
                             .lineLimit(1...6)
                             .accessibilityIdentifier("edit-step")
-                        if let tmx = step.tmx, !tmx.isEmpty {
+                        if !step.tmx.isEmpty {
                             TmxSettingBadges(
-                                time: tmx.time,
-                                temperature: tmx.temperature,
-                                speed: tmx.speed,
-                                reverse: tmx.reverse
+                                time: step.tmx.time,
+                                temperature: step.tmx.temperature,
+                                speed: step.tmx.speed,
+                                reverse: step.tmx.reverse
                             )
                         }
                     }
@@ -201,7 +202,7 @@ struct PropositionPage: View {
         // Drop emptied steps, carrying each surviving row's tmx settings so `steps`
         // and `tmxSteps` keep the same length — a cleared step must not desync them
         // (a length mismatch makes the backend drop ALL Thermomix settings).
-        let survivingSteps = steps.compactMap { row -> (text: String, tmx: TmxSettings?)? in
+        let survivingSteps = steps.compactMap { row -> (text: String, tmx: TmxSettings)? in
             let text = row.text.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !text.isEmpty else { return nil }
             return (text, row.tmx)
@@ -209,7 +210,7 @@ struct PropositionPage: View {
         let editedSteps = survivingSteps.map(\.text)
         // Empty for a non-Thermomix recipe (the proposition had no tmxSteps);
         // otherwise aligned 1:1 with the surviving steps.
-        let editedTmxSteps: [TmxSettings?] = proposition.tmxSteps.isEmpty ? [] : survivingSteps.map(\.tmx)
+        let editedTmxSteps: [TmxSettings] = proposition.tmxSteps.isEmpty ? [] : survivingSteps.map(\.tmx)
 
         return PropositionEdit(
             basedOn: proposition.basedOn,

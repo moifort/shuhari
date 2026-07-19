@@ -107,23 +107,20 @@ describe('alignedTmxSteps', () => {
   const settings: TmxSettings = { time: '5 min' as TmxTime, speed: '4' as TmxSpeed }
 
   test('keeps settings aligned with the steps', () => {
-    expect(alignedTmxSteps(steps, [settings, undefined])).toEqual([settings, undefined])
+    expect(alignedTmxSteps(steps, [settings, {}])).toEqual([settings, {}])
   })
   test('drops settings whose length differs from the steps', () => {
     expect(alignedTmxSteps(steps, [settings])).toEqual([])
   })
-  test('drops settings when every entry is absent', () => {
-    expect(alignedTmxSteps(steps, [undefined, undefined])).toEqual([])
+  test('drops settings when every entry is empty', () => {
+    expect(alignedTmxSteps(steps, [{}, {}])).toEqual([])
   })
-  test('normalizes entries carrying no actual setting to an absent entry', () => {
-    expect(alignedTmxSteps(steps, [settings, { reverse: false }])).toEqual([settings, undefined])
+  test('normalizes entries carrying no actual setting to the empty settings object', () => {
+    expect(alignedTmxSteps(steps, [settings, { reverse: false }])).toEqual([settings, {}])
     expect(alignedTmxSteps(steps, [{}, { reverse: false }])).toEqual([])
   })
   test('keeps reverse alone as a setting when true', () => {
-    expect(alignedTmxSteps(steps, [{ reverse: true }, undefined])).toEqual([
-      { reverse: true },
-      undefined,
-    ])
+    expect(alignedTmxSteps(steps, [{ reverse: true }, {}])).toEqual([{ reverse: true }, {}])
   })
   test('returns [] for an empty list', () => {
     expect(alignedTmxSteps(steps, [])).toEqual([])
@@ -131,8 +128,8 @@ describe('alignedTmxSteps', () => {
 })
 
 describe('toTmxSettings', () => {
-  test('maps an absent entry to a plain step', () => {
-    expect(toTmxSettings([undefined, undefined])).toEqual([undefined, undefined])
+  test('maps an entry with no field to the empty settings object (a plain step)', () => {
+    expect(toTmxSettings([{}, {}])).toEqual([{}, {}])
   })
   test('drops absent fields', () => {
     expect(

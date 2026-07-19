@@ -59,9 +59,7 @@ func mapVersion(_ v: ShuhariGraphQL.VersionFields) -> RecipeVersion {
         originDetail: v.originDetail,
         ingredients: v.ingredients.map { Ingredient(name: $0.name, quantity: $0.quantity) },
         steps: v.steps,
-        tmxSteps: v.tmxSteps.map { step in
-            step.map { TmxSettings(time: $0.time, temperature: $0.temperature, speed: $0.speed, reverse: $0.reverse ?? false) }
-        },
+        tmxSteps: v.tmxSteps.map { TmxSettings(time: $0.time, temperature: $0.temperature, speed: $0.speed, reverse: $0.reverse ?? false) },
         recipeId: v.recipeId,
         rating: v.rating,
         remarks: v.remarks,
@@ -78,8 +76,6 @@ func mapProposition(_ d: ShuhariGraphQL.ProposalFields) -> Proposition {
         rationale: d.rationale,
         ingredients: d.ingredients.map { Ingredient(name: $0.name, quantity: $0.quantity) },
         steps: d.steps,
-        tmxSteps: d.tmxSteps.map { step in
-            step.map { TmxSettings(time: $0.time, temperature: $0.temperature, speed: $0.speed, reverse: $0.reverse ?? false) }
-        }
+        tmxSteps: d.tmxSteps.map { TmxSettings(time: $0.time, temperature: $0.temperature, speed: $0.speed, reverse: $0.reverse ?? false) }
     )
 }

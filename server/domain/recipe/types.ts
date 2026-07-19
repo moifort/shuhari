@@ -43,6 +43,8 @@ export type Ingredient = { name: IngredientName; quantity: IngredientQuantity }
 
 // Thermomix settings for one step, display-oriented strings (no computation is
 // ever done on them — "Varoma" and "pétrin" are valid values, not numbers).
+// Every field absent (`{}`) means "this step carries no Thermomix setting" — the
+// single representation of a plain step inside the parallel `tmxSteps` array.
 export type TmxSettings = {
   time?: TmxTime // "3 min", "30 s", "1 h 10 min"
   temperature?: TmxTemperature // "100°C", "Varoma"
@@ -91,10 +93,10 @@ export type RecipeVersion = {
   // The recipe's components with quantities. `[]` when the recipe has nothing
   // measurable.
   ingredients: Ingredient[]
-  // Thermomix settings aligned with `steps` by index (an absent entry = plain
-  // step). `[]` for non-tmx recipes — "is Thermomix" is derived from
-  // `type === 'tmx'`, never from the presence of this array.
-  tmxSteps: (TmxSettings | undefined)[]
+  // Thermomix settings aligned with `steps` by index (an entry with every field
+  // absent — `{}` — = plain step). `[]` for non-tmx recipes — "is Thermomix" is
+  // derived from `type === 'tmx'`, never from the presence of this array.
+  tmxSteps: TmxSettings[]
   // The attempt outcome, written once when the version is executed. All absent
   // while the version is still a planned attempt (no `executedAt`).
   executedAt?: Date

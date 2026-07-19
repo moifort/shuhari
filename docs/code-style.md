@@ -92,9 +92,24 @@ type RecipeVersion = { ingredients?: Ingredient[] }
 type RecipeVersion = { ingredients: Ingredient[] }  // [] is the neutral state
 ```
 
-Applies to both backend TypeScript and iOS Swift. When absence seems meaningful, derive it from a
-real field instead of the array's presence — a Thermomix recipe is `type === 'tmx'`, not "`tmxSteps`
-is present" (see the next rule).
+**Items are never optional either** — an array is *total*: neither the list nor any of its slots can
+be absent. A parallel array aligned by index (`tmxSteps` mirrors `steps`) must not spell "nothing
+here" as a hole; give the element type a neutral value instead.
+
+```ts
+// Bad — two spellings of "no setting", and a hole Firestore can't store
+tmxSteps: (TmxSettings | undefined)[]
+// Good — every field of TmxSettings is optional, so `{}` IS "plain step"
+tmxSteps: TmxSettings[]
+```
+
+At the GraphQL boundary this means **`[T!]!` everywhere**, in output types *and* inputs/args —
+never `[T]`, `[T]!` or `[T!]`. A client sends `[]` for "none", never `null`, and an empty element
+for "this slot carries nothing".
+
+Applies to both backend TypeScript and iOS Swift (`[TmxSettings]`, never `[TmxSettings?]` nor
+`[TmxSettings]?`). When absence seems meaningful, derive it from a real field instead of the array's
+presence — a Thermomix recipe is `type === 'tmx'`, not "`tmxSteps` is present" (see the next rule).
 
 ### ⛔ No `null` in the domain — absence is `?` / `undefined`
 

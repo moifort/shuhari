@@ -41,12 +41,10 @@ export const ProposalType = builder.objectRef<Proposal>('Proposal').implement({
     }),
     tmxSteps: t.field({
       type: [TmxSettingsType],
-      nullable: { list: false, items: true },
       description:
         'Per-step Thermomix settings aligned with steps, e.g. `"10 min / 100°C / speed 2"` ' +
-        '(`null` = plain step; `[]` if not tmx)',
-      // Boundary: the domain leaves a plain step's slot absent, GraphQL spells it `null`.
-      resolve: (d) => d.tmxSteps.map((settings) => settings ?? null),
+        '(an entry with every field `null` = plain step; `[]` if not tmx)',
+      resolve: (d) => d.tmxSteps,
     }),
   }),
 })
@@ -87,9 +85,10 @@ export const ImportAnalysisType = builder.objectRef<ImportAnalysis>('ImportAnaly
     steps: t.exposeStringList('steps'),
     tmxSteps: t.field({
       type: [ImportTmxSettingsType],
-      nullable: { list: true, items: true },
-      description: 'Per-step Thermomix settings, aligned with steps (null = plain step)',
-      resolve: (a) => a.tmxSteps?.map((settings) => settings ?? null) ?? null,
+      description:
+        'Per-step Thermomix settings, aligned with steps (an entry with every field `null` = ' +
+        'plain step; `[]` if not tmx)',
+      resolve: (a) => a.tmxSteps,
     }),
   }),
 })

@@ -18,7 +18,8 @@ struct ExecutePage: View {
                     if !version.ingredients.isEmpty {
                         Divider()
                     }
-                    if let tmxItems = TmxStepsList.Item.zipped(steps: version.steps, tmxSteps: version.tmxSteps) {
+                    let tmxItems = TmxStepsList.Item.zipped(steps: version.steps, tmxSteps: version.tmxSteps)
+                    if !tmxItems.isEmpty {
                         TmxStepsList(items: tmxItems, big: true)
                     } else {
                         StepsList(steps: version.steps, big: true)

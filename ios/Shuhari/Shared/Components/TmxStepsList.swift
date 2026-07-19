@@ -117,18 +117,18 @@ struct TmxSettingBadges: View {
 
 extension TmxStepsList.Item {
     /// Builds the rows only when the settings usably mirror the steps: same
-    /// count and at least one step actually carrying a setting. Returns nil
+    /// count and at least one step actually carrying a setting. Returns `[]`
     /// otherwise — callers fall back to the plain `StepsList`.
-    static func zipped(steps: [String], tmxSteps: [TmxSettings?]) -> [TmxStepsList.Item]? {
+    static func zipped(steps: [String], tmxSteps: [TmxSettings]) -> [TmxStepsList.Item] {
         guard tmxSteps.count == steps.count,
-              tmxSteps.contains(where: { $0?.isEmpty == false }) else { return nil }
+              tmxSteps.contains(where: { !$0.isEmpty }) else { return [] }
         return zip(steps, tmxSteps).map { text, settings in
             TmxStepsList.Item(
                 text: text,
-                time: settings?.time,
-                temperature: settings?.temperature,
-                speed: settings?.speed,
-                reverse: settings?.reverse ?? false
+                time: settings.time,
+                temperature: settings.temperature,
+                speed: settings.speed,
+                reverse: settings.reverse
             )
         }
     }
