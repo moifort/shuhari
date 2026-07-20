@@ -108,7 +108,14 @@ struct HomePage: View {
     private var content: some View {
         if library.isEmpty {
             if libraryLoading {
-                ProgressView()
+                // Cold functions make the first load slow: the looping flask
+                // (fill → boil away → refill) owns the wait instead of a bare spinner.
+                VStack(spacing: 16) {
+                    LiquidFlask(size: 80, tint: .primary)
+                    Text("Chargement des recettes…")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
             } else {
                 ContentUnavailableView {
                     Label("Aucune recette", systemImage: "camera.viewfinder")
@@ -164,6 +171,23 @@ private struct HomePagePreview: View {
 
 #Preview {
     HomePagePreview()
+}
+
+#Preview("Premier chargement") {
+    NavigationStack {
+        HomePage(
+            library: [],
+            libraryGrouping: .month,
+            libraryLoading: true,
+            libraryHasMore: false,
+            libraryLoadMoreFailed: false,
+            title: "Cuisine",
+            lensPicker: nil,
+            sort: .constant(.lastModified),
+            categoryFilter: .constant(nil),
+            onSettings: {}
+        )
+    }
 }
 
 #Preview("Chargement de plus") {

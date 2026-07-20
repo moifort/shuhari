@@ -20,6 +20,21 @@ struct DebugGallery: View {
             CuisineGalleryScreen(lens: .favorites)
         case "cuisine-thermomix":
             CuisineGalleryScreen(lens: .type(.thermomix))
+        case "cuisine-loading":
+            NavigationStack {
+                HomePage(
+                    library: [],
+                    libraryGrouping: .month,
+                    libraryLoading: true,
+                    libraryHasMore: false,
+                    libraryLoadMoreFailed: false,
+                    title: "Cuisine",
+                    lensPicker: nil,
+                    sort: .constant(.lastModified),
+                    categoryFilter: .constant(nil),
+                    onSettings: {}
+                )
+            }
         case "recipe":
             RecipeDetailGalleryScreen(recipe: Fixtures.bourguignon)
         case "recipe-thermomix":
@@ -146,7 +161,7 @@ struct DebugGallery: View {
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : cuisine, cuisine-course, cuisine-favorites, cuisine-thermomix, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, to-test, to-test-empty, recipe-edit, improve, viewfinder, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found, login, settings-data")
+                description: Text("Écrans : cuisine, cuisine-course, cuisine-favorites, cuisine-thermomix, cuisine-loading, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, to-test, to-test-empty, recipe-edit, improve, viewfinder, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found, login, settings-data")
             )
         }
     }

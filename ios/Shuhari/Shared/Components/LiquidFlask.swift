@@ -1,46 +1,64 @@
 import SwiftUI
 
-/// The login logo: an orange flask filling up with liquid, then bubbling like a
-/// chemical reaction. Two stacked SF Symbols — `flask.fill` (the liquid) masked by
-/// a rising wave, under an orange `flask` (the glass) — plus a loop of small orange
-/// bubbles escaping from the top of the flask once the fill settles. On appear the
-/// level eases up to the bulb over ~1.8 s, then the surface keeps a light permanent
-/// slosh. Respects Reduce Motion by holding the filled state with a flat surface
-/// and no bubbles. Purely presentational.
+/// The animated flask, looping like a slow chemical experiment: the liquid rises,
+/// rests a beat, then boils away — each escaping bubble carrying the level down —
+/// and the cycle starts over. Two stacked SF Symbols — `flask.fill` (the liquid)
+/// masked by a rising wave, under a `flask` of the same tint (the glass) — plus the swarm
+/// of bubbles popping out of the neck during the evaporation phase. The glass
+/// itself swirls like a flask stirred by the neck, harder the fuller it is. Used as the
+/// login logo and as the library's first-load indicator (cold functions make that
+/// wait long enough to deserve a show). Respects Reduce Motion by holding the
+/// filled state with a flat surface and no bubbles. Purely presentational.
 struct LiquidFlask: View {
     var size: CGFloat = 64
+    /// Colour of the glass, the liquid and the bubbles — orange logo by default,
+    /// `.primary` when the flask plays the loading indicator.
+    var tint: Color = .orange
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var start = Date()
 
     /// Seconds for the level to rise from empty to `finalLevel`.
     private let fillDuration: TimeInterval = 1.8
+    /// Seconds the flask rests full — long enough for the fill to read before it boils.
+    private let holdDuration: TimeInterval = 0.6
+    /// Seconds for the level to evaporate back to empty, bubbles escaping meanwhile.
+    private let evaporateDuration: TimeInterval = 3.2
     /// Resting level as a fraction of the glyph height — low in the bulb, so the
     /// sloshing surface stays visible under the neck.
     private let finalLevel: CGFloat = 0.42
     /// Seconds for one full slosh oscillation of the surface.
     private let sloshPeriod: TimeInterval = 1.6
+    /// Seconds for one full swirl of the glass — the wrist gesture that stirs the
+    /// liquid, the flask held by the neck while its base sweeps a circle.
+    private let swirlPeriod: TimeInterval = 1.1
+
+    private var cycleDuration: TimeInterval { fillDuration + holdDuration + evaporateDuration }
 
     var body: some View {
         TimelineView(.animation(paused: reduceMotion)) { context in
             let elapsed = context.date.timeIntervalSince(start)
+            let cycleTime = elapsed.truncatingRemainder(dividingBy: cycleDuration)
             ZStack {
-                Image(systemName: "flask.fill")
-                    .font(.system(size: size))
-                    .foregroundStyle(Color.orange)
-                    .mask {
-                        WaveShape(
-                            level: reduceMotion ? finalLevel : level(at: elapsed),
-                            amplitude: reduceMotion ? 0 : size * 0.025,
-                            phase: 2 * .pi * elapsed / sloshPeriod
-                        )
-                    }
-                Image(systemName: "flask")
-                    .font(.system(size: size))
-                    .foregroundStyle(Color.orange)
+                ZStack {
+                    Image(systemName: "flask.fill")
+                        .font(.system(size: size))
+                        .foregroundStyle(tint)
+                        .mask {
+                            WaveShape(
+                                level: reduceMotion ? finalLevel : level(at: cycleTime),
+                                amplitude: reduceMotion ? 0 : size * 0.025,
+                                phase: 2 * .pi * elapsed / sloshPeriod
+                            )
+                        }
+                    Image(systemName: "flask")
+                        .font(.system(size: size))
+                        .foregroundStyle(tint)
+                }
+                .modifier(swirl(elapsed: elapsed, cycleTime: cycleTime))
                 if !reduceMotion {
                     ForEach(bubbles.indices, id: \.self) { index in
-                        bubble(bubbles[index], at: elapsed)
+                        bubble(bubbles[index], at: cycleTime)
                     }
                 }
             }
@@ -48,41 +66,82 @@ struct LiquidFlask: View {
         .accessibilityHidden(true)
     }
 
-    /// Fill level at `elapsed` seconds: a cubic ease-out from 0 to `finalLevel`,
-    /// then steady — the slosh alone keeps the surface alive.
-    private func level(at elapsed: TimeInterval) -> CGFloat {
-        let t = min(max(elapsed / fillDuration, 0), 1)
-        let easedOut = 1 - pow(1 - t, 3)
-        return finalLevel * easedOut
+    /// The glass motion: the mixing swirl — held by the neck (rotation anchored at
+    /// the top), the base sweeps a circle, the tilt and the sideways drift a
+    /// quarter turn apart. Its intensity follows the liquid level: a full flask
+    /// gets the vigorous stir, an empty one barely moves.
+    private func swirl(elapsed: TimeInterval, cycleTime: TimeInterval) -> SwirlEffect {
+        if reduceMotion { return SwirlEffect(tilt: .zero, offset: .zero) }
+        let beat = 2 * .pi * elapsed / swirlPeriod
+        let intensity = 0.35 + 0.65 * level(at: cycleTime) / finalLevel
+        return SwirlEffect(
+            tilt: .degrees(5 * intensity * sin(beat)),
+            offset: CGSize(
+                width: size * 0.04 * intensity * cos(beat),
+                height: size * 0.012 * intensity * sin(2 * beat)
+            )
+        )
     }
 
-    /// One bubble of the escaping loop: drifts around `xOffset`, reborn every
-    /// `period` seconds, `delay` staggering it from the others. Fractions are of
-    /// `size` so the swarm scales with the glyph.
+    /// The swirl applied: tilt around the neck, then the drift of the whole glass.
+    private struct SwirlEffect: ViewModifier {
+        let tilt: Angle
+        let offset: CGSize
+
+        func body(content: Content) -> some View {
+            content
+                .rotationEffect(tilt, anchor: .top)
+                .offset(offset)
+        }
+    }
+
+    /// Fill level at `cycleTime` seconds into the loop: a cubic ease-out up to
+    /// `finalLevel`, a full-flask rest, then a smooth ease back to empty as the
+    /// bubbles boil the liquid off.
+    private func level(at cycleTime: TimeInterval) -> CGFloat {
+        if cycleTime < fillDuration {
+            let t = cycleTime / fillDuration
+            return finalLevel * (1 - pow(1 - t, 3))
+        }
+        if cycleTime < fillDuration + holdDuration {
+            return finalLevel
+        }
+        let t = (cycleTime - fillDuration - holdDuration) / evaporateDuration
+        let easedInOut = t < 0.5 ? 2 * t * t : 1 - pow(-2 * t + 2, 2) / 2
+        return finalLevel * (1 - easedInOut)
+    }
+
+    /// One bubble of the evaporation: takes off `delay` seconds into the phase and
+    /// climbs for `rise` seconds, once per cycle. `delay + rise` must fit within
+    /// `evaporateDuration` so no bubble outlives the boil. Fractions are of `size`
+    /// so the swarm scales with the glyph.
     private struct Bubble {
         let xOffset: CGFloat
         let diameter: CGFloat
-        let period: TimeInterval
+        let rise: TimeInterval
         let delay: TimeInterval
     }
 
     private let bubbles: [Bubble] = [
-        Bubble(xOffset: -0.08, diameter: 0.16, period: 2.6, delay: 0),
-        Bubble(xOffset: 0.06, diameter: 0.11, period: 2.1, delay: 0.7),
-        Bubble(xOffset: 0, diameter: 0.13, period: 2.9, delay: 1.3),
-        Bubble(xOffset: 0.12, diameter: 0.09, period: 2.3, delay: 1.8),
+        Bubble(xOffset: -0.08, diameter: 0.16, rise: 1.8, delay: 0),
+        Bubble(xOffset: 0.06, diameter: 0.11, rise: 1.6, delay: 0.4),
+        Bubble(xOffset: 0.12, diameter: 0.09, rise: 1.7, delay: 0.8),
+        Bubble(xOffset: 0, diameter: 0.13, rise: 1.9, delay: 1.1),
+        Bubble(xOffset: -0.05, diameter: 0.1, rise: 1.6, delay: 1.5),
     ]
 
     /// A bubble pops out of the flask mouth and climbs above it — fading in as it
-    /// escapes, out as it bursts. The swarm only starts once the flask has filled.
-    private func bubble(_ bubble: Bubble, at elapsed: TimeInterval) -> some View {
-        let alive = max(elapsed - fillDuration - bubble.delay, 0)
-        let progress = alive > 0 ? (alive / bubble.period).truncatingRemainder(dividingBy: 1) : 0
+    /// escapes, out as it bursts. Bubbles only fly during the evaporation phase,
+    /// each exactly once per cycle.
+    private func bubble(_ bubble: Bubble, at cycleTime: TimeInterval) -> some View {
+        let alive = cycleTime - fillDuration - holdDuration - bubble.delay
+        let flying = alive > 0 && alive < bubble.rise
+        let progress = flying ? alive / bubble.rise : 0
         let rise = size * (-0.38 - 0.75 * progress)
         let wobble = size * 0.02 * sin(progress * 4 * .pi + bubble.delay)
-        let opacity = alive > 0 ? min(progress / 0.15, (1 - progress) / 0.25, 1) : 0
+        let opacity = flying ? min(progress / 0.15, (1 - progress) / 0.25, 1) : 0
         return Circle()
-            .fill(Color.orange)
+            .fill(tint)
             .frame(width: size * bubble.diameter, height: size * bubble.diameter)
             .offset(x: size * bubble.xOffset + wobble, y: rise)
             .opacity(opacity * 0.9)
