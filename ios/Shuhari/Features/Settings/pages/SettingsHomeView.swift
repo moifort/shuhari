@@ -5,6 +5,7 @@ struct SettingsHomeView: View {
     /// refresh the caller's recipe list.
     var onDataReplaced: () async -> Void = {}
     @Environment(AuthSession.self) private var authSession
+    @Environment(SubscriptionStore.self) private var subscription
     @Environment(\.dismiss) private var dismiss
     @State private var signOutError: String?
     /// The AI allowance, loaded on appear. Absent until it answers — the section
@@ -81,7 +82,9 @@ struct SettingsHomeView: View {
                 }
             }
             .task { quota = try? await QuotaAPI.load() }
-            .sheet(isPresented: $showPremium) { PremiumSheet() }
+            .sheet(isPresented: $showPremium, onDismiss: { Task { quota = try? await QuotaAPI.load() } }) {
+                PremiumSheet(store: subscription)
+            }
             .navigationTitle("Réglages")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

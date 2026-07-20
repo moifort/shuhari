@@ -34,6 +34,7 @@ struct ImportReviewSheet: View {
         case premiumRequired
     }
 
+    @Environment(SubscriptionStore.self) private var subscription
     @State private var phase: Phase = .analyzing
     @State private var isSaving = false
     @State private var showPremium = false
@@ -91,7 +92,7 @@ struct ImportReviewSheet: View {
             }
             .animation(.easeInOut(duration: 0.35), value: phase)
         }
-        .sheet(isPresented: $showPremium) { PremiumSheet() }
+        .sheet(isPresented: $showPremium) { PremiumSheet(store: subscription) }
         .errorAlert(errorPresenter)
         // While a recipe is being created, block Fermer and swipe-to-dismiss so a
         // cancel can't orphan the create task (which would still fire onCreated).

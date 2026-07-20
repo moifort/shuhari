@@ -1,0 +1,78 @@
+{
+  "identifier" : "A1B2C3D4",
+  "nonRenewingSubscriptions" : [],
+  "products" : [],
+  "settings" : {
+    "_applicationInternalID" : "0000000000",
+    "_developerTeamID" : "46C337T7YN",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 0,
+    "_locale" : "fr_FR",
+    "_storefront" : "FRA",
+    "_storeKitErrors" : []
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21451447",
+      "localizations" : [
+        {
+          "description" : "L’IA en cuisine, sans compter.",
+          "displayName" : "Shuhari Premium",
+          "locale" : "fr_FR"
+        }
+      ],
+      "name" : "Shuhari Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "24.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6740001",
+          "introductoryOffer" : {
+            "internalID" : "6740003",
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
+          "localizations" : [
+            {
+              "description" : "Imports et itérations IA illimités, import par lien web.",
+              "displayName" : "Premium annuel",
+              "locale" : "fr_FR"
+            }
+          ],
+          "productID" : "com.polyforms.shuhari.app.premium.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Premium annuel",
+          "subscriptionGroupID" : "21451447",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "2.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6740002",
+          "localizations" : [
+            {
+              "description" : "Imports et itérations IA illimités, import par lien web.",
+              "displayName" : "Premium mensuel",
+              "locale" : "fr_FR"
+            }
+          ],
+          "productID" : "com.polyforms.shuhari.app.premium.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Premium mensuel",
+          "subscriptionGroupID" : "21451447",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

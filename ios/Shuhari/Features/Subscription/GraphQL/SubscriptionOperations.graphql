@@ -1,0 +1,17 @@
+query Entitlement {
+  entitlement {
+    plan
+    appAccountToken
+    productId
+    expiresOn
+  }
+}
+
+mutation SyncEntitlement($signedTransaction: String!) {
+  syncEntitlement(signedTransaction: $signedTransaction) {
+    plan
+    appAccountToken
+    productId
+    expiresOn
+  }
+}

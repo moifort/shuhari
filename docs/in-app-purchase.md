@@ -53,11 +53,11 @@ Two auto-renewable subscriptions in one subscription group, so a cook can switch
 | `com.polyforms.shuhari.app.premium.yearly` | 1 year | 24,99 € | 7 days free |
 
 The ids are declared in `ios/Shuhari/Features/Subscription/SubscriptionProducts.swift` and in
-`ios/Shuhari.storekit`; they must match App Store Connect exactly.
+`ios/Shuhari/Shuhari.storekit`; they must match App Store Connect exactly.
 
 ## Local testing (no App Store Connect needed)
 
-`ios/Shuhari.storekit` describes both products locally. Purchases made against it are signed by a
+`ios/Shuhari/Shuhari.storekit` describes both products locally. Purchases made against it are signed by a
 throwaway Xcode certificate, which cannot chain to Apple's roots — so the server must be told to
 expect them:
 

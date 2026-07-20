@@ -30,8 +30,18 @@
 		E20000030000000000000001 /* ShuhariUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShuhariUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		E1000007000000000000000A /* Exceptions for "Shuhari" folder in "Shuhari" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Shuhari.storekit,
+			);
+			target = E10000060000000000000001 /* Shuhari */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		E10000050000000000000002 /* Shuhari */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Shuhari; sourceTree = "<group>"; };
+		E10000050000000000000002 /* Shuhari */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (E1000007000000000000000A /* Exceptions for "Shuhari" folder in "Shuhari" target */, ); explicitFileTypes = {}; explicitFolders = (); path = Shuhari; sourceTree = "<group>"; };
 		E20000050000000000000001 /* ShuhariUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ShuhariUITests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 

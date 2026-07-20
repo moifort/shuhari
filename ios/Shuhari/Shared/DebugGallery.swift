@@ -7,8 +7,16 @@ import SwiftUI
 /// the design in the simulator and to capture screenshots.
 struct DebugGallery: View {
     let screen: String
+    /// Every gallery screen gets a store: the ones that present the Premium sheet
+    /// read it from the environment, and an unconfigured one simply sells nothing.
+    @State private var subscription = SubscriptionStore()
 
     var body: some View {
+        gallery.environment(subscription)
+    }
+
+    @ViewBuilder
+    private var gallery: some View {
         switch screen {
         case "root":
             ContentView()
@@ -182,7 +190,7 @@ struct DebugGallery: View {
         case "premium":
             Color.clear
                 .sheet(isPresented: .constant(true)) {
-                    PremiumSheet()
+                    PremiumSheet(store: subscription)
                 }
         case "import-quota-exhausted":
             ImportReviewSheet(galleryPhase: .quotaExhausted)
