@@ -205,13 +205,6 @@ struct Recipe: Identifiable, Sendable {
             .sorted { ($0.executedAt ?? .distantPast) > ($1.executedAt ?? .distantPast) }
     }
 
-    /// Mean rating over every attempt of the recipe, all versions combined.
-    var overallAverageRating: Double? {
-        let ratings = attempts.compactMap(\.rating)
-        guard !ratings.isEmpty else { return nil }
-        return Double(ratings.reduce(0, +)) / Double(ratings.count)
-    }
-
     func version(_ number: Int) -> RecipeVersion? {
         versions.first { $0.number == number }
     }

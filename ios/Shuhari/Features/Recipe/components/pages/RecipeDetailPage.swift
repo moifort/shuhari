@@ -81,7 +81,8 @@ struct RecipeDetailPage: View {
     // The badges + rating line: a normal list row, so it scrolls with the page and
     // fades under the soft scroll edge. It sits right under the title pill in both
     // modes — a focused version still says which type, which number and how it was
-    // rated, before the card saying what it changes.
+    // rated, before the card saying what it changes. The stars are the displayed
+    // version's own rating, not a recipe-wide average: a version never cooked shows none.
     private var header: some View {
         Section {
             VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
@@ -92,8 +93,8 @@ struct RecipeDetailPage: View {
                         toTestCount: recipe.versionsToTest.count
                     )
                     Spacer(minLength: Theme.Spacing.s)
-                    if let average = recipe.overallAverageRating {
-                        RatingStars(rating: average)
+                    if let rating = displayedVersion.rating {
+                        RatingStars(rating: Double(rating))
                     }
                 }
             }

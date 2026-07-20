@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Read-only 5-star display of a rating on the native 1–5 scale.
-/// The mirror of the `StarRating` input, for showing a recipe's average rating.
+/// The mirror of the `StarRating` input, for showing a rating already given.
 struct RatingStars: View {
     let rating: Double
 
@@ -16,7 +16,7 @@ struct RatingStars: View {
         }
         .font(.footnote)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Note moyenne \(RatingFormat.average(rating))")
+        .accessibilityLabel("Note \(RatingFormat.average(rating))")
     }
 }
 
