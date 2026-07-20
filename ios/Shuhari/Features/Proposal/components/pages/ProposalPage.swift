@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// The AI proposal screen: a short summary of what changes and why, then the
-/// FULL proposed next version — ingredients and steps, each row editable inline
-/// and marked with a dot when it differs from the base version. Finally
+/// FULL proposed next version — ingredients, steps and tips, each row editable
+/// inline and marked with a dot when it differs from the base version. Finally
 /// Valider/Fermer.
 ///
 /// Diff marking: rows are always editable `TextField`s, so a from→to
@@ -13,7 +13,7 @@ import SwiftUI
 /// The proposal is ephemeral (never persisted): "Fermer" discards it, "Valider"
 /// accepts it. On accept the page emits the COMPLETE proposal (full-replacement
 /// semantics) — the `basedOn`, `changeSummary` and `rationale` carried through from
-/// the in-memory AI proposal, the ingredient and step lists taken from the
+/// the in-memory AI proposal, the ingredient, step and tip lists taken from the
 /// form's current (possibly edited) state.
 ///
 /// A proposal has a second way out: "Nouvelle recette" saves it as the v1 of a recipe
@@ -27,6 +27,8 @@ struct ProposalPage: View {
     /// The base steps with their machine settings, so a Thermomix step that only
     /// changed a time, a temperature or a speed still reads as changed.
     let baseSteps: [ThermomixStep]
+    /// The base version's tips, to mark what the proposal changes.
+    let baseTips: [String]
     let isWorking: Bool
     /// What the new-recipe field opens on — the title of the recipe this proposal
     /// iterates on, the cook renames it from there.
@@ -50,8 +52,14 @@ struct ProposalPage: View {
         let settings: ThermomixSettings
     }
 
+    private struct EditableTip: Identifiable {
+        let id = UUID()
+        var text: String
+    }
+
     @State private var ingredients: [EditableIngredient]
     @State private var steps: [EditableStep]
+    @State private var tips: [EditableTip]
     /// The new-recipe title being typed, seeded from `suggestedRecipeTitle` each time
     /// the prompt opens.
     @State private var draftRecipeTitle = ""
@@ -64,6 +72,7 @@ struct ProposalPage: View {
         nextVersionNumber: Int,
         baseIngredients: [Ingredient],
         baseSteps: [ThermomixStep],
+        baseTips: [String] = [],
         isWorking: Bool,
         suggestedRecipeTitle: String,
         isCreatingRecipe: Bool = false,
@@ -75,6 +84,7 @@ struct ProposalPage: View {
         self.nextVersionNumber = nextVersionNumber
         self.baseIngredients = baseIngredients
         self.baseSteps = baseSteps
+        self.baseTips = baseTips
         self.isWorking = isWorking
         self.suggestedRecipeTitle = suggestedRecipeTitle
         self.isCreatingRecipe = isCreatingRecipe
@@ -85,6 +95,7 @@ struct ProposalPage: View {
             EditableIngredient(name: $0.name, quantity: $0.quantity)
         })
         self._steps = State(initialValue: Self.editableSteps(from: proposal.content))
+        self._tips = State(initialValue: proposal.tips.map { EditableTip(text: $0) })
     }
 
     /// The proposal's steps as editable rows, each keeping its own settings — a dish
@@ -100,6 +111,11 @@ struct ProposalPage: View {
                 ingredientsSection
             }
             stepsSection
+            // Nothing on either side means the recipe has no tips at all: no empty
+            // section on a proposal that changes none.
+            if !tips.isEmpty || !baseTips.isEmpty {
+                tipsSection
+            }
         }
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Proposition")
@@ -209,6 +225,23 @@ struct ProposalPage: View {
         }
     }
 
+    // MARK: - Tips
+
+    /// The proposed version's tips, editable like every other row: what the AI kept
+    /// from the base version plus the advice it read in the remarks.
+    private var tipsSection: some View {
+        Section("Conseils") {
+            ForEach($tips) { $tip in
+                HStack(alignment: .top, spacing: 12) {
+                    changeDot(!baseTips.contains(tip.text))
+                    TextField("Conseil", text: $tip.text, axis: .vertical)
+                        .lineLimit(1...6)
+                        .accessibilityIdentifier("edit-tip")
+                }
+            }
+        }
+    }
+
     // MARK: - Diff
 
     /// The orange dot marking a changed row — same 7 pt token as `StepsList`.
@@ -273,7 +306,12 @@ struct ProposalPage: View {
             basedOn: proposal.basedOn,
             changeSummary: proposal.changeSummary,
             rationale: proposal.rationale,
-            content: content
+            content: content,
+            // Emptied tips are dropped, like emptied steps.
+            tips: tips.compactMap {
+                let text = $0.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                return text.isEmpty ? nil : text
+            }
         )
     }
 }
@@ -285,6 +323,7 @@ struct ProposalPage: View {
             nextVersionNumber: 5,
             baseIngredients: Fixtures.bourguignonV4.ingredients,
             baseSteps: Fixtures.bourguignonV4.content.stepsWithSettings,
+            baseTips: Fixtures.bourguignonV4.tips,
             isWorking: false,
             suggestedRecipeTitle: Fixtures.bourguignon.title,
             onClose: {},

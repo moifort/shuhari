@@ -153,6 +153,13 @@ export const CreateRecipeInput = builder.inputType('CreateRecipeInput', {
       description:
         'The recipe body — provide exactly one of `dish` or `thermomix`, matching `type`',
     }),
+    tips: t.field({
+      type: ['Tip'],
+      required: true,
+      defaultValue: [],
+      description:
+        'The cooking tips found in the source, e.g. `"Serve over rice"` (send `[]` when it has none)',
+    }),
   }),
 })
 

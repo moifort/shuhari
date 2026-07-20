@@ -34,6 +34,7 @@ fragment VersionFields on Version {
   content {
     ...VersionContentFields
   }
+  tips
   recipeId
   rating
   remarks

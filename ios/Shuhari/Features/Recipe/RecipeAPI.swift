@@ -23,12 +23,14 @@ enum RecipeAPI {
         type: RecipeType,
         category: DishCategory,
         content: VersionContent,
+        tips: [String] = [],
         sourceLabel: String?
     ) async throws -> String {
         let input = ShuhariGraphQL.CreateRecipeInput(
             category: category.graphQLValue,
             content: GraphQLHelpers.versionContentInput(content),
             sourceLabel: GraphQLHelpers.graphQLNullable(sourceLabel),
+            tips: tips,
             title: title,
             type: type.graphQLValue
         )
@@ -101,6 +103,7 @@ func mapVersion(_ v: ShuhariGraphQL.VersionFields) -> RecipeVersion {
         originKind: VersionOriginKind(graphql: v.originKind),
         originDetail: v.originDetail,
         content: mapVersionContent(v.content.fragments.versionContentFields),
+        tips: v.tips,
         recipeId: v.recipeId,
         toTest: v.toTest,
         rating: v.rating,
@@ -116,7 +119,8 @@ func mapProposal(_ d: ShuhariGraphQL.ProposalFields) -> Proposal {
         basedOn: d.basedOn,
         changeSummary: d.changeSummary,
         rationale: d.rationale,
-        content: mapVersionContent(d.content.fragments.versionContentFields)
+        content: mapVersionContent(d.content.fragments.versionContentFields),
+        tips: d.tips
     )
 }
 

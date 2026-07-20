@@ -21,6 +21,7 @@ struct RecipeDetailView: View {
     @State private var showHistory = false
     @State private var showToTest = false
     @State private var showImprove = false
+    @State private var showTips = false
     @State private var recordRequest: ExecutionRequest?
     @State private var showDeleteConfirm = false
     /// The version picked in the history / to-cook sheet, opened once that sheet has
@@ -107,6 +108,14 @@ struct RecipeDetailView: View {
                         recipeType: recipe.type,
                         category: recipe.category
                     ) {
+                        onReload()
+                        Task { await viewModel.load() }
+                    }
+                }
+                // The tips flow: reword and merge what the cook types into the
+                // displayed version's own tips — rewritten in place, no version created.
+                .sheet(isPresented: $showTips) {
+                    TipsFlowView(recipeId: recipeId, version: displayedVersion(recipe)) {
                         onReload()
                         Task { await viewModel.load() }
                     }
@@ -249,6 +258,15 @@ struct RecipeDetailView: View {
             }
             .accessibilityIdentifier("improve-recipe-button")
             .accessibilityLabel("Proposer une amélioration")
+        }
+        ToolbarItem(placement: .bottomBar) {
+            Button {
+                showTips = true
+            } label: {
+                Image(systemName: "lightbulb")
+            }
+            .accessibilityIdentifier("add-tips-button")
+            .accessibilityLabel("Ajouter des conseils")
         }
         ToolbarSpacer(.flexible, placement: .bottomBar)
         ToolbarItem(placement: .bottomBar) {

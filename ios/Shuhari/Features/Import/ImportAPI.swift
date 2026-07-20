@@ -53,6 +53,7 @@ enum ImportAPI {
                     )
                 )
             },
+            tips: analysis.tips,
             sourceLabel: analysis.sourceLabel
         )
     }
@@ -73,6 +74,7 @@ enum ImportAPI {
             type: analysis.type,
             category: analysis.category,
             content: content,
+            tips: analysis.tips,
             sourceLabel: analysis.sourceLabel
         )
     }

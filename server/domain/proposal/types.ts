@@ -1,6 +1,6 @@
 import type { Attempt } from '~/domain/recipe/command'
 import type { VersionContent } from '~/domain/recipe/content/types'
-import type { VersionNumber } from '~/domain/recipe/types'
+import type { Tip, VersionNumber } from '~/domain/recipe/types'
 
 // An ephemeral next-version proposal, already validated into branded domain
 // shapes — either freshly branded from the AI (`fromAttempt`) or the user's inline
@@ -11,6 +11,9 @@ export type Proposal = {
   changeSummary: string
   rationale: string
   content: VersionContent
+  // The complete tips list of the proposed version — the current tips carried
+  // over, advice found in the remarks folded in.
+  tips: Tip[]
 }
 
 // The client-supplied proposal to accept: everything that becomes version n+1,

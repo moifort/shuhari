@@ -14,6 +14,7 @@ import type {
   ThermomixSpeed,
   ThermomixTemperature,
   ThermomixTime,
+  Tip,
   VersionNumber,
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
@@ -22,14 +23,16 @@ import { fakeDb, resetFakeFirestore } from '~/test/fake-firestore'
 
 mock.module('~/system/firebase', () => ({ db: fakeDb }))
 
-// The AI is mocked: each test sets `proposal`/`analysis`, and the use-case
-// returns it (branded for a proposal, raw for an import analysis).
+// The AI is mocked: each test sets `proposal`/`analysis`/`mergedTips`, and the
+// use-case returns it (branded for a proposal or tips, raw for an import analysis).
 let proposal: AiProposal
 let analysis: ImportAnalysis | 'no-recipe-found'
+let mergedTips: string[]
 mock.module('~/system/ai', () => ({
   Ai: {
     proposeNext: async () => proposal,
     analyzeImport: async () => analysis,
+    formatTips: async () => mergedTips,
   },
 }))
 
@@ -66,7 +69,7 @@ const recipeInput = (opts: { type?: 'dish' | 'thermomix' } = {}) => {
           steps: stepList('Saisir', 'Mijoter').map((text) => ({ text, settings: {} })),
         } as ThermomixContent)
       : dishContent()
-  return { type, category: 'main' as const, title: 'Blanquette' as RecipeTitle, content }
+  return { type, category: 'main' as const, title: 'Blanquette' as RecipeTitle, content, tips: [] }
 }
 
 const baseProposal = (): AiProposal => ({
@@ -80,6 +83,7 @@ const baseProposal = (): AiProposal => ({
     { text: 'Saisir', settings: {} },
     { text: 'Mijoter', settings: {} },
   ],
+  tips: ['Servir avec du riz'],
 })
 
 const baseAnalysis = (): ImportAnalysis => ({
@@ -92,6 +96,7 @@ const baseAnalysis = (): ImportAnalysis => ({
     { text: 'Saisir', settings: {} },
     { text: 'Mijoter', settings: {} },
   ],
+  tips: ['Servir avec du riz'],
 })
 
 let fake = resetFakeFirestore()
@@ -99,6 +104,7 @@ beforeEach(() => {
   fake = resetFakeFirestore()
   proposal = baseProposal()
   analysis = baseAnalysis()
+  mergedTips = ['Servir avec du riz', 'Se congèle bien']
 })
 
 describe('ProposalUseCase.fromAttempt', () => {
@@ -133,6 +139,8 @@ describe('ProposalUseCase.fromAttempt', () => {
       ingredients: PROPOSAL_INGREDIENTS,
       steps: stepList('Saisir', 'Mijoter'),
     })
+    // The proposal carries the complete tips list of the version it would create.
+    expect(result.tips).toEqual(['Servir avec du riz' as Tip])
 
     // Two keyed doc reads (the recipe pointer + the cooked version) — the attempt
     // itself comes from the caller, so there is no collection scan, no N+1, and
@@ -216,6 +224,42 @@ describe('ProposalUseCase.fromImprovement', () => {
   })
 })
 
+describe('ProposalUseCase.fromTips', () => {
+  test('returns the branded merged list, persisting nothing', async () => {
+    const recipe = await RecipeCommand.create(userId, recipeInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    const docReadsBefore = fake.docReads
+    const batchesBefore = fake.batches.length
+
+    const result = await ProposalUseCase.fromTips(
+      userId,
+      recipe.id,
+      V1,
+      'servir avec du riz, se congèle bien' as Remarks,
+    )
+    if (result === 'not-found') throw new Error('expected tips')
+    expect(result).toEqual(['Servir avec du riz' as Tip, 'Se congèle bien' as Tip])
+
+    // Same budget as a version proposal — the recipe pointer + the version — and
+    // the version's own tips are left exactly as they were until updateTips.
+    expect(fake.docReads - docReadsBefore).toBe(2)
+    expect(fake.batches.length).toBe(batchesBefore)
+    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.tips).toEqual([])
+  })
+
+  test('returns not-found for an unknown recipe or version', async () => {
+    expect(await ProposalUseCase.fromTips(userId, 'nope' as RecipeId, V1, 'x' as Remarks)).toBe(
+      'not-found',
+    )
+
+    const recipe = await RecipeCommand.create(userId, recipeInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    expect(
+      await ProposalUseCase.fromTips(userId, recipe.id, 9 as VersionNumber, 'x' as Remarks),
+    ).toBe('not-found')
+  })
+})
+
 describe('ProposalUseCase.fromPhoto', () => {
   test('returns the AI import analysis without persisting anything', async () => {
     const batchesBefore = fake.batches.length
@@ -249,6 +293,7 @@ describe('ProposalUseCase.accept', () => {
         ingredients: PROPOSAL_INGREDIENTS,
         steps: stepList('Saisir', 'Mijoter'),
       },
+      tips: ['Servir avec du riz' as Tip],
     })) as Recipe
     expect(result.lastVersionNumber).toBe(2 as VersionNumber)
 
@@ -263,6 +308,9 @@ describe('ProposalUseCase.accept', () => {
       steps: stepList('Saisir', 'Mijoter'),
     })
     expect(v2?.origin).toEqual({ kind: 'ai-proposal' })
+    // The accepted tips land on the version created, not on the one it iterates on.
+    expect(v2?.tips).toEqual(['Servir avec du riz' as Tip])
+    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.tips).toEqual([])
     expect(fake.queryReads - queryReadsBefore).toBe(0)
   })
 
@@ -279,6 +327,7 @@ describe('ProposalUseCase.accept', () => {
         ingredients: PROPOSAL_INGREDIENTS,
         steps: stepList('Saisir'),
       },
+      tips: [],
     })
 
     const v2 = fake.snapshot('recipe-versions').get(`${recipe.id}_2`)
@@ -295,6 +344,7 @@ describe('ProposalUseCase.accept', () => {
         rationale: 'y',
         attempt: ATTEMPT,
         content: { kind: 'dish', ingredients: PROPOSAL_INGREDIENTS, steps: stepList('Saisir') },
+        tips: [],
       }),
     ).toBe('not-found')
   })

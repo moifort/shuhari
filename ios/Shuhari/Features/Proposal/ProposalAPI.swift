@@ -17,7 +17,8 @@ enum ProposalAPI {
             photo: GraphQLHelpers.graphQLNullable(attempt?.photoBase64),
             rating: GraphQLHelpers.graphQLNullable(attempt?.rating),
             rationale: proposal.rationale,
-            remarks: GraphQLHelpers.graphQLNullable(attempt?.remarks)
+            remarks: GraphQLHelpers.graphQLNullable(attempt?.remarks),
+            tips: proposal.tips
         )
 
         _ = try await GraphQLHelpers.perform(
@@ -42,5 +43,38 @@ enum ProposalAPI {
             )
         )
         return mapProposal(data.requestImprovement.fragments.proposalFields)
+    }
+
+    /// Ask the AI to fold the tips the cook just typed into the version's own tips —
+    /// reworded, merged, deduplicated. Nothing is saved: the complete list comes back
+    /// to review, and accepting it goes through `updateTips`.
+    static func requestTips(
+        recipeId: String,
+        versionNumber: Int,
+        tips: String
+    ) async throws -> [String] {
+        let data = try await GraphQLHelpers.perform(
+            GraphQLClient.shared.apollo,
+            mutation: ShuhariGraphQL.RequestTipsMutation(
+                recipeId: recipeId,
+                versionNumber: versionNumber,
+                tips: tips
+            )
+        )
+        return data.requestTips.tips
+    }
+
+    /// Replace one version's tips with this complete list. No version is created:
+    /// the tips are the one part of a version, beside its outcome, that is rewritten
+    /// in place.
+    static func updateTips(recipeId: String, versionNumber: Int, tips: [String]) async throws {
+        _ = try await GraphQLHelpers.perform(
+            GraphQLClient.shared.apollo,
+            mutation: ShuhariGraphQL.UpdateTipsMutation(
+                recipeId: recipeId,
+                versionNumber: versionNumber,
+                tips: tips
+            )
+        )
     }
 }

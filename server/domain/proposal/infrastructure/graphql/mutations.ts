@@ -10,7 +10,7 @@ import { domainError } from '~/domain/shared/graphql/errors'
 import { imageWithinSizeLimit, MAX_IMPORT_PHOTOS } from '~/system/ai/limits'
 import type { ImportSource } from '~/system/ai/types'
 import { ProposalInput } from './inputs'
-import { ImportAnalysisType, ProposalType } from './types'
+import { ImportAnalysisType, ProposalType, TipsProposalType } from './types'
 
 type AcceptResult = {
   recipe: Recipe
@@ -148,6 +148,53 @@ builder.mutationField('requestImprovement', (t) =>
   }),
 )
 
+builder.mutationField('requestTips', (t) =>
+  t.field({
+    type: TipsProposalType,
+    description: [
+      'Ask the AI to fold the tips you just typed into one version’s tips list — reworded, ' +
+        'merged with the tips it already has, deduplicated. Nothing is saved: you get the ' +
+        'complete list back to review, and accepting it goes through updateTips (no new version ' +
+        'is ever created for tips).',
+      '',
+      '```graphql',
+      'requestTips(',
+      '  recipeId: "9f1c-a3b2"',
+      '  versionNumber: 2',
+      '  tips: "servir avec du riz, se congèle bien"',
+      ') {',
+      '  tips',
+      '}',
+      '```',
+    ].join('\n'),
+    args: {
+      recipeId: t.arg({
+        type: 'RecipeId',
+        required: true,
+        description: 'The recipe whose tips to extend, e.g. the id of `"Grandma’s lasagna"`',
+      }),
+      versionNumber: t.arg({
+        type: 'VersionNumber',
+        required: true,
+        description: 'The version whose tips to extend — the one on screen, e.g. `2`',
+      }),
+      tips: t.arg({
+        type: 'Remarks',
+        required: true,
+        description:
+          'The tips to add, in your own words, e.g. `"servir avec du riz, se congèle bien"`',
+      }),
+    },
+    resolve: async (_root, { recipeId, versionNumber, tips }, { userId }) => {
+      const result = await ProposalUseCase.fromTips(userId, recipeId, versionNumber, tips)
+      return match(result)
+        .with('not-found', domainError)
+        .with(P.not(P.string), (merged) => ({ tips: merged }))
+        .exhaustive()
+    },
+  }),
+)
+
 builder.mutationField('acceptProposal', (t) =>
   t.field({
     type: AcceptProposalResultType,
@@ -192,6 +239,7 @@ builder.mutationField('acceptProposal', (t) =>
         changeSummary: proposal.changeSummary,
         rationale: proposal.rationale,
         content: versionContentInput(proposal.content),
+        tips: [...proposal.tips],
         // The cook that asked for it, when one did — an improvement has none, and the
         // version created is then the one to test.
         ...(proposal.rating !== null && proposal.rating !== undefined && proposal.remarks

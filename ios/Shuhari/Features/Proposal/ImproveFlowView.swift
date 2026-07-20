@@ -88,6 +88,7 @@ struct ImproveFlowView: View {
                 nextVersionNumber: nextVersionNumber,
                 baseIngredients: version.ingredients,
                 baseSteps: version.content.stepsWithSettings,
+                baseTips: version.tips,
                 isWorking: isAccepting,
                 suggestedRecipeTitle: recipeTitle,
                 isCreatingRecipe: isCreatingRecipe,
@@ -133,6 +134,7 @@ struct ImproveFlowView: View {
                 type: recipeType,
                 category: category,
                 content: edited.content,
+                tips: edited.tips,
                 sourceLabel: "\(recipeTitle) v\(version.number)"
             )
             onFinished()

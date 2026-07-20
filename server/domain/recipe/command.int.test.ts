@@ -13,6 +13,7 @@ import type {
   StepText,
   ThermomixSpeed,
   ThermomixTime,
+  Tip,
   VersionNumber,
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
@@ -40,6 +41,7 @@ const newInput = (content: DishContent | ThermomixContent = dishContent()) => ({
   category: 'main' as const,
   title: 'Blanquette' as RecipeTitle,
   content,
+  tips: [],
 })
 
 let fake = resetFakeFirestore()
@@ -95,6 +97,7 @@ describe('RecipeCommand.create', () => {
       category: 'main' as const,
       title: 'Blanquette' as RecipeTitle,
       content: dishContent(),
+      tips: [],
     })
     expect(mismatch).toBe('content-type-mismatch')
     // Nothing written on the rejected create.
@@ -133,6 +136,7 @@ describe('RecipeCommand.addVersion', () => {
       change: 'Bouillon 700 → 650 ml',
       basedOn: 1 as VersionNumber,
       content,
+      tips: [],
     })) as Recipe
 
     expect(withV2.lastVersionNumber).toBe(2 as VersionNumber)
@@ -158,6 +162,7 @@ describe('RecipeCommand.addVersion', () => {
       change: 'Version végétarienne',
       basedOn: 1 as VersionNumber,
       content: { kind: 'dish', ingredients: [], steps: steps('Saisir') },
+      tips: [],
     })
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_2`)?.toTest).toBe(true)
   })
@@ -170,6 +175,7 @@ describe('RecipeCommand.addVersion', () => {
       change: 'Version végétarienne',
       basedOn: 1 as VersionNumber,
       content: { kind: 'dish', ingredients: [], steps: steps('Saisir') },
+      tips: [],
     })
 
     // Cooking it with remarks answers it with v3 — v2 owes nothing anymore.
@@ -177,6 +183,7 @@ describe('RecipeCommand.addVersion', () => {
       change: 'Moins de sel',
       basedOn: 2 as VersionNumber,
       content: { kind: 'dish', ingredients: [], steps: steps('Saisir') },
+      tips: [],
       attempt: { rating: 3 as Rating, remarks: 'Trop salé' as Remarks },
     })
 
@@ -192,6 +199,7 @@ describe('RecipeCommand.addVersion', () => {
       change: 'Bouillon 700 → 650 ml',
       basedOn: 1 as VersionNumber,
       content: { kind: 'dish', ingredients: [], steps: steps('Saisir') },
+      tips: [],
       attempt: { rating: 3 as Rating, remarks: 'Trop liquide' as Remarks },
     })
 
@@ -213,6 +221,7 @@ describe('RecipeCommand.addVersion', () => {
     const result = await RecipeCommand.addVersion(userId, recipe.id, {
       change: 'x',
       content: { kind: 'thermomix', ingredients: [], steps: [] },
+      tips: [],
     })
     expect(result).toBe('content-type-mismatch')
   })
@@ -221,6 +230,7 @@ describe('RecipeCommand.addVersion', () => {
     const result = await RecipeCommand.addVersion(userId, 'nope' as RecipeId, {
       change: 'x',
       content: { kind: 'dish', ingredients: [], steps: [] },
+      tips: [],
     })
     expect(result).toBe('not-found')
   })
@@ -280,11 +290,13 @@ describe('RecipeCommand.removeVersion', () => {
       change: 'v2',
       basedOn: 1 as VersionNumber,
       content: dishContent(),
+      tips: [],
     })
     await RecipeCommand.addVersion(userId, recipe.id, {
       change: 'v3',
       basedOn: 2 as VersionNumber,
       content: dishContent(),
+      tips: [],
     })
     return recipe
   }
@@ -335,6 +347,7 @@ describe('RecipeCommand.removeVersion', () => {
       change: 'v2',
       basedOn: 1 as VersionNumber,
       content: dishContent(),
+      tips: [],
     })
 
     await RecipeCommand.removeVersion(userId, recipe.id, 2 as VersionNumber)
@@ -342,6 +355,7 @@ describe('RecipeCommand.removeVersion', () => {
       change: 'après le trou',
       basedOn: 1 as VersionNumber,
       content: dishContent(),
+      tips: [],
     })
 
     // v2's number stays a hole: the new iteration is v3.
@@ -399,6 +413,7 @@ describe('RecipeCommand.recordAttempt', () => {
       change: 'Version végétarienne',
       basedOn: 1 as VersionNumber,
       content: { kind: 'dish', ingredients: [], steps: steps('Saisir') },
+      tips: [],
     })
 
     await RecipeCommand.recordAttempt(userId, {
@@ -509,5 +524,64 @@ describe('RecipeCommand.recordAttempt', () => {
       remarks: '' as Remarks,
     })
     expect(unknownVersion).toBe('not-found')
+  })
+})
+
+describe('RecipeCommand.updateTips', () => {
+  const tips = (...t: string[]) => t.map((x) => x as Tip)
+
+  test('replaces the tips in place — no new version, everything else untouched', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    const batchesBefore = fake.batches.length
+
+    const result = await RecipeCommand.updateTips(
+      userId,
+      recipe.id,
+      1 as VersionNumber,
+      tips('Servir avec du riz', 'Se congèle bien'),
+    )
+    if (typeof result === 'string') throw new Error(`expected a version, got ${result}`)
+
+    expect(result.tips).toEqual(tips('Servir avec du riz', 'Se congèle bien'))
+    const stored = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)
+    expect(stored?.tips).toEqual(tips('Servir avec du riz', 'Se congèle bien'))
+    // Refining the advice never creates a version, and the content rides along.
+    expect(fake.snapshot('recipes').get(recipe.id)?.lastVersionNumber).toBe(1 as VersionNumber)
+    expect(stored?.content).toEqual(dishContent())
+    // Tips + recipe bump land in a single batch (all-or-nothing).
+    expect(fake.directWrites).toEqual([])
+    expect(fake.batches.length).toBe(batchesBefore + 1)
+  })
+
+  test('full-replacement: [] clears the section, the outcome stays', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    await RecipeCommand.recordAttempt(userId, {
+      recipeId: recipe.id,
+      versionNumber: 1 as VersionNumber,
+      rating: 4 as Rating,
+    })
+    await RecipeCommand.updateTips(userId, recipe.id, 1 as VersionNumber, tips('Servir chaud'))
+
+    const cleared = await RecipeCommand.updateTips(userId, recipe.id, 1 as VersionNumber, [])
+    if (typeof cleared === 'string') throw new Error(`expected a version, got ${cleared}`)
+
+    expect(cleared.tips).toEqual([])
+    const stored = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)
+    expect(stored?.tips).toEqual([])
+    expect(stored?.rating).toBe(4 as Rating)
+  })
+
+  test('returns not-found for an unknown recipe or version', async () => {
+    expect(await RecipeCommand.updateTips(userId, 'nope' as RecipeId, 1 as VersionNumber, [])).toBe(
+      'not-found',
+    )
+
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    expect(await RecipeCommand.updateTips(userId, recipe.id, 9 as VersionNumber, [])).toBe(
+      'not-found',
+    )
   })
 })

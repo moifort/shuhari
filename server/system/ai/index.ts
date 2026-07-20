@@ -1,12 +1,18 @@
 import { createHash } from 'node:crypto'
 import { DISH_CATEGORY_VALUES, RECIPE_TYPE_VALUES } from '~/domain/recipe/types'
-import { ImportHash, parseImportResponse, parseProposalResponse } from '~/system/ai/primitives'
+import {
+  ImportHash,
+  parseImportResponse,
+  parseProposalResponse,
+  parseTipsResponse,
+} from '~/system/ai/primitives'
 import * as repository from '~/system/ai/repository'
 import type {
   ImportHash as ImportHashType,
   ImportSource,
   Proposal,
   ProposalContext,
+  TipsContext,
 } from '~/system/ai/types'
 import { config } from '~/system/config/index'
 
@@ -92,6 +98,16 @@ const stepsSchemaProperty = {
   },
 }
 
+// Shared tips item shape (import, proposal and tips-formatting schemas), so the
+// three can't drift.
+const tipsSchemaProperty = {
+  type: 'array',
+  description:
+    'Cooking tips (serving, storage, technique advice — neither an ingredient nor a step), ' +
+    'written in French. One short sentence per tip, ≤300 characters. Empty array when there are none.',
+  items: { type: 'string' },
+}
+
 const importResponseSchema = {
   type: 'object',
   properties: {
@@ -120,6 +136,7 @@ const importResponseSchema = {
     },
     ingredients: ingredientsSchemaProperty,
     steps: stepsSchemaProperty,
+    tips: { ...tipsSchemaProperty, nullable: true },
   },
   required: ['recipeFound', 'type', 'category', 'title'],
   propertyOrdering: [
@@ -130,6 +147,7 @@ const importResponseSchema = {
     'sourceLabel',
     'ingredients',
     'steps',
+    'tips',
   ],
 }
 
@@ -144,9 +162,17 @@ const proposalResponseSchema = {
     rationale: { type: 'string', description: 'Explanation of the reasoning, written in French' },
     ingredients: ingredientsSchemaProperty,
     steps: stepsSchemaProperty,
+    tips: tipsSchemaProperty,
   },
-  required: ['changeSummary', 'rationale', 'ingredients', 'steps'],
-  propertyOrdering: ['changeSummary', 'rationale', 'ingredients', 'steps'],
+  required: ['changeSummary', 'rationale', 'ingredients', 'steps', 'tips'],
+  propertyOrdering: ['changeSummary', 'rationale', 'ingredients', 'steps', 'tips'],
+}
+
+const tipsResponseSchema = {
+  type: 'object',
+  properties: { tips: tipsSchemaProperty },
+  required: ['tips'],
+  propertyOrdering: ['tips'],
 }
 
 const IMPORT_INSTRUCTIONS = `You are the assistant of a culinary experimentation notebook. From the provided source (photos, web page or recipe text), extract a STRUCTURED and REPRODUCIBLE recipe.
@@ -157,6 +183,7 @@ Rules:
 - Determine the dish category: starter, main, dessert, soup, sauce, baking (pastry, bread, viennoiserie) or drink (cocktail, smoothie, hot or cold beverage). When in doubt, pick main.
 - ingredients: the ORDERED list of the recipe's components with their quantity (e.g. Gin → 50 ml, Beurre → 170 g, Fraise → 3 pièces). Include EVERY ingredient visible in the source, each with its quantity and unit. This is the recipe's "shopping list". The NAME stays short: the ingredient alone, never its transient preparation ("Pommes de terre", not "Pommes de terre épluchées et coupées en rondelles" — the preparation belongs in the steps). An intrinsic variety, type or grade stays in the name, in parentheses ("Pommes de terre (Marbella)", "Farine (T45)").
 - steps: short steps, imperative mood, in order. Precise settings (oven temperature, duration, ratio…) stay in the step text.
+- tips: the cooking tips found in the source — serving suggestions, storage/freezing advice, technique pointers ("Servir avec du riz", "Se congèle bien"). One short sentence per tip. A tip is neither an ingredient nor a step: never duplicate the method here. Empty array when the source carries none.
 - For a Thermomix recipe (type thermomix): for every step performed on the Thermomix, fill the nested settings object (time, temperature, speed, reverse) exactly as stated in the recipe (time "3 min" / "30 s" / "1 h 10 min"; temperature "100°C" or "Varoma"; speed "0,5" to "10", "pétrin", "mijotage" or "turbo"). ALWAYS return every step as an object: use null for every missing setting, and set settings to null (or leave its fields null) when the step is not done on the Thermomix or when the recipe is not of type thermomix — never omit or merge a step because it carries no setting.
 - Be concise: every value stays short (ingredient name ≤120, quantity ≤60, step ≤300, title ≤200, Thermomix setting ≤20 characters).
 - If the source contains no usable recipe (unreadable image or one without a recipe, off-topic page or text), set recipeFound to false and leave every other field empty or null. Otherwise set recipeFound to true.
@@ -204,6 +231,55 @@ export namespace Ai {
     return parseProposalResponse(text)
   }
 
+  // Merge the cook's raw advice into the version's tips list. No version is at
+  // stake: the answer is the complete reworded list the current version's tips are
+  // replaced with (once accepted — nothing is persisted here).
+  export const formatTips = async (context: TipsContext): Promise<string[]> => {
+    const text = await callGemini({
+      contents: [{ parts: [{ text: tipsPrompt(context) }] }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: tipsResponseSchema,
+      },
+    })
+    if (!text) throw new Error('Gemini did not return structured tips')
+    return parseTipsResponse(text)
+  }
+
+  const tipsPrompt = (context: TipsContext): string => {
+    const ingredients =
+      context.currentIngredients.map((i) => `- ${i.name} : ${i.quantity}`).join('\n') || '—'
+    const steps =
+      context.currentSteps
+        .map((s, i) => `${i + 1}. ${s.text}${formatThermomix(s.settings)}`)
+        .join('\n') || '—'
+    const tips = context.currentTips.map((t) => `- ${t}`).join('\n') || '—'
+
+    return `You are the assistant of a culinary experimentation notebook. The cook wants to add tips to this recipe — serving suggestions, storage advice, technique pointers. Merge them into the recipe's tips list.
+
+MANDATORY: write every tip in French. The reader is a French speaker; never answer in English.
+
+Rules:
+- Return the COMPLETE tips list: every current tip kept, plus the requested advice folded in.
+- Reword each requested tip into one short, clear sentence (≤300 characters). A tip is neither an ingredient nor a step: never restate the method.
+- Deduplicate: when a requested tip says the same thing as a current one, keep a single merged tip.
+- The recipe below is context for the rewording only — change nothing else about it.
+
+Current ingredients:
+${ingredients}
+
+Current steps:
+${steps}
+
+Current tips:
+${tips}
+
+Tips requested by the cook, in their own words:
+${context.requested}
+
+Reminder: all tips you produce must be written in French.`
+  }
+
   const importParts = (source: ImportSource): GeminiPart[] => {
     if (source.kind === 'photos') {
       return [
@@ -222,7 +298,7 @@ export namespace Ai {
   // Cuisine-scoped iteration rule (dish + thermomix). Coffee and cocktail will get
   // their own rules later — no speculative abstraction here.
   const cuisineIterationRule = (_type: ProposalContext['type']) =>
-    'For a dish or a Thermomix recipe, you may adjust several coherent elements at once. Return the COMPLETE ingredient and step list of the next version (not only what changes), plus a short summary of the changes. When the remarks ask for a precise adjustment (a new cooking time, temperature, speed or quantity), apply that exact value in the right structured field — a Thermomix time/temperature/speed in the step settings, a duration in the dish step text, a quantity on the ingredient — and record every change in changeSummary as "old → new", with the arrow character U+2192 between the two, whether the change is a new value or one ingredient replacing another.'
+    'For a dish or a Thermomix recipe, you may adjust several coherent elements at once. Return the COMPLETE ingredient and step list of the next version (not only what changes), plus a short summary of the changes. When the remarks ask for a precise adjustment (a new cooking time, temperature, speed or quantity), apply that exact value in the right structured field — a Thermomix time/temperature/speed in the step settings, a duration in the dish step text, a quantity on the ingredient — and record every change in changeSummary as "old → new", with the arrow character U+2192 between the two, whether the change is a new value or one ingredient replacing another. Also return tips: the COMPLETE tips list of the next version — keep the current tips, and when a remark carries advice that changes nothing in the method (a serving suggestion, storage advice, a technique pointer like "la prochaine fois, servir avec du riz"), fold it in as a short reworded tip instead of forcing it into an ingredient or a step.'
 
   const formatThermomix = (
     settings: ProposalContext['currentSteps'][number]['settings'],
@@ -244,6 +320,7 @@ export namespace Ai {
         // Each step carries its own settings — an empty settings object is a plain step.
         .map((s, i) => `${i + 1}. ${s.text}${formatThermomix(s.settings)}`)
         .join('\n') || '—'
+    const tips = context.currentTips.map((t) => `- ${t}`).join('\n') || '—'
     // The proposal answers either the cooks that were run, or — when the cook asked
     // for one outright — the improvement they described.
     const request = context.improvement
@@ -266,9 +343,12 @@ ${ingredients}
 Current steps:
 ${steps}
 
+Current tips:
+${tips}
+
 ${request}
 
-Propose an iteration: an improvement of this recipe. Fill changeSummary (a short summary of what changes), rationale (why), ingredients and steps (the COMPLETE list of the next version).
+Propose an iteration: an improvement of this recipe. Fill changeSummary (a short summary of what changes), rationale (why), ingredients, steps and tips (the COMPLETE lists of the next version).
 
 Reminder: all text values you produce must be written in French.`
   }
@@ -284,15 +364,15 @@ Reminder: all text values you produce must be written in French.`
   }
 
   const hashSource = (source: ImportSource): ImportHashType => {
-    // 'v8' salts the cache: bumped from 'v7' because the import step schema moved
-    // from flat tmx* fields to a nested settings object — so previously-analysed
-    // sources re-run instead of serving a stale result.
+    // 'v9' salts the cache: bumped from 'v8' because the import schema gained the
+    // `tips` extraction — so previously-analysed sources re-run instead of serving
+    // a stale, tip-less result.
     const material =
       source.kind === 'photos'
-        ? `v8|${source.photos.join('|')}`
+        ? `v9|${source.photos.join('|')}`
         : source.kind === 'url'
-          ? `v8|url:${source.url}`
-          : `v8|text:${source.text}`
+          ? `v9|url:${source.url}`
+          : `v9|text:${source.text}`
     return ImportHash(createHash('sha256').update(material).digest('hex'))
   }
 }

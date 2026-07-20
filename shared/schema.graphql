@@ -44,6 +44,11 @@ input CreateRecipeInput {
   """Where it came from, e.g. `"Marmiton"` or `"Mum"`"""
   sourceLabel: String
 
+  """
+  The cooking tips found in the source, e.g. `"Serve over rice"` (send `[]` when it has none)
+  """
+  tips: [Tip!]! = []
+
   """The recipe’s name, e.g. `"Grandma’s lasagna"`"""
   title: RecipeTitle!
 
@@ -121,6 +126,11 @@ type ImportAnalysis {
 
   """The extracted steps, each carrying its own Thermomix settings"""
   steps: [ImportStep!]!
+
+  """
+  The cooking tips found in the source (unvalidated preview) — empty list when it carries none
+  """
+  tips: [String!]!
   title: String!
   type: RecipeType!
 }
@@ -383,6 +393,32 @@ type Mutation {
   ): Proposal!
 
   """
+  Ask the AI to fold the tips you just typed into one version’s tips list — reworded, merged with the tips it already has, deduplicated. Nothing is saved: you get the complete list back to review, and accepting it goes through updateTips (no new version is ever created for tips).
+  
+  ```graphql
+  requestTips(
+    recipeId: "9f1c-a3b2"
+    versionNumber: 2
+    tips: "servir avec du riz, se congèle bien"
+  ) {
+    tips
+  }
+  ```
+  """
+  requestTips(
+    """The recipe whose tips to extend, e.g. the id of `"Grandma’s lasagna"`"""
+    recipeId: RecipeId!
+
+    """
+    The tips to add, in your own words, e.g. `"servir avec du riz, se congèle bien"`
+    """
+    tips: Remarks!
+
+    """The version whose tips to extend — the one on screen, e.g. `2`"""
+    versionNumber: VersionNumber!
+  ): TipsProposal!
+
+  """
   Retouch a recipe: rename it, refile it under another course, mark it as a favourite, or any combination. Returns the updated recipe.
   
   ```graphql
@@ -401,6 +437,27 @@ type Mutation {
     """What to change (leave a field out to change nothing)"""
     input: UpdateRecipeInput!
   ): Recipe!
+
+  """
+  Replace one version’s cooking tips with this complete list — typically the accepted requestTips proposal, after your edits. Rewrites the tips in place: no new version is created, the content and outcome are left untouched. Returns the updated version.
+  
+  ```graphql
+  updateTips(recipeId: "9f1c-a3b2", versionNumber: 2, tips: ["Serve over rice"]) {
+    number
+    tips
+  }
+  ```
+  """
+  updateTips(
+    """Which recipe the version belongs to"""
+    recipeId: RecipeId!
+
+    """The complete new tips list (send `[]` to clear the section)"""
+    tips: [Tip!]!
+
+    """Which version’s tips to replace, e.g. `2`"""
+    versionNumber: VersionNumber!
+  ): Version!
 }
 
 """
@@ -426,6 +483,11 @@ type Proposal {
   The AI’s reasoning — why it thinks this change will help, based on your last remarks, e.g. `"You noted it was too sweet, so cutting the sugar should balance it"`
   """
   rationale: String!
+
+  """
+  The complete tips list of the suggested version — the current tips carried over, any advice found in your remarks folded in, e.g. `["Serve over rice"]`
+  """
+  tips: [Tip!]!
 }
 
 """
@@ -464,6 +526,11 @@ input ProposalInput {
   What you noticed on that cook, e.g. `"Still a touch too sweet"` — the remarks this version answers (leave out when the proposal came from requestImprovement)
   """
   remarks: Remarks
+
+  """
+  The complete tips list of the next version — echo back the proposal’s `tips` (with any edits), e.g. `["Serve over rice"]`; send `[]` when it has none
+  """
+  tips: [Tip!]! = []
 }
 
 type Query {
@@ -812,6 +879,21 @@ How long a Thermomix step runs, written as you would read it, e.g. `"3 min"` or 
 scalar ThermomixTime
 
 """
+One cooking tip — serving, storage or technique advice that is neither an ingredient nor a step, e.g. `"Serve over rice"` (1 to 300 characters)
+"""
+scalar Tip
+
+"""
+The AI’s reworded, merged tips list for one version — what you asked to add, folded into the tips it already had. Just a proposal shown on screen: nothing is saved until you send it back through updateTips.
+"""
+type TipsProposal {
+  """
+  The complete new tips list, e.g. `["Serve over rice", "Freezes well"]` — every current tip kept, the requested advice reworded and deduplicated
+  """
+  tips: [Tip!]!
+}
+
+"""
 What you can retouch on a recipe: its name, its course and whether it is a favourite. Send only what you want to change — anything you leave out stays as it was.
 """
 input UpdateRecipeInput {
@@ -899,6 +981,11 @@ type Version {
   Your free notes on how it turned out, e.g. `"Still a touch too sweet, but the texture is spot on"`. `null` until you have cooked it.
   """
   remarks: Remarks
+
+  """
+  This version’s cooking tips — serving, storage or technique advice, e.g. `"Serve over rice"`. Empty list when it has none. Unlike the content, they are rewritable in place (see updateTips) — refining the advice never creates a version.
+  """
+  tips: [Tip!]!
 
   """
   Whether this version is on your to-cook list, e.g. `true` for the version you just got out of requestImprovement. Only an improvement puts a version there; cooking it (a rating, a photo, remarks) takes it off.

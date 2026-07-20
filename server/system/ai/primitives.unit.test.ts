@@ -7,7 +7,11 @@ import {
   StepText,
   ThermomixTime,
 } from '~/domain/recipe/primitives'
-import { parseImportResponse, parseProposalResponse } from '~/system/ai/primitives'
+import {
+  parseImportResponse,
+  parseProposalResponse,
+  parseTipsResponse,
+} from '~/system/ai/primitives'
 import type { ImportAnalysis } from '~/system/ai/types'
 
 const base = { type: 'thermomix', title: 'Risotto' }
@@ -291,5 +295,39 @@ describe('parseProposalResponse — full next-version proposal', () => {
 
     expect(result.ingredients).toEqual([{ name: 'Sel', quantity: '5 g' }])
     expect(result.steps).toEqual([{ text: 'Saler', settings: {} }])
+  })
+})
+
+describe('tips', () => {
+  test('an import keeps the extracted tips, and defaults to none when nulled', () => {
+    expect(parsedImport({ ...base, steps: ['Cuire'], tips: ['Servir avec du riz'] }).tips).toEqual([
+      'Servir avec du riz',
+    ])
+    // Gemini nulls a field it was told to leave out — the domain spells it `[]`.
+    expect(parsedImport({ ...base, steps: ['Cuire'], tips: null }).tips).toEqual([])
+    expect(parsedImport({ ...base, steps: ['Cuire'] }).tips).toEqual([])
+  })
+
+  test('a proposal carries its tips, clamped and stripped of blanks', () => {
+    const result = parseProposalResponse(
+      JSON.stringify({
+        changeSummary: 'Ajustement',
+        rationale: 'ok',
+        ingredients: [{ name: 'Riz', quantity: '300 g' }],
+        steps: ['Cuire'],
+        tips: ['Servir avec du riz', '   ', 'T'.repeat(500)],
+      }),
+    )
+
+    expect(result.tips.length).toBe(2)
+    expect(result.tips[0]).toBe('Servir avec du riz')
+    expect(result.tips[1]?.length).toBe(RECIPE_MAX.tip)
+  })
+
+  test('parseTipsResponse returns the merged list, blanks dropped', () => {
+    expect(
+      parseTipsResponse(JSON.stringify({ tips: ['Servir avec du riz', '', 'Se congèle bien'] })),
+    ).toEqual(['Servir avec du riz', 'Se congèle bien'])
+    expect(parseTipsResponse(JSON.stringify({ tips: [] }))).toEqual([])
   })
 })

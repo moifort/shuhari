@@ -1,6 +1,6 @@
 import { RecipeCommand } from '~/domain/recipe/command'
 import type { VersionContent } from '~/domain/recipe/content/types'
-import { VersionContent as brandVersionContent } from '~/domain/recipe/primitives'
+import { VersionContent as brandVersionContent, Tip } from '~/domain/recipe/primitives'
 import { RecipeQuery } from '~/domain/recipe/query'
 import type { Rating, RecipeId, RecipeType, Remarks, VersionNumber } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
@@ -69,6 +69,7 @@ export namespace ProposalUseCase {
         quantity: i.quantity as string,
       })),
       currentSteps: contextSteps(version.content),
+      currentTips: version.tips.map((tip) => tip as string),
       attempts: 'attempts' in request ? request.attempts : [],
       ...('improvement' in request ? { improvement: request.improvement } : {}),
     }
@@ -79,6 +80,7 @@ export namespace ProposalUseCase {
       changeSummary: proposal.changeSummary,
       rationale: proposal.rationale,
       content: brandProposal(recipe.type, proposal),
+      tips: proposal.tips.map(Tip),
     }
     return branded
   }
@@ -99,6 +101,34 @@ export namespace ProposalUseCase {
     versionNumber: VersionNumber,
     improvement: Remarks,
   ) => nextVersion(userId, recipeId, versionNumber, { improvement })
+
+  // The complete tips list merging what the cook just typed into the version's
+  // current tips — reworded and deduplicated by the AI. Ephemeral like the version
+  // proposals: nothing is persisted until the cook accepts it, which rewrites the
+  // SAME version's tips via `RecipeCommand.updateTips` (no new version at stake).
+  export const fromTips = async (
+    userId: UserId,
+    recipeId: RecipeId,
+    versionNumber: VersionNumber,
+    requested: Remarks,
+  ) => {
+    const recipe = await RecipeQuery.byId(userId, recipeId)
+    if (recipe === 'not-found') return 'not-found'
+    const version = await RecipeQuery.versionBy(recipeId, versionNumber)
+    if (version === 'not-found') return 'not-found'
+
+    const tips = await Ai.formatTips({
+      type: recipe.type,
+      currentIngredients: version.content.ingredients.map((i) => ({
+        name: i.name as string,
+        quantity: i.quantity as string,
+      })),
+      currentSteps: contextSteps(version.content),
+      currentTips: version.tips.map((tip) => tip as string),
+      requested,
+    })
+    return tips.map(Tip)
+  }
 
   // Analyze an import source (photos, a URL or raw text) into a structured recipe
   // preview. The proposal domain is the sole caller of the import AI; confirming
@@ -121,6 +151,7 @@ export namespace ProposalUseCase {
       basedOn: proposal.basedOn,
       ...(proposal.rationale ? { why: proposal.rationale } : {}),
       content: proposal.content,
+      tips: proposal.tips,
       ...(proposal.attempt ? { attempt: proposal.attempt } : {}),
     })
 }

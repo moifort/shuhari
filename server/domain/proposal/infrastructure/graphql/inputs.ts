@@ -33,6 +33,14 @@ export const ProposalInput = builder.inputType('ProposalInput', {
         'The complete body of the next version — provide exactly one of `dish` or `thermomix`, ' +
         'matching the recipe type',
     }),
+    tips: t.field({
+      type: ['Tip'],
+      required: true,
+      defaultValue: [],
+      description:
+        'The complete tips list of the next version — echo back the proposal’s `tips` (with ' +
+        'any edits), e.g. `["Serve over rice"]`; send `[]` when it has none',
+    }),
     // The cook that asked for this version, when one did. Recorded on the version
     // being created, never on the one it iterates on. Both are left out when the
     // proposal answers an improvement instead of a cook.

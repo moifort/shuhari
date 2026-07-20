@@ -31,7 +31,12 @@ const versionDocId = (recipeId: RecipeId, number: VersionNumber) => `${recipeId}
 // while the domain spells it "absent" — so the top-level `null`s are erased on the
 // way in. The nested `content` needs no defaulting: it is built total, a plain
 // Thermomix step being the empty settings object `{}` Firestore stores verbatim.
-const normalizeVersion = (stored: RecipeVersion): RecipeVersion => withoutStoredNulls(stored)
+// `tips` is total in the domain, so a document written before the field existed
+// (or restored from such an export) reads as the empty list.
+const normalizeVersion = (stored: RecipeVersion): RecipeVersion => ({
+  ...withoutStoredNulls(stored),
+  tips: stored.tips ?? [],
+})
 
 // Storage boundary, write side. Every version write is a full `set` (never a
 // merge), so an omitted key erases the stored field — which is precisely what an

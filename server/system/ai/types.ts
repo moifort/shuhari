@@ -33,6 +33,9 @@ export type ImportAnalysis = {
   sourceLabel?: string
   ingredients: { name: string; quantity: string }[]
   steps: ImportStep[]
+  // Cooking tips found in the source (serving, storage, technique) — `[]` when
+  // the source carries none.
+  tips: string[]
 }
 
 export type CachedImport = {
@@ -49,6 +52,9 @@ export type ProposalContext = {
   currentIngredients: { name: string; quantity: string }[]
   // Each step carries its own Thermomix settings (an empty object is a plain step).
   currentSteps: ImportStep[]
+  // The tips of the version iterated on — the proposal returns the complete
+  // updated list of the next version (advice found in the remarks lands here).
+  currentTips: string[]
   attempts: {
     rating: number
     remarks: string
@@ -65,4 +71,19 @@ export type Proposal = {
   rationale: string
   ingredients: { name: string; quantity: string }[]
   steps: ImportStep[]
+  // The complete tips list of the next version (current tips carried over,
+  // advice found in the remarks folded in).
+  tips: string[]
+}
+
+// Context handed to the tips model: the current version (for grounding the
+// rewording) plus the raw advice the cook typed. The answer is the complete
+// merged tips list of that same version — no new version is at stake.
+export type TipsContext = {
+  type: RecipeType
+  currentIngredients: { name: string; quantity: string }[]
+  currentSteps: ImportStep[]
+  currentTips: string[]
+  // The tips to add, in the cook's own words.
+  requested: string
 }

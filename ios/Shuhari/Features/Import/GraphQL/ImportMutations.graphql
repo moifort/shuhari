@@ -17,6 +17,7 @@ mutation AnalyzeImport($photos: [String!]!, $url: String, $text: String) {
         reverse
       }
     }
+    tips
   }
 }
 

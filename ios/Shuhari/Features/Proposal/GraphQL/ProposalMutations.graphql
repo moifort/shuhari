@@ -20,3 +20,16 @@ mutation RequestImprovement(
     ...ProposalFields
   }
 }
+
+mutation RequestTips($recipeId: RecipeId!, $versionNumber: VersionNumber!, $tips: Remarks!) {
+  requestTips(recipeId: $recipeId, versionNumber: $versionNumber, tips: $tips) {
+    tips
+  }
+}
+
+mutation UpdateTips($recipeId: RecipeId!, $versionNumber: VersionNumber!, $tips: [Tip!]!) {
+  updateTips(recipeId: $recipeId, versionNumber: $versionNumber, tips: $tips) {
+    number
+    tips
+  }
+}

@@ -1,5 +1,6 @@
 import { DishCategoryEnum, RecipeTypeEnum } from '~/domain/recipe/infrastructure/graphql/enums'
 import { VersionContentUnion } from '~/domain/recipe/infrastructure/graphql/types'
+import type { Tip } from '~/domain/recipe/types'
 import { builder } from '~/domain/shared/graphql/builder'
 import type { ImportAnalysis, ImportStep, ImportThermomixSettings } from '~/system/ai/types'
 import type { Proposal } from '../../types'
@@ -32,6 +33,32 @@ export const ProposalType = builder.objectRef<Proposal>('Proposal').implement({
         'The complete body of the suggested version (not just what changed) — a `DishContent` or ' +
         'a `ThermomixContent` depending on the recipe type',
       resolve: (d) => d.content,
+    }),
+    tips: t.field({
+      type: ['Tip'],
+      description:
+        'The complete tips list of the suggested version — the current tips carried over, any ' +
+        'advice found in your remarks folded in, e.g. `["Serve over rice"]`',
+      resolve: (d) => d.tips,
+    }),
+  }),
+})
+
+// The tips-only proposal: the complete merged list the current version's tips
+// would be replaced with. Ephemeral like ProposalType — accepting it goes through
+// the updateTips mutation, which touches no other part of the version.
+export const TipsProposalType = builder.objectRef<{ tips: Tip[] }>('TipsProposal').implement({
+  description:
+    'The AI’s reworded, merged tips list for one version — what you asked to add, folded into ' +
+    'the tips it already had. Just a proposal shown on screen: nothing is saved until you send ' +
+    'it back through updateTips.',
+  fields: (t) => ({
+    tips: t.field({
+      type: ['Tip'],
+      description:
+        'The complete new tips list, e.g. `["Serve over rice", "Freezes well"]` — every current ' +
+        'tip kept, the requested advice reworded and deduplicated',
+      resolve: (p) => p.tips,
     }),
   }),
 })
@@ -89,6 +116,11 @@ export const ImportAnalysisType = builder.objectRef<ImportAnalysis>('ImportAnaly
       type: [ImportStepType],
       description: 'The extracted steps, each carrying its own Thermomix settings',
       resolve: (a) => a.steps,
+    }),
+    tips: t.exposeStringList('tips', {
+      description:
+        'The cooking tips found in the source (unvalidated preview) — empty list when it ' +
+        'carries none',
     }),
   }),
 })

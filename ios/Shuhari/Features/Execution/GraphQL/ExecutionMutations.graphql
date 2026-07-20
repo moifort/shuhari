@@ -27,4 +27,5 @@ fragment ProposalFields on Proposal {
   content {
     ...VersionContentFields
   }
+  tips
 }

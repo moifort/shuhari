@@ -34,6 +34,7 @@ struct RecipeDetailPage: View {
                 compactHeader: focusVersion == nil
             )
             ReferenceVersionSection(version: displayedVersion, modified: modifiedSteps)
+            TipsSection(tips: displayedVersion.tips)
         }
         .listSectionSpacing(5)
         .contentMargins(.top, 0, for: .scrollContent)

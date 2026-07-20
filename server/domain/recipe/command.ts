@@ -11,6 +11,7 @@ import type {
   RecipeType,
   RecipeVersion,
   Remarks,
+  Tip,
   VersionNumber as VersionNumberT,
   VersionOrigin,
 } from '~/domain/recipe/types'
@@ -24,6 +25,7 @@ export type NewRecipeInput = {
   category: DishCategory
   title: RecipeTitle
   content: VersionContent
+  tips: Tip[]
 }
 
 // The cook that produced a version: the rating, remarks and photo of the attempt
@@ -39,6 +41,7 @@ export type NewVersionInput = {
   basedOn?: VersionNumberT
   why?: string
   content: VersionContent
+  tips: Tip[]
   // The attempt that produced this version — absent when an improvement asked for it
   // instead, in which case the version created is one to test.
   attempt?: Attempt
@@ -114,6 +117,7 @@ export namespace RecipeCommand {
       ...(input.basedOn !== undefined ? { basedOn: input.basedOn } : {}),
       ...(input.why ? { why: input.why } : {}),
       content: input.content,
+      tips: input.tips,
       // The outcome of the attempt that produced it, when there was one; without it
       // the version is what the cook asked for and still owes a try.
       ...(input.attempt
@@ -173,6 +177,30 @@ export namespace RecipeCommand {
       await repository.saveVersion(executed, batch)
       await repository.save(updatedRecipe, batch)
       return executed
+    })
+  }
+
+  // Rewrite a version's tips in place — the second overwritable part of the
+  // envelope, beside the attempt outcome. No new version: the cook is refining the
+  // advice on the version they have, not iterating on it. Full-replacement (the
+  // accepted tips proposal is the complete list), plus the recipe's `updatedAt`
+  // bump, in one batch.
+  export const updateTips = async (
+    userId: UserId,
+    recipeId: RecipeId,
+    versionNumber: VersionNumberT,
+    tips: Tip[],
+  ): Promise<RecipeVersion | 'not-found'> => {
+    const recipe = await repository.findBy(userId, recipeId)
+    if (!recipe) return 'not-found' as const
+    const version = await repository.findVersion(recipeId, versionNumber)
+    if (!version) return 'not-found' as const
+    const updated: RecipeVersion = { ...version, tips }
+    const updatedRecipe: Recipe = { ...recipe, updatedAt: new Date() }
+    return atomically(async (batch) => {
+      await repository.saveVersion(updated, batch)
+      await repository.save(updatedRecipe, batch)
+      return updated
     })
   }
 
@@ -275,5 +303,6 @@ export namespace RecipeCommand {
     // No `change`/`basedOn`: v1 is the original, it iterates on nothing and
     // changes nothing. No outcome either — it awaits its first cook.
     content: input.content,
+    tips: input.tips,
   })
 }

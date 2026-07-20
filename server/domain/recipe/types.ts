@@ -34,6 +34,7 @@ export type Remarks = Brand<string, 'Remarks'>
 export type IngredientName = Brand<string, 'IngredientName'>
 export type IngredientQuantity = Brand<string, 'IngredientQuantity'>
 export type StepText = Brand<string, 'StepText'>
+export type Tip = Brand<string, 'Tip'>
 export type ThermomixTime = Brand<string, 'ThermomixTime'>
 export type ThermomixTemperature = Brand<string, 'ThermomixTemperature'>
 export type ThermomixSpeed = Brand<string, 'ThermomixSpeed'>

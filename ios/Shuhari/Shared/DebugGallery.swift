@@ -82,6 +82,7 @@ struct DebugGallery: View {
                     nextVersionNumber: 5,
                     baseIngredients: Fixtures.bourguignonV4.ingredients,
                     baseSteps: Fixtures.bourguignonV4.content.stepsWithSettings,
+                    baseTips: Fixtures.bourguignonV4.tips,
                     isWorking: false,
                     suggestedRecipeTitle: Fixtures.bourguignon.title,
                     onClose: {},
@@ -96,11 +97,28 @@ struct DebugGallery: View {
                     nextVersionNumber: 3,
                     baseIngredients: Fixtures.risottoV2.ingredients,
                     baseSteps: Fixtures.risottoV2.content.stepsWithSettings,
+                    baseTips: Fixtures.risottoV2.tips,
                     isWorking: false,
                     suggestedRecipeTitle: Fixtures.risotto.title,
                     onClose: {},
                     onValidate: { _ in },
                     onCreateRecipe: { _, _ in }
+                )
+            }
+        case "tips-section":
+            // The recipe sheet's closing section on its own — it sits below the steps,
+            // too far down the sheet to be seen without scrolling.
+            List {
+                TipsSection(tips: Fixtures.bourguignonV3.tips)
+            }
+        case "tips-proposal":
+            NavigationStack {
+                TipsProposalPage(
+                    proposedTips: Fixtures.proposal.tips,
+                    baseTips: Fixtures.bourguignonV3.tips,
+                    isWorking: false,
+                    onClose: {},
+                    onValidate: { _ in }
                 )
             }
         case "to-test":

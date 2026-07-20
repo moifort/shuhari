@@ -106,6 +106,13 @@ const foldIngredients = (raw: { name: string; quantity: string }[]) =>
 const foldSteps = (raw: ImportStep[]): ImportStep[] =>
   raw.filter((s) => s.text.length > 0).slice(0, MAX_ITEMS)
 
+// Drop blank tips and cap the count. Shared by import, proposal and the
+// tips-formatting call.
+const tipsSchema = z
+  .array(clampedField(RECIPE_MAX.tip))
+  .default([])
+  .transform((raw) => raw.filter((tip) => tip.length > 0).slice(0, MAX_ITEMS))
+
 // Gemini marks absent fields as explicit null (the prompt instructs it to), so
 // every optional field accepts null and normalizes it away — parsing the response
 // is the boundary where the AI's nulls become the domain's absent fields. All
@@ -120,6 +127,7 @@ export const ImportAnalysisSchema = z
     sourceLabel: optionalClamped(SOURCE_LABEL_MAX),
     ingredients: z.array(ingredientSchema).default([]),
     steps: z.array(stepSchema).default([]),
+    tips: tipsSchema.nullish().transform((v) => v ?? []),
   })
   .transform(
     (raw): ImportAnalysis => ({
@@ -130,6 +138,7 @@ export const ImportAnalysisSchema = z
       ...(raw.sourceLabel ? { sourceLabel: raw.sourceLabel } : {}),
       ingredients: foldIngredients(raw.ingredients),
       steps: foldSteps(raw.steps),
+      tips: raw.tips,
     }),
   )
 
@@ -139,6 +148,7 @@ export const ProposalSchema = z
     rationale: clampedField(RATIONALE_MAX),
     ingredients: z.array(ingredientSchema).default([]),
     steps: z.array(stepSchema).default([]),
+    tips: tipsSchema,
   })
   .transform(
     (raw): Proposal => ({
@@ -146,6 +156,7 @@ export const ProposalSchema = z
       rationale: raw.rationale,
       ingredients: foldIngredients(raw.ingredients),
       steps: foldSteps(raw.steps),
+      tips: raw.tips,
     }),
   )
 
@@ -167,3 +178,8 @@ export const parseImportResponse = (text: string): ImportAnalysis | 'no-recipe-f
 
 export const parseProposalResponse = (text: string): Proposal =>
   ProposalSchema.parse(JSON.parse(text))
+
+const TipsResponseSchema = z.object({ tips: tipsSchema })
+
+export const parseTipsResponse = (text: string): string[] =>
+  TipsResponseSchema.parse(JSON.parse(text)).tips

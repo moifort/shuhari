@@ -200,6 +200,14 @@ export const VersionType = builder.objectRef<RecipeVersion>('Version').implement
         'machine settings).',
       resolve: (v) => v.content,
     }),
+    tips: t.field({
+      type: ['Tip'],
+      description:
+        'This version’s cooking tips — serving, storage or technique advice, e.g. `"Serve over ' +
+        'rice"`. Empty list when it has none. Unlike the content, they are rewritable in place ' +
+        '(see updateTips) — refining the advice never creates a version.',
+      resolve: (v) => v.tips,
+    }),
     executedAt: t.field({
       type: 'DateTime',
       nullable: true,

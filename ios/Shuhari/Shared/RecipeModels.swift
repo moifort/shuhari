@@ -103,6 +103,10 @@ struct RecipeVersion: Identifiable, Sendable {
     /// machine settings). "Is Thermomix" is carried by the content variant, mirroring
     /// the recipe `type`.
     let content: VersionContent
+    /// Cooking tips — serving, storage or technique advice, neither an ingredient
+    /// nor a step. Empty when it has none (the section is then not rendered).
+    /// Unlike the content they are rewritable in place, without creating a version.
+    var tips: [String] = []
     /// The recipe this version belongs to.
     let recipeId: String
     /// On the to-cook list: an improvement asked for this version, and it has not
@@ -143,6 +147,9 @@ struct Proposal: Sendable {
     let rationale: String
     /// The full body of the proposed next version (dish or Thermomix).
     let content: VersionContent
+    /// The complete tips list of the proposed version — the current tips carried
+    /// over, any advice found in the remarks folded in.
+    var tips: [String] = []
 }
 
 /// The complete next-version proposal handed back from the proposal screen
@@ -154,6 +161,8 @@ struct ProposalEdit: Sendable {
     let changeSummary: String
     let rationale: String
     let content: VersionContent
+    /// The complete tips list of the version being created.
+    var tips: [String] = []
 }
 
 /// A cook: how it was rated, what was noticed, what it looked like. When it carries
@@ -225,5 +234,7 @@ struct ImportAnalysis: Sendable, Hashable {
     /// The extracted steps, each carrying its own Thermomix settings (`.plain` for a
     /// plain step).
     var steps: [ThermomixStep]
+    /// The cooking tips found in the source (empty when it carries none).
+    var tips: [String] = []
     var sourceLabel: String?
 }

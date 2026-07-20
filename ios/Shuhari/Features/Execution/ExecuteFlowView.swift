@@ -106,6 +106,7 @@ struct ExecuteFlowView: View {
                     nextVersionNumber: recipe.nextVersionNumber,
                     baseIngredients: base?.ingredients ?? [],
                     baseSteps: base?.content.stepsWithSettings ?? [],
+                    baseTips: base?.tips ?? [],
                     isWorking: isAcceptingProposal,
                     suggestedRecipeTitle: recipe.title,
                     isCreatingRecipe: isCreatingRecipe,
@@ -212,6 +213,7 @@ struct ExecuteFlowView: View {
                 type: recipe.type,
                 category: recipe.category,
                 content: edited.content,
+                tips: edited.tips,
                 sourceLabel: "\(recipe.title) v\(edited.basedOn)"
             )
             finish()

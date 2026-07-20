@@ -103,6 +103,10 @@ enum Fixtures {
         originKind: .aiProposal,
         originDetail: nil,
         content: .dish(ingredients: bourguignonIngredients, steps: bourguignonSteps),
+        tips: [
+            "Servir avec des tagliatelles fraîches ou une purée maison.",
+            "Meilleur réchauffé le lendemain.",
+        ],
         recipeId: "bourguignon",
         rating: 4,
         remarks: "Sauce nappante, viande fondante.",
@@ -119,6 +123,7 @@ enum Fixtures {
         originKind: .aiProposal,
         originDetail: nil,
         content: .dish(ingredients: bourguignonIngredients, steps: bourguignonStepsV4),
+        tips: ["Servir avec des tagliatelles fraîches ou une purée maison."],
         recipeId: "bourguignon",
         toTest: true,
         rating: nil,
@@ -229,7 +234,13 @@ enum Fixtures {
                 "Mouiller au vin et au bouillon, ajouter le bouquet garni.",
                 "Cuire à couvert 4 h.",
             ]
-        )
+        ),
+        // The base v4 tip kept, plus one the remarks asked for — the second row is
+        // the one the diff marks.
+        tips: [
+            "Servir avec des tagliatelles fraîches ou une purée maison.",
+            "Sortir la viande du réfrigérateur 1 h avant de la saisir.",
+        ]
     )
 
     /// The Thermomix counterpart of `proposal`: the step texts are the base's word
@@ -273,6 +284,10 @@ enum Fixtures {
             "Ajouter les noix de pécan torréfiées.",
             "Cuire 12 min à 180 °C.",
         ].map { ThermomixStep(text: $0, settings: .plain) },
+        tips: [
+            "Réserver la pâte 1 h au frais avant de former les boules.",
+            "Se congèlent crus, à cuire sans décongeler.",
+        ],
         sourceLabel: "Photo du livre « Biscuits »"
     )
 

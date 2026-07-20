@@ -48,6 +48,7 @@ builder.mutationField('createRecipe', (t) =>
           category: input.category,
           title: input.title,
           content: versionContentInput(input.content),
+          tips: input.tips,
         },
         input.sourceLabel ?? undefined,
       )
@@ -152,6 +153,48 @@ builder.mutationField('deleteVersion', (t) =>
       return match(result)
         .with('not-found', domainError)
         .with(P.not(P.string), () => true)
+        .exhaustive()
+    },
+  }),
+)
+
+builder.mutationField('updateTips', (t) =>
+  t.field({
+    type: VersionType,
+    description: [
+      'Replace one version’s cooking tips with this complete list — typically the accepted ' +
+        'requestTips proposal, after your edits. Rewrites the tips in place: no new version is ' +
+        'created, the content and outcome are left untouched. Returns the updated version.',
+      '',
+      '```graphql',
+      'updateTips(recipeId: "9f1c-a3b2", versionNumber: 2, tips: ["Serve over rice"]) {',
+      '  number',
+      '  tips',
+      '}',
+      '```',
+    ].join('\n'),
+    args: {
+      recipeId: t.arg({
+        type: 'RecipeId',
+        required: true,
+        description: 'Which recipe the version belongs to',
+      }),
+      versionNumber: t.arg({
+        type: 'VersionNumber',
+        required: true,
+        description: 'Which version’s tips to replace, e.g. `2`',
+      }),
+      tips: t.arg({
+        type: ['Tip'],
+        required: true,
+        description: 'The complete new tips list (send `[]` to clear the section)',
+      }),
+    },
+    resolve: async (_root, { recipeId, versionNumber, tips }, { userId }) => {
+      const result = await RecipeCommand.updateTips(userId, recipeId, versionNumber, [...tips])
+      return match(result)
+        .with('not-found', domainError)
+        .with(P.not(P.string), (version) => version)
         .exhaustive()
     },
   }),

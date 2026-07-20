@@ -11,6 +11,7 @@ import {
   ThermomixSpeed,
   ThermomixTemperature,
   ThermomixTime,
+  Tip,
   VersionNumber,
 } from '~/domain/recipe/primitives'
 import { UserId } from '~/domain/shared/primitives'
@@ -89,6 +90,14 @@ builder.scalarType('StepText', {
     'One instruction in the method, e.g. `"Fold in the egg whites"` (1 to 300 characters)',
   serialize: (value) => value as string,
   parseValue: validatedParse('StepText', StepText),
+})
+
+builder.scalarType('Tip', {
+  description:
+    'One cooking tip — serving, storage or technique advice that is neither an ingredient nor ' +
+    'a step, e.g. `"Serve over rice"` (1 to 300 characters)',
+  serialize: (value) => value as string,
+  parseValue: validatedParse('Tip', Tip),
 })
 
 builder.scalarType('ThermomixTime', {

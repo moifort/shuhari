@@ -18,6 +18,7 @@ import {
   type ThermomixSpeed as ThermomixSpeedType,
   type ThermomixTemperature as ThermomixTemperatureType,
   type ThermomixTime as ThermomixTimeType,
+  type Tip as TipType,
   type VersionNumber as VersionNumberType,
   type VersionOriginKind as VersionOriginKindType,
 } from '~/domain/recipe/types'
@@ -62,6 +63,11 @@ export const IngredientQuantity = (value: unknown) => {
 export const StepText = (value: unknown) => {
   const v = z.string().trim().min(1).max(RECIPE_MAX.stepText).parse(value)
   return make<StepTextType>()(v)
+}
+
+export const Tip = (value: unknown) => {
+  const v = z.string().trim().min(1).max(RECIPE_MAX.tip).parse(value)
+  return make<TipType>()(v)
 }
 
 export const ThermomixTime = (value: unknown) => {

@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The editable import preview: title, detected type and dish category,
-/// ingredients and steps. Everything is adjustable before creating the recipe
+/// ingredients, steps and the tips the AI found. Everything is adjustable before creating the recipe
 /// (v1). Presented inside the import review sheet — its actions live in the sheet
 /// toolbar (Fermer / Valider), not a bottom button.
 struct ImportPreviewPage: View {
@@ -22,6 +22,7 @@ struct ImportPreviewPage: View {
     @State private var category: DishCategory
     @State private var ingredients: [EditableIngredient]
     @State private var stepTexts: [String]
+    @State private var tipTexts: [String]
 
     init(
         analysis: ImportAnalysis,
@@ -40,6 +41,7 @@ struct ImportPreviewPage: View {
             EditableIngredient(name: $0.name, quantity: $0.quantity)
         })
         self._stepTexts = State(initialValue: analysis.steps.map(\.text))
+        self._tipTexts = State(initialValue: analysis.tips)
     }
 
     var body: some View {
@@ -97,8 +99,22 @@ struct ImportPreviewPage: View {
             } header: {
                 Text("Étapes")
             } footer: {
-                if let source = analysis.sourceLabel, !source.isEmpty {
-                    Text("Source : \(source)")
+                // The source caption closes the preview: it sits under the steps
+                // unless tips follow, in which case they are the last section.
+                if tipTexts.isEmpty { sourceCaption }
+            }
+
+            if !tipTexts.isEmpty {
+                Section {
+                    ForEach(tipTexts.indices, id: \.self) { index in
+                        TextField("Conseil", text: $tipTexts[index], axis: .vertical)
+                            .lineLimit(1...6)
+                            .accessibilityIdentifier("import-tip-field")
+                    }
+                } header: {
+                    Text("Conseils")
+                } footer: {
+                    sourceCaption
                 }
             }
         }
@@ -123,6 +139,13 @@ struct ImportPreviewPage: View {
                 .accessibilityLabel("Valider")
                 .accessibilityIdentifier("save-recipe-button")
             }
+        }
+    }
+
+    @ViewBuilder
+    private var sourceCaption: some View {
+        if let source = analysis.sourceLabel, !source.isEmpty {
+            Text("Source : \(source)")
         }
     }
 
@@ -174,6 +197,11 @@ struct ImportPreviewPage: View {
                 return Ingredient(name: name, quantity: quantity)
             },
             steps: steps,
+            // Blank tips are dropped, like blank steps.
+            tips: tipTexts.compactMap {
+                let text = $0.trimmingCharacters(in: .whitespacesAndNewlines)
+                return text.isEmpty ? nil : text
+            },
             sourceLabel: analysis.sourceLabel
         )
     }
