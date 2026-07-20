@@ -1,11 +1,11 @@
 # Migration System
 
-> **Dated note (2026-07): production Firestore is empty.** The app is pre-first-release; no
-> real data exists to transform. Schema-shape changes (renamed/removed fields, new required
-> fields) therefore need **no migration** while that holds — the `migrations` array is still
-> empty, so the next one will be `0001`. Before writing a migration, check whether real data
-> has landed since; once the App Store release ships and data exists, delete this note and
-> follow the rules below again.
+> **Dated note (2026-07-20): production Firestore holds real data.** The app is still
+> pre-first-release, but the deployed backend serves the recipes cooked on the physical
+> device — a `versionCount` → `lastVersionNumber` rename shipped without a migration and
+> broke every recipe stored before it (`undefined + 1` = `NaN` at the next `addVersion`).
+> The "no data, no migration" shortcut is over: **every schema-shape change needs its
+> migration**, per the rules below.
 
 ## Overview
 

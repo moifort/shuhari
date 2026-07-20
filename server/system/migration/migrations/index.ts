@@ -1,5 +1,6 @@
+import { migration0001 } from '~/system/migration/migrations/0001-rename-version-count'
 import type { Migration } from '~/system/migration/types'
 
 // Forward-only migrations, applied in order by the runner. Register new
-// migrations here. Empty until the first schema evolution ships.
-export const migrations: Migration[] = []
+// migrations here, in ascending version order.
+export const migrations: Migration[] = [migration0001]

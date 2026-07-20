@@ -126,7 +126,7 @@ The **only** French in the repo is user-facing copy — `CHANGELOG.fr.md` (the c
 - Runner (`runner.ts`) wraps each migration in try/catch — migrations don't need their own error handling
 - **When to migrate**: renaming a field, changing a field's structure, changing enum values (e.g. a new `RecipeType`), removing stale data
 - **No migration needed**: adding a new optional (`?`) field, adding a new collection, changing query logic/routes
-- **Dated note (2026-07)**: production Firestore is empty (pre-first-release) — schema refactors need **no migration** while that holds; see [docs/migrations.md](docs/migrations.md)
+- **Dated note (2026-07-20)**: production Firestore now holds real data (the recipes cooked on the device) — **every schema-shape change needs its migration**, the pre-release shortcut is over; see [docs/migrations.md](docs/migrations.md)
 
 ## iOS Patterns (SwiftUI)
 
