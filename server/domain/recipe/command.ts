@@ -280,6 +280,10 @@ export namespace RecipeCommand {
     await bulkSave(versions, (version) => repository.saveVersion(version))
   }
 
+  // Everything this domain holds on one cook, erased: the notebook and every
+  // version in it. Called only when the account itself goes.
+  export const forget = (userId: UserId): Promise<void> => repository.removeAllByUser(userId)
+
   // The version an attempt-born iteration is based on, stripped of its `toTest` flag —
   // or nothing when there is no base, or it was not waiting to be cooked.
   const cookedBase = async (recipeId: RecipeId, basedOn?: VersionNumberT) => {

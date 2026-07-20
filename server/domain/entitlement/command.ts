@@ -21,4 +21,9 @@ export namespace EntitlementCommand {
       ...(transaction.revokedAt ? { revokedAt: transaction.revokedAt } : {}),
       updatedAt: new Date(),
     })
+
+  // Everything this domain holds on one cook, erased. The subscription itself is
+  // Apple's to end: deleting the entitlement stops the app believing in it, it does
+  // not stop the billing, which only the cook can from the App Store settings.
+  export const forget = (userId: UserId): Promise<void> => repository.removeBy(userId)
 }

@@ -28,6 +28,13 @@ export const findByAppAccountToken = async (
   return snap.docs[0]?.data()
 }
 
+// Keyed by cook, so one delete by key — no query. Nothing else references the
+// document: the App Store keeps its own record of the subscription regardless.
+export const removeBy = async (userId: UserId): Promise<void> => {
+  await entitlements().doc(userId).delete()
+  evictFromRequestCache(cacheKey(userId))
+}
+
 export const save = async (entitlement: Entitlement): Promise<Entitlement> => {
   // Full `set`, never a merge: an omitted key erases the stored field, which is
   // what an absent `revokedAt` means (a refund reversed is Premium restored).

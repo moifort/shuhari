@@ -36,4 +36,7 @@ import '~/system/portability/infrastructure/graphql/types'
 import '~/system/portability/infrastructure/graphql/queries'
 import '~/system/portability/infrastructure/graphql/mutations'
 
+// Account (erasing a cook and everything held on them)
+import '~/system/account/infrastructure/graphql/mutations'
+
 export const schema = builder.toSchema()

@@ -11,4 +11,8 @@ export namespace QuotaCommand {
     const quota = await repository.findBy(userId, monthOf(new Date()))
     return repository.save(consumed(quota, action))
   }
+
+  // Everything this domain holds on one cook, erased. Called only when the account
+  // itself goes: there is no other reason to forget what the AI already cost.
+  export const forget = (userId: UserId): Promise<void> => repository.removeAllByUser(userId)
 }

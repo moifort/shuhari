@@ -3,7 +3,7 @@ import type { Quota, QuotaMonth } from '~/domain/quota/types'
 import type { UserId } from '~/domain/shared/types'
 import { db } from '~/system/firebase'
 import { evictFromRequestCache, memoizedPerRequest } from '~/system/request-cache'
-import { genericDataConverter } from '~/utils/firestore'
+import { deleteInBatches, genericDataConverter } from '~/utils/firestore'
 
 const quotas = () => db().collection('ai-quotas').withConverter(genericDataConverter<Quota>())
 
@@ -28,4 +28,12 @@ export const save = async (quota: Quota): Promise<Quota> => {
   // same request (the `quota` query alongside a mutation) sees what was just spent.
   evictFromRequestCache(`quota:${quota.userId}:${quota.month}`)
   return quota
+}
+
+// Every month this cook has ever spent anything in. Queried rather than derived:
+// the documents are keyed by month, and nothing records which months exist.
+export const removeAllByUser = async (userId: UserId): Promise<void> => {
+  const snap = await quotas().where('userId', '==', userId).get()
+  await deleteInBatches(snap.docs.map((doc) => doc.ref))
+  for (const doc of snap.docs) evictFromRequestCache(`quota:${userId}:${doc.data().month}`)
 }
