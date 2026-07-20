@@ -139,7 +139,7 @@ const proposalResponseSchema = {
     changeSummary: {
       type: 'string',
       description:
-        'Short summary of what changes, written in French, as a comma-separated list of value deltas in "label old → new unit" arrow notation (e.g. "Bouillon 50 → 40 cl, cuisson 3 h 30 → 4 h"), ≤200 characters',
+        'Short summary of what changes, written in French. One change = "label old → new unit", where → is the arrow character U+2192 — ALWAYS that character between the old and the new value, never a comma, a dash, a slash or quotes. Replacing one thing by another is written the same way (e.g. "Citrons jaunes 2-3 pièces → Pomelo 1 pièce"). Several changes are joined by ", " (e.g. "Bouillon 50 → 40 cl, cuisson 3 h 30 → 4 h"). ≤200 characters',
     },
     rationale: { type: 'string', description: 'Explanation of the reasoning, written in French' },
     ingredients: ingredientsSchemaProperty,
@@ -222,7 +222,7 @@ export namespace Ai {
   // Cuisine-scoped iteration rule (dish + thermomix). Coffee and cocktail will get
   // their own rules later — no speculative abstraction here.
   const cuisineIterationRule = (_type: ProposalContext['type']) =>
-    'For a dish or a Thermomix recipe, you may adjust several coherent elements at once. Return the COMPLETE ingredient and step list of the next version (not only what changes), plus a short summary of the changes. When the remarks ask for a precise adjustment (a new cooking time, temperature, speed or quantity), apply that exact value in the right structured field — a Thermomix time/temperature/speed in the step settings, a duration in the dish step text, a quantity on the ingredient — and record every value change in changeSummary with the "old → new" arrow notation.'
+    'For a dish or a Thermomix recipe, you may adjust several coherent elements at once. Return the COMPLETE ingredient and step list of the next version (not only what changes), plus a short summary of the changes. When the remarks ask for a precise adjustment (a new cooking time, temperature, speed or quantity), apply that exact value in the right structured field — a Thermomix time/temperature/speed in the step settings, a duration in the dish step text, a quantity on the ingredient — and record every change in changeSummary as "old → new", with the arrow character U+2192 between the two, whether the change is a new value or one ingredient replacing another.'
 
   const formatThermomix = (
     settings: ProposalContext['currentSteps'][number]['settings'],
