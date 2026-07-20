@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+
+      # ITMS-90111: the App Store rejects a build made with anything but the latest final
+      # Xcode. The runner image ships several; pick the newest.
+      - name: Select the newest Xcode
+        run: |
+          set -euo pipefail
+          LATEST=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          echo "using $LATEST"
+          sudo xcode-select -s "$LATEST"
+          xcodebuild -version
+
+      - name: Read the version out of the tag
+        id: version
+        run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      # Fails before anything reaches Apple: a tag that disagrees with MARKETING_VERSION, or a
+      # changelog whose section is still called "Unreleased", is a release nobody meant to make.
+      - name: Guard the release
+        run: bun scripts/release-notes.ts guard "${{ steps.version.outputs.value }}"
+
+      - name: Write the release notes
+        run: |
+          bun scripts/release-notes.ts notes "${{ steps.version.outputs.value }}" \
+            > fastlane/metadata/fr-FR/release_notes.txt
+          cat fastlane/metadata/fr-FR/release_notes.txt
+
+      # Debug configuration on purpose: DebugGallery sits behind #if DEBUG, and without it the
+      # -gallery argument is ignored and every capture returns the same screen.
+      - name: Build for the simulator
+        run: |
+          xcodebuild -project ios/Shuhari.xcodeproj -scheme Shuhari -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/sim build
+
+      - name: Capture the screens
+        run: |
+          scripts/screenshots/capture.sh \
+            build/sim/Build/Products/Debug-iphonesimulator/Shuhari.app \
+            build/screenshots/raw
+
+      - name: Compose the panels
+        run: |
+          bun scripts/screenshots/compose.ts build/screenshots/raw fastlane/screenshots/fr-FR
+          rm -rf fastlane/screenshots/fr-FR/.html
+          sips -g pixelWidth -g pixelHeight fastlane/screenshots/fr-FR/*.png
+
+      - name: Keep the panels reviewable even if the release fails
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-store-panels
+          path: fastlane/screenshots/fr-FR
+
+      - name: Build, upload, submit and publish
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          FASTLANE_SKIP_UPDATE_CHECK: '1'
+        run: fastlane release
