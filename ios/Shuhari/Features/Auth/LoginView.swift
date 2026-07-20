@@ -12,9 +12,7 @@ struct LoginView: View {
         VStack(spacing: 32) {
             Spacer()
             VStack(spacing: 12) {
-                Image(systemName: "book.closed.fill")
-                    .font(.system(size: logoSize))
-                    .foregroundStyle(Color.accentColor)
+                LiquidFlask(size: logoSize)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility2)
                 Text("Shuhari")
                     .font(.largeTitle.bold())
