@@ -63,7 +63,7 @@
          </BuildableReference>
       </BuildableProductRunnable>
       <StoreKitConfigurationFileReference
-         identifier = "../Shuhari/Shuhari.storekit">
+         identifier = "../../../Shuhari/Shuhari.storekit">
       </StoreKitConfigurationFileReference>
    </LaunchAction>
    <ProfileAction

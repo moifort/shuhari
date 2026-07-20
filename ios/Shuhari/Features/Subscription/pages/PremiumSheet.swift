@@ -5,6 +5,20 @@ import SwiftUI
 /// it. Prices come from the App Store — never hard-coded, they differ by
 /// storefront and Apple raises them without asking us.
 struct PremiumSheet: View {
+    /// One offer as the sheet shows it: everything already in words, nothing of
+    /// StoreKit left. The page maps `Product` down to this, which is what lets the
+    /// gallery render the real screen with no App Store behind it.
+    struct Offer: Identifiable, Equatable {
+        let id: String
+        let title: String
+        let price: String
+        let detail: String
+        let badge: String?
+        /// Drives the CTA wording: an offer opening on a free trial does not say
+        /// "S'abonner".
+        let isTrial: Bool
+    }
+
     /// Optional so the sheet stays previewable offline: without a store it shows
     /// the offer it cannot sell, which is also what a network failure looks like.
     var store: SubscriptionStore? = nil
@@ -12,6 +26,22 @@ struct PremiumSheet: View {
     @Environment(\.dismiss) private var dismiss
     /// The spec pushes the yearly price forward, so it is the pre-selected offer.
     @State private var selectedProductId = SubscriptionProducts.yearly
+    /// Frozen offers: the gallery renders the sheet exactly as shipped, without
+    /// StoreKit — the only way to capture it outside Xcode.
+    private let frozenOffers: [Offer]?
+
+    init(store: SubscriptionStore? = nil) {
+        self.store = store
+        frozenOffers = nil
+    }
+
+    #if DEBUG
+    /// Gallery entry: fixed offers, inert purchase.
+    init(galleryOffers: [Offer]) {
+        store = nil
+        frozenOffers = galleryOffers
+    }
+    #endif
 
     var body: some View {
         NavigationStack {
@@ -37,7 +67,7 @@ struct PremiumSheet: View {
         // Full height only: at .medium the offers sit below the fold, and a
         // subscription sheet that hides its prices is not one.
         .presentationDetents([.large])
-        .task { await store?.refresh() }
+        .task { if frozenOffers == nil { await store?.refresh() } }
         .onChange(of: store?.isPremium) { _, isPremium in
             // The moment the server confirms Premium, the sheet has done its job.
             if isPremium == true { dismiss() }
@@ -99,11 +129,11 @@ struct PremiumSheet: View {
 
     @ViewBuilder
     private var offers: some View {
-        if store?.isLoading == true {
+        if frozenOffers == nil && store?.isLoading == true {
             ProgressView()
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Theme.Spacing.xl)
-        } else if products.isEmpty {
+        } else if offerList.isEmpty {
             // Loaded and still nothing: no network, or the products are not
             // available on this store. Say so rather than spin forever.
             VStack(spacing: Theme.Spacing.s) {
@@ -118,14 +148,14 @@ struct PremiumSheet: View {
             .padding(.vertical, Theme.Spacing.l)
         } else {
             VStack(spacing: Theme.Spacing.s) {
-                ForEach(products, id: \.id) { product in
+                ForEach(offerList) { offer in
                     OfferCard(
-                        title: product.displayName,
-                        price: product.displayPrice,
-                        detail: detail(for: product),
-                        badge: product.id == SubscriptionProducts.yearly ? "Économisez 30 %" : nil,
-                        isSelected: selectedProductId == product.id
-                    ) { selectedProductId = product.id }
+                        title: offer.title,
+                        price: offer.price,
+                        detail: offer.detail,
+                        badge: offer.badge,
+                        isSelected: selectedProductId == offer.id
+                    ) { selectedProductId = offer.id }
                 }
             }
         }
@@ -147,7 +177,9 @@ struct PremiumSheet: View {
             .buttonStyle(.glassProminent)
             .controlSize(.large)
             .frame(maxWidth: .infinity)
-            .disabled(selectedProduct == nil || store?.isPurchasing == true)
+            // Bound to the offers on screen, not to StoreKit: the gallery shows the
+            // sheet as a cook sees it, CTA included.
+            .disabled(offerList.isEmpty || store?.isPurchasing == true)
             .accessibilityIdentifier("subscribe-button")
 
             Button("Restaurer mes achats") {
@@ -167,8 +199,17 @@ struct PremiumSheet: View {
         .background(.bar)
     }
 
+    /// What the sheet shows: the frozen offers when the gallery froze them, the
+    /// App Store's own otherwise. Declared order — yearly first, the offer we put
+    /// forward.
+    private var offerList: [Offer] {
+        if let frozenOffers { return frozenOffers }
+        return SubscriptionProducts.all.compactMap { id in
+            store?.products.first { $0.id == id }.map(offer)
+        }
+    }
+
     private var products: [Product] {
-        // Keep the declared order — yearly first, the offer we put forward.
         SubscriptionProducts.all.compactMap { id in store?.products.first { $0.id == id } }
     }
 
@@ -179,28 +220,40 @@ struct PremiumSheet: View {
     /// The subscribe label says what actually happens: a free trial when the
     /// selected offer carries one, a payment otherwise.
     private var subscribeLabel: String {
-        selectedProduct?.subscription?.introductoryOffer?.paymentMode == .freeTrial
+        offerList.first { $0.id == selectedProductId }?.isTrial == true
             ? "Essayer gratuitement"
             : "S’abonner"
     }
 
-    /// The line under an offer: what a year costs per month, or the trial it opens with.
-    private func detail(for product: Product) -> String {
-        if let trial = product.subscription?.introductoryOffer, trial.paymentMode == .freeTrial {
-            return "\(trial.period.value) \(trial.period.unit.frenchName) offerts, puis renouvellement automatique"
-        }
-        return "sans engagement"
+    /// StoreKit → words. The only place the sheet knows what a `Product` is.
+    private func offer(_ product: Product) -> Offer {
+        let trial = product.subscription?.introductoryOffer
+        let isTrial = trial?.paymentMode == .freeTrial
+        return Offer(
+            id: product.id,
+            title: product.displayName,
+            price: product.displayPrice,
+            detail: isTrial && trial != nil
+                ? "\(trial!.period.value) \(trial!.period.unit.frenchName(trial!.period.value)) d’essai gratuit, puis renouvellement automatique"
+                : "sans engagement",
+            badge: product.id == SubscriptionProducts.yearly ? "Économisez 30 %" : nil,
+            isTrial: isTrial
+        )
     }
 }
 
 private extension Product.SubscriptionPeriod.Unit {
-    var frenchName: String {
+    /// The unit spelled for a count — "1 semaine", "7 jours". Written as
+    /// "N <unité> d'essai gratuit" precisely to dodge the gender agreement a
+    /// "offert / offerte" wording would force on us.
+    func frenchName(_ count: Int) -> String {
+        let plural = count > 1
         switch self {
-        case .day: return "jours"
-        case .week: return "semaines"
+        case .day: return plural ? "jours" : "jour"
+        case .week: return plural ? "semaines" : "semaine"
         case .month: return "mois"
-        case .year: return "ans"
-        @unknown default: return "jours"
+        case .year: return plural ? "ans" : "an"
+        @unknown default: return plural ? "jours" : "jour"
         }
     }
 }

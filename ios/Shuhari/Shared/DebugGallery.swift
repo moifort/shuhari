@@ -190,6 +190,11 @@ struct DebugGallery: View {
         case "premium":
             Color.clear
                 .sheet(isPresented: .constant(true)) {
+                    PremiumSheet(galleryOffers: Fixtures.premiumOffers)
+                }
+        case "premium-live":
+            Color.clear
+                .sheet(isPresented: .constant(true)) {
                     PremiumSheet(store: subscription)
                 }
         case "import-quota-exhausted":
@@ -200,7 +205,7 @@ struct DebugGallery: View {
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : cuisine, cuisine-course, cuisine-favorites, cuisine-thermomix, cuisine-loading, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, to-test, to-test-empty, recipe-edit, improve, viewfinder, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found, login, settings-data, quota, quota-premium, premium, import-quota-exhausted, import-premium-required")
+                description: Text("Écrans : cuisine, cuisine-course, cuisine-favorites, cuisine-thermomix, cuisine-loading, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, to-test, to-test-empty, recipe-edit, improve, viewfinder, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found, login, settings-data, quota, quota-premium, premium, premium-live, import-quota-exhausted, import-premium-required")
             )
         }
     }

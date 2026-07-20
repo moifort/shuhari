@@ -7,6 +7,28 @@ import Foundation
 /// and the transient models (AI proposal, import analysis, library rows)
 /// around them. Cooking-only — no params, no café/cocktail.
 enum Fixtures {
+    /// The two offers as `Shuhari.storekit` declares them — what StoreKit hands
+    /// the sheet once the App Store answers. Lets the gallery render the shipped
+    /// subscription screen offline (App Store review needs a screenshot of it).
+    static let premiumOffers: [PremiumSheet.Offer] = [
+        .init(
+            id: SubscriptionProducts.yearly,
+            title: "Premium annuel",
+            price: "24,99 €",
+            detail: "1 semaine d’essai gratuit, puis renouvellement automatique",
+            badge: "Économisez 30 %",
+            isTrial: true
+        ),
+        .init(
+            id: SubscriptionProducts.monthly,
+            title: "Premium mensuel",
+            price: "2,99 €",
+            detail: "sans engagement",
+            badge: nil,
+            isTrial: false
+        ),
+    ]
+
     static let date = Date(timeIntervalSince1970: 1_752_300_000)
 
     static let bourguignonIngredients = [

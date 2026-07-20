@@ -79,3 +79,7 @@ server/system/changelog-content.ts
 
 # JetBrains IDE settings (local, not shared)
 .idea/
+
+# Screenshots produced by the UI screenshot test and by the debug gallery —
+# review material, regenerated on demand, never a source of truth.
+screenshots/
