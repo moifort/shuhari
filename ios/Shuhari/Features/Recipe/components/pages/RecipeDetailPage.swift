@@ -89,7 +89,7 @@ struct RecipeDetailPage: View {
                     RecipeHeaderBadges(
                         type: recipe.type,
                         versionNumber: displayedVersion.number,
-                        attemptCount: recipe.attempts.count
+                        toTestCount: recipe.versionsToTest.count
                     )
                     Spacer(minLength: Theme.Spacing.s)
                     if let average = recipe.overallAverageRating {

@@ -2,11 +2,12 @@ import SwiftUI
 
 /// The recipe sheet's header badges, in the iOS Photos "CINÉMATIQUE" style: a capsule
 /// carrying the recipe type (icon + short uppercase label), then the displayed
-/// version and the attempt count. Primitive-first: no domain struct.
+/// version and how many versions wait to be cooked. Primitive-first: no domain struct.
 struct RecipeHeaderBadges: View {
     let type: RecipeType
     let versionNumber: Int?
-    var attemptCount: Int = 0
+    /// The versions waiting to be cooked. Zero hides the flask badge.
+    var toTestCount: Int = 0
 
     var body: some View {
         HStack(spacing: Theme.Spacing.s) {
@@ -25,13 +26,13 @@ struct RecipeHeaderBadges: View {
                 .accessibilityLabel("Version \(versionNumber)")
             }
 
-            if attemptCount > 0 {
+            if toTestCount > 0 {
                 capsule {
                     Image(systemName: "flask")
-                    Text("\(attemptCount)")
+                    Text("\(toTestCount)")
                         .monospacedDigit()
                 }
-                .accessibilityLabel("\(attemptCount) essais")
+                .accessibilityLabel("\(toTestCount) versions à tester")
             }
         }
     }
@@ -52,7 +53,7 @@ struct RecipeHeaderBadges: View {
 #Preview {
     VStack(alignment: .leading, spacing: 12) {
         ForEach(RecipeType.allCases) { type in
-            RecipeHeaderBadges(type: type, versionNumber: 3, attemptCount: 2)
+            RecipeHeaderBadges(type: type, versionNumber: 3, toTestCount: 2)
         }
         RecipeHeaderBadges(type: .dish, versionNumber: nil)
     }
