@@ -6,7 +6,11 @@ store panels, archives, uploads, submits for review and publishes on approval.
 ## Releasing
 
 1. Write the release notes in English under `## Unreleased` in `CHANGELOG.md`, then the French
-   translation under `## Unreleased` in `CHANGELOG.fr.md`.
+   translation under `## Unreleased` in `CHANGELOG.fr.md`. These notes are what the store shows
+   under "What's New", so they are written for whoever taps it, not for the team: what earns a
+   line and what stays in the git history is
+   [changelog-best-practices.md](./changelog-best-practices.md). The French file is the one the
+   pipeline reads.
 2. Rename `## Unreleased` to `## <version> (<YYYY.MM.DD>)` in **both** files. There is no CI
    date stamp; versioning is manual, and the pipeline refuses to run while an `## Unreleased`
    section remains — the app would otherwise display "Unreleased" as a version title.

@@ -48,7 +48,7 @@ Everything versioned and technical is **English**: commits, code, comments, docs
 3. **Commit freely, one task = one commit**: commit each finished task without asking, never bundle tasks — a rollback is a clean `git revert`. English messages, Conventional Commits, `Co-Authored-By:` trailer.
 4. **Close every task with the surfaces touched, then the diff size** ([docs/collaboration.md](docs/collaboration.md#closing-a-task-surfaces-then-diff-size)): one sentence on which of **the database**, **the backend** and **the iOS app** changed (the deployment blast radius), then `git show --stat HEAD | tail -1` and the lines added / removed — a refactor that only adds is a refactor that forgot to delete.
 5. **Never push until the user explicitly says "push"**, and **never open a PR**: a push goes straight to `origin/main` (`git push origin HEAD:main`), whatever the working branch, following the [push protocol](docs/git-workflow.md#push-protocol-only-when-the-user-says-push) — reshape the pending commits, Biome autofix, regenerate the iOS GraphQL API if the schema changed, push, watch CI to green.
-6. **Not at push time**: never touch `README.md` (updated on its own, when asked) or the changelogs — the changelog is written only during an [App Store release](docs/app-store-release.md).
+6. **Not at push time**: never touch `README.md` (updated on its own, when asked) or the changelogs — the changelog is written only during an [App Store release](docs/app-store-release.md), and it is written for whoever taps "What's New", never as a development log ([changelog-best-practices.md](docs/changelog-best-practices.md)).
 
 ## Backend Patterns (TypeScript / Nitro)
 
