@@ -60,22 +60,6 @@ struct DebugGallery: View {
             RecipeDetailGalleryScreen(recipe: Fixtures.bourguignon, focusVersionNumber: 3)
         case "attempt-pending":
             RecipeDetailGalleryScreen(recipe: Fixtures.bourguignon, focusVersionNumber: 4)
-        case "execute":
-            NavigationStack {
-                ExecutePage(
-                    recipeTitle: Fixtures.bourguignon.title,
-                    version: Fixtures.bourguignonV4,
-                    onDone: {}
-                )
-            }
-        case "execute-thermomix":
-            NavigationStack {
-                ExecutePage(
-                    recipeTitle: Fixtures.risotto.title,
-                    version: Fixtures.risottoV2,
-                    onDone: {}
-                )
-            }
         case "capture":
             NavigationStack {
                 CapturePage(

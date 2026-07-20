@@ -34,10 +34,9 @@ struct RecipeRouteView: View {
     }
 }
 
-/// Installs the recipe push destinations and the execution full-screen cover.
+/// Installs the recipe push destinations.
 struct RecipeFlowModifier: ViewModifier {
     @Binding var path: NavigationPath
-    @Binding var execution: ExecutionRequest?
     let onReload: () -> Void
     let onDelete: (String) -> Void
     let onDeleteVersion: (String, Int) -> Void
@@ -53,23 +52,18 @@ struct RecipeFlowModifier: ViewModifier {
                     onDeleteVersion: onDeleteVersion
                 )
             }
-            .fullScreenCover(item: $execution) { request in
-                ExecuteFlowView(request: request) { onReload() }
-            }
     }
 }
 
 extension View {
     func recipeFlow(
         path: Binding<NavigationPath>,
-        execution: Binding<ExecutionRequest?> = .constant(nil),
         onReload: @escaping () -> Void,
         onDelete: @escaping (String) -> Void,
         onDeleteVersion: @escaping (String, Int) -> Void
     ) -> some View {
         modifier(RecipeFlowModifier(
             path: path,
-            execution: execution,
             onReload: onReload,
             onDelete: onDelete,
             onDeleteVersion: onDeleteVersion

@@ -78,7 +78,7 @@ struct RecipeDetailView: View {
                 // The record-attempt flow as a half-screen sheet: capture at .medium,
                 // grows to .large for the AI proposal.
                 .sheet(item: $recordRequest) { request in
-                    ExecuteFlowView(request: request, presentation: .sheet) {
+                    ExecuteFlowView(request: request) {
                         onReload()
                         Task { await viewModel.load() }
                     }
@@ -357,10 +357,6 @@ struct RecipeDetailView: View {
     }
 
     private func presentRecordAttempt(versionNumber: Int) {
-        recordRequest = ExecutionRequest(
-            recipeId: recipeId,
-            versionNumber: versionNumber,
-            startAtCapture: true
-        )
+        recordRequest = ExecutionRequest(recipeId: recipeId, versionNumber: versionNumber)
     }
 }

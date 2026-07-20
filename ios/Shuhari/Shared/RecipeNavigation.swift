@@ -6,16 +6,13 @@ enum RecipeRoute: Hashable {
     case attempt(recipeId: String, versionNumber: Int)
 }
 
-/// A request to run the execution flow (presented as a full-screen cover).
-/// `startAtCapture` skips the step-by-step `ExecutePage` and opens the attempt
-/// capture directly — the recipe sheet already shows the recipe, so re-displaying it
-/// would be redundant.
+/// A request to run the execution flow on a given version, presented as a sheet from
+/// the recipe's record CTA.
 struct ExecutionRequest: Identifiable, Hashable {
     let recipeId: String
     let versionNumber: Int
-    var startAtCapture: Bool = false
 
-    var id: String { "\(recipeId)#\(versionNumber)#\(startAtCapture)" }
+    var id: String { "\(recipeId)#\(versionNumber)" }
 }
 
 /// Identifiable wrapper to drive a `.sheet(item:)` from a recipe id.

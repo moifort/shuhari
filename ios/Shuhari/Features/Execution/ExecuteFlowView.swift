@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The execution flow: execute → capture → record → next step.
+/// The execution flow: capture → record → next step.
 ///
 /// Where the cook lands depends on the remark. A blank remark asks for nothing: the
 /// rating (and photo) is recorded on the version cooked, and the flow ends. A written
@@ -8,16 +8,11 @@ import SwiftUI
 /// recorded on the version the accepted proposal creates, leaving the version cooked
 /// untouched. Nothing is saved before that: closing the proposal saves nothing.
 ///
-/// Presented as a `fullScreenCover` (`.cover`) from Home/replay, or as a half-screen
-/// `.sheet` from the recipe sheet's record CTA; on completion it dismisses and asks
-/// the caller to refresh.
+/// Presented as a half-screen `.sheet` from the recipe sheet's record CTA — the sheet
+/// already shows the recipe, so the flow opens straight on the attempt capture. On
+/// completion it dismisses and asks the caller to refresh.
 struct ExecuteFlowView: View {
-    /// How the flow is hosted. `.sheet` sizes the capture at `.medium` and grows to
-    /// `.large` for the AI proposal; `.cover` is the full-screen presentation.
-    enum Presentation { case cover, sheet }
-
     let request: ExecutionRequest
-    var presentation: Presentation = .cover
     let onFinished: () -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -38,38 +33,23 @@ struct ExecuteFlowView: View {
     @State private var isAcceptingProposal = false
     @State private var isCreatingRecipe = false
 
-    private enum Step: Hashable { case capture, proposal }
+    /// The only push the flow makes: the capture is the root, the proposal follows it.
+    private enum Step: Hashable { case proposal }
 
     var body: some View {
-        if presentation == .sheet {
-            flow
-                .presentationDetents([.medium, .large], selection: $detent)
-                .presentationDragIndicator(.visible)
-        } else {
-            flow
-        }
+        flow
+            .presentationDetents([.medium, .large], selection: $detent)
+            .presentationDragIndicator(.visible)
     }
 
     private var flow: some View {
         NavigationStack(path: $path) {
             Group {
-                if let recipe, let version = recipe.version(request.versionNumber) {
-                    Group {
-                        if request.startAtCapture {
-                            // The recipe sheet already shows the recipe: go straight to the
-                            // attempt capture instead of re-displaying the version.
-                            captureScreen(recipe: recipe, version: version)
-                        } else {
-                            ExecutePage(
-                                recipeTitle: recipe.title,
-                                version: version,
-                                onDone: { path.append(.capture) }
-                            )
+                if let recipe, recipe.version(request.versionNumber) != nil {
+                    captureScreen
+                        .navigationDestination(for: Step.self) { step in
+                            destination(step, recipe: recipe)
                         }
-                    }
-                    .navigationDestination(for: Step.self) { step in
-                        destination(step, recipe: recipe, version: version)
-                    }
                 } else if let loadError {
                     ContentUnavailableView("Erreur", systemImage: "exclamationmark.triangle", description: Text(loadError))
                 } else {
@@ -91,10 +71,8 @@ struct ExecuteFlowView: View {
     }
 
     @ViewBuilder
-    private func destination(_ step: Step, recipe: Recipe, version: RecipeVersion) -> some View {
+    private func destination(_ step: Step, recipe: Recipe) -> some View {
         switch step {
-        case .capture:
-            captureScreen(recipe: recipe, version: version)
         case .proposal:
             if let proposal {
                 // The ephemeral AI proposal is already in memory (from `save`);
@@ -120,7 +98,7 @@ struct ExecuteFlowView: View {
         }
     }
 
-    private func captureScreen(recipe: Recipe, version: RecipeVersion) -> some View {
+    private var captureScreen: some View {
         CapturePage(isSaving: isSaving) { rating, remarks, photo in
             Task { await save(rating: rating, remarks: remarks, photo: photo) }
         }
