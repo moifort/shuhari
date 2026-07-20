@@ -1,3 +1,4 @@
+import { EntitlementQuery } from '~/domain/entitlement/query'
 import { allowsUrlImport } from '~/domain/quota/business-rules'
 import { QuotaCommand } from '~/domain/quota/command'
 import { QuotaQuery } from '~/domain/quota/query'
@@ -59,7 +60,8 @@ export namespace ProposalUseCase {
     versionNumber: VersionNumber,
     request: ProposalRequest,
   ) => {
-    if (await QuotaQuery.exhaustedFor(userId, 'iteration')) return 'quota-exhausted'
+    const plan = await EntitlementQuery.planOf(userId)
+    if (await QuotaQuery.exhaustedFor(userId, plan, 'iteration')) return 'quota-exhausted'
     const recipe = await RecipeQuery.byId(userId, recipeId)
     if (recipe === 'not-found') return 'not-found'
     const version = await RecipeQuery.versionBy(recipeId, versionNumber)
@@ -119,7 +121,8 @@ export namespace ProposalUseCase {
     versionNumber: VersionNumber,
     requested: Remarks,
   ) => {
-    if (await QuotaQuery.exhaustedFor(userId, 'iteration')) return 'quota-exhausted'
+    const plan = await EntitlementQuery.planOf(userId)
+    if (await QuotaQuery.exhaustedFor(userId, plan, 'iteration')) return 'quota-exhausted'
     const recipe = await RecipeQuery.byId(userId, recipeId)
     if (recipe === 'not-found') return 'not-found'
     const version = await RecipeQuery.versionBy(recipeId, versionNumber)
@@ -148,9 +151,9 @@ export namespace ProposalUseCase {
   // read for the plan and the quota alone. Reading a web page is what the
   // subscription pays for, so a free cook is turned away before any billing.
   export const fromPhoto = async (userId: UserId, source: ImportSource) => {
-    if (source.kind === 'url' && !allowsUrlImport(await QuotaQuery.planOf(userId)))
-      return 'premium-required'
-    if (await QuotaQuery.exhaustedFor(userId, 'import')) return 'quota-exhausted'
+    const plan = await EntitlementQuery.planOf(userId)
+    if (source.kind === 'url' && !allowsUrlImport(plan)) return 'premium-required'
+    if (await QuotaQuery.exhaustedFor(userId, plan, 'import')) return 'quota-exhausted'
     const analysis = await Ai.analyzeImport(source)
     // A source the AI found no recipe in costs the cook nothing: it is a miss, not
     // an import. A cache hit does count — the quota is a product promise, not a

@@ -5,10 +5,6 @@ import { fakeDb, resetFakeFirestore } from '~/test/fake-firestore'
 
 mock.module('~/system/firebase', () => ({ db: fakeDb }))
 
-// The plan comes from configuration until in-app purchase ships (see `QuotaQuery.planOf`).
-let premiumUserIds: UserId[] = []
-mock.module('~/system/config', () => ({ config: () => ({ premiumUserIds }) }))
-
 const { QuotaCommand } = await import('~/domain/quota/command')
 const { QuotaQuery } = await import('~/domain/quota/query')
 const { FREE_LIMITS, monthOf } = await import('~/domain/quota/business-rules')
@@ -20,7 +16,6 @@ const docId = `${userId}_${month}`
 let fake = resetFakeFirestore()
 beforeEach(() => {
   fake = resetFakeFirestore()
-  premiumUserIds = []
 })
 
 describe('QuotaCommand.record', () => {
@@ -84,25 +79,17 @@ describe('QuotaQuery', () => {
   test('exhaustedFor turns true exactly at the free limit', async () => {
     for (const _ of Array(FREE_LIMITS.import - 1).keys())
       await QuotaCommand.record(userId, 'import')
-    expect(await QuotaQuery.exhaustedFor(userId, 'import')).toBe(false)
+    expect(await QuotaQuery.exhaustedFor(userId, 'free', 'import')).toBe(false)
 
     await QuotaCommand.record(userId, 'import')
-    expect(await QuotaQuery.exhaustedFor(userId, 'import')).toBe(true)
+    expect(await QuotaQuery.exhaustedFor(userId, 'free', 'import')).toBe(true)
     // The other meter is untouched.
-    expect(await QuotaQuery.exhaustedFor(userId, 'iteration')).toBe(false)
-  })
-
-  test('planOf reads the configured Premium cooks, everyone else is free', async () => {
-    expect(await QuotaQuery.planOf(userId)).toBe('free')
-    premiumUserIds = [userId]
-    expect(await QuotaQuery.planOf(userId)).toBe('premium')
-    expect(await QuotaQuery.planOf('user-2' as UserId)).toBe('free')
+    expect(await QuotaQuery.exhaustedFor(userId, 'free', 'iteration')).toBe(false)
   })
 
   test('a Premium cook is never exhausted', async () => {
-    premiumUserIds = [userId]
     for (const _ of Array(FREE_LIMITS.import + 1).keys())
       await QuotaCommand.record(userId, 'import')
-    expect(await QuotaQuery.exhaustedFor(userId, 'import')).toBe(false)
+    expect(await QuotaQuery.exhaustedFor(userId, 'premium', 'import')).toBe(false)
   })
 })

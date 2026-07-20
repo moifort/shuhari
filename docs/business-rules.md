@@ -126,10 +126,18 @@ app's only variable cost, so it is the only thing metered (`quota` domain, dimen
   has answered: a Gemini failure never costs a cook a quota, and a source with no recipe in it
   (`no-recipe-found`) is a miss, not an import. A cache hit *does* count — the quota is a product
   promise, not a meter on our bill.
-- **The plan is not yet bought.** In-app purchase is not shipped; `QuotaQuery.planOf` reads
-  `NITRO_PREMIUM_USER_IDS` (comma-separated Firebase uids). That single function is the seam a
-  verified App Store entitlement will replace — nothing else in the domain knows where the plan
-  comes from.
+- **Premium is bought from Apple, and proved to us.** `EntitlementQuery.planOf` is the single
+  answer to "what is this cook entitled to", and it reads the `entitlements` document — written
+  only from a transaction whose signature checked out against Apple's root certificates. The app
+  is never believed: it hands over the signed transaction, nothing more.
+  `NITRO_PREMIUM_USER_IDS` stays as a comp list (the maker's account, a reviewer's).
+- **A purchase names its cook.** `appAccountToken` is a version-5 UUID derived from the cook's id
+  (`entitlement/business-rules.ts`), handed to StoreKit at purchase time and returned inside the
+  signed transaction. A transaction that does not carry it, or carries someone else's, is refused
+  — that is what stops a signed receipt from being replayed onto another account. The derivation
+  is frozen: changing it detaches every subscription already sold.
+- **Cancelling is not losing.** Premium runs to `expiresAt` whatever happens; only a refund
+  (`revokedAt`, pushed by the webhook) ends it on the spot.
 
 ## Style rules that bite here
 

@@ -43,13 +43,15 @@ server/
 │           └── graphql/         # enums, types, inputs, queries, mutations (Pothos)
 ├── routes/                      # HTTP endpoints (auto-scanned by Nitro)
 │   ├── graphql.ts               # GET/POST /graphql → Apollo
-│   └── admin/migrate.post.ts    # POST /admin/migrate → runs migrations
+│   ├── admin/migrate.post.ts    # POST /admin/migrate → runs migrations
+│   └── apple/notifications.post.ts # POST /apple/notifications → App Store Server Notifications
 ├── middleware/auth.ts           # Firebase ID token / admin token auth (H3 middleware)
 ├── plugins/
 │   ├── 01-sentry.ts             # error reporting (Sentry, DSN from NITRO_SENTRY_DSN)
 │   └── 02-graphql.ts            # boots ApolloServer once with the assembled schema
 ├── system/                      # infrastructure concerns + system-hosted mini-domains
 │   ├── ai/                      # Gemini engine: Ai.analyzeImport + Ai.proposeNext
+│   ├── apple/                   # App Store signature verification + Apple root certificates
 │   ├── changelog/               # release notes (parses the changelog asset — read-only)
 │   ├── portability/             # user-data export/import (orchestrates over recipe)
 │   ├── config/                  # runtime config (env)
@@ -120,7 +122,10 @@ append-only collection keyed by a deterministic id:
 **Standalone documents.** Not every collection is an aggregate: `ai-quotas` holds one document
 per cook and per calendar month, keyed `${userId}_${month}` (`quota` domain). Nothing is scanned
 and nothing is purged — last month's document is simply never read again, and an absent document
-reads back as both meters at zero.
+reads back as both meters at zero. `entitlements` (`entitlement` domain) holds one document per
+cook, keyed by `userId`, overwritten in place on every renewal; it also carries the
+`appAccountToken`, the one field queried rather than keyed (the App Store notifications name a
+cook only through it).
 
 Multi-document writes are made atomic with `atomically` (a single committed `WriteBatch`);
 import/restore use `bulkSave` (bounded-concurrency individual sets, above the 500-op batch

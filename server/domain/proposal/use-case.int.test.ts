@@ -36,8 +36,9 @@ mock.module('~/system/ai', () => ({
   },
 }))
 
-// The plan comes from configuration until in-app purchase ships (see
-// `QuotaQuery.planOf`): tests grant Premium by putting the uid in this list.
+// Premium is granted by a verified App Store transaction (see
+// `EntitlementQuery.planOf`) or, for comped accounts, by this configured list —
+// which is how these tests grant it without signing a transaction.
 let premiumUserIds: UserId[] = []
 mock.module('~/system/config', () => ({ config: () => ({ premiumUserIds }) }))
 
@@ -149,12 +150,13 @@ describe('ProposalUseCase.fromAttempt', () => {
     // The proposal carries the complete tips list of the version it would create.
     expect(result.tips).toEqual(['Servir avec du riz' as Tip])
 
-    // Three keyed doc reads: the recipe pointer, the cooked version — the attempt
-    // itself comes from the caller, so there is no collection scan and no N+1 —
-    // and the quota, read once and shared by the check before the call and the
-    // record after it (`memoizedPerRequest`). The only write is that quota: no
-    // version and no recipe is touched until the proposal is accepted.
-    expect(fake.docReads - docReadsBefore).toBe(3)
+    // Four keyed doc reads: the entitlement (what plan the cook is on), the
+    // recipe pointer, the cooked version — the attempt itself comes from the
+    // caller, so there is no collection scan and no N+1 — and the quota, read
+    // once and shared by the check before the call and the record after it
+    // (`memoizedPerRequest`). The only write is that quota: no version and no
+    // recipe is touched until the proposal is accepted.
+    expect(fake.docReads - docReadsBefore).toBe(4)
     expect(fake.queryReads - queryReadsBefore).toBe(0)
     expect(fake.batches.length).toBe(batchesBefore)
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.rating).toBeUndefined()
@@ -222,8 +224,8 @@ describe('ProposalUseCase.fromImprovement', () => {
       steps: stepList('Saisir', 'Mijoter'),
     })
 
-    // Same budget as fromAttempt: the recipe pointer, the version and the quota.
-    expect(fake.docReads - docReadsBefore).toBe(3)
+    // Same budget as fromAttempt: entitlement, recipe pointer, version, quota.
+    expect(fake.docReads - docReadsBefore).toBe(4)
     expect(fake.batches.length).toBe(batchesBefore)
   })
 
@@ -250,10 +252,10 @@ describe('ProposalUseCase.fromTips', () => {
     if (typeof result === 'string') throw new Error('expected tips')
     expect(result).toEqual(['Servir avec du riz' as Tip, 'Se congèle bien' as Tip])
 
-    // Same budget as a version proposal — the recipe pointer, the version and the
+    // Same budget as a version proposal — entitlement, recipe pointer, version,
     // quota — and the version's own tips are left exactly as they were until
     // updateTips.
-    expect(fake.docReads - docReadsBefore).toBe(3)
+    expect(fake.docReads - docReadsBefore).toBe(4)
     expect(fake.batches.length).toBe(batchesBefore)
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.tips).toEqual([])
   })

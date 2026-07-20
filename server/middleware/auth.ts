@@ -16,6 +16,12 @@ export default defineEventHandler(async (event) => {
     return
   }
 
+  // App Store Server Notifications: the caller is Apple, which carries no token
+  // of ours. Its proof of origin is the signature on the payload, verified in the
+  // handler against Apple's root certificates — a bearer check here would only be
+  // security theatre.
+  if (path.startsWith('/apple/')) return
+
   // Local dev only: let the GraphiQL/Sandbox web tool reach /graphql without a
   // Firebase token. Stripped in production builds (import.meta.dev is false there).
   // Compare the pathname only, so GET query execution (/graphql?query=…) matches too.

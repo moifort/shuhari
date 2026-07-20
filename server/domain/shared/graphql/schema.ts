@@ -22,6 +22,11 @@ import '~/domain/quota/infrastructure/graphql/enums'
 import '~/domain/quota/infrastructure/graphql/types'
 import '~/domain/quota/infrastructure/graphql/queries'
 
+// Entitlement domain (what the App Store sold — the sole source of the plan)
+import '~/domain/entitlement/infrastructure/graphql/types'
+import '~/domain/entitlement/infrastructure/graphql/queries'
+import '~/domain/entitlement/infrastructure/graphql/mutations'
+
 // Changelog (application release notes)
 import '~/system/changelog/infrastructure/graphql/types'
 import '~/system/changelog/infrastructure/graphql/queries'

@@ -1,7 +1,7 @@
 import { QuotaMonth as toQuotaMonth } from '~/domain/quota/primitives'
-import type { AiAction, Plan, Quota, QuotaMonth } from '~/domain/quota/types'
+import type { AiAction, Quota, QuotaMonth } from '~/domain/quota/types'
 import { Count } from '~/domain/shared/primitives'
-import type { Count as CountType, UserId } from '~/domain/shared/types'
+import type { Count as CountType, Plan, UserId } from '~/domain/shared/types'
 
 // What a free cook gets each calendar month. AI is the app's only variable cost,
 // so these two numbers are the whole free tier: recipes themselves stay unlimited.

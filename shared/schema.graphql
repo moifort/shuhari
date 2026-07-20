@@ -117,6 +117,29 @@ input DishContentInput {
   steps: [StepText!]!
 }
 
+"""
+What you are entitled to, and what the App Store sold you to get there. Read it before starting a purchase: `appAccountToken` is what ties the payment back to your account.
+"""
+type Entitlement {
+  """
+  The UUID to pass to StoreKit as the purchase’s account token, e.g. `"1f2e3d4c-5b6a-5978-8695-a4b3c2d1e0f9"`. Without it a purchase cannot be matched to you, and syncing it will be refused.
+  """
+  appAccountToken: String!
+
+  """
+  When the paid period ends, e.g. `"2027-07-20T09:12:00.000Z"` — `null` when there is no subscription. A cancelled subscription keeps its Premium until this date.
+  """
+  expiresOn: DateTime
+
+  """The plan in force right now, e.g. `PREMIUM`"""
+  plan: Plan!
+
+  """
+  The subscription bought, e.g. `"com.polyforms.shuhari.app.premium.yearly"` — `null` when there is none
+  """
+  productId: String
+}
+
 """Structured recipe extracted from an import source (editable preview)"""
 type ImportAnalysis {
   """The dish category detected by the AI"""
@@ -419,6 +442,25 @@ type Mutation {
   ): TipsProposal!
 
   """
+  Hand over a transaction the App Store signed for you — after a purchase, after a restore, and on every launch while a subscription is running. The signature is verified against Apple’s root certificates and the purchase must carry your `appAccountToken`, so this is what grants Premium: nothing else does.
+  
+  Answers `INVALID_TRANSACTION` when the signature does not check out, and `TRANSACTION_NOT_YOURS` when the purchase belongs to another account.
+  
+  ```graphql
+  syncEntitlement(signedTransaction: "eyJhbGciOi...") {
+    plan
+    expiresOn
+  }
+  ```
+  """
+  syncEntitlement(
+    """
+    The JWS representation of the StoreKit transaction, e.g. the `jwsRepresentation` of a verified entitlement
+    """
+    signedTransaction: String!
+  ): Entitlement!
+
+  """
   Retouch a recipe: rename it, refile it under another course, mark it as a favourite, or any combination. Returns the updated recipe.
   
   ```graphql
@@ -559,6 +601,20 @@ type Query {
   ```
   """
   changelog: [ChangelogEntry!]!
+
+  """
+  What you are entitled to today, and the account token to start a purchase with. The app reads this before showing the subscription sheet.
+  
+  ```graphql
+  entitlement {
+    plan
+    appAccountToken
+    productId
+    expiresOn
+  }
+  ```
+  """
+  entitlement: Entitlement!
 
   """
   Download all your data as one JSON text — a full backup of every recipe and version you own (e.g. your `"Grandma’s lasagna"` and all its attempts). Pair it with importData to move or restore your library.

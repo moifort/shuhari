@@ -1,6 +1,7 @@
 import { limitOf, remaining, renewsOn, used } from '~/domain/quota/business-rules'
-import type { AiAction, Plan, Quota } from '~/domain/quota/types'
+import type { AiAction, Quota } from '~/domain/quota/types'
 import { builder } from '~/domain/shared/graphql/builder'
+import type { Plan } from '~/domain/shared/types'
 import { PlanEnum } from './enums'
 
 // One meter, read for the plan in force. `limit` and `remaining` are absent on an

@@ -1,3 +1,4 @@
+import { EntitlementQuery } from '~/domain/entitlement/query'
 import { QuotaQuery } from '~/domain/quota/query'
 import { builder } from '~/domain/shared/graphql/builder'
 import { QuotaType } from './types'
@@ -20,7 +21,7 @@ builder.queryField('quota', (t) =>
       '```',
     ].join('\n'),
     resolve: async (_root, _args, { userId }) => ({
-      plan: await QuotaQuery.planOf(userId),
+      plan: await EntitlementQuery.planOf(userId),
       quota: await QuotaQuery.current(userId),
     }),
   }),
