@@ -83,3 +83,6 @@ server/system/changelog-content.ts
 # Screenshots produced by the UI screenshot test and by the debug gallery —
 # review material, regenerated on demand, never a source of truth.
 screenshots/
+
+# Superpowers brainstorming companion
+.superpowers/
