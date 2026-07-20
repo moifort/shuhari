@@ -73,13 +73,13 @@ variable "google_api_key" {
 }
 
 variable "apple_app_id" {
-  description = "The app's numeric App Store id (App Store Connect > App Information). Exposed as NITRO_APPLE_APP_ID; required to verify a Production App Store signature. Public information, not a secret."
+  description = "The app's numeric App Store id (App Store Connect > App Information). Exposed as NITRO_APPLE_APP_ID; required to verify a Production App Store signature. Public and stable, so it is defaulted here like ios_bundle_id rather than passed by the deploy workflow."
   type        = string
-  default     = ""
+  default     = "6792835124"
 }
 
 variable "premium_user_ids" {
-  description = "Firebase uids comped Premium without paying, comma-separated (the maker's own account, a reviewer's). Exposed as NITRO_PREMIUM_USER_IDS. An override on top of real App Store entitlements — an access list, not a credential."
+  description = "Firebase uids comped Premium without paying, comma-separated (the maker's own account, a reviewer's). Exposed as NITRO_PREMIUM_USER_IDS. An override on top of real App Store entitlements — an access list, not a credential, but a personal identifier, so it is passed in rather than defaulted in this public repo."
   type        = string
   default     = ""
 }
