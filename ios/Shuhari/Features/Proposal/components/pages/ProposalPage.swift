@@ -76,7 +76,7 @@ struct ProposalPage: View {
 
     var body: some View {
         List {
-            summarySection
+            ChangeSummaryCard(summary: proposal.changeSummary, rationale: proposal.rationale)
             if !ingredients.isEmpty {
                 ingredientsSection
             }
@@ -109,26 +109,6 @@ struct ProposalPage: View {
                 .accessibilityLabel("Valider")
             }
         }
-    }
-
-    // MARK: - Summary
-
-    /// The card is dressed in the change accent, in three shades: the summary at
-    /// full strength, the rationale softened, the row tinted behind them — the
-    /// same 0.12 wash the Thermomix badges use.
-    private var summarySection: some View {
-        Section {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(proposal.changeSummary)
-                    .font(.headline)
-                    .foregroundStyle(Theme.Status.changed)
-                Text(proposal.rationale)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.Status.changed.opacity(0.75))
-            }
-            .padding(.vertical, 2)
-        }
-        .listRowBackground(Theme.Status.changed.opacity(0.12))
     }
 
     // MARK: - Ingredients

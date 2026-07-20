@@ -159,13 +159,16 @@ struct RecipeDetailView: View {
         )
     }
 
-    /// Step indices whose exact text is absent from `previous` — the rows that
-    /// changed. No previous version → nothing changed.
+    /// Step indices absent from `previous` — the rows that changed. A step matches
+    /// on its text AND its machine settings, exactly as the proposal screen marks
+    /// its own rows: a Thermomix step retimed or reheated changes without a word of
+    /// its text moving. No previous version → nothing changed.
     private func modifiedSteps(_ version: RecipeVersion, previous: RecipeVersion?) -> Set<Int> {
         guard let previous else { return [] }
+        let previousSteps = previous.content.stepsWithSettings
         return Set(
-            version.steps.enumerated()
-                .filter { !previous.steps.contains($0.element) }
+            version.content.stepsWithSettings.enumerated()
+                .filter { !previousSteps.contains($0.element) }
                 .map(\.offset)
         )
     }

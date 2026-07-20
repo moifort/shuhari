@@ -19,7 +19,7 @@ struct ReferenceVersionSection: View {
                     ThermomixStepsList(steps: steps, modified: modified)
                 }
             } header: {
-                Text("Description")
+                Text("Étapes")
             }
         }
     }

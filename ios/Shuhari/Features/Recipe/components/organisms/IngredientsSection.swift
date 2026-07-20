@@ -8,15 +8,17 @@ struct IngredientsSection: View {
     /// Names of ingredients changed vs the previous version — flagged with an
     /// orange dot. Empty (the default) renders exactly like the plain recipe sheet.
     var modified: Set<String> = []
+    /// Pulls the header up under the badge line above it — the plain recipe sheet's
+    /// compact look. False when a card sits above instead, which needs its own air.
+    var compactHeader: Bool = true
 
     var body: some View {
         if !ingredients.isEmpty {
             Section {
                 IngredientsGrid(items: ingredients.map { ($0.name, $0.quantity) }, modified: modified)
             } header: {
-                // Trim the header's built-in top padding so the recipe sheet stays compact.
                 Text("Ingrédients")
-                    .padding(.top, -14)
+                    .padding(.top, compactHeader ? -14 : 0)
             }
         }
     }
