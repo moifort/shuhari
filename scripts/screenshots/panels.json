@@ -1,0 +1,22 @@
+[
+  {
+    "screen": "cuisine",
+    "caption": "Un carnet qui range\net qui classe",
+    "subtitle": "Par type, par catégorie, en favoris — avec le nombre de versions et la meilleure note de chaque recette."
+  },
+  {
+    "screen": "import-preview",
+    "caption": "Une photo suffit\npour saisir une recette",
+    "subtitle": "L'IA en extrait le titre, les ingrédients, les étapes et la catégorie."
+  },
+  {
+    "screen": "proposal",
+    "caption": "Une remarque suffit\npour faire progresser la recette",
+    "subtitle": "L'IA propose la version suivante et surligne chaque quantité modifiée."
+  },
+  {
+    "screen": "recipe-thermomix",
+    "caption": "Les recettes Thermomix,\nréglages compris",
+    "subtitle": "Vitesse, température et durée restent attachées à chaque étape."
+  }
+]
