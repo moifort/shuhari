@@ -46,15 +46,13 @@ is pure ceremony. **Never open one, never suggest one.** On "push", the work goe
    asset-catalog `Contents.json`, which CI's `bunx biome check` lints too. Then run `bun run lint`
    to confirm it's clean, and commit any changes. This is what keeps the Unit Tests job (which
    runs `biome check`) green — a local `bun test` alone does **not** cover Biome.
-3. **README** (`README.md`): update the features / tech-stack sections if the pushed work
-   changed them.
-4. **iOS GraphQL API** (only if the GraphQL schema changed): run `bun run generate:graphql`,
+3. **iOS GraphQL API** (only if the GraphQL schema changed): run `bun run generate:graphql`,
    then `bun run generate:ios`, and commit the regenerated `shared/schema.graphql`
    and the generated Apollo operations so the app's typed operations stay in sync with the
    deployed schema.
-5. **Push — straight to `origin/main`.** `git push origin HEAD:main` (fast-forward), whatever
+4. **Push — straight to `origin/main`.** `git push origin HEAD:main` (fast-forward), whatever
    the working branch — never via a pull request. Realign local `main` afterwards.
-6. **Analyze the CI.** A push to `main` fires two workflows — **Unit Tests** (`bun tsc`) and
+5. **Analyze the CI.** A push to `main` fires two workflows — **Unit Tests** (`bun tsc`) and
    **Deploy**. Watch them through to completion rather than assuming green: `gh run watch`, or
    `gh run list --branch main --limit 5` then `gh run view <id> --log-failed` on any failure.
    The push isn't done until CI is green; if a job fails, report it and fix it (a follow-up
