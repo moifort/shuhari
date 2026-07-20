@@ -46,7 +46,8 @@ struct HistoryPage: View {
                                 number: version.number,
                                 change: version.change,
                                 rating: version.rating,
-                                isFocus: version.number == recipe.versionToOpen.number
+                                isFocus: version.number == recipe.versionToOpen.number,
+                                toTest: version.toTest
                             )
                         }
                         .buttonStyle(.plain)

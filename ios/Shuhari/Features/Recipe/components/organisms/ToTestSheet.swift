@@ -72,12 +72,14 @@ struct ToTestSheet: View {
                         Button {
                             onSelect(version.number)
                         } label: {
-                            // No stars: a version waiting to be cooked has no rating.
+                            // A flask instead of stars: a version waiting to be cooked
+                            // has no rating.
                             VersionRow(
                                 number: version.number,
                                 change: version.change,
                                 rating: nil,
-                                isFocus: false
+                                isFocus: false,
+                                toTest: true
                             )
                         }
                         .buttonStyle(.plain)
