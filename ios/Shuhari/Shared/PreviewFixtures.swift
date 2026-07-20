@@ -288,10 +288,10 @@ enum Fixtures {
     /// A page of library rows spanning both cooking types and a couple of months —
     /// backs the paginated notebook list in previews and the debug gallery.
     static let libraryRecipes = [
-        LibraryRecipe(id: "bourguignon", title: "Bœuf bourguignon", type: .dish, category: .main, favorite: true, versionCount: 4, attemptCount: 3, bestRating: 5, updatedAt: Date()),
-        LibraryRecipe(id: "joues", title: "Joues de bœuf confites", type: .dish, category: .main, favorite: false, versionCount: 1, attemptCount: 1, bestRating: 4, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
-        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .thermomix, category: .main, favorite: false, versionCount: 2, attemptCount: 1, bestRating: 4, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
-        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .thermomix, category: .soup, favorite: true, versionCount: 1, attemptCount: 0, bestRating: nil, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
+        LibraryRecipe(id: "bourguignon", title: "Bœuf bourguignon", type: .dish, category: .main, favorite: true, versionCount: 4, toTestCount: 1, bestRating: 5, updatedAt: Date()),
+        LibraryRecipe(id: "joues", title: "Joues de bœuf confites", type: .dish, category: .main, favorite: false, versionCount: 1, toTestCount: 0, bestRating: 4, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
+        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .thermomix, category: .main, favorite: false, versionCount: 2, toTestCount: 1, bestRating: 4, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .thermomix, category: .soup, favorite: true, versionCount: 1, toTestCount: 0, bestRating: nil, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
     ]
 }
 #endif

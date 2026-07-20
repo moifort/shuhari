@@ -9,8 +9,8 @@ struct LibraryRecipe: Identifiable, Sendable {
     let category: DishCategory
     let favorite: Bool
     let versionCount: Int
-    /// How many of those versions were actually cooked — `0` while none was.
-    let attemptCount: Int
+    /// How many of those versions are waiting to be cooked — `0` when none is.
+    let toTestCount: Int
     let bestRating: Int?
     let updatedAt: Date
 }

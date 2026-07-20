@@ -39,12 +39,12 @@ export const bestRating = (versions: RecipeVersion[]): RecipeVersion | undefined
       undefined,
     )
 
-// How many times the recipe was actually cooked: one attempt per version that has
-// been executed. A version is its own attempt, so the count is the number of tried
-// versions — the planned ones (never cooked) count for nothing, and re-cooking a
-// version overwrites its outcome rather than adding an attempt.
-export const attemptCount = (versions: RecipeVersion[]): number =>
-  versions.filter((version) => version.executedAt !== undefined).length
+// How many versions are waiting to be cooked — the very list the recipe sheet's
+// flask CTA opens. Only an improvement puts a version there, and cooking it takes it
+// off, so the count is what the recipe still owes the kitchen, never what it went
+// through.
+export const toTestCount = (versions: RecipeVersion[]): number =>
+  versions.filter((version) => version.toTest === true).length
 
 // Which version the recipe sheet opens on when entered from the home: the best-rated
 // one, falling back to the latest version when nothing was ever cooked (a brand-new,

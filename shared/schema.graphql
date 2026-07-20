@@ -557,11 +557,6 @@ A dish you are perfecting over time. A recipe is the whole experiment, not a sin
 """
 type Recipe {
   """
-  How many times you actually cooked this recipe, e.g. `2` when two of its versions have been tried. `0` while none was ever cooked (every version still a plan).
-  """
-  attemptCount: Int!
-
-  """
   The best rating this recipe ever got, across all the attempts you have cooked, e.g. `5` (`1`–`5`). `null` if you have never tried any version yet.
   """
   bestRating: Rating
@@ -584,6 +579,11 @@ type Recipe {
 
   """Its name, e.g. `"Grandma’s lasagna"`"""
   title: RecipeTitle!
+
+  """
+  How many of its versions are waiting to be cooked, e.g. `1` after accepting one improvement. `0` when the recipe owes no cook (see the `toTest` field on Version).
+  """
+  toTestCount: Int!
 
   """
   Whether it is a cooked dish (`DISH`) or a Thermomix recipe (`THERMOMIX`)

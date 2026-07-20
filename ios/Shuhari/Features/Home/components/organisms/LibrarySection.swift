@@ -58,7 +58,7 @@ struct LibrarySection: View {
                 type: recipe.type,
                 category: recipe.category,
                 versionCount: recipe.versionCount,
-                attemptCount: recipe.attemptCount,
+                toTestCount: recipe.toTestCount,
                 bestRating: recipe.bestRating,
                 favorite: recipe.favorite
             )

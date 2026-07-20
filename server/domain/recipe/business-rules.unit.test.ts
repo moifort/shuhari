@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 import {
-  attemptCount,
   bestRating,
   categoryRank,
   nextVersionNumber,
+  toTestCount,
   versionToOpen,
 } from '~/domain/recipe/business-rules'
 import {
@@ -16,14 +16,18 @@ import {
 const v = (n: number) => n as VersionNumber
 const rating = (n: number) => n as Rating
 
-// Minimal RecipeVersion fixture: bestRating/versionToOpen/attemptCount only read
-// `number`, `rating`, `executedAt` and `basedOn`. An absent rating means the version
-// was never cooked — the domain always writes the rating and the cook date together.
-const version = (number: number, opts: { rating?: number; basedOn?: number } = {}): RecipeVersion =>
+// Minimal RecipeVersion fixture: bestRating/versionToOpen/toTestCount only read
+// `number`, `rating`, `toTest` and `basedOn`. An absent rating means the version was
+// never cooked — the domain always writes the rating and the cook date together.
+const version = (
+  number: number,
+  opts: { rating?: number; basedOn?: number; toTest?: true } = {},
+): RecipeVersion =>
   ({
     number: v(number),
     ...(opts.rating === undefined ? {} : { rating: rating(opts.rating), executedAt: new Date() }),
     ...(opts.basedOn === undefined ? {} : { basedOn: v(opts.basedOn) }),
+    ...(opts.toTest === undefined ? {} : { toTest: opts.toTest }),
   }) as RecipeVersion
 
 describe('categoryRank', () => {
@@ -52,13 +56,15 @@ describe('nextVersionNumber', () => {
   })
 })
 
-describe('attemptCount', () => {
-  test('counts nothing when no version was ever cooked', () => {
-    expect(attemptCount([])).toBe(0)
-    expect(attemptCount([version(1), version(2)])).toBe(0)
+describe('toTestCount', () => {
+  test('counts nothing when the recipe owes no cook', () => {
+    expect(toTestCount([])).toBe(0)
+    expect(toTestCount([version(1, { rating: 3 }), version(2)])).toBe(0)
   })
-  test('counts one attempt per cooked version, ignoring the planned ones', () => {
-    expect(attemptCount([version(1, { rating: 3 }), version(2), version(3, { rating: 5 })])).toBe(2)
+  test('counts the versions waiting to be cooked, whatever the rest went through', () => {
+    expect(toTestCount([version(1, { rating: 3 }), version(2, { toTest: true }), version(3)])).toBe(
+      1,
+    )
   })
 })
 

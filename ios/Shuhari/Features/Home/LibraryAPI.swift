@@ -40,7 +40,7 @@ enum LibraryAPI {
                     category: DishCategory(graphql: recipe.category),
                     favorite: recipe.favorite,
                     versionCount: recipe.versionCount,
-                    attemptCount: recipe.attemptCount,
+                    toTestCount: recipe.toTestCount,
                     bestRating: recipe.bestRating,
                     updatedAt: GraphQLHelpers.parseISO8601(recipe.updatedAt) ?? Date.distantPast
                 )
