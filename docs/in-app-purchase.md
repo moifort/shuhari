@@ -124,9 +124,20 @@ The app record and both products exist. What they are, for reference:
 | `NITRO_APPLE_ENVIRONMENT` | Pins verification to one environment. Blank tries Production then Sandbox — what a shipped app needs, since TestFlight and review sign in Sandbox. `Xcode` for the local StoreKit file |
 | `NITRO_PREMIUM_USER_IDS` | Comped accounts, granted Premium without paying. An access list, not a credential — also a plain environment variable |
 
-They are set through Terraform (`infra/variables.tf`, values in the untracked
-`infra/terraform.tfvars`) and reach the function as environment variables. Only genuine
-credentials go to Secret Manager — see [architecture.md](./architecture.md).
+They are set through Terraform (`infra/variables.tf`) and reach the function as plain
+environment variables; only genuine credentials go to Secret Manager — see
+[architecture.md](./architecture.md).
+
+**Terraform is applied by CI, not from a laptop.** `.github/workflows/deploy.yml` writes its own
+`infra/terraform.tfvars` from GitHub secrets and variables, then runs `terraform apply` on every
+push to `main`. A value that only exists in the local `infra/terraform.tfvars` never reaches
+production. So:
+
+- `apple_app_id` is **defaulted in `variables.tf`** (public, stable — like `ios_bundle_id`), and
+  the workflow passes nothing.
+- `premium_user_ids` comes from the repository variable **`PREMIUM_USER_IDS`** (Settings →
+  Secrets and variables → Actions → Variables). A Firebase uid is not a credential, but it is a
+  personal identifier and this repository is public, so it is not defaulted in the code.
 
 ## What is deliberately not built
 
