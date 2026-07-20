@@ -97,9 +97,15 @@ struct RecipeDetailView: View {
                     }
                 }
                 .sheet(isPresented: $showEdit) {
-                    RecipeEditSheet(initialTitle: recipe.title) { title in
-                        try await RecipeAPI.updateRecipe(id: recipeId, title: title)
+                    RecipeEditSheet(
+                        initialTitle: recipe.title,
+                        initialCategory: recipe.category
+                    ) { title, category in
+                        try await RecipeAPI.updateRecipe(id: recipeId, title: title, category: category)
                         await viewModel.load()
+                        // The library behind carries the new name and re-files the row
+                        // under its new course.
+                        onReload()
                     }
                 }
                 .alert("Supprimer cette recette ?", isPresented: $showDeleteConfirm) {

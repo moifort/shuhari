@@ -158,12 +158,18 @@ export const CreateRecipeInput = builder.inputType('CreateRecipeInput', {
 
 export const UpdateRecipeInput = builder.inputType('UpdateRecipeInput', {
   description:
-    'What you can retouch on a recipe: its name and whether it is a favourite. Send only what ' +
-    'you want to change — anything you leave out stays as it was.',
+    'What you can retouch on a recipe: its name, its course and whether it is a favourite. Send ' +
+    'only what you want to change — anything you leave out stays as it was.',
   fields: (t) => ({
     title: t.field({
       type: 'RecipeTitle',
       description: 'The new name, e.g. `"Nonna’s lasagna"` (leave out to keep the current one)',
+    }),
+    category: t.field({
+      type: DishCategoryEnum,
+      description:
+        'The new course, e.g. `DRINK` for a recipe the import filed as `MAIN` (leave out to keep ' +
+        'the current one)',
     }),
     favorite: t.boolean({
       description:

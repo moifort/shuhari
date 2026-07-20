@@ -48,6 +48,7 @@ export type NewVersionInput = {
 // it was; `favorite: false` un-favourites.
 export type UpdateRecipeInput = {
   title?: RecipeTitle
+  category?: DishCategory
   favorite?: boolean
 }
 
@@ -175,10 +176,11 @@ export namespace RecipeCommand {
     })
   }
 
-  // The two touches a cook can make to the aggregate itself: its name and whether it
-  // is a favourite. Each is optional — what is left out stays as it was. `favorite:
-  // false` drops the field entirely (the full-document write erases it), so absence
-  // is the single spelling of "not a favourite".
+  // The touches a cook can make to the aggregate itself: its name, its course and
+  // whether it is a favourite. Each is optional — what is left out stays as it was.
+  // `favorite: false` drops the field entirely (the full-document write erases it),
+  // so absence is the single spelling of "not a favourite". A category change keeps
+  // the library's sort honest on its own: `repository.save` re-derives `categoryRank`.
   export const update = async (userId: UserId, recipeId: RecipeId, input: UpdateRecipeInput) => {
     const recipe = await repository.findBy(userId, recipeId)
     if (!recipe) return 'not-found' as const
@@ -189,6 +191,7 @@ export namespace RecipeCommand {
     const updated: Recipe = {
       ...rest,
       ...(input.title ? { title: input.title } : {}),
+      ...(input.category ? { category: input.category } : {}),
       ...(favorite ? { favorite: true as const } : {}),
       updatedAt: new Date(),
     }

@@ -6,5 +6,6 @@ mutation UpdateRecipe($id: RecipeId!, $input: UpdateRecipeInput!) {
   updateRecipe(id: $id, input: $input) {
     id
     title
+    category
   }
 }

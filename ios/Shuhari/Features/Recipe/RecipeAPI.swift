@@ -22,10 +22,16 @@ enum RecipeAPI {
         )
     }
 
-    /// Retouch the aggregate: rename it, mark it a favourite, or both. A field left
-    /// nil is left alone.
-    static func updateRecipe(id: String, title: String? = nil, favorite: Bool? = nil) async throws {
+    /// Retouch the aggregate: rename it, refile it under another course, mark it a
+    /// favourite, or any combination. A field left nil is left alone.
+    static func updateRecipe(
+        id: String,
+        title: String? = nil,
+        category: DishCategory? = nil,
+        favorite: Bool? = nil
+    ) async throws {
         let input = ShuhariGraphQL.UpdateRecipeInput(
+            category: GraphQLHelpers.graphQLNullable(category?.graphQLValue),
             favorite: GraphQLHelpers.graphQLNullable(favorite),
             title: GraphQLHelpers.graphQLNullable(title)
         )

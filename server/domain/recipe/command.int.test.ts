@@ -254,6 +254,16 @@ describe('RecipeCommand.update', () => {
     expect(fake.snapshot('recipes').get(recipe.id)?.title).toBe('Blanquette de veau' as RecipeTitle)
   })
 
+  test('refiles the recipe under another course, re-deriving its sort rank', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+
+    await RecipeCommand.update(userId, recipe.id, { category: 'drink' })
+    const refiled = fake.snapshot('recipes').get(recipe.id)
+    expect(refiled?.category).toBe('drink')
+    expect(refiled?.categoryRank).toBe(6)
+  })
+
   test('returns not-found for an unknown recipe', async () => {
     expect(await RecipeCommand.update(userId, 'nope' as RecipeId, { favorite: true })).toBe(
       'not-found',

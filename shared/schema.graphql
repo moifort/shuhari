@@ -368,12 +368,13 @@ type Mutation {
   ): Proposal!
 
   """
-  Retouch a recipe: rename it, mark it as a favourite, or both. Returns the updated recipe.
+  Retouch a recipe: rename it, refile it under another course, mark it as a favourite, or any combination. Returns the updated recipe.
   
   ```graphql
-  updateRecipe(id: "9f1c-a3b2", input: { title: "Nonna's lasagna", favorite: true }) {
+  updateRecipe(id: "9f1c-a3b2", input: { title: "Nonna's lasagna", category: MAIN, favorite: true }) {
     id
     title
+    category
     favorite
   }
   ```
@@ -791,9 +792,14 @@ How long a Thermomix step runs, written as you would read it, e.g. `"3 min"` or 
 scalar ThermomixTime
 
 """
-What you can retouch on a recipe: its name and whether it is a favourite. Send only what you want to change — anything you leave out stays as it was.
+What you can retouch on a recipe: its name, its course and whether it is a favourite. Send only what you want to change — anything you leave out stays as it was.
 """
 input UpdateRecipeInput {
+  """
+  The new course, e.g. `DRINK` for a recipe the import filed as `MAIN` (leave out to keep the current one)
+  """
+  category: DishCategory
+
   """
   `true` marks it as a favourite, `false` un-marks it, e.g. `true` for the risotto you keep coming back to (leave out to keep it as it is)
   """

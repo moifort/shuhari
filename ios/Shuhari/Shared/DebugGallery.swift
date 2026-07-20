@@ -90,6 +90,14 @@ struct DebugGallery: View {
                 .sheet(isPresented: .constant(true)) {
                     ToTestSheet(versions: [], onSelect: { _ in })
                 }
+        case "recipe-edit":
+            Color.clear
+                .sheet(isPresented: .constant(true)) {
+                    RecipeEditSheet(
+                        initialTitle: Fixtures.bourguignon.title,
+                        initialCategory: Fixtures.bourguignon.category
+                    ) { _, _ in }
+                }
         case "improve":
             Color.clear
                 .sheet(isPresented: .constant(true)) {
@@ -122,7 +130,7 @@ struct DebugGallery: View {
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : cuisine, cuisine-course, cuisine-favorites, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, to-test, to-test-empty, improve, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found, login, settings-data")
+                description: Text("Écrans : cuisine, cuisine-course, cuisine-favorites, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, to-test, to-test-empty, recipe-edit, improve, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found, login, settings-data")
             )
         }
     }

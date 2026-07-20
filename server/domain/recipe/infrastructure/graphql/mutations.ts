@@ -63,12 +63,14 @@ builder.mutationField('updateRecipe', (t) =>
   t.field({
     type: RecipeType,
     description: [
-      'Retouch a recipe: rename it, mark it as a favourite, or both. Returns the updated recipe.',
+      'Retouch a recipe: rename it, refile it under another course, mark it as a favourite, or ' +
+        'any combination. Returns the updated recipe.',
       '',
       '```graphql',
-      'updateRecipe(id: "9f1c-a3b2", input: { title: "Nonna\'s lasagna", favorite: true }) {',
+      'updateRecipe(id: "9f1c-a3b2", input: { title: "Nonna\'s lasagna", category: MAIN, favorite: true }) {',
       '  id',
       '  title',
+      '  category',
       '  favorite',
       '}',
       '```',
@@ -84,6 +86,7 @@ builder.mutationField('updateRecipe', (t) =>
     resolve: async (_root, { id, input }, { userId }) => {
       const result = await RecipeCommand.update(userId, id, {
         ...(input.title ? { title: input.title } : {}),
+        ...(input.category ? { category: input.category } : {}),
         ...(input.favorite !== null && input.favorite !== undefined
           ? { favorite: input.favorite }
           : {}),
