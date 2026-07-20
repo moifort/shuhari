@@ -32,8 +32,8 @@ the one worth cooking next.
    proposes a version from that alone. Accepted, it lands on the **to-cook list** the recipe sheet's
    flask opens, and leaves it the moment you cook it.
 5. The app derives the rest: the **best rating** is the highest-rated attempt (most recent one wins a
-   tie), and the recipe opens on the **attempt in progress** — the newest version built on that
-   best-rated one — falling back to the best-rated version, then to the latest.
+   tie), and the recipe opens on that best-rated version — falling back to the latest one when
+   nothing has been cooked yet. A version still waiting to be cooked never opens on its own.
 
 There is no "promote a version" step and no variations: nothing is flagged by hand, everything is
 derived from the ratings.

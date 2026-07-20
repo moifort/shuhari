@@ -74,24 +74,20 @@ describe('versionToOpen', () => {
     const v3 = version(3)
     expect(versionToOpen([version(1), version(2), v3])).toBe(v3)
   })
-  test('opens the best-rated version when it has no version derived from it', () => {
+  test('opens the best-rated version', () => {
     const v1 = version(1, { rating: 5 })
     expect(versionToOpen([v1, version(2, { rating: 3 })])).toBe(v1)
   })
-  test('opens the attempt in progress: the version derived from the best-rated one', () => {
-    const v2 = version(2, { basedOn: 1 })
-    expect(versionToOpen([version(1, { rating: 5 }), v2])).toBe(v2)
+  test('breaks a rating tie toward the most recent version', () => {
+    const v2 = version(2, { rating: 4 })
+    expect(versionToOpen([version(1, { rating: 4 }), v2])).toBe(v2)
   })
-  test('opens the most recent version derived from the best-rated one', () => {
-    const v3 = version(3, { basedOn: 1 })
-    expect(versionToOpen([version(1, { rating: 5 }), version(2, { basedOn: 1 }), v3])).toBe(v3)
+  test('never opens a version waiting to be cooked, however recent', () => {
+    const best = version(1, { rating: 5 })
+    expect(versionToOpen([best, version(2, { basedOn: 1 })])).toBe(best)
   })
-  test('ignores versions derived from a non-best version', () => {
+  test('opens a lower-rated iteration only when it outranks nothing else', () => {
     const best = version(2, { rating: 5 })
-    expect(versionToOpen([version(1, { rating: 3 }), best, version(3, { basedOn: 1 })])).toBe(best)
-  })
-  test('propagates the best-rated tie-break to the attempt in progress', () => {
-    const v3 = version(3, { basedOn: 2 })
-    expect(versionToOpen([version(1, { rating: 4 }), version(2, { rating: 4 }), v3])).toBe(v3)
+    expect(versionToOpen([version(1, { rating: 3 }), best, version(3, { rating: 4 })])).toBe(best)
   })
 })

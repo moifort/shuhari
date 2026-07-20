@@ -302,10 +302,10 @@ RecipeType.implement({
     versionToOpen: t.field({
       type: VersionType,
       description:
-        'The version to show first when you open this recipe: the attempt in progress (the most ' +
-        'recent one built on your best-rated version), or that best-rated version itself, or — ' +
-        'if you have never cooked any — the latest version. Never `null`; a recipe always has at ' +
-        'least its `v1`.',
+        'The version to show first when you open this recipe: your best-rated one (the most ' +
+        'recent wins a tie), or — if you have never cooked any — the latest version. A version ' +
+        'still waiting to be cooked never opens. Never `null`; a recipe always has at least its ' +
+        '`v1`.',
       resolve: async (r, _a, { loaders }) => {
         const versions = (await loaders.versionsByRecipe.load(r.id)) ?? []
         return versionToOpen(versions)

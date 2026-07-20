@@ -104,7 +104,7 @@ struct RecipeDetailPage: View {
     }
 }
 
-#Preview("Plat — v4 à tester") {
+#Preview("Plat — ouvre la mieux notée") {
     NavigationStack {
         RecipeDetailPage(recipe: Fixtures.bourguignon)
     }

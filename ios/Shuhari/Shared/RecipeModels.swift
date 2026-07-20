@@ -184,9 +184,9 @@ struct Recipe: Identifiable, Sendable {
     /// The best rating across every executed version, computed server-side. nil
     /// when no version has been cooked yet. Drives the recipe's display rating.
     let bestRating: Int?
-    /// The version to show first when the recipe sheet opens: the attempt in progress (the
-    /// most recent version built on the best-rated one), else that best-rated
-    /// version, else the latest. Never nil — a recipe always has at least its v1.
+    /// The version to show first when the recipe sheet opens: the best-rated one (the
+    /// most recent wins a tie), else the latest when nothing has been cooked. A version
+    /// waiting to be cooked never opens. Never nil — a recipe always has at least its v1.
     let versionToOpen: RecipeVersion
 
     /// The version number the next iteration would take.

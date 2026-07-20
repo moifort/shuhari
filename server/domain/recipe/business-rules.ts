@@ -38,21 +38,10 @@ export const bestRating = (versions: RecipeVersion[]): RecipeVersion | undefined
       undefined,
     )
 
-// Which version the recipe sheet opens on when entered from the home. Priority:
-//   1. the attempt in progress — the most recent version based on the best-rated one
-//      (an iteration cooked or awaiting a cook off the current reference);
-//   2. failing that, the best-rated version itself;
-//   3. failing any rating at all, the latest version (a brand-new, untried recipe).
-// Assumes a non-empty lineage (a recipe always owns at least its v1).
-export const versionToOpen = (versions: RecipeVersion[]): RecipeVersion => {
-  const latest = versions.reduce((a, b) => (b.number > a.number ? b : a))
-  const best = bestRating(versions)
-  if (best === undefined) return latest
-  const attemptInProgress = versions
-    .filter((version) => version.basedOn === best.number)
-    .reduce<RecipeVersion | undefined>(
-      (a, b) => (a === undefined || b.number > a.number ? b : a),
-      undefined,
-    )
-  return attemptInProgress ?? best
-}
+// Which version the recipe sheet opens on when entered from the home: the best-rated
+// one, falling back to the latest version when nothing was ever cooked (a brand-new,
+// untried recipe). A version that still owes a cook is never opened — the sheet shows
+// what is known to work, and the versions waiting to be tried are reached through the
+// flask CTA. Assumes a non-empty lineage (a recipe always owns at least its v1).
+export const versionToOpen = (versions: RecipeVersion[]): RecipeVersion =>
+  bestRating(versions) ?? versions.reduce((a, b) => (b.number > a.number ? b : a))

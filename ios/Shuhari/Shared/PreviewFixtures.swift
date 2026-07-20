@@ -138,8 +138,8 @@ enum Fixtures {
         updatedAt: date,
         versions: [bourguignonV1, bourguignonV2, bourguignonV3, bourguignonV4],
         bestRating: 4,
-        // The attempt in progress: v4 is built on the best-rated v3.
-        versionToOpen: bourguignonV4
+        // The best-rated version: v4 is still waiting to be cooked, so it never opens.
+        versionToOpen: bourguignonV3
     )
 
     // MARK: - Risotto (thermomix, per-step machine settings)

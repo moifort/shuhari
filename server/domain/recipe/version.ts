@@ -17,7 +17,7 @@ export type RecipeVersion = {
   change?: string // human summary of what changed ("Bouillon 700 → 650 ml"); absent on v1
   // The version this one iterates on — set to the attempt it was proposed from
   // (`versionToOpen` at proposal time); absent on the original v1, which iterates
-  // on nothing. Drives the "attempt in progress" branch of `versionToOpen`.
+  // on nothing. Records the lineage; it never decides which version opens.
   basedOn?: VersionNumber
   why?: string // AI rationale, for proposed versions
   // The recipe body, discriminated by `kind` (mirrors the recipe type): ingredients
