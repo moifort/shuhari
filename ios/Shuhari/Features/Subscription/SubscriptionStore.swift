@@ -71,9 +71,15 @@ final class SubscriptionStore {
             let result = try await product.purchase(options: [.appAccountToken(appAccountToken)])
             switch result {
             case .success(let verification):
-                await send(verification)
+                let granted = await send(verification)
                 if case .verified(let transaction) = verification { await transaction.finish() }
-                return isPremium == true
+                // Apple has taken the money. If our own server would not grant the
+                // Premium, saying nothing is the one thing we must not do: the cook
+                // has paid and has nothing to show for it.
+                if !granted {
+                    errorMessage = "Ton achat a bien été enregistré par Apple, mais nous n’avons pas pu l’activer. Rouvre l’app dans un instant : il sera repris automatiquement. Si rien ne change, touche « Restaurer mes achats »."
+                }
+                return granted
             case .pending:
                 // Ask-to-buy and other deferred approvals: nothing to do but wait
                 // for Transaction.updates to fire.
@@ -98,29 +104,38 @@ final class SubscriptionStore {
         defer { isPurchasing = false }
         do {
             try await AppStore.sync()
-            await syncCurrentEntitlements()
-            if isPremium != true { errorMessage = "Aucun abonnement à restaurer sur ce compte." }
+            let granted = await syncCurrentEntitlements()
+            if !granted { errorMessage = "Aucun abonnement à restaurer sur ce compte." }
         } catch {
             errorMessage = reportError(error)
         }
     }
 
     /// Walk everything the App Store currently considers ours and hand it over.
-    /// There is at most one subscription, but the sequence is the API.
-    private func syncCurrentEntitlements() async {
+    /// There is at most one subscription, but the sequence is the API. This is
+    /// also the catch-up path: a purchase the server refused at the time is
+    /// re-offered on every launch until it takes.
+    @discardableResult
+    private func syncCurrentEntitlements() async -> Bool {
+        var granted = false
         for await entitlement in Transaction.currentEntitlements {
-            await send(entitlement)
+            if await send(entitlement) { granted = true }
         }
+        return granted
     }
 
     /// The one path to Premium: the server verifies the signature and answers
     /// with the plan. An unverified result is not even sent — Apple already told
-    /// us it does not check out.
-    private func send(_ result: VerificationResult<Transaction>) async {
-        guard case .verified = result else { return }
+    /// us it does not check out. Returns whether the cook came out of it Premium,
+    /// so a caller can tell a refusal from a success instead of guessing from
+    /// state that may not have moved.
+    @discardableResult
+    private func send(_ result: VerificationResult<Transaction>) async -> Bool {
+        guard case .verified = result else { return false }
         guard let state = try? await SubscriptionAPI.sync(signedTransaction: result.jwsRepresentation)
-        else { return }
+        else { return false }
         isPremium = state.isPremium
         appAccountToken = state.appAccountToken ?? appAccountToken
+        return state.isPremium
     }
 }
