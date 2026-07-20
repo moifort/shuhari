@@ -36,6 +36,7 @@ struct ExecuteFlowView: View {
     /// proposal is accepted and it lands on the version it created.
     @State private var pendingAttempt: Attempt?
     @State private var isAcceptingProposal = false
+    @State private var isCreatingRecipe = false
 
     private enum Step: Hashable { case capture, proposal }
 
@@ -106,8 +107,13 @@ struct ExecuteFlowView: View {
                     baseIngredients: base?.ingredients ?? [],
                     baseSteps: base?.content.stepsWithSettings ?? [],
                     isWorking: isAcceptingProposal,
+                    suggestedRecipeTitle: recipe.title,
+                    isCreatingRecipe: isCreatingRecipe,
                     onClose: { finish() },
-                    onValidate: { edited in Task { await acceptProposal(edited) } }
+                    onValidate: { edited in Task { await acceptProposal(edited) } },
+                    onCreateRecipe: { edited, title in
+                        Task { await createRecipe(edited, title: title, from: recipe) }
+                    }
                 )
             }
         }
@@ -186,6 +192,27 @@ struct ExecuteFlowView: View {
                 recipeId: request.recipeId,
                 proposal: edited,
                 attempt: pendingAttempt
+            )
+            finish()
+        } catch {
+            errorPresenter.message = reportError(error)
+        }
+    }
+
+    // The proposal saved as a recipe of its own instead of the next version of this
+    // one: same type and course, the version it was proposed from as its source. The
+    // cook that asked for it is dropped — it has no version here to land on, exactly
+    // as closing the proposal drops it.
+    private func createRecipe(_ edited: ProposalEdit, title: String, from recipe: Recipe) async {
+        isCreatingRecipe = true
+        defer { isCreatingRecipe = false }
+        do {
+            _ = try await RecipeAPI.createRecipe(
+                title: title,
+                type: recipe.type,
+                category: recipe.category,
+                content: edited.content,
+                sourceLabel: "\(recipe.title) v\(edited.basedOn)"
             )
             finish()
         } catch {

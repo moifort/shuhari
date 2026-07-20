@@ -68,18 +68,13 @@ enum ImportAPI {
         case .thermomix:
             content = .thermomix(ingredients: analysis.ingredients, steps: analysis.steps)
         }
-        let input = ShuhariGraphQL.CreateRecipeInput(
-            category: analysis.category.graphQLValue,
-            content: GraphQLHelpers.versionContentInput(content),
-            sourceLabel: GraphQLHelpers.graphQLNullable(analysis.sourceLabel),
+        return try await RecipeAPI.createRecipe(
             title: analysis.title,
-            type: analysis.type.graphQLValue
+            type: analysis.type,
+            category: analysis.category,
+            content: content,
+            sourceLabel: analysis.sourceLabel
         )
-        let data = try await GraphQLHelpers.perform(
-            GraphQLClient.shared.apollo,
-            mutation: ShuhariGraphQL.CreateRecipeMutation(input: input)
-        )
-        return data.createRecipe.id
     }
 
     /// AI sources sometimes hand back an all-caps title ("COOKIES AUX NOIX DE

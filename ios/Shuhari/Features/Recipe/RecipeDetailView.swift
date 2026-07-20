@@ -102,7 +102,10 @@ struct RecipeDetailView: View {
                     ImproveFlowView(
                         recipeId: recipeId,
                         version: displayedVersion(recipe),
-                        nextVersionNumber: recipe.nextVersionNumber
+                        nextVersionNumber: recipe.nextVersionNumber,
+                        recipeTitle: recipe.title,
+                        recipeType: recipe.type,
+                        category: recipe.category
                     ) {
                         onReload()
                         Task { await viewModel.load() }

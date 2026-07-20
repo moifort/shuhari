@@ -68,8 +68,10 @@ struct DebugGallery: View {
                     baseIngredients: Fixtures.bourguignonV4.ingredients,
                     baseSteps: Fixtures.bourguignonV4.content.stepsWithSettings,
                     isWorking: false,
+                    suggestedRecipeTitle: Fixtures.bourguignon.title,
                     onClose: {},
-                    onValidate: { _ in }
+                    onValidate: { _ in },
+                    onCreateRecipe: { _, _ in }
                 )
             }
         case "proposal-thermomix":
@@ -80,8 +82,10 @@ struct DebugGallery: View {
                     baseIngredients: Fixtures.risottoV2.ingredients,
                     baseSteps: Fixtures.risottoV2.content.stepsWithSettings,
                     isWorking: false,
+                    suggestedRecipeTitle: Fixtures.risotto.title,
                     onClose: {},
-                    onValidate: { _ in }
+                    onValidate: { _ in },
+                    onCreateRecipe: { _, _ in }
                 )
             }
         case "to-test":
@@ -109,6 +113,9 @@ struct DebugGallery: View {
                         recipeId: Fixtures.bourguignon.id,
                         version: Fixtures.bourguignonV4,
                         nextVersionNumber: 5,
+                        recipeTitle: Fixtures.bourguignon.title,
+                        recipeType: Fixtures.bourguignon.type,
+                        category: Fixtures.bourguignon.category,
                         onFinished: {}
                     )
                 }

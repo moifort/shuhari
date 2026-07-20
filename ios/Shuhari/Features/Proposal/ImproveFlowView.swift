@@ -12,6 +12,11 @@ struct ImproveFlowView: View {
     /// The version being improved on — the one the recipe sheet is showing.
     let version: RecipeVersion
     let nextVersionNumber: Int
+    /// The recipe being improved, as the new-recipe route needs it: its name seeds the
+    /// title field, its type and course are the ones the new recipe is filed under.
+    let recipeTitle: String
+    let recipeType: RecipeType
+    let category: DishCategory
     let onFinished: () -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -21,6 +26,7 @@ struct ImproveFlowView: View {
     @State private var detent: PresentationDetent = .medium
     @State private var analyzing = false
     @State private var isAccepting = false
+    @State private var isCreatingRecipe = false
     @State private var errorPresenter = ErrorPresenter()
     /// The ephemeral AI proposal, held in memory while the `.proposal` step is shown.
     @State private var proposal: Proposal?
@@ -83,8 +89,13 @@ struct ImproveFlowView: View {
                 baseIngredients: version.ingredients,
                 baseSteps: version.content.stepsWithSettings,
                 isWorking: isAccepting,
+                suggestedRecipeTitle: recipeTitle,
+                isCreatingRecipe: isCreatingRecipe,
                 onClose: { dismiss() },
-                onValidate: { edited in Task { await accept(edited) } }
+                onValidate: { edited in Task { await accept(edited) } },
+                onCreateRecipe: { edited, title in
+                    Task { await createRecipe(edited, title: title) }
+                }
             )
         }
     }
@@ -105,6 +116,27 @@ struct ImproveFlowView: View {
                 improvement: trimmedImprovement
             )
             path.append(.proposal)
+        } catch {
+            errorPresenter.message = reportError(error)
+        }
+    }
+
+    /// The other way out: the proposal becomes the v1 of a recipe of its own, filed
+    /// under the same type and course, remembering where it came from as its source.
+    /// The recipe it was improved from is left exactly as it was.
+    private func createRecipe(_ edited: ProposalEdit, title: String) async {
+        isCreatingRecipe = true
+        defer { isCreatingRecipe = false }
+        do {
+            _ = try await RecipeAPI.createRecipe(
+                title: title,
+                type: recipeType,
+                category: category,
+                content: edited.content,
+                sourceLabel: "\(recipeTitle) v\(version.number)"
+            )
+            onFinished()
+            dismiss()
         } catch {
             errorPresenter.message = reportError(error)
         }
@@ -131,6 +163,9 @@ struct ImproveFlowView: View {
                 recipeId: Fixtures.bourguignon.id,
                 version: Fixtures.bourguignonV4,
                 nextVersionNumber: 5,
+                recipeTitle: Fixtures.bourguignon.title,
+                recipeType: Fixtures.bourguignon.type,
+                category: Fixtures.bourguignon.category,
                 onFinished: {}
             )
         }

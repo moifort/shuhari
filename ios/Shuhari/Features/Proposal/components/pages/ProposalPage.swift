@@ -15,6 +15,10 @@ import SwiftUI
 /// semantics) — the `basedOn`, `changeSummary` and `rationale` carried through from
 /// the in-memory AI proposal, the ingredient and step lists taken from the
 /// form's current (possibly edited) state.
+///
+/// A proposal has a second way out: "Nouvelle recette" saves it as the v1 of a recipe
+/// of its own instead of the next version of the one it was proposed for — the change
+/// went far enough that it is another dish. The recipe it came from is left untouched.
 struct ProposalPage: View {
     let proposal: Proposal
     let nextVersionNumber: Int
@@ -24,8 +28,13 @@ struct ProposalPage: View {
     /// changed a time, a temperature or a speed still reads as changed.
     let baseSteps: [ThermomixStep]
     let isWorking: Bool
+    /// What the new-recipe field opens on — the title of the recipe this proposal
+    /// iterates on, the cook renames it from there.
+    let suggestedRecipeTitle: String
+    let isCreatingRecipe: Bool
     let onClose: () -> Void
     let onValidate: (_ edited: ProposalEdit) -> Void
+    let onCreateRecipe: (_ edited: ProposalEdit, _ title: String) -> Void
 
     private struct EditableIngredient: Identifiable {
         let id = UUID()
@@ -43,6 +52,10 @@ struct ProposalPage: View {
 
     @State private var ingredients: [EditableIngredient]
     @State private var steps: [EditableStep]
+    /// The new-recipe title being typed, seeded from `suggestedRecipeTitle` each time
+    /// the prompt opens.
+    @State private var draftRecipeTitle = ""
+    @State private var askingRecipeTitle = false
     /// Height of one line of body text — the box the change dot centres itself in.
     @ScaledMetric(relativeTo: .body) private var bodyLineHeight: CGFloat = 20.5
 
@@ -52,16 +65,22 @@ struct ProposalPage: View {
         baseIngredients: [Ingredient],
         baseSteps: [ThermomixStep],
         isWorking: Bool,
+        suggestedRecipeTitle: String,
+        isCreatingRecipe: Bool = false,
         onClose: @escaping () -> Void,
-        onValidate: @escaping (_ edited: ProposalEdit) -> Void
+        onValidate: @escaping (_ edited: ProposalEdit) -> Void,
+        onCreateRecipe: @escaping (_ edited: ProposalEdit, _ title: String) -> Void
     ) {
         self.proposal = proposal
         self.nextVersionNumber = nextVersionNumber
         self.baseIngredients = baseIngredients
         self.baseSteps = baseSteps
         self.isWorking = isWorking
+        self.suggestedRecipeTitle = suggestedRecipeTitle
+        self.isCreatingRecipe = isCreatingRecipe
         self.onClose = onClose
         self.onValidate = onValidate
+        self.onCreateRecipe = onCreateRecipe
         self._ingredients = State(initialValue: proposal.content.ingredients.map {
             EditableIngredient(name: $0.name, quantity: $0.quantity)
         })
@@ -94,22 +113,48 @@ struct ProposalPage: View {
                 Button(action: onClose) {
                     Image(systemName: "xmark")
                 }
-                .disabled(isWorking)
+                .disabled(busy)
                 .accessibilityIdentifier("close-proposal-button")
                 .accessibilityLabel("Fermer")
             }
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                Button {
+                    draftRecipeTitle = suggestedRecipeTitle
+                    askingRecipeTitle = true
+                } label: {
+                    ActionIcon(systemImage: "plus", isRunning: isCreatingRecipe)
+                }
+                .disabled(busy)
+                .accessibilityIdentifier("create-recipe-from-proposal-button")
+                .accessibilityLabel("Nouvelle recette")
+
                 Button {
                     onValidate(currentProposal)
                 } label: {
                     ActionIcon(systemImage: "checkmark", isRunning: isWorking)
                 }
-                .disabled(isWorking)
+                .disabled(busy)
                 .accessibilityIdentifier("validate-proposal-button")
                 .accessibilityLabel("Valider")
             }
         }
+        .alert("Nouvelle recette", isPresented: $askingRecipeTitle) {
+            TextField("Nom de la recette", text: $draftRecipeTitle)
+                .accessibilityIdentifier("new-recipe-title-field")
+            Button("Créer") {
+                let title = draftRecipeTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !title.isEmpty else { return }
+                onCreateRecipe(currentProposal, title)
+            }
+            .accessibilityIdentifier("confirm-new-recipe")
+            Button("Annuler", role: .cancel) {}
+        } message: {
+            Text("Créer une nouvelle recette à partir de cette proposition ?")
+        }
     }
+
+    /// Either CTA running locks the screen: the two are exclusive decisions.
+    private var busy: Bool { isWorking || isCreatingRecipe }
 
     // MARK: - Ingredients
 
@@ -241,8 +286,10 @@ struct ProposalPage: View {
             baseIngredients: Fixtures.bourguignonV4.ingredients,
             baseSteps: Fixtures.bourguignonV4.content.stepsWithSettings,
             isWorking: false,
+            suggestedRecipeTitle: Fixtures.bourguignon.title,
             onClose: {},
-            onValidate: { _ in }
+            onValidate: { _ in },
+            onCreateRecipe: { _, _ in }
         )
     }
 }

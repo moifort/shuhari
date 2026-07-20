@@ -15,6 +15,30 @@ enum RecipeAPI {
 
     // MARK: - Mutations
 
+    /// Create a recipe and its v1 in one go. Returns the new recipe's id. Two ways in:
+    /// a confirmed import preview, and a proposal saved as a recipe of its own rather
+    /// than as the next version of the one it was proposed for.
+    static func createRecipe(
+        title: String,
+        type: RecipeType,
+        category: DishCategory,
+        content: VersionContent,
+        sourceLabel: String?
+    ) async throws -> String {
+        let input = ShuhariGraphQL.CreateRecipeInput(
+            category: category.graphQLValue,
+            content: GraphQLHelpers.versionContentInput(content),
+            sourceLabel: GraphQLHelpers.graphQLNullable(sourceLabel),
+            title: title,
+            type: type.graphQLValue
+        )
+        let data = try await GraphQLHelpers.perform(
+            GraphQLClient.shared.apollo,
+            mutation: ShuhariGraphQL.CreateRecipeMutation(input: input)
+        )
+        return data.createRecipe.id
+    }
+
     static func deleteRecipe(id: String) async throws {
         _ = try await GraphQLHelpers.perform(
             GraphQLClient.shared.apollo,
