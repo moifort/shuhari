@@ -10,45 +10,49 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-# Every lookup ends in `|| true`: `find` on a missing directory fails, and under
-# `set -e` with `pipefail` that kills the script mid-assignment — silently, before
-# reaching the diagnostics below. Which is precisely how a first CI run failed with
-# no message at all.
 # A newline-separated string, not an array: `"${array[@]}"` on an empty array is an
 # unbound variable under `set -u` in the bash macOS ships, so the diagnostic would
 # itself crash exactly when it is needed.
 searched=""
+cli=""
 
-look_in() {
+# Sets `cli` when the CLI is in `$1`, and extracts it first when only the shipped
+# archive is there — which is the state of a freshly resolved checkout. The binary
+# itself is unpacked by Apollo's build plugin, so `-resolvePackageDependencies`
+# alone leaves the folder holding nothing but `apollo-ios-cli.tar.gz`.
+#
+# Never called through `$( )`: a command substitution runs in a subshell, and both
+# `cli` and the trail of searched paths would be discarded with it.
+ensure_cli() {
   searched="${searched}  $1"$'\n'
   [ -d "$1" ] || return 0
-  find "$1" -name apollo-ios-cli -type f 2>/dev/null | head -1 || true
+  if [ ! -x "$1/apollo-ios-cli" ] && [ -f "$1/apollo-ios-cli.tar.gz" ]; then
+    echo "Unpacking $1/apollo-ios-cli.tar.gz"
+    tar -xzf "$1/apollo-ios-cli.tar.gz" -C "$1"
+  fi
+  [ -x "$1/apollo-ios-cli" ] && cli="$1/apollo-ios-cli"
+  return 0
 }
 
-# CI resolves packages into a path of its own choosing (`-derivedDataPath`), so look
-# there first when it says where. A developer machine leaves them under the global
-# DerivedData and needs no variable.
-cli=""
+# A derived-data folder inside the repo, which is what CI asks xcodebuild for, then
+# the global DerivedData a developer machine uses. Both probed without being told:
+# relying on an environment variable surviving a `bun run` cost two release attempts.
 if [ -n "${DERIVED_DATA_PATH:-}" ]; then
-  cli=$(look_in "$DERIVED_DATA_PATH/SourcePackages/checkouts/apollo-ios/CLI")
+  ensure_cli "$DERIVED_DATA_PATH/SourcePackages/checkouts/apollo-ios/CLI"
 fi
 
-# A derived-data folder inside the repo, which is what CI asks xcodebuild for. Probed
-# without being told: relying on an environment variable surviving a `bun run` cost
-# two release attempts, and this needs no variable at all.
 if [ -z "$cli" ]; then
   for candidate in build/*; do
     [ -d "$candidate" ] || continue
-    cli=$(look_in "$candidate/SourcePackages/checkouts/apollo-ios/CLI")
+    ensure_cli "$candidate/SourcePackages/checkouts/apollo-ios/CLI"
     [ -n "$cli" ] && break
   done
 fi
 
 if [ -z "$cli" ]; then
-  searched="${searched}  $HOME/Library/Developer/Xcode/DerivedData/Shuhari-*/SourcePackages/checkouts/apollo-ios/CLI"$'\n'
   for candidate in "$HOME"/Library/Developer/Xcode/DerivedData/Shuhari-*; do
     [ -d "$candidate" ] || continue
-    cli=$(look_in "$candidate/SourcePackages/checkouts/apollo-ios/CLI")
+    ensure_cli "$candidate/SourcePackages/checkouts/apollo-ios/CLI"
     [ -n "$cli" ] && break
   done
 fi
