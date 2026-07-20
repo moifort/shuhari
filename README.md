@@ -36,8 +36,8 @@ There is no "promote a version" step and no variations: nothing is flagged by ha
 derived from the ratings.
 
 Recipes come in two kinds — **dish** and **thermomix** (where each step also carries time,
-temperature, speed and reverse rotation) — and one of six courses (starter, main, dessert, soup,
-sauce, baking) detected at import. The library is paginated, filterable by kind and sortable by
+temperature, speed and reverse rotation) — and one of seven courses (starter, main, dessert, soup,
+sauce, baking, drink) detected at import. The library is paginated, filterable by kind and sortable by
 course or by last edit. The notebook opens on **Tout** — every recipe, both kinds mixed, newest
 first — and the other lenses narrow it to one kind. Mark a recipe as a **favourite** from its sheet
 and the last lens lists your favourites, course by course; the heart also shows on the library row.

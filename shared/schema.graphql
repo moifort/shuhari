@@ -66,6 +66,9 @@ enum DishCategory {
   """Dessert, e.g. `"Tarte tatin"`"""
   DESSERT
 
+  """Drink, e.g. `"Ginger lemonade"`"""
+  DRINK
+
   """Main course, e.g. `"Grandma’s lasagna"`"""
   MAIN
 
@@ -593,7 +596,7 @@ scalar RecipeId
 """Field the paginated recipe library is ordered by, e.g. `UPDATED_AT`"""
 enum RecipeSort {
   """
-  Dish course order (`STARTER → MAIN → DESSERT → SOUP → SAUCE → BAKING`), most recently modified first within a course
+  Dish course order (`STARTER → MAIN → DESSERT → SOUP → SAUCE → BAKING → DRINK`), most recently modified first within a course
   """
   CATEGORY
 

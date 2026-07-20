@@ -11,6 +11,7 @@ enum DishCategory: String, CaseIterable, Sendable, Identifiable {
     case soup
     case sauce
     case baking
+    case drink
 
     var id: String { rawValue }
 
@@ -22,6 +23,7 @@ enum DishCategory: String, CaseIterable, Sendable, Identifiable {
         case .soup: "Soupe"
         case .sauce: "Sauce"
         case .baking: "Boulangerie"
+        case .drink: "Boisson"
         }
     }
 
@@ -37,6 +39,7 @@ enum DishCategory: String, CaseIterable, Sendable, Identifiable {
         case .soup: "cup.and.heat.waves"
         case .sauce: "drop"
         case .baking: "oven"
+        case .drink: "wineglass"
         }
     }
 

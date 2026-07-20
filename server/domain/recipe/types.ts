@@ -7,8 +7,8 @@ export const RECIPE_TYPE_VALUES = ['dish', 'thermomix'] as const
 export type RecipeType = (typeof RECIPE_TYPE_VALUES)[number]
 
 // The course a dish belongs to. Detected by the AI at import and drives sorting
-// in the library (starter → main → dessert → soup → sauce → baking). The array
-// order IS the business rank — see `categoryRank`.
+// in the library (starter → main → dessert → soup → sauce → baking → drink). The
+// array order IS the business rank — see `categoryRank`.
 export const DISH_CATEGORY_VALUES = [
   'starter',
   'main',
@@ -16,6 +16,7 @@ export const DISH_CATEGORY_VALUES = [
   'soup',
   'sauce',
   'baking',
+  'drink',
 ] as const
 export type DishCategory = (typeof DISH_CATEGORY_VALUES)[number]
 

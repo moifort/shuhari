@@ -29,6 +29,7 @@ export const DishCategoryEnum = builder.enumType('DishCategory', {
     SOUP: { value: 'soup', description: 'Soup, e.g. `"Pumpkin velouté"`' },
     SAUCE: { value: 'sauce', description: 'Sauce or condiment, e.g. `"Béchamel"`' },
     BAKING: { value: 'baking', description: 'Bread and bakery, e.g. `"Sourdough loaf"`' },
+    DRINK: { value: 'drink', description: 'Drink, e.g. `"Ginger lemonade"`' },
   } as const,
 })
 
@@ -42,7 +43,7 @@ export const RecipeSortEnum = builder.enumType('RecipeSort', {
     CATEGORY: {
       value: 'category',
       description:
-        'Dish course order (`STARTER → MAIN → DESSERT → SOUP → SAUCE → BAKING`), ' +
+        'Dish course order (`STARTER → MAIN → DESSERT → SOUP → SAUCE → BAKING → DRINK`), ' +
         'most recently modified first within a course',
     },
   } as const,

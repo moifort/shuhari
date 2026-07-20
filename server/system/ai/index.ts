@@ -107,7 +107,7 @@ const importResponseSchema = {
     category: {
       type: 'string',
       enum: DISH_CATEGORY_VALUES,
-      description: 'Dish category: starter, main, dessert, soup, sauce or baking',
+      description: 'Dish category: starter, main, dessert, soup, sauce, baking or drink',
     },
     title: {
       type: 'string',
@@ -154,7 +154,7 @@ const IMPORT_INSTRUCTIONS = `You are the assistant of a culinary experimentation
 Rules:
 - MANDATORY: write every generated value — title, ingredient names and quantities, step text — in French. The reader is a French speaker; never answer in English.
 - Determine the type: dish (cooked recipe) or thermomix (Thermomix recipe).
-- Determine the dish category: starter, main, dessert, soup, sauce or baking (pastry, bread, viennoiserie). When in doubt, pick main.
+- Determine the dish category: starter, main, dessert, soup, sauce, baking (pastry, bread, viennoiserie) or drink (cocktail, smoothie, hot or cold beverage). When in doubt, pick main.
 - ingredients: the ORDERED list of the recipe's components with their quantity (e.g. Gin → 50 ml, Beurre → 170 g, Fraise → 3 pièces). Include EVERY ingredient visible in the source, each with its quantity and unit. This is the recipe's "shopping list". The NAME stays short: the ingredient alone, never its transient preparation ("Pommes de terre", not "Pommes de terre épluchées et coupées en rondelles" — the preparation belongs in the steps). An intrinsic variety, type or grade stays in the name, in parentheses ("Pommes de terre (Marbella)", "Farine (T45)").
 - steps: short steps, imperative mood, in order. Precise settings (oven temperature, duration, ratio…) stay in the step text.
 - For a Thermomix recipe (type thermomix): for every step performed on the Thermomix, fill the nested settings object (time, temperature, speed, reverse) exactly as stated in the recipe (time "3 min" / "30 s" / "1 h 10 min"; temperature "100°C" or "Varoma"; speed "0,5" to "10", "pétrin", "mijotage" or "turbo"). ALWAYS return every step as an object: use null for every missing setting, and set settings to null (or leave its fields null) when the step is not done on the Thermomix or when the recipe is not of type thermomix — never omit or merge a step because it carries no setting.

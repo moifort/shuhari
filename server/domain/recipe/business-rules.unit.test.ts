@@ -32,6 +32,7 @@ describe('categoryRank', () => {
     expect(categoryRank('soup')).toBe(3)
     expect(categoryRank('sauce')).toBe(4)
     expect(categoryRank('baking')).toBe(5)
+    expect(categoryRank('drink')).toBe(6)
   })
   test('a starter outranks a dessert which outranks baking (non-alphabetical)', () => {
     expect(categoryRank('starter')).toBeLessThan(categoryRank('dessert'))

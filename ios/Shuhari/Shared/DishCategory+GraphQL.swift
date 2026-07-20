@@ -15,6 +15,7 @@ extension DishCategory {
             case .soup: self = .soup
             case .sauce: self = .sauce
             case .baking: self = .baking
+            case .drink: self = .drink
             }
         case .unknown:
             self = .main
@@ -29,6 +30,7 @@ extension DishCategory {
         case .soup: .case(.soup)
         case .sauce: .case(.sauce)
         case .baking: .case(.baking)
+        case .drink: .case(.drink)
         }
     }
 }
