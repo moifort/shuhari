@@ -73,11 +73,9 @@ A privacy URL and a support URL are mandatory. Both are served by GitHub Pages f
 `docs/pages/`, deployed by `.github/workflows/pages.yml`. **The privacy page and the App Store
 Connect privacy questionnaire must agree** — a divergence is a common rejection.
 
-## Still missing before the first submission
+## Account deletion, which review checks
 
-**In-app account deletion.** Guideline 5.1.1(v) requires any app that creates accounts to let
-them be deleted from within the app. Shuhari signs cooks in with Apple but exposes no such
-action: the schema stops at `deleteRecipe` and `deleteVersion`, and Settings only offers import
-and export. Until a `deleteAccount` mutation exists — purging `recipes`, `recipe-versions`,
-`ai-quotas` and `entitlements`, revoking the Apple token and removing the Firebase Auth user —
-the first submission is very likely to be rejected.
+Guideline 5.1.1(v) requires any app that creates accounts to let them be deleted from within the
+app, and reviewers check it on every app that offers Sign in with Apple. Shuhari answers with
+Settings → Compte → Supprimer mon compte, wired to the `deleteAccount` mutation
+(`server/system/account/`). Do not remove or hide it.
