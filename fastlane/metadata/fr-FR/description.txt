@@ -1,0 +1,23 @@
+Shuhari est un carnet de cuisine où chaque recette progresse essai après essai.
+
+守破離 — suivre la règle, la briser, la transcender.
+
+IMPORTER SANS RIEN SAISIR
+Une photo d'un livre, d'une fiche ou d'un écran suffit : l'IA en extrait le titre, les ingrédients, les étapes et la catégorie.
+
+NOTER CHAQUE ESSAI
+Chaque essai reçoit une note de 1 à 5, et une remarque quand quelque chose cloche : trop salé, sauce trop liquide, cuisson trop courte.
+
+LA REMARQUE DEVIENT LA VERSION SUIVANTE
+À partir de cette remarque, l'IA propose une nouvelle version et surligne chaque quantité modifiée, avec la raison du changement. La version retenue rejoint la lignée de la recette ; la mieux notée s'ouvre par défaut.
+
+UN CARNET QUI RANGE
+Tri par type et par catégorie, favoris, historique complet des versions, liste des recettes à retester.
+
+THERMOMIX
+Les recettes Thermomix conservent vitesse, température et durée sur chaque étape.
+
+GRATUIT, ET PREMIUM POUR L'IA
+Le carnet est gratuit et illimité. Seule l'IA est comptée : 3 imports et 5 itérations par mois civil. Premium lève ces limites et ajoute l'import depuis un lien web.
+
+Premium mensuel : 2,99 €/mois. Premium annuel : 24,99 €/an, après 7 jours d'essai gratuit. L'abonnement se renouvelle automatiquement sauf résiliation au moins 24 h avant la fin de la période en cours. La gestion et la résiliation se font dans les réglages du compte App Store.

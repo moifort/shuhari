@@ -1,0 +1,1 @@
+Une photo pour saisir une recette, une remarque pour l'améliorer. L'IA propose la version suivante, le carnet garde la trace de chaque essai.

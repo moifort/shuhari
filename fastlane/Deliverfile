@@ -1,0 +1,33 @@
+app_identifier("com.polyforms.shuhari.app")
+
+# The whole listing lives in the repository: metadata and screenshots are pushed on every
+# release and overwrite whatever App Store Connect holds. Editing the listing in the web
+# console is therefore pointless — the next release wipes it.
+metadata_path("./fastlane/metadata")
+screenshots_path("./fastlane/screenshots")
+overwrite_screenshots(true)
+app_rating_config_path("./fastlane/metadata/app_rating_config.json")
+
+# No interactive confirmation: this runs unattended in CI.
+force(true)
+
+submit_for_review(true)
+automatic_release(true)
+
+# Asked by App Store Connect at every submission. Answering them here keeps the pipeline
+# from stalling on a prompt nobody is there to read.
+submission_information({
+  add_id_info_uses_idfa: false,
+  export_compliance_uses_encryption: false,
+  export_compliance_encryption_updated: false,
+  content_rights_contains_third_party_content: false
+})
+
+app_review_information(
+  first_name: "Thibaut",
+  last_name: "Mottet",
+  email_address: "thibaut.mottet@gmail.com",
+  phone_number: "+33623070069",
+  notes: "Sign in with Apple is the only way in; any Apple ID works, no demo account is needed. " \
+         "The AI import needs a photo of a recipe: any cookbook page will do."
+)

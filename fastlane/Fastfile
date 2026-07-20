@@ -1,0 +1,29 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build the App Store archive, upload it, submit it for review and publish it"
+  lane :release do
+    key = app_store_connect_api_key(
+      key_id: ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      key_content: ENV.fetch("ASC_KEY_P8"),
+      in_house: false
+    )
+
+    build_app(
+      project: "ios/Shuhari.xcodeproj",
+      scheme: "Shuhari",
+      configuration: "Release",
+      export_method: "app-store",
+      api_key: key,
+      # Cloud signing: Xcode fetches the distribution certificate and profile itself, so no
+      # .p12 has to be stored anywhere. The build number comes from the workflow run, which
+      # only ever grows — App Store Connect rejects a number it has already seen.
+      xcargs: "-allowProvisioningUpdates CURRENT_PROJECT_VERSION=#{ENV.fetch('BUILD_NUMBER')}",
+      output_directory: "build",
+      output_name: "Shuhari.ipa"
+    )
+
+    deliver(api_key: key, ipa: "build/Shuhari.ipa")
+  end
+end
