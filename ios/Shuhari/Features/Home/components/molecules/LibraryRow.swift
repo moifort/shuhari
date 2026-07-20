@@ -40,7 +40,7 @@ struct LibraryRow: View {
 
             if favorite {
                 Image(systemName: "heart.fill")
-                    .font(.caption)
+                    .font(.footnote)
                     .foregroundStyle(Theme.Status.favorite)
                     .frame(maxHeight: .infinity, alignment: .top)
                     .accessibilityLabel("Favori")
