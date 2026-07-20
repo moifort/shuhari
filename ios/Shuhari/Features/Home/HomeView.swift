@@ -12,15 +12,16 @@ struct HomeView: View {
     @State private var library = LibraryStore()
     @State private var path = NavigationPath()
     @State private var showSettings = false
-    @State private var lens: LibraryLens = .type(.dish)
+    /// The notebook opens on the whole library — every type, no facet.
+    @State private var lens: LibraryLens = .all
 
     /// Multi-type tabs (cooking) offer the lens picker; single-type tabs don't.
     private var isMultiType: Bool { categoryTypes.count > 1 }
 
-    /// The lenses in design order — the tab's types, then the favourites, which cut
-    /// across all of them.
+    /// The lenses in design order — everything first (the default), then the tab's
+    /// types, then the favourites, which cut across all of them.
     private var lensOptions: [LibraryLens] {
-        RecipeType.allCases.filter { categoryTypes.contains($0) }.map(LibraryLens.type) + [.favorites]
+        [.all] + RecipeType.allCases.filter { categoryTypes.contains($0) }.map(LibraryLens.type) + [.favorites]
     }
 
     var body: some View {

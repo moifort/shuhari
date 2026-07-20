@@ -38,8 +38,9 @@ derived from the ratings.
 Recipes come in two kinds — **dish** and **thermomix** (where each step also carries time,
 temperature, speed and reverse rotation) — and one of six courses (starter, main, dessert, soup,
 sauce, baking) detected at import. The library is paginated, filterable by kind and sortable by
-course or by last edit. Mark a recipe as a **favourite** from its sheet and the notebook's third
-lens lists your favourites, both kinds mixed, course by course.
+course or by last edit. The notebook opens on **Tout** — every recipe, both kinds mixed, newest
+first — and the other lenses narrow it to one kind. Mark a recipe as a **favourite** from its sheet
+and the last lens lists your favourites, course by course; the heart also shows on the library row.
 
 The app is single-user but uses real authentication: Firebase Auth with Sign in with Apple.
 

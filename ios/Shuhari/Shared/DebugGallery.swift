@@ -124,15 +124,15 @@ private struct RecipeDetailGalleryScreen: View {
     }
 }
 
-/// The multi-type cooking tab with its round type-filter CTAs and sectioned
-/// library — needs local state for the selected filter and sort, so it lives in its
-/// own view. Defaults to Thermomix to show the outlined custom symbol in the list;
-/// the sort picker is live, so both section axes (month, course) are reachable.
+/// The multi-type cooking tab with its round lens CTAs and sectioned library — needs
+/// local state for the selected lens and sort, so it lives in its own view. Defaults
+/// to the whole library, as the app does; the sort picker is live, so both section
+/// axes (month, course) are reachable.
 private struct CuisineGalleryScreen: View {
     @State private var lens: LibraryLens
     @State private var sort: RecipeSortOption
 
-    init(lens: LibraryLens = .type(.thermomix), sort: RecipeSortOption? = nil) {
+    init(lens: LibraryLens = .all, sort: RecipeSortOption? = nil) {
         self._lens = State(initialValue: lens)
         self._sort = State(initialValue: sort ?? lens.defaultSort)
     }
@@ -147,7 +147,11 @@ private struct CuisineGalleryScreen: View {
         NavigationStack {
             HomePage(
                 library: library.filter { recipe in
-                    lens == .favorites ? recipe.favorite : recipe.type == lens.recipeType
+                    switch lens {
+                    case .all: true
+                    case .favorites: recipe.favorite
+                    case .type(let type): recipe.type == type
+                    }
                 },
                 libraryGrouping: sort == .lastModified ? .month : .course,
                 libraryLoading: false,
@@ -155,7 +159,7 @@ private struct CuisineGalleryScreen: View {
                 libraryLoadMoreFailed: false,
                 title: lens.label,
                 lensPicker: .init(
-                    options: [.type(.dish), .type(.thermomix), .favorites],
+                    options: [.all, .type(.dish), .type(.thermomix), .favorites],
                     selection: $lens
                 ),
                 sort: $sort,

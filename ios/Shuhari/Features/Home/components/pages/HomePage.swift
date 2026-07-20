@@ -97,7 +97,8 @@ struct HomePage: View {
         if lensPicker?.selection.wrappedValue == .favorites {
             return "Aucun favori pour l’instant — ajoute-les depuis la fiche d’une recette."
         }
-        if lensPicker != nil {
+        // The `.all` lens narrows nothing: an empty library there IS the first-run state.
+        if lensPicker != nil, lensPicker?.selection.wrappedValue != .all {
             return "Aucune recette de ce type pour l’instant."
         }
         return "Importe ta première recette depuis l’onglet Importer — photo, texte ou lien."
@@ -132,13 +133,17 @@ struct HomePage: View {
 }
 
 private struct HomePagePreview: View {
-    @State private var lens: LibraryLens = .type(.dish)
+    @State private var lens: LibraryLens = .all
     @State private var sort: RecipeSortOption = .lastModified
     @State private var category: DishCategory?
 
     var body: some View {
         let library = Fixtures.libraryRecipes.filter { recipe in
-            lens == .favorites ? recipe.favorite : recipe.type == lens.recipeType
+            switch lens {
+            case .all: true
+            case .favorites: recipe.favorite
+            case .type(let type): recipe.type == type
+            }
         }
         NavigationStack {
             HomePage(
@@ -148,7 +153,7 @@ private struct HomePagePreview: View {
                 libraryHasMore: false,
                 libraryLoadMoreFailed: false,
                 title: "Cuisine",
-                lensPicker: .init(options: [.type(.dish), .type(.thermomix), .favorites], selection: $lens),
+                lensPicker: .init(options: [.all, .type(.dish), .type(.thermomix), .favorites], selection: $lens),
                 sort: $sort,
                 categoryFilter: $category,
                 onSettings: {}
