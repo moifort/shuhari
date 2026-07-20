@@ -337,7 +337,10 @@ don't stub.
 
 `ShuhariApp.init()` calls `SentrySDK.start` (right after `FirebaseApp.configure()`) with a
 hardcoded DSN — a Sentry DSN is public by design. A blank/placeholder DSN leaves the SDK inert
-(same "no-op on empty DSN" behaviour as the backend plugin). `Shared/ErrorReporting.swift`'s
+(same "no-op on empty DSN" behaviour as the backend plugin). The app reports to the
+`shuhari-ios` project of the `polyforms` organisation; the backend has its own project
+(`shuhari-server`, DSN passed as the `SENTRY_DSN` repository secret) so a crash in the kitchen
+is never mixed up with a fault in the API. `Shared/ErrorReporting.swift`'s
 `reportError(_:)` does `SentrySDK.capture(error:)` and returns the display message; the 10+
 call sites in ViewModels are unchanged.
 
