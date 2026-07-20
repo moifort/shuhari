@@ -106,15 +106,21 @@ The app record and both products exist. What they are, for reference:
 | Yearly | `com.polyforms.shuhari.app.premium.yearly` — `6792835914`, 24,99 €, 7-day free trial |
 | Monthly | `com.polyforms.shuhari.app.premium.monthly` — `6792838776`, 2,99 € |
 
+Both carry their French localization, their review notes and the review screenshot
+(`screenshots/paywall.png`, regenerated any time with `-gallery premium`).
+
 **Still open**, and blocking a real purchase:
 
 1. **The Paid Apps agreement is not active** (no bank account, US tax form missing). Until it is,
    both products stay in `Missing Metadata` and never load in the app — the paywall shows "Les
-   offres ne sont pas disponibles pour le moment." The local StoreKit file is unaffected.
-2. **No review screenshot** on either product. Apple requires one before the products can ship.
-3. **Server notifications are not configured** — deliberately, the endpoint is not deployed yet.
-4. **Small Business Program**: the enrolment page only opens once the Paid Apps agreement is
+   offres ne sont pas disponibles pour le moment." The local StoreKit file is unaffected. Account
+   Holder only, on a desktop browser: the iOS App Store Connect app does not expose the section.
+2. **Server notifications are not configured** — deliberately, the endpoint is not deployed yet.
+3. **Small Business Program**: the enrolment page only opens once the Paid Apps agreement is
    active.
+4. **No purchase has ever run end to end.** The domain tests mock Apple, so our verification of a
+   real JWS signature has never executed. The local StoreKit configuration is the cheapest way to
+   close that gap, and it needs Xcode to launch the app.
 
 ## Secrets
 
