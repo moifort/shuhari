@@ -55,7 +55,7 @@ jobs:
           apple_private_key_path = "./apple.p8"
           google_api_key         = "${{ secrets.GEMINI_API_KEY }}"
           premium_user_ids       = "${{ vars.PREMIUM_USER_IDS }}"
-          fixme_dsn              = "${{ secrets.FIXME_DSN }}"
+          sentry_dsn             = "${{ secrets.SENTRY_DSN }}"
           admin_token            = "${{ secrets.ADMIN_TOKEN }}"
           EOF
 
