@@ -10,18 +10,36 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Every lookup ends in `|| true`: `find` on a missing directory fails, and under
+# `set -e` with `pipefail` that kills the script mid-assignment — silently, before
+# reaching the diagnostics below. Which is precisely how a first CI run failed with
+# no message at all.
+# A newline-separated string, not an array: `"${array[@]}"` on an empty array is an
+# unbound variable under `set -u` in the bash macOS ships, so the diagnostic would
+# itself crash exactly when it is needed.
+searched=""
+
+look_in() {
+  searched="${searched}  $1"$'\n'
+  [ -d "$1" ] || return 0
+  find "$1" -name apollo-ios-cli -type f 2>/dev/null | head -1 || true
+}
+
 # CI resolves packages into a path of its own choosing (`-derivedDataPath`), so look
 # there first when it says where. A developer machine leaves them under the global
 # DerivedData and needs no variable.
 cli=""
 if [ -n "${DERIVED_DATA_PATH:-}" ]; then
-  cli=$(find "$DERIVED_DATA_PATH/SourcePackages/checkouts/apollo-ios/CLI" \
-    -name apollo-ios-cli -type f 2>/dev/null | head -1)
+  cli=$(look_in "$DERIVED_DATA_PATH/SourcePackages/checkouts/apollo-ios/CLI")
 fi
 
 if [ -z "$cli" ]; then
-  cli=$(find ~/Library/Developer/Xcode/DerivedData/Shuhari-*/SourcePackages/checkouts/apollo-ios/CLI \
-    -name apollo-ios-cli -type f 2>/dev/null | head -1)
+  searched="${searched}  $HOME/Library/Developer/Xcode/DerivedData/Shuhari-*/SourcePackages/checkouts/apollo-ios/CLI"$'\n'
+  for candidate in "$HOME"/Library/Developer/Xcode/DerivedData/Shuhari-*; do
+    [ -d "$candidate" ] || continue
+    cli=$(look_in "$candidate/SourcePackages/checkouts/apollo-ios/CLI")
+    [ -n "$cli" ] && break
+  done
 fi
 
 if [ -z "$cli" ]; then
@@ -29,7 +47,8 @@ if [ -z "$cli" ]; then
 fi
 
 if [ -z "$cli" ]; then
-  echo "apollo-ios-cli not found." >&2
+  echo "apollo-ios-cli not found. Looked in:" >&2
+  printf '%s' "$searched" >&2
   echo "Build the Xcode project once so SwiftPM checks out apollo-ios, then retry," >&2
   echo "or point DERIVED_DATA_PATH at a folder where they are already resolved." >&2
   exit 1

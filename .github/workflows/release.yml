@@ -48,6 +48,11 @@ jobs:
         run: |
           xcodebuild -project ios/Shuhari.xcodeproj -scheme Shuhari \
             -resolvePackageDependencies -derivedDataPath build/spm
+          # Printed unconditionally: the first attempt failed here with no output at
+          # all, and one listing answers "did the checkout land where we expect?"
+          echo "--- SourcePackages ---"
+          ls build/spm/SourcePackages/checkouts 2>&1 || true
+          ls -d build/spm/SourcePackages/checkouts/apollo-ios/CLI 2>&1 || true
           DERIVED_DATA_PATH=build/spm bun run generate:ios
 
       # Debug configuration on purpose: DebugGallery sits behind #if DEBUG, and without it the
