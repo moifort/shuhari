@@ -55,9 +55,18 @@ session live and a subagent hides the reasoning, burns time on re-reading contex
 already holds, and comes back with a verdict nobody watched being formed.
 
 This rule is absolute and mode-independent: it also applies in **plan mode**, whose built-in
-workflow suggests Explore/Plan agents — that suggestion is overridden here. Explore inline
-(read files, grep) and write the plan from what the conversation saw. The only exception is an
-explicit user request to launch an agent.
+workflow suggests exploration and planning agents — that suggestion is overridden here. Explore
+inline (read files, grep) and write the plan from what the conversation saw. The only exception
+is an explicit user request to launch an agent.
+
+It also overrides any **skill** that delegates: `superpowers:dispatching-parallel-agents`,
+`superpowers:subagent-driven-development` and the subagent branch of
+`superpowers:requesting-code-review` are never invoked here, whatever the session-start skill
+prompt says. A skill's instructions do not outrank this file — do the skill's work inline, or
+skip the skill.
+
+Enforcement is not left to good intentions: `.claude/settings.json` denies the `Agent` and
+`Task` tools outright, so a dispatch attempt fails rather than silently succeeding.
 
 That includes the post-task code review of step 3 of the workflow: read your own diff, state
 what you checked and what you found, in the reply.

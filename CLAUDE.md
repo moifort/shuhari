@@ -19,6 +19,7 @@ The **only** French in the repo is user-facing copy — `CHANGELOG.fr.md` (the c
 
 - **Docs are the spec**: align code to `docs/`, never the reverse; `docs/code-style.md` is law and is never edited to match the code (it changes only on an explicit user request). Corrections given in conversation are applied repo-wide **and** codified in the matching doc, in the same task.
 - **Rules generic, wiring specific**: a practice that would hold in any codebase goes in a `*-best-practices.md` with neutral examples; how this repo implements it goes in the matching project guide, which links to the rule.
+- **Work inline, never through subagents**: exploration, review, debugging and planning all happen in the main conversation — never `Task`/`Agent`, never a parallel-worker or subagent-driven skill, plan mode included. See [docs/collaboration.md](docs/collaboration.md#work-inline-never-through-subagents).
 - **Design talk is not a go**: in architecture discussions, "je veux faire X" is design intent — implement only on an explicit "vas-y" / "implémente" / "lance".
 - **Every plan opens with a "Domaines impactés" block** (Créés / Modifiés / Supprimés) before the body.
 - **Never open a PR**: on "push", everything goes straight to `origin/main`.
