@@ -80,9 +80,15 @@ resource "google_cloudfunctions2_function" "server" {
     min_instance_count    = 0
     service_account_email = google_service_account.function.email
 
+    # Plain variables, not Secret Manager entries: an App Store app id is public,
+    # and the comp list is an access list rather than a credential. NITRO_APPLE_ENVIRONMENT
+    # is deliberately unset — blank makes the server try Production then Sandbox,
+    # which is what a shipped app needs (TestFlight and App Review sign in Sandbox).
     environment_variables = {
       NITRO_FIREBASE_PROJECT_ID = google_project.this.project_id
       NITRO_TRIAL_PHOTOS_BUCKET = google_storage_bucket.trial_photos.name
+      NITRO_APPLE_APP_ID        = var.apple_app_id
+      NITRO_PREMIUM_USER_IDS    = var.premium_user_ids
     }
 
     dynamic "secret_environment_variables" {

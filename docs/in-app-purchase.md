@@ -90,20 +90,43 @@ Credential-gated; none of it is scriptable.
    `https://<the deployed function host>/apple/notifications`, and the sandbox URL to the same.
    Version **V2**, not V1.
 8. Note the app's **numeric Apple id** (App Store Connect → App Information → General → Apple ID)
-   and set it as the `NITRO_APPLE_APP_ID` secret — Production signature verification needs it.
+   and set it as `apple_app_id` in `infra/terraform.tfvars` — Production signature verification
+   needs it.
 9. Submit both products **with the app build** that contains the paywall: Apple reviews
    subscriptions alongside a build, and rejects them if the reviewer cannot reach the purchase.
+
+### Done on 2026-07-20
+
+The app record and both products exist. What they are, for reference:
+
+| | Value |
+|---|---|
+| App Apple id | `6792835124` |
+| Subscription group | `Shuhari Premium` (`22251064`) |
+| Yearly | `com.polyforms.shuhari.app.premium.yearly` — `6792835914`, 24,99 €, 7-day free trial |
+| Monthly | `com.polyforms.shuhari.app.premium.monthly` — `6792838776`, 2,99 € |
+
+**Still open**, and blocking a real purchase:
+
+1. **The Paid Apps agreement is not active** (no bank account, US tax form missing). Until it is,
+   both products stay in `Missing Metadata` and never load in the app — the paywall shows "Les
+   offres ne sont pas disponibles pour le moment." The local StoreKit file is unaffected.
+2. **No review screenshot** on either product. Apple requires one before the products can ship.
+3. **Server notifications are not configured** — deliberately, the endpoint is not deployed yet.
+4. **Small Business Program**: the enrolment page only opens once the Paid Apps agreement is
+   active.
 
 ## Secrets
 
 | Variable | Purpose |
 |---|---|
-| `NITRO_APPLE_APP_ID` | The app's numeric App Store id, required to verify a Production signature |
+| `NITRO_APPLE_APP_ID` | The app's numeric App Store id (`6792835124`), required to verify a Production signature. Public — a plain Cloud Function environment variable, not a Secret Manager entry (`infra/function.tf`) |
 | `NITRO_APPLE_ENVIRONMENT` | Pins verification to one environment. Blank tries Production then Sandbox — what a shipped app needs, since TestFlight and review sign in Sandbox. `Xcode` for the local StoreKit file |
-| `NITRO_PREMIUM_USER_IDS` | Comped accounts, granted Premium without paying |
+| `NITRO_PREMIUM_USER_IDS` | Comped accounts, granted Premium without paying. An access list, not a credential — also a plain environment variable |
 
-In production these live in GCP Secret Manager (project `shuhari-polyforms`), like the rest —
-see [architecture.md](./architecture.md).
+They are set through Terraform (`infra/variables.tf`, values in the untracked
+`infra/terraform.tfvars`) and reach the function as environment variables. Only genuine
+credentials go to Secret Manager — see [architecture.md](./architecture.md).
 
 ## What is deliberately not built
 

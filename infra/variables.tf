@@ -72,6 +72,18 @@ variable "google_api_key" {
   sensitive   = true
 }
 
+variable "apple_app_id" {
+  description = "The app's numeric App Store id (App Store Connect > App Information). Exposed as NITRO_APPLE_APP_ID; required to verify a Production App Store signature. Public information, not a secret."
+  type        = string
+  default     = ""
+}
+
+variable "premium_user_ids" {
+  description = "Firebase uids comped Premium without paying, comma-separated (the maker's own account, a reviewer's). Exposed as NITRO_PREMIUM_USER_IDS. An override on top of real App Store entitlements — an access list, not a credential."
+  type        = string
+  default     = ""
+}
+
 variable "sentry_dsn" {
   description = "Sentry DSN for error reporting (empty disables Sentry). Exposed to the function as NITRO_SENTRY_DSN, read via process.env.NITRO_SENTRY_DSN in the Nitro plugin."
   type        = string

@@ -13,6 +13,10 @@ apple_services_id      = "com.polyforms.shuhari.signin"
 apple_key_id           = "KEY1234567"
 apple_private_key_path = "./AuthKey_KEY1234567.p8"
 
+# In-app purchase (see docs/in-app-purchase.md)
+apple_app_id     = "6792835124"                # App Store Connect > App Information > Apple ID
+premium_user_ids = ""                          # Firebase uids comped Premium, comma-separated
+
 # Backend secrets
 google_api_key = "..."
 sentry_dsn     = ""                            # optional
