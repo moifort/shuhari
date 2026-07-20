@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import {
+  attemptCount,
   bestRating,
   categoryRank,
   nextVersionNumber,
@@ -15,12 +16,13 @@ import {
 const v = (n: number) => n as VersionNumber
 const rating = (n: number) => n as Rating
 
-// Minimal RecipeVersion fixture: bestRating/versionToOpen only read `number`,
-// `rating` and `basedOn`. An absent rating means the version was never cooked.
+// Minimal RecipeVersion fixture: bestRating/versionToOpen/attemptCount only read
+// `number`, `rating`, `executedAt` and `basedOn`. An absent rating means the version
+// was never cooked — the domain always writes the rating and the cook date together.
 const version = (number: number, opts: { rating?: number; basedOn?: number } = {}): RecipeVersion =>
   ({
     number: v(number),
-    ...(opts.rating === undefined ? {} : { rating: rating(opts.rating) }),
+    ...(opts.rating === undefined ? {} : { rating: rating(opts.rating), executedAt: new Date() }),
     ...(opts.basedOn === undefined ? {} : { basedOn: v(opts.basedOn) }),
   }) as RecipeVersion
 
@@ -47,6 +49,16 @@ describe('categoryRank', () => {
 describe('nextVersionNumber', () => {
   test('increments the highest allocated number', () => {
     expect(nextVersionNumber(v(3))).toBe(v(4))
+  })
+})
+
+describe('attemptCount', () => {
+  test('counts nothing when no version was ever cooked', () => {
+    expect(attemptCount([])).toBe(0)
+    expect(attemptCount([version(1), version(2)])).toBe(0)
+  })
+  test('counts one attempt per cooked version, ignoring the planned ones', () => {
+    expect(attemptCount([version(1, { rating: 3 }), version(2), version(3, { rating: 5 })])).toBe(2)
   })
 })
 

@@ -39,6 +39,13 @@ export const bestRating = (versions: RecipeVersion[]): RecipeVersion | undefined
       undefined,
     )
 
+// How many times the recipe was actually cooked: one attempt per version that has
+// been executed. A version is its own attempt, so the count is the number of tried
+// versions — the planned ones (never cooked) count for nothing, and re-cooking a
+// version overwrites its outcome rather than adding an attempt.
+export const attemptCount = (versions: RecipeVersion[]): number =>
+  versions.filter((version) => version.executedAt !== undefined).length
+
 // Which version the recipe sheet opens on when entered from the home: the best-rated
 // one, falling back to the latest version when nothing was ever cooked (a brand-new,
 // untried recipe). A version that still owes a cook is never opened — the sheet shows

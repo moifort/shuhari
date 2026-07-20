@@ -24,6 +24,7 @@ query RecipeList(
       favorite
       updatedAt
       versionCount
+      attemptCount
       bestRating
     }
     hasMore

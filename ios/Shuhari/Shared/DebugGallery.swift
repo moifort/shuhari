@@ -180,9 +180,9 @@ private struct CuisineGalleryScreen: View {
     }
 
     private let library = [
-        LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .dish, category: .main, favorite: true, versionCount: 4, bestRating: 5, updatedAt: Date()),
-        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .thermomix, category: .main, favorite: false, versionCount: 3, bestRating: 4, updatedAt: Date()),
-        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .thermomix, category: .soup, favorite: true, versionCount: 1, bestRating: nil, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+        LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .dish, category: .main, favorite: true, versionCount: 4, attemptCount: 3, bestRating: 5, updatedAt: Date()),
+        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .thermomix, category: .main, favorite: false, versionCount: 3, attemptCount: 2, bestRating: 4, updatedAt: Date()),
+        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .thermomix, category: .soup, favorite: true, versionCount: 1, attemptCount: 0, bestRating: nil, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
     ]
 
     var body: some View {

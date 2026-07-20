@@ -10,6 +10,9 @@ struct LibraryRow: View {
     let type: RecipeType
     let category: DishCategory
     let versionCount: Int
+    /// How many of those versions were cooked — `0` drops the count from the subtitle
+    /// rather than writing "0 essai".
+    var attemptCount: Int = 0
     let bestRating: Int?
     var favorite: Bool = false
 
@@ -27,7 +30,7 @@ struct LibraryRow: View {
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 HStack(spacing: Theme.Spacing.xs) {
-                    Text(versionCountText)
+                    Text(subtitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -54,15 +57,19 @@ struct LibraryRow: View {
         .accessibilityElement(children: .combine)
     }
 
-    private var versionCountText: String {
-        "\(versionCount) version\(versionCount > 1 ? "s" : "")"
+    /// "4 versions · 2 essais" — the cooks the recipe went through, dropped entirely
+    /// when it has never been cooked (nothing to say beyond its versions).
+    private var subtitle: String {
+        let versions = "\(versionCount) version\(versionCount > 1 ? "s" : "")"
+        guard attemptCount > 0 else { return versions }
+        return "\(versions) · \(attemptCount) essai\(attemptCount > 1 ? "s" : "")"
     }
 }
 
 #Preview {
     List {
-        LibraryRow(title: "Bœuf bourguignon", type: .dish, category: .main, versionCount: 4, bestRating: 5, favorite: true)
-        LibraryRow(title: "Tarte au citron meringuée", type: .thermomix, category: .dessert, versionCount: 1, bestRating: 3)
-        LibraryRow(title: "Velouté de courge", type: .thermomix, category: .soup, versionCount: 2, bestRating: nil, favorite: true)
+        LibraryRow(title: "Bœuf bourguignon", type: .dish, category: .main, versionCount: 4, attemptCount: 3, bestRating: 5, favorite: true)
+        LibraryRow(title: "Tarte au citron meringuée", type: .thermomix, category: .dessert, versionCount: 1, attemptCount: 1, bestRating: 3)
+        LibraryRow(title: "Velouté de courge", type: .thermomix, category: .soup, versionCount: 2, attemptCount: 0, bestRating: nil, favorite: true)
     }
 }

@@ -1,4 +1,4 @@
-import { bestRating, versionToOpen } from '~/domain/recipe/business-rules'
+import { attemptCount, bestRating, versionToOpen } from '~/domain/recipe/business-rules'
 import type { DishContent } from '~/domain/recipe/content/dish'
 import type { ThermomixContent, ThermomixStep } from '~/domain/recipe/content/thermomix'
 import type { VersionContent } from '~/domain/recipe/content/types'
@@ -304,6 +304,17 @@ RecipeType.implement({
       resolve: async (r, _a, { loaders }) => {
         const versions = (await loaders.versionsByRecipe.load(r.id)) ?? []
         return versions.length as VersionNumber
+      },
+    }),
+    // Satellite: derived from the same batched loader as versionCount/bestRating —
+    // no extra reads.
+    attemptCount: t.int({
+      description:
+        'How many times you actually cooked this recipe, e.g. `2` when two of its versions ' +
+        'have been tried. `0` while none was ever cooked (every version still a plan).',
+      resolve: async (r, _a, { loaders }) => {
+        const versions = (await loaders.versionsByRecipe.load(r.id)) ?? []
+        return attemptCount(versions)
       },
     }),
     versions: t.field({
