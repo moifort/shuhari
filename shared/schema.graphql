@@ -273,6 +273,21 @@ type Mutation {
   ): Boolean!
 
   """
+  Delete one version from a recipe, attempt included. The versions built on it are re-based onto the one it iterated on, and its number is never reused by a later iteration. Deleting the sole version deletes the recipe with it. Returns `true` on success.
+  
+  ```graphql
+  deleteVersion(recipeId: "9f1c-a3b2", number: 2)
+  ```
+  """
+  deleteVersion(
+    """Which version to delete"""
+    number: VersionNumber!
+
+    """Which recipe the version belongs to"""
+    recipeId: RecipeId!
+  ): Boolean!
+
+  """
   Restore a backup. WARNING: this REPLACES everything you currently have with the contents of the JSON text (as produced by exportData). Returns a count of what was loaded, e.g. `12` recipes.
   
   ```graphql
@@ -576,12 +591,12 @@ type Recipe {
   updatedAt: DateTime!
 
   """
-  How many versions exist so far — also the number of the most recent one, e.g. `3` after `v1 → v2 → v3`
+  How many versions this recipe holds, e.g. `3` after `v1 → v2 → v3`. Deleting a version lowers it, but never renumbers the survivors.
   """
   versionCount: VersionNumber!
 
   """
-  The version to show first when you open this recipe: the attempt in progress (the most recent one built on your best-rated version), or that best-rated version itself, or — if you have never cooked any — the latest version. Never `null`; a recipe always has at least its `v1`.
+  The version to show first when you open this recipe: your best-rated one (the most recent wins a tie), or — if you have never cooked any — the latest version. A version still waiting to be cooked never opens. Never `null`; a recipe always has at least its `v1`.
   """
   versionToOpen: Version!
 

@@ -149,6 +149,16 @@ export const saveVersion = async (version: RecipeVersion, batch?: WriteBatch) =>
   return version
 }
 
+export const removeVersion = async (
+  recipeId: RecipeId,
+  number: VersionNumber,
+  batch?: WriteBatch,
+) => {
+  const ref = versions().doc(versionDocId(recipeId, number))
+  if (batch) batch.delete(ref)
+  else await ref.delete()
+}
+
 export const remove = async (id: RecipeId) => {
   const versionSnap = await versions().where('recipeId', '==', id).get()
   await deleteInBatches([recipes().doc(id), ...versionSnap.docs.map((doc) => doc.ref)])

@@ -123,6 +123,40 @@ builder.mutationField('deleteRecipe', (t) =>
   }),
 )
 
+builder.mutationField('deleteVersion', (t) =>
+  t.field({
+    type: 'Boolean',
+    description: [
+      'Delete one version from a recipe, attempt included. The versions built on it are re-based ' +
+        'onto the one it iterated on, and its number is never reused by a later iteration. ' +
+        'Deleting the sole version deletes the recipe with it. Returns `true` on success.',
+      '',
+      '```graphql',
+      'deleteVersion(recipeId: "9f1c-a3b2", number: 2)',
+      '```',
+    ].join('\n'),
+    args: {
+      recipeId: t.arg({
+        type: 'RecipeId',
+        required: true,
+        description: 'Which recipe the version belongs to',
+      }),
+      number: t.arg({
+        type: 'VersionNumber',
+        required: true,
+        description: 'Which version to delete',
+      }),
+    },
+    resolve: async (_root, { recipeId, number }, { userId }) => {
+      const result = await RecipeCommand.removeVersion(userId, recipeId, number)
+      return match(result)
+        .with('not-found', domainError)
+        .with(P.not(P.string), () => true)
+        .exhaustive()
+    },
+  }),
+)
+
 builder.mutationField('recordAttempt', (t) =>
   t.field({
     type: VersionType,

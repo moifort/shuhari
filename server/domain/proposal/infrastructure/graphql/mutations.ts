@@ -207,9 +207,9 @@ builder.mutationField('acceptProposal', (t) =>
       }
       const result = await ProposalUseCase.accept(userId, recipeId, accepted)
       const recipe = ensureRecipe(result)
-      // addVersion appends n+1 and bumps versionCount to it, so the newly created
-      // version is the recipe's latest (highest) number.
-      return { recipe, createdVersion: recipe.versionCount }
+      // addVersion appends n+1 and bumps lastVersionNumber to it, so the newly
+      // created version is the recipe's latest (highest) number.
+      return { recipe, createdVersion: recipe.lastVersionNumber }
     },
   }),
 )

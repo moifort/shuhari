@@ -19,7 +19,8 @@ const isRated = (version: RecipeVersion): version is RatedVersion => version.rat
 export const categoryRank = (category: DishCategory): number =>
   DISH_CATEGORY_VALUES.indexOf(category)
 
-export const nextVersionNumber = (versionCount: VersionNumber) => toVersionNumber(versionCount + 1)
+export const nextVersionNumber = (lastVersionNumber: VersionNumber) =>
+  toVersionNumber(lastVersionNumber + 1)
 
 // The recipe's best attempt across its cooked versions, or nothing when none was
 // ever tried. Highest rating wins; a tie breaks toward the most recent version

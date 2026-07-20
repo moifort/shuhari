@@ -4,7 +4,13 @@ import type { ThermomixContent, ThermomixStep } from '~/domain/recipe/content/th
 import type { VersionContent } from '~/domain/recipe/content/types'
 import { type RecipeLibraryPage, RecipeQuery } from '~/domain/recipe/query'
 import { builder } from '~/domain/shared/graphql/builder'
-import type { Ingredient, Recipe, RecipeVersion, ThermomixSettings } from '../../types'
+import type {
+  Ingredient,
+  Recipe,
+  RecipeVersion,
+  ThermomixSettings,
+  VersionNumber,
+} from '../../types'
 import { DishCategoryEnum, RecipeTypeEnum, VersionOriginKindEnum } from './enums'
 
 export const IngredientType = builder.objectRef<Ingredient>('Ingredient').implement({
@@ -286,11 +292,19 @@ RecipeType.implement({
         'to. Drives the library’s favourites lens (see the `favorite` argument on `recipes`).',
       resolve: (recipe) => recipe.favorite === true,
     }),
-    versionCount: t.expose('versionCount', {
+    // Satellite: a real count of the remaining versions, not the highest number — a
+    // deleted version leaves a numbering hole the aggregate's allocator never refills.
+    // Resolved through the batched loader (shares the scan with bestRating — no extra
+    // reads).
+    versionCount: t.field({
       type: 'VersionNumber',
       description:
-        'How many versions exist so far — also the number of the most recent one, e.g. `3` ' +
-        'after `v1 → v2 → v3`',
+        'How many versions this recipe holds, e.g. `3` after `v1 → v2 → v3`. Deleting a ' +
+        'version lowers it, but never renumbers the survivors.',
+      resolve: async (r, _a, { loaders }) => {
+        const versions = (await loaders.versionsByRecipe.load(r.id)) ?? []
+        return versions.length as VersionNumber
+      },
     }),
     versions: t.field({
       type: [VersionType],

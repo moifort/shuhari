@@ -76,7 +76,7 @@ export namespace RecipeCommand {
       type: input.type,
       category: input.category,
       title: input.title,
-      versionCount: FIRST_VERSION,
+      lastVersionNumber: FIRST_VERSION,
       createdAt: now,
       updatedAt: now,
     }
@@ -93,7 +93,7 @@ export namespace RecipeCommand {
 
   // Accepted AI iteration → append version n+1 to the lineage, stamping the version
   // it was proposed from (`basedOn`). No reference/pending pointer to maintain: the
-  // recipe just bumps its `versionCount` and `updatedAt`. The attempt that asked for
+  // recipe just bumps its `lastVersionNumber` and `updatedAt`. The attempt that asked for
   // this version lands on it, never on the version it iterates on — that one only
   // loses its `toTest` flag, since the cook that answers it is the cook it owed.
   // Born of an improvement instead (no attempt), the version is the one waiting to be
@@ -103,7 +103,7 @@ export namespace RecipeCommand {
     if (!recipe) return 'not-found' as const
     // The body's discriminant must mirror the recipe type (see `create`).
     if (input.content.kind !== recipe.type) return 'content-type-mismatch' as const
-    const number = nextVersionNumber(recipe.versionCount)
+    const number = nextVersionNumber(recipe.lastVersionNumber)
     const version: RecipeVersion = {
       userId,
       recipeId,
@@ -127,7 +127,7 @@ export namespace RecipeCommand {
     }
     const updated: Recipe = {
       ...recipe,
-      versionCount: number,
+      lastVersionNumber: number,
       updatedAt: new Date(),
     }
     // The version this one answers has been cooked: it owes nothing anymore.
@@ -196,6 +196,42 @@ export namespace RecipeCommand {
       updatedAt: new Date(),
     }
     return repository.save(updated)
+  }
+
+  // Delete one version from the lineage. Its children are re-based onto the version
+  // it iterated on (deleting a root leaves them iterating on nothing), so the chain
+  // stays linear around the hole; the allocator (`lastVersionNumber`) never rolls
+  // back, a deleted number is never reused. Deleting the sole version is deleting
+  // the recipe — a recipe without a version does not exist.
+  export const removeVersion = async (
+    userId: UserId,
+    recipeId: RecipeId,
+    number: VersionNumberT,
+  ) => {
+    const recipe = await repository.findBy(userId, recipeId)
+    if (!recipe) return 'not-found' as const
+    const versions = await repository.findVersionsOf(recipeId)
+    const target = versions.find((version) => version.number === number)
+    if (!target) return 'not-found' as const
+    if (versions.length === 1) {
+      await repository.remove(recipeId)
+      return undefined
+    }
+    // The children iterate on what the deleted version iterated on — its own base,
+    // or nothing when it was a root.
+    const rebased = versions
+      .filter((version) => version.basedOn === number)
+      .map(({ basedOn: _deleted, ...rest }) => ({
+        ...rest,
+        ...(target.basedOn !== undefined ? { basedOn: target.basedOn } : {}),
+      }))
+    const updated: Recipe = { ...recipe, updatedAt: new Date() }
+    return atomically(async (batch) => {
+      for (const child of rebased) await repository.saveVersion(child, batch)
+      await repository.removeVersion(recipeId, number, batch)
+      await repository.save(updated, batch)
+      return undefined
+    })
   }
 
   export const remove = async (userId: UserId, recipeId: RecipeId) => {

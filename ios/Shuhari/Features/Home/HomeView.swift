@@ -61,7 +61,8 @@ struct HomeView: View {
             .recipeFlow(
                 path: $path,
                 onReload: { Task { await reloadAll() } },
-                onDelete: { library.delete(recipeId: $0) }
+                onDelete: { library.delete(recipeId: $0) },
+                onDeleteVersion: { library.deleteVersion(recipeId: $0, number: $1) }
             )
         }
         .task {

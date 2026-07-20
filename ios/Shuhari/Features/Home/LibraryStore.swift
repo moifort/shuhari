@@ -127,6 +127,20 @@ final class LibraryStore {
         }
     }
 
+    /// Delete one version in the background: the recipe sheet closes without waiting
+    /// and the call follows. A failure is reported; the reload reflects whatever
+    /// survived either way (the row's version count, its best rating).
+    func deleteVersion(recipeId: String, number: Int) {
+        Task {
+            do {
+                try await RecipeAPI.deleteVersion(recipeId: recipeId, number: number)
+            } catch {
+                self.error = reportError(error)
+            }
+            await load()
+        }
+    }
+
     /// Trigger the next page when a row near the end appears (infinite scroll).
     func prefetchIfNeeded(for recipeId: String) {
         guard hasMore, !isLoadingMore else { return }

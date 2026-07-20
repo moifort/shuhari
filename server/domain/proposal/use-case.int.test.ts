@@ -250,7 +250,7 @@ describe('ProposalUseCase.accept', () => {
         steps: stepList('Saisir', 'Mijoter'),
       },
     })) as Recipe
-    expect(result.versionCount).toBe(2 as VersionNumber)
+    expect(result.lastVersionNumber).toBe(2 as VersionNumber)
 
     const v2 = fake.snapshot('recipe-versions').get(`${recipe.id}_2`)
     expect(v2?.change).toBe('Bouillon 700 → 650 ml')

@@ -7,11 +7,18 @@ struct RecipeRouteView: View {
     @Binding var path: NavigationPath
     let onReload: () -> Void
     let onDelete: (String) -> Void
+    let onDeleteVersion: (String, Int) -> Void
 
     var body: some View {
         switch route {
         case .recipe(let id):
-            RecipeDetailView(recipeId: id, path: $path, onReload: onReload, onDelete: onDelete)
+            RecipeDetailView(
+                recipeId: id,
+                path: $path,
+                onReload: onReload,
+                onDelete: onDelete,
+                onDeleteVersion: onDeleteVersion
+            )
         case .attempt(let recipeId, let versionNumber):
             // The attempt reuses the recipe sheet, focused on the version: same
             // title, sections and CTAs, plus an orange banner and change dots.
@@ -20,7 +27,8 @@ struct RecipeRouteView: View {
                 focusVersionNumber: versionNumber,
                 path: $path,
                 onReload: onReload,
-                onDelete: onDelete
+                onDelete: onDelete,
+                onDeleteVersion: onDeleteVersion
             )
         }
     }
@@ -32,11 +40,18 @@ struct RecipeFlowModifier: ViewModifier {
     @Binding var execution: ExecutionRequest?
     let onReload: () -> Void
     let onDelete: (String) -> Void
+    let onDeleteVersion: (String, Int) -> Void
 
     func body(content: Content) -> some View {
         content
             .navigationDestination(for: RecipeRoute.self) { route in
-                RecipeRouteView(route: route, path: $path, onReload: onReload, onDelete: onDelete)
+                RecipeRouteView(
+                    route: route,
+                    path: $path,
+                    onReload: onReload,
+                    onDelete: onDelete,
+                    onDeleteVersion: onDeleteVersion
+                )
             }
             .fullScreenCover(item: $execution) { request in
                 ExecuteFlowView(request: request) { onReload() }
@@ -49,8 +64,15 @@ extension View {
         path: Binding<NavigationPath>,
         execution: Binding<ExecutionRequest?> = .constant(nil),
         onReload: @escaping () -> Void,
-        onDelete: @escaping (String) -> Void
+        onDelete: @escaping (String) -> Void,
+        onDeleteVersion: @escaping (String, Int) -> Void
     ) -> some View {
-        modifier(RecipeFlowModifier(path: path, execution: execution, onReload: onReload, onDelete: onDelete))
+        modifier(RecipeFlowModifier(
+            path: path,
+            execution: execution,
+            onReload: onReload,
+            onDelete: onDelete,
+            onDeleteVersion: onDeleteVersion
+        ))
     }
 }

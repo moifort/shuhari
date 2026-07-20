@@ -76,7 +76,9 @@ export type Recipe = {
   // rather than false when it is not one — the library's favourites lens filters on
   // its presence.
   favorite?: true
-  versionCount: VersionNumber // highest version number allocated so far
+  // Highest version number ever allocated — a monotonic allocator, never decremented
+  // when a version is deleted, so a number is never reused by a later iteration.
+  lastVersionNumber: VersionNumber
   createdAt: Date
   updatedAt: Date
 }

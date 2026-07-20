@@ -12,6 +12,9 @@ struct RecipeDetailView: View {
     /// Hands the deletion to the library, which drops the row and runs the call in the
     /// background — this screen closes without waiting for it.
     let onDelete: (String) -> Void
+    /// Same one-way pattern for a single version: the library carries the call (and
+    /// reports its failure) while the recipe flow closes without waiting.
+    let onDeleteVersion: (String, Int) -> Void
 
     @State private var viewModel: RecipeViewModel
     @State private var showEdit = false
@@ -27,13 +30,15 @@ struct RecipeDetailView: View {
         focusVersionNumber: Int? = nil,
         path: Binding<NavigationPath>,
         onReload: @escaping () -> Void,
-        onDelete: @escaping (String) -> Void
+        onDelete: @escaping (String) -> Void,
+        onDeleteVersion: @escaping (String, Int) -> Void
     ) {
         self.recipeId = recipeId
         self.focusVersionNumber = focusVersionNumber
         self._path = path
         self.onReload = onReload
         self.onDelete = onDelete
+        self.onDeleteVersion = onDeleteVersion
         self._viewModel = State(initialValue: RecipeViewModel(recipeId: recipeId))
     }
 
@@ -44,14 +49,18 @@ struct RecipeDetailView: View {
         path: Binding<NavigationPath>,
         onReload: @escaping () -> Void = {},
         onDelete: @escaping (String) -> Void = { _ in },
-        focusVersionNumber: Int? = nil
+        onDeleteVersion: @escaping (String, Int) -> Void = { _, _ in },
+        focusVersionNumber: Int? = nil,
+        startOnDeleteConfirm: Bool = false
     ) {
         self.recipeId = previewRecipe.id
         self.focusVersionNumber = focusVersionNumber
         self._path = path
         self.onReload = onReload
         self.onDelete = onDelete
+        self.onDeleteVersion = onDeleteVersion
         self._viewModel = State(initialValue: RecipeViewModel(previewRecipe: previewRecipe))
+        self._showDeleteConfirm = State(initialValue: startOnDeleteConfirm)
     }
 
     var body: some View {
@@ -108,17 +117,17 @@ struct RecipeDetailView: View {
                         onReload()
                     }
                 }
-                .alert("Supprimer cette recette ?", isPresented: $showDeleteConfirm) {
-                    Button("Annuler", role: .cancel) {}
-                    Button("Supprimer", role: .destructive) {
-                        // One-way action: leave immediately, the library drops the row
-                        // and carries the call — nothing to wait for here.
-                        onDelete(recipeId)
-                        if !path.isEmpty { path.removeLast() }
+                // No title nor message: the two destructive labels say it all.
+                .alert("", isPresented: $showDeleteConfirm) {
+                    Button("Supprimer la version \(displayedVersion(recipe).number)", role: .destructive) {
+                        deleteDisplayedVersion(recipe)
+                    }
+                    .accessibilityIdentifier("confirm-delete-version")
+                    Button(deleteRecipeLabel(recipe), role: .destructive) {
+                        deleteRecipe()
                     }
                     .accessibilityIdentifier("confirm-delete-recipe")
-                } message: {
-                    Text("Toutes ses versions et essais seront supprimés. Action irréversible.")
+                    Button("Annuler", role: .cancel) {}
                 }
             } else if let error = viewModel.error {
                 ContentUnavailableView("Erreur", systemImage: "exclamationmark.triangle", description: Text(error))
@@ -273,6 +282,31 @@ struct RecipeDetailView: View {
     /// attempt version when set, otherwise the recipe's `versionToOpen`.
     private func displayedVersion(_ recipe: Recipe) -> RecipeVersion {
         focusVersionNumber.flatMap { recipe.version($0) } ?? recipe.versionToOpen
+    }
+
+    private func deleteRecipeLabel(_ recipe: Recipe) -> String {
+        let count = recipe.versions.count
+        return "Supprimer la recette (\(count) version\(count > 1 ? "s" : ""))"
+    }
+
+    /// One-way action: leave immediately, the library drops the row and carries the
+    /// call — nothing to wait for here.
+    private func deleteRecipe() {
+        onDelete(recipeId)
+        if !path.isEmpty { path.removeLast() }
+    }
+
+    /// Delete the displayed version and close the whole recipe flow — the screens
+    /// underneath were built on data this deletion just rewrote. The library carries
+    /// the call, same one-way pattern as the recipe.
+    private func deleteDisplayedVersion(_ recipe: Recipe) {
+        // The sole version has no separate fate: deleting it is deleting the recipe.
+        guard recipe.versions.count > 1 else {
+            deleteRecipe()
+            return
+        }
+        onDeleteVersion(recipeId, displayedVersion(recipe).number)
+        if !path.isEmpty { path.removeLast(path.count) }
     }
 
     /// Flip the favourite and reload — the sheet redraws its heart, and the library

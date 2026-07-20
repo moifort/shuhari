@@ -2,6 +2,10 @@ mutation DeleteRecipe($id: RecipeId!) {
   deleteRecipe(id: $id)
 }
 
+mutation DeleteVersion($recipeId: RecipeId!, $number: VersionNumber!) {
+  deleteVersion(recipeId: $recipeId, number: $number)
+}
+
 mutation UpdateRecipe($id: RecipeId!, $input: UpdateRecipeInput!) {
   updateRecipe(id: $id, input: $input) {
     id

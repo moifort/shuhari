@@ -24,6 +24,8 @@ struct DebugGallery: View {
             RecipeDetailGalleryScreen(recipe: Fixtures.risotto)
         case "recipe-fresh":
             RecipeDetailGalleryScreen(recipe: Fixtures.freshImport)
+        case "recipe-delete":
+            RecipeDetailGalleryScreen(recipe: Fixtures.bourguignon, startOnDeleteConfirm: true)
         case "history":
             Color.clear
                 .sheet(isPresented: .constant(true)) {
@@ -148,11 +150,18 @@ private struct RecipeDetailGalleryScreen: View {
     let recipe: Recipe
     /// When set, focuses that version (the attempt view: orange banner + change dots).
     var focusVersionNumber: Int? = nil
+    /// Opens straight on the delete dialog (version vs whole recipe).
+    var startOnDeleteConfirm = false
     @State private var path = NavigationPath()
 
     var body: some View {
         NavigationStack(path: $path) {
-            RecipeDetailView(previewRecipe: recipe, path: $path, focusVersionNumber: focusVersionNumber)
+            RecipeDetailView(
+                previewRecipe: recipe,
+                path: $path,
+                focusVersionNumber: focusVersionNumber,
+                startOnDeleteConfirm: startOnDeleteConfirm
+            )
         }
     }
 }

@@ -52,7 +52,7 @@ describe('RecipeCommand.create', () => {
     const recipe = await RecipeCommand.create(userId, newInput(), 'Un site')
     if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
 
-    expect(recipe.versionCount).toBe(1 as VersionNumber)
+    expect(recipe.lastVersionNumber).toBe(1 as VersionNumber)
     expect(fake.snapshot('recipes').get(recipe.id as string)?.type).toBe('dish')
     const v1 = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)
     expect(v1?.origin).toEqual({ kind: 'import', detail: 'Un site' })
@@ -135,7 +135,7 @@ describe('RecipeCommand.addVersion', () => {
       content,
     })) as Recipe
 
-    expect(withV2.versionCount).toBe(2 as VersionNumber)
+    expect(withV2.lastVersionNumber).toBe(2 as VersionNumber)
     const v2 = fake.snapshot('recipe-versions').get(`${recipe.id}_2`)
     expect(v2?.change).toBe('Bouillon 700 → 650 ml')
     expect(v2?.basedOn).toBe(1 as VersionNumber)
@@ -268,6 +268,99 @@ describe('RecipeCommand.update', () => {
     expect(await RecipeCommand.update(userId, 'nope' as RecipeId, { favorite: true })).toBe(
       'not-found',
     )
+  })
+})
+
+describe('RecipeCommand.removeVersion', () => {
+  // A three-version chain v1 → v2 → v3, each iterating on the previous one.
+  const threeVersionRecipe = async (): Promise<Recipe> => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    await RecipeCommand.addVersion(userId, recipe.id, {
+      change: 'v2',
+      basedOn: 1 as VersionNumber,
+      content: dishContent(),
+    })
+    await RecipeCommand.addVersion(userId, recipe.id, {
+      change: 'v3',
+      basedOn: 2 as VersionNumber,
+      content: dishContent(),
+    })
+    return recipe
+  }
+
+  test('deletes the version and re-threads its children onto its base, atomically', async () => {
+    const recipe = await threeVersionRecipe()
+    const batchesBefore = fake.batches.length
+
+    const result = await RecipeCommand.removeVersion(userId, recipe.id, 2 as VersionNumber)
+    expect(result).toBeUndefined()
+
+    expect(fake.snapshot('recipe-versions').has(`${recipe.id}_2`)).toBe(false)
+    // v3 iterated on v2; it now iterates on what v2 iterated on.
+    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_3`)?.basedOn).toBe(1 as VersionNumber)
+    // The allocator never rolls back: the next iteration must not reuse a number.
+    expect(fake.snapshot('recipes').get(recipe.id)?.lastVersionNumber).toBe(3 as VersionNumber)
+    // Re-threading + delete + recipe bump land in a single batch (all-or-nothing).
+    expect(fake.directWrites).toEqual([])
+    expect(fake.batches.length).toBe(batchesBefore + 1)
+  })
+
+  test('deleting a root leaves its children iterating on nothing', async () => {
+    const recipe = await threeVersionRecipe()
+
+    await RecipeCommand.removeVersion(userId, recipe.id, 1 as VersionNumber)
+
+    const v2 = fake.snapshot('recipe-versions').get(`${recipe.id}_2`)
+    expect(v2).not.toHaveProperty('basedOn')
+    // The rest of the chain is untouched.
+    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_3`)?.basedOn).toBe(2 as VersionNumber)
+  })
+
+  test('deleting the sole version removes the whole recipe', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+
+    const result = await RecipeCommand.removeVersion(userId, recipe.id, 1 as VersionNumber)
+    expect(result).toBeUndefined()
+
+    expect(fake.snapshot('recipes').has(recipe.id)).toBe(false)
+    expect(fake.snapshot('recipe-versions').has(`${recipe.id}_1`)).toBe(false)
+  })
+
+  test('a deleted number is never reused by the next iteration', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    await RecipeCommand.addVersion(userId, recipe.id, {
+      change: 'v2',
+      basedOn: 1 as VersionNumber,
+      content: dishContent(),
+    })
+
+    await RecipeCommand.removeVersion(userId, recipe.id, 2 as VersionNumber)
+    await RecipeCommand.addVersion(userId, recipe.id, {
+      change: 'après le trou',
+      basedOn: 1 as VersionNumber,
+      content: dishContent(),
+    })
+
+    // v2's number stays a hole: the new iteration is v3.
+    expect(fake.snapshot('recipe-versions').has(`${recipe.id}_2`)).toBe(false)
+    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_3`)?.change).toBe('après le trou')
+  })
+
+  test('returns not-found for an unknown recipe or version', async () => {
+    expect(await RecipeCommand.removeVersion(userId, 'nope' as RecipeId, 1 as VersionNumber)).toBe(
+      'not-found',
+    )
+
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    expect(await RecipeCommand.removeVersion(userId, recipe.id, 9 as VersionNumber)).toBe(
+      'not-found',
+    )
+    // Nothing was written on the rejected removals.
+    expect(fake.snapshot('recipe-versions').has(`${recipe.id}_1`)).toBe(true)
   })
 })
 

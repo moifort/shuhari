@@ -22,6 +22,15 @@ enum RecipeAPI {
         )
     }
 
+    /// Delete one version from the lineage; the versions built on it are re-based
+    /// onto the one it iterated on, its number is never reused.
+    static func deleteVersion(recipeId: String, number: Int) async throws {
+        _ = try await GraphQLHelpers.perform(
+            GraphQLClient.shared.apollo,
+            mutation: ShuhariGraphQL.DeleteVersionMutation(recipeId: recipeId, number: number)
+        )
+    }
+
     /// Retouch the aggregate: rename it, refile it under another course, mark it a
     /// favourite, or any combination. A field left nil is left alone.
     static func updateRecipe(
