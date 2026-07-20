@@ -28,7 +28,10 @@ the one worth cooking next.
 3. Write remarks and the **AI proposes the next version** instead. Accept it and it is appended as
    `v2` — a straight line, never a fork — carrying that attempt as its own outcome; the version you
    cooked is left untouched. Nothing is saved until you accept.
-4. The app derives the rest: the **best rating** is the highest-rated attempt (most recent one wins a
+4. Or ask for an **improvement** without cooking at all: write what you want changed and the AI
+   proposes a version from that alone. Accepted, it lands on the **to-cook list** the recipe sheet's
+   flask opens, and leaves it the moment you cook it.
+5. The app derives the rest: the **best rating** is the highest-rated attempt (most recent one wins a
    tie), and the recipe opens on the **attempt in progress** — the newest version built on that
    best-rated one — falling back to the best-rated version, then to the latest.
 
@@ -37,8 +40,8 @@ derived from the ratings.
 
 Recipes come in two kinds — **dish** and **thermomix** (where each step also carries time,
 temperature, speed and reverse rotation) — and one of seven courses (starter, main, dessert, soup,
-sauce, baking, drink) detected at import. The library is paginated, filterable by kind and sortable by
-course or by last edit. The notebook opens on **Tout** — every recipe, both kinds mixed, newest
+sauce, baking, drink) detected at import and changeable from the recipe sheet. The library is
+paginated, filterable by kind and sortable by course or by last edit. The notebook opens on **Tout** — every recipe, both kinds mixed, newest
 first — and the other lenses narrow it to one kind. Mark a recipe as a **favourite** from its sheet
 and the last lens lists your favourites, course by course; the heart also shows on the library row.
 
