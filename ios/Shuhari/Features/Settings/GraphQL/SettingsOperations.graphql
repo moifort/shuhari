@@ -16,3 +16,7 @@ mutation ImportData($payload: String!) {
     versions
   }
 }
+
+mutation DeleteAccount {
+  deleteAccount
+}

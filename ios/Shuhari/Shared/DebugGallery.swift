@@ -10,9 +10,14 @@ struct DebugGallery: View {
     /// Every gallery screen gets a store: the ones that present the Premium sheet
     /// read it from the environment, and an unconfigured one simply sells nothing.
     @State private var subscription = SubscriptionStore()
+    /// Likewise for the session: screens that show the account read it from the
+    /// environment, and with nobody signed in they simply show no address.
+    @State private var authSession = AuthSession()
 
     var body: some View {
-        gallery.environment(subscription)
+        gallery
+            .environment(subscription)
+            .environment(authSession)
     }
 
     @ViewBuilder
@@ -163,6 +168,8 @@ struct DebugGallery: View {
             ImportReviewSheet(galleryPhase: .nothingFound)
         case "login":
             LoginView()
+        case "settings":
+            SettingsHomeView()
         case "settings-data":
             NavigationStack {
                 ImportExportSettingsView()

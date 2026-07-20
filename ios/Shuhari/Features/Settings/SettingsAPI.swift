@@ -24,6 +24,13 @@ enum SettingsAPI {
         return data.exportData
     }
 
+    static func deleteAccount() async throws {
+        _ = try await GraphQLHelpers.perform(
+            GraphQLClient.shared.apollo,
+            mutation: ShuhariGraphQL.DeleteAccountMutation()
+        )
+    }
+
     static func importData(payload: String) async throws -> ImportSummary {
         let data = try await GraphQLHelpers.perform(
             GraphQLClient.shared.apollo,
