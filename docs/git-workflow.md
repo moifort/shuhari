@@ -72,5 +72,4 @@ is written only at the moment of an iOS App Store release:
    asset `server/system/changelog-content.ts` from `CHANGELOG.fr.md` (never edit that asset by
    hand). The notes reach the app only after this deploy.
 
-See [App Store Distribution in CLAUDE.md](../CLAUDE.md#app-store-distribution) for the full
-release flow.
+See [app-store-release.md](./app-store-release.md) for the full release flow.
