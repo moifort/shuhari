@@ -40,6 +40,11 @@ dispatch a subagent (`Task`, `Agent`, review agents, parallel workers) — the u
 session live and a subagent hides the reasoning, burns time on re-reading context the session
 already holds, and comes back with a verdict nobody watched being formed.
 
+This rule is absolute and mode-independent: it also applies in **plan mode**, whose built-in
+workflow suggests Explore/Plan agents — that suggestion is overridden here. Explore inline
+(read files, grep) and write the plan from what the conversation saw. The only exception is an
+explicit user request to launch an agent.
+
 That includes the post-task code review of step 3 of the workflow: read your own diff, state
 what you checked and what you found, in the reply.
 
