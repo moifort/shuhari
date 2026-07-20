@@ -232,7 +232,7 @@ type Mutation {
   ): AcceptProposalResult!
 
   """
-  Analyze an import source (photos, a URL or raw text) into a structured recipe preview. Exactly one source must be provided. Results are cached server-side by SHA-256.
+  Analyze an import source (photos, a URL or raw text) into a structured recipe preview. Exactly one source must be provided. Results are cached server-side by SHA-256. Spends one import of your monthly AI allowance (see quota) — `QUOTA_EXHAUSTED` once it is used up; importing from a URL is a Premium feature and answers `PREMIUM_REQUIRED` otherwise.
   """
   analyzeImport(
     """
@@ -332,7 +332,7 @@ type Mutation {
   ): Version!
 
   """
-  Ask the AI for a next version answering something you want changed — no cook needed, just say what to improve. Nothing is saved yet: you get a proposal to review, and accepting it (see acceptProposal) creates the version, which lands on your to-cook list.
+  Ask the AI for a next version answering something you want changed — no cook needed, just say what to improve. Nothing is saved yet: you get a proposal to review, and accepting it (see acceptProposal) creates the version, which lands on your to-cook list. Spends one iteration of your monthly AI allowance (see quota) — `QUOTA_EXHAUSTED` once it is used up.
   
   ```graphql
   requestImprovement(
@@ -359,7 +359,7 @@ type Mutation {
   ): Proposal!
 
   """
-  Ask the AI for a suggested next version. It looks at the version you just cooked and at how the cook went — the rating and remarks you send here — and proposes one improvement. Nothing is saved yet, not even your rating: it is recorded on the new version when you accept the proposal (see acceptProposal).
+  Ask the AI for a suggested next version. It looks at the version you just cooked and at how the cook went — the rating and remarks you send here — and proposes one improvement. Nothing is saved yet, not even your rating: it is recorded on the new version when you accept the proposal (see acceptProposal). Spends one iteration of your monthly AI allowance (see quota) — `QUOTA_EXHAUSTED` once it is used up.
   
   ```graphql
   requestProposal(
@@ -393,7 +393,7 @@ type Mutation {
   ): Proposal!
 
   """
-  Ask the AI to fold the tips you just typed into one version’s tips list — reworded, merged with the tips it already has, deduplicated. Nothing is saved: you get the complete list back to review, and accepting it goes through updateTips (no new version is ever created for tips).
+  Ask the AI to fold the tips you just typed into one version’s tips list — reworded, merged with the tips it already has, deduplicated. Nothing is saved: you get the complete list back to review, and accepting it goes through updateTips (no new version is ever created for tips). Spends one iteration of your monthly AI allowance (see quota) — `QUOTA_EXHAUSTED` once it is used up.
   
   ```graphql
   requestTips(
@@ -458,6 +458,19 @@ type Mutation {
     """Which version’s tips to replace, e.g. `2`"""
     versionNumber: VersionNumber!
   ): Version!
+}
+
+"""
+What a cook is entitled to. The notebook itself is free and unlimited — the plan only decides how much AI comes with it.
+"""
+enum Plan {
+  """
+  The free plan — unlimited recipes, a monthly allowance of AI calls, no URL import
+  """
+  FREE
+
+  """The paid subscription — unlimited AI calls and the URL import"""
+  PREMIUM
 }
 
 """
@@ -559,6 +572,20 @@ type Query {
   exportData: String!
 
   """
+  Your AI allowance for the current month: the plan you are on, what you have spent, what is left and when it renews. Free plans get 3 imports and 5 iterations a month; Premium is unlimited and unlocks the URL import.
+  
+  ```graphql
+  quota {
+    plan
+    imports { used limit remaining }
+    iterations { used limit remaining }
+    renewsOn
+  }
+  ```
+  """
+  quota: Quota!
+
+  """
   Fetch one recipe by its id, with everything on it. Returns `null` if no such recipe exists.
   
   ```graphql
@@ -612,6 +639,45 @@ type Query {
     """Facet: keep only this recipe type, e.g. `THERMOMIX`"""
     type: RecipeType
   ): Recipes!
+}
+
+"""
+Your AI allowance for the current calendar month. Recipes and versions are never limited: only the calls to the AI are, and they reset on the 1st.
+"""
+type Quota {
+  """Recipe imports analyzed by the AI this month (photos, text or URL)"""
+  imports: QuotaCounter!
+
+  """
+  AI calls made on an existing recipe this month — a proposal, an improvement or a tips merge
+  """
+  iterations: QuotaCounter!
+
+  """The plan in force, e.g. `FREE`"""
+  plan: Plan!
+
+  """
+  When both meters go back to zero — the 1st of next month, e.g. `"2026-08-01T00:00:00.000Z"`
+  """
+  renewsOn: DateTime!
+}
+
+"""
+One AI meter for the current month — what has been spent and what is left, e.g. `1` import used out of `3`
+"""
+type QuotaCounter {
+  """
+  How many the plan allows per month, e.g. `3` — `null` on an unlimited plan
+  """
+  limit: Int
+
+  """
+  How many are still available this month, e.g. `2` — `null` on an unlimited plan
+  """
+  remaining: Int
+
+  """How many were spent this month, e.g. `1`"""
+  used: Int!
 }
 
 """

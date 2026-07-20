@@ -36,8 +36,14 @@ mock.module('~/system/ai', () => ({
   },
 }))
 
+// The plan comes from configuration until in-app purchase ships (see
+// `QuotaQuery.planOf`): tests grant Premium by putting the uid in this list.
+let premiumUserIds: UserId[] = []
+mock.module('~/system/config', () => ({ config: () => ({ premiumUserIds }) }))
+
 const { RecipeCommand } = await import('~/domain/recipe/command')
 const { ProposalUseCase } = await import('~/domain/proposal/use-case')
+const { FREE_LIMITS } = await import('~/domain/quota/business-rules')
 
 const userId = 'user-1' as UserId
 const V1 = 1 as VersionNumber
@@ -102,6 +108,7 @@ const baseAnalysis = (): ImportAnalysis => ({
 let fake = resetFakeFirestore()
 beforeEach(() => {
   fake = resetFakeFirestore()
+  premiumUserIds = []
   proposal = baseProposal()
   analysis = baseAnalysis()
   mergedTips = ['Servir avec du riz', 'Se congèle bien']
@@ -122,14 +129,14 @@ describe('ProposalUseCase.fromAttempt', () => {
     )
   })
 
-  test('returns the branded proposal based on the tried version, persisting nothing', async () => {
+  test('returns the branded proposal based on the tried version, persisting no version', async () => {
     const recipe = await RecipeCommand.create(userId, recipeInput())
     if (typeof recipe === 'string') throw new Error('expected a recipe')
     const docReadsBefore = fake.docReads
     const queryReadsBefore = fake.queryReads
     const batchesBefore = fake.batches.length
     const result = await ProposalUseCase.fromAttempt(userId, recipe.id, V1, ATTEMPT)
-    if (result === 'not-found') throw new Error('expected a proposal')
+    if (typeof result === 'string') throw new Error('expected a proposal')
 
     expect(result.basedOn).toBe(V1)
     expect(result.changeSummary).toBe('Bouillon 700 → 650 ml')
@@ -142,12 +149,15 @@ describe('ProposalUseCase.fromAttempt', () => {
     // The proposal carries the complete tips list of the version it would create.
     expect(result.tips).toEqual(['Servir avec du riz' as Tip])
 
-    // Two keyed doc reads (the recipe pointer + the cooked version) — the attempt
-    // itself comes from the caller, so there is no collection scan, no N+1, and
-    // nothing written back.
-    expect(fake.docReads - docReadsBefore).toBe(2)
+    // Three keyed doc reads: the recipe pointer, the cooked version — the attempt
+    // itself comes from the caller, so there is no collection scan and no N+1 —
+    // and the quota, read once and shared by the check before the call and the
+    // record after it (`memoizedPerRequest`). The only write is that quota: no
+    // version and no recipe is touched until the proposal is accepted.
+    expect(fake.docReads - docReadsBefore).toBe(3)
     expect(fake.queryReads - queryReadsBefore).toBe(0)
     expect(fake.batches.length).toBe(batchesBefore)
+    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.rating).toBeUndefined()
   })
 
   test('pairs the steps with settings for a thermomix recipe, plain steps for a dish', async () => {
@@ -161,7 +171,7 @@ describe('ProposalUseCase.fromAttempt', () => {
     const thermomix = await RecipeCommand.create(userId, recipeInput({ type: 'thermomix' }))
     if (typeof thermomix === 'string') throw new Error('expected a recipe')
     const thermomixProposal = await ProposalUseCase.fromAttempt(userId, thermomix.id, V1, ATTEMPT)
-    if (thermomixProposal === 'not-found') throw new Error('expected a proposal')
+    if (typeof thermomixProposal === 'string') throw new Error('expected a proposal')
     expect(thermomixProposal.content).toEqual({
       kind: 'thermomix',
       ingredients: PROPOSAL_INGREDIENTS,
@@ -182,7 +192,7 @@ describe('ProposalUseCase.fromAttempt', () => {
     const dish = await RecipeCommand.create(userId, recipeInput())
     if (typeof dish === 'string') throw new Error('expected a recipe')
     const dishProposal = await ProposalUseCase.fromAttempt(userId, dish.id, V1, ATTEMPT)
-    if (dishProposal === 'not-found') throw new Error('expected a proposal')
+    if (typeof dishProposal === 'string') throw new Error('expected a proposal')
     expect(dishProposal.content).toEqual({
       kind: 'dish',
       ingredients: PROPOSAL_INGREDIENTS,
@@ -204,7 +214,7 @@ describe('ProposalUseCase.fromImprovement', () => {
       V1,
       'Version végétarienne' as Remarks,
     )
-    if (result === 'not-found') throw new Error('expected a proposal')
+    if (typeof result === 'string') throw new Error('expected a proposal')
     expect(result.basedOn).toBe(V1)
     expect(result.content).toEqual({
       kind: 'dish',
@@ -212,8 +222,8 @@ describe('ProposalUseCase.fromImprovement', () => {
       steps: stepList('Saisir', 'Mijoter'),
     })
 
-    // Same budget as fromAttempt: the recipe pointer + the version, nothing written.
-    expect(fake.docReads - docReadsBefore).toBe(2)
+    // Same budget as fromAttempt: the recipe pointer, the version and the quota.
+    expect(fake.docReads - docReadsBefore).toBe(3)
     expect(fake.batches.length).toBe(batchesBefore)
   })
 
@@ -225,7 +235,7 @@ describe('ProposalUseCase.fromImprovement', () => {
 })
 
 describe('ProposalUseCase.fromTips', () => {
-  test('returns the branded merged list, persisting nothing', async () => {
+  test('returns the branded merged list, persisting no version', async () => {
     const recipe = await RecipeCommand.create(userId, recipeInput())
     if (typeof recipe === 'string') throw new Error('expected a recipe')
     const docReadsBefore = fake.docReads
@@ -237,12 +247,13 @@ describe('ProposalUseCase.fromTips', () => {
       V1,
       'servir avec du riz, se congèle bien' as Remarks,
     )
-    if (result === 'not-found') throw new Error('expected tips')
+    if (typeof result === 'string') throw new Error('expected tips')
     expect(result).toEqual(['Servir avec du riz' as Tip, 'Se congèle bien' as Tip])
 
-    // Same budget as a version proposal — the recipe pointer + the version — and
-    // the version's own tips are left exactly as they were until updateTips.
-    expect(fake.docReads - docReadsBefore).toBe(2)
+    // Same budget as a version proposal — the recipe pointer, the version and the
+    // quota — and the version's own tips are left exactly as they were until
+    // updateTips.
+    expect(fake.docReads - docReadsBefore).toBe(3)
     expect(fake.batches.length).toBe(batchesBefore)
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.tips).toEqual([])
   })
@@ -261,19 +272,74 @@ describe('ProposalUseCase.fromTips', () => {
 })
 
 describe('ProposalUseCase.fromPhoto', () => {
-  test('returns the AI import analysis without persisting anything', async () => {
+  test('returns the AI import analysis without persisting a recipe', async () => {
     const batchesBefore = fake.batches.length
     const result = await ProposalUseCase.fromPhoto(userId, { kind: 'text', text: 'Blanquette' })
 
     expect(result).toEqual(baseAnalysis())
     expect(fake.batches.length).toBe(batchesBefore)
+    expect(fake.snapshot('recipes').size).toBe(0)
   })
 
-  test('passes the no-recipe-found sentinel straight through', async () => {
+  test('passes the no-recipe-found sentinel straight through, free of charge', async () => {
     analysis = 'no-recipe-found'
     expect(await ProposalUseCase.fromPhoto(userId, { kind: 'text', text: 'nope' })).toBe(
       'no-recipe-found',
     )
+    // A source with no recipe in it is a miss, not an import: nothing is spent.
+    expect(fake.snapshot('ai-quotas').size).toBe(0)
+  })
+
+  test('reserves the URL import for Premium', async () => {
+    expect(await ProposalUseCase.fromPhoto(userId, { kind: 'url', url: 'https://x.test' })).toBe(
+      'premium-required',
+    )
+    // Refused before Gemini is ever called, so it costs nothing at all.
+    expect(fake.snapshot('ai-quotas').size).toBe(0)
+
+    premiumUserIds = [userId]
+    expect(await ProposalUseCase.fromPhoto(userId, { kind: 'url', url: 'https://x.test' })).toEqual(
+      baseAnalysis(),
+    )
+  })
+})
+
+describe('the monthly AI allowance', () => {
+  const textSource = { kind: 'text', text: 'Blanquette' } as const
+
+  test('refuses the import past the free limit, then again the next call', async () => {
+    for (const _ of Array(FREE_LIMITS.import).keys())
+      expect(await ProposalUseCase.fromPhoto(userId, textSource)).toEqual(baseAnalysis())
+
+    expect(await ProposalUseCase.fromPhoto(userId, textSource)).toBe('quota-exhausted')
+    expect(await ProposalUseCase.fromPhoto(userId, textSource)).toBe('quota-exhausted')
+  })
+
+  test('counts proposals, improvements and tips on the one iteration meter', async () => {
+    const recipe = await RecipeCommand.create(userId, recipeInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+
+    // Three different AI calls on an existing version, one shared meter.
+    await ProposalUseCase.fromAttempt(userId, recipe.id, V1, ATTEMPT)
+    await ProposalUseCase.fromImprovement(userId, recipe.id, V1, 'Végétarien' as Remarks)
+    await ProposalUseCase.fromTips(userId, recipe.id, V1, 'riz' as Remarks)
+    for (const _ of Array(FREE_LIMITS.iteration - 3).keys())
+      await ProposalUseCase.fromAttempt(userId, recipe.id, V1, ATTEMPT)
+
+    expect(await ProposalUseCase.fromAttempt(userId, recipe.id, V1, ATTEMPT)).toBe(
+      'quota-exhausted',
+    )
+    expect(await ProposalUseCase.fromTips(userId, recipe.id, V1, 'riz' as Remarks)).toBe(
+      'quota-exhausted',
+    )
+    // The import meter is untouched by iterations.
+    expect(await ProposalUseCase.fromPhoto(userId, textSource)).toEqual(baseAnalysis())
+  })
+
+  test('never runs out on Premium', async () => {
+    premiumUserIds = [userId]
+    for (const _ of Array(FREE_LIMITS.import + 2).keys())
+      expect(await ProposalUseCase.fromPhoto(userId, textSource)).toEqual(baseAnalysis())
   })
 })
 

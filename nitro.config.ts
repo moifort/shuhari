@@ -22,5 +22,6 @@ export default defineNitroConfig({
   runtimeConfig: {
     googleApiKey: '',
     adminToken: '',
+    premiumUserIds: '',
   },
 })

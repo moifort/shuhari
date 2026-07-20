@@ -1,4 +1,4 @@
-import { AdminToken, ApiToken, GoogleApiKey } from '~/system/config/primitives'
+import { AdminToken, ApiToken, GoogleApiKey, PremiumUserIds } from '~/system/config/primitives'
 
 export const config = () => {
   const runtimeConfig = useRuntimeConfig()
@@ -6,5 +6,6 @@ export const config = () => {
     apiToken: runtimeConfig.apiToken ? ApiToken(runtimeConfig.apiToken) : undefined,
     adminToken: runtimeConfig.adminToken ? AdminToken(runtimeConfig.adminToken) : undefined,
     googleApiKey: GoogleApiKey(runtimeConfig.googleApiKey),
+    premiumUserIds: PremiumUserIds(runtimeConfig.premiumUserIds),
   }
 }

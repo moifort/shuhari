@@ -1,3 +1,6 @@
+import { allowsUrlImport } from '~/domain/quota/business-rules'
+import { QuotaCommand } from '~/domain/quota/command'
+import { QuotaQuery } from '~/domain/quota/query'
 import { RecipeCommand } from '~/domain/recipe/command'
 import type { VersionContent } from '~/domain/recipe/content/types'
 import { VersionContent as brandVersionContent, Tip } from '~/domain/recipe/primitives'
@@ -49,13 +52,14 @@ export namespace ProposalUseCase {
   // the improvement) exists only in the request. Loads the version iterated on by key
   // — recipe + version, two keyed doc reads, no lineage scan — feeds both to the AI,
   // brands the result into domain shapes and returns it stamped with
-  // `basedOn = versionNumber`. Nothing is persisted.
+  // `basedOn = versionNumber`. Nothing is persisted beyond the quota spent.
   const nextVersion = async (
     userId: UserId,
     recipeId: RecipeId,
     versionNumber: VersionNumber,
     request: ProposalRequest,
   ) => {
+    if (await QuotaQuery.exhaustedFor(userId, 'iteration')) return 'quota-exhausted'
     const recipe = await RecipeQuery.byId(userId, recipeId)
     if (recipe === 'not-found') return 'not-found'
     const version = await RecipeQuery.versionBy(recipeId, versionNumber)
@@ -74,6 +78,8 @@ export namespace ProposalUseCase {
       ...('improvement' in request ? { improvement: request.improvement } : {}),
     }
     const proposal = await Ai.proposeNext(context)
+    // Recorded only now: the call went through, so it is billed and it counts.
+    await QuotaCommand.record(userId, 'iteration')
 
     const branded: Proposal = {
       basedOn: version.number,
@@ -106,12 +112,14 @@ export namespace ProposalUseCase {
   // current tips — reworded and deduplicated by the AI. Ephemeral like the version
   // proposals: nothing is persisted until the cook accepts it, which rewrites the
   // SAME version's tips via `RecipeCommand.updateTips` (no new version at stake).
+  // It is still a Gemini call on an existing version, so it spends an iteration.
   export const fromTips = async (
     userId: UserId,
     recipeId: RecipeId,
     versionNumber: VersionNumber,
     requested: Remarks,
   ) => {
+    if (await QuotaQuery.exhaustedFor(userId, 'iteration')) return 'quota-exhausted'
     const recipe = await RecipeQuery.byId(userId, recipeId)
     if (recipe === 'not-found') return 'not-found'
     const version = await RecipeQuery.versionBy(recipeId, versionNumber)
@@ -127,16 +135,29 @@ export namespace ProposalUseCase {
       currentTips: version.tips.map((tip) => tip as string),
       requested,
     })
+    await QuotaCommand.record(userId, 'iteration')
     return tips.map(Tip)
   }
 
   // Analyze an import source (photos, a URL or raw text) into a structured recipe
   // preview. The proposal domain is the sole caller of the import AI; confirming
   // this preview persists a brand-new recipe via `RecipeCommand.create` (the recipe
-  // domain's `createRecipe` mutation) — nothing is saved here. `_userId` is ignored on
-  // purpose: the analysis is globally SHA-cached (keyed on the source, not the caller)
-  // and stays user-scoped only from the confirmed `create` onward.
-  export const fromPhoto = async (_userId: UserId, source: ImportSource) => Ai.analyzeImport(source)
+  // domain's `createRecipe` mutation) — nothing is saved here but the quota spent.
+  // The analysis itself stays globally SHA-cached (keyed on the source, not the
+  // caller), and user-scoped only from the confirmed `create` onward; `userId` is
+  // read for the plan and the quota alone. Reading a web page is what the
+  // subscription pays for, so a free cook is turned away before any billing.
+  export const fromPhoto = async (userId: UserId, source: ImportSource) => {
+    if (source.kind === 'url' && !allowsUrlImport(await QuotaQuery.planOf(userId)))
+      return 'premium-required'
+    if (await QuotaQuery.exhaustedFor(userId, 'import')) return 'quota-exhausted'
+    const analysis = await Ai.analyzeImport(source)
+    // A source the AI found no recipe in costs the cook nothing: it is a miss, not
+    // an import. A cache hit does count — the quota is a product promise, not a
+    // meter on our Gemini bill.
+    if (analysis !== 'no-recipe-found') await QuotaCommand.record(userId, 'import')
+    return analysis
+  }
 
   // Accept a proposal as an iteration: append version n+1 from the client-supplied
   // content, stamping the version it iterated on (`basedOn`, threaded back through the

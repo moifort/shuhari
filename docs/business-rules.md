@@ -107,6 +107,30 @@ The prompts in `server/system/ai/index.ts`:
   so the prompt must name the arrow character explicitly: told only "a comma-separated list of
   deltas", the model has answered with the comma as the separator *inside* a change.
 
+## The plan and the monthly AI allowance
+
+The notebook is free and unlimited — recipes, versions, attempts, photos, export. The AI is the
+app's only variable cost, so it is the only thing metered (`quota` domain, dimensioned in
+[specs/2026-07-20-freemium-pricing-design.md](./specs/2026-07-20-freemium-pricing-design.md)):
+
+- Two meters, `imports` and `iterations`. An **import** is one recipe analysis (`analyzeImport`,
+  whatever the source); an **iteration** is one AI call on an existing version — a proposal, an
+  improvement *or* a tips merge, all three sharing the same counter.
+- `free` gets 3 imports and 5 iterations per **calendar month** (`FREE_LIMITS`), `premium`
+  is unlimited. The window IS the month: one document per cook and per month, no reset job, and
+  `renewsOn` is the 1st of the next month, UTC.
+- **Importing from a URL is Premium.** It is the one call billed per request (Google Search
+  grounding), and a free cook is refused before Gemini is ever called (`PREMIUM_REQUIRED`).
+- **Check before, record after.** `ProposalUseCase` asks `QuotaQuery.exhaustedFor` before calling
+  the AI (a refusal costs nothing, `QUOTA_EXHAUSTED`) and `QuotaCommand.record` only once the AI
+  has answered: a Gemini failure never costs a cook a quota, and a source with no recipe in it
+  (`no-recipe-found`) is a miss, not an import. A cache hit *does* count — the quota is a product
+  promise, not a meter on our bill.
+- **The plan is not yet bought.** In-app purchase is not shipped; `QuotaQuery.planOf` reads
+  `NITRO_PREMIUM_USER_IDS` (comma-separated Firebase uids). That single function is the seam a
+  verified App Store entitlement will replace — nothing else in the domain knows where the plan
+  comes from.
+
 ## Style rules that bite here
 
 See [code-style.md](./code-style.md):

@@ -17,6 +17,11 @@ import '~/domain/proposal/infrastructure/graphql/types'
 import '~/domain/proposal/infrastructure/graphql/inputs'
 import '~/domain/proposal/infrastructure/graphql/mutations'
 
+// Quota domain (the freemium plan and the monthly AI allowance it comes with)
+import '~/domain/quota/infrastructure/graphql/enums'
+import '~/domain/quota/infrastructure/graphql/types'
+import '~/domain/quota/infrastructure/graphql/queries'
+
 // Changelog (application release notes)
 import '~/system/changelog/infrastructure/graphql/types'
 import '~/system/changelog/infrastructure/graphql/queries'

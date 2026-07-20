@@ -117,6 +117,11 @@ append-only collection keyed by a deterministic id:
   state (best rating, version to open) is *derived* from its versions, not stored on it
 - `recipe-versions` — one immutable doc per version, keyed `${recipeId}_${number}`
 
+**Standalone documents.** Not every collection is an aggregate: `ai-quotas` holds one document
+per cook and per calendar month, keyed `${userId}_${month}` (`quota` domain). Nothing is scanned
+and nothing is purged — last month's document is simply never read again, and an absent document
+reads back as both meters at zero.
+
 Multi-document writes are made atomic with `atomically` (a single committed `WriteBatch`);
 import/restore use `bulkSave` (bounded-concurrency individual sets, above the 500-op batch
 cap); deletes use `deleteInBatches`. See the [domain guide](./domain-guide.md).

@@ -43,7 +43,8 @@ builder.mutationField('requestProposal', (t) =>
       'Ask the AI for a suggested next version. It looks at the version you just cooked and at ' +
         'how the cook went — the rating and remarks you send here — and proposes one ' +
         'improvement. Nothing is saved yet, not even your rating: it is recorded on the new ' +
-        'version when you accept the proposal (see acceptProposal).',
+        'version when you accept the proposal (see acceptProposal). Spends one iteration of ' +
+        'your monthly AI allowance (see quota) — `QUOTA_EXHAUSTED` once it is used up.',
       '',
       '```graphql',
       'requestProposal(',
@@ -89,6 +90,7 @@ builder.mutationField('requestProposal', (t) =>
       })
       return match(result)
         .with('not-found', domainError)
+        .with('quota-exhausted', domainError)
         .with(P.not(P.string), (proposal) => proposal)
         .exhaustive()
     },
@@ -101,7 +103,9 @@ builder.mutationField('requestImprovement', (t) =>
     description: [
       'Ask the AI for a next version answering something you want changed — no cook needed, ' +
         'just say what to improve. Nothing is saved yet: you get a proposal to review, and ' +
-        'accepting it (see acceptProposal) creates the version, which lands on your to-cook list.',
+        'accepting it (see acceptProposal) creates the version, which lands on your to-cook ' +
+        'list. Spends one iteration of your monthly AI allowance (see quota) — ' +
+        '`QUOTA_EXHAUSTED` once it is used up.',
       '',
       '```graphql',
       'requestImprovement(',
@@ -142,6 +146,7 @@ builder.mutationField('requestImprovement', (t) =>
       )
       return match(result)
         .with('not-found', domainError)
+        .with('quota-exhausted', domainError)
         .with(P.not(P.string), (proposal) => proposal)
         .exhaustive()
     },
@@ -155,7 +160,8 @@ builder.mutationField('requestTips', (t) =>
       'Ask the AI to fold the tips you just typed into one version’s tips list — reworded, ' +
         'merged with the tips it already has, deduplicated. Nothing is saved: you get the ' +
         'complete list back to review, and accepting it goes through updateTips (no new version ' +
-        'is ever created for tips).',
+        'is ever created for tips). Spends one iteration of your monthly AI allowance (see ' +
+        'quota) — `QUOTA_EXHAUSTED` once it is used up.',
       '',
       '```graphql',
       'requestTips(',
@@ -189,6 +195,7 @@ builder.mutationField('requestTips', (t) =>
       const result = await ProposalUseCase.fromTips(userId, recipeId, versionNumber, tips)
       return match(result)
         .with('not-found', domainError)
+        .with('quota-exhausted', domainError)
         .with(P.not(P.string), (merged) => ({ tips: merged }))
         .exhaustive()
     },
@@ -269,7 +276,10 @@ builder.mutationField('analyzeImport', (t) =>
   t.field({
     type: ImportAnalysisType,
     description:
-      'Analyze an import source (photos, a URL or raw text) into a structured recipe preview. Exactly one source must be provided. Results are cached server-side by SHA-256.',
+      'Analyze an import source (photos, a URL or raw text) into a structured recipe preview. ' +
+      'Exactly one source must be provided. Results are cached server-side by SHA-256. Spends ' +
+      'one import of your monthly AI allowance (see quota) — `QUOTA_EXHAUSTED` once it is used ' +
+      'up; importing from a URL is a Premium feature and answers `PREMIUM_REQUIRED` otherwise.',
     args: {
       photos: t.arg.stringList({
         required: true,
@@ -290,6 +300,8 @@ builder.mutationField('analyzeImport', (t) =>
       }
       return match(result)
         .with('no-recipe-found', domainError)
+        .with('quota-exhausted', domainError)
+        .with('premium-required', domainError)
         .with(P.not(P.string), (analysis) => analysis)
         .exhaustive()
     },

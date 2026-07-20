@@ -61,9 +61,9 @@ Everything versioned and technical is **English**: commits, code, comments, docs
 > [collaboration](docs/collaboration.md). This section is the quick reference.
 
 - **Stack**: Bun + Nitro 2.13 (`preset firebase`, gen 2, nodejs22, `europe-west3`) + Apollo Server 5 + Pothos 4 + firebase-admin (native Firestore) + Zod + ts-brand. DDD/CQRS strict. Biome (spaces 2, single quotes, no semicolons, width 100), `ts-pattern` (`match().exhaustive()`), `lodash-es`.
-- **Domains**: `server/domain/{recipe,proposal,shared}` — `recipe` is the only persisted domain; `proposal` is ephemeral (never stored) and the sole caller of `~/system/ai`; system concerns in `server/system/`. Standard layout (`types.ts`, `primitives.ts`, `command.ts`, `query.ts`, `infrastructure/{repository,graphql/*}.ts`, optional `business-rules.ts` / `use-case.ts`): [docs/domain-guide.md](docs/domain-guide.md).
+- **Domains**: `server/domain/{recipe,proposal,quota,shared}` — `recipe` and `quota` are the persisted domains; `proposal` is ephemeral (never stored) and the sole caller of `~/system/ai`, which it gates on the quota; system concerns in `server/system/`. Standard layout (`types.ts`, `primitives.ts`, `command.ts`, `query.ts`, `infrastructure/{repository,graphql/*}.ts`, optional `business-rules.ts` / `use-case.ts`): [docs/domain-guide.md](docs/domain-guide.md).
 - **Branded types** (`ts-brand` + Zod constructors in `primitives.ts`: `RecipeId`, `VersionNumber`, `Rating`…); discriminated results for absence/errors (`'not-found' as const`) — no exceptions for control flow, no `null` in the domain (absence = `field?: T`, converted only at the GraphQL/Firestore/AI boundaries).
-- **Storage: native Firestore**, only inside `infrastructure/repository.ts`, via the `server/utils/firestore.ts` helpers (`genericDataConverter`, `atomically`, `bulkSave`, `deleteInBatches`) and the per-request cache (`memoizedPerRequest`) — see [docs/architecture.md](docs/architecture.md#storage--native-firestore). Aggregate root `recipes` + append-only satellite `recipe-versions` keyed `${recipeId}_${number}`.
+- **Storage: native Firestore**, only inside `infrastructure/repository.ts`, via the `server/utils/firestore.ts` helpers (`genericDataConverter`, `atomically`, `bulkSave`, `deleteInBatches`) and the per-request cache (`memoizedPerRequest`) — see [docs/architecture.md](docs/architecture.md#storage--native-firestore). Aggregate root `recipes` + append-only satellite `recipe-versions` keyed `${recipeId}_${number}`; standalone `ai-quotas` keyed `${userId}_${month}`.
 - **GraphQL** (single endpoint `POST /graphql`): satellite `RecipeType` fields resolve through the per-request `versionsByRecipe` loader — never a collection scan or one doc per parent (N+1); read budgets asserted in tests via `fake.reads`. See [docs/graphql-patterns.md](docs/graphql-patterns.md#satellite-loaders--the-n1-budget).
 - **Naming / ubiquitous language**: function names ARE the business concept (`bestRating`, `versionToOpen` — never `computeX`, `handleX`); one business concept = one word at every layer (domain, GraphQL, iOS, tests). See [docs/domain-guide.md](docs/domain-guide.md#ubiquitous-language).
 - **Tests**: `*.unit.test.ts` with `bun:test`; Firestore mocked via `server/test/fake-firestore.ts`, which records batches and read counts to assert atomicity and read budgets.
@@ -80,6 +80,7 @@ Everything versioned and technical is **English**: commits, code, comments, docs
 - **Everything derived, no promotion**: `bestRating` and `versionToOpen` are computed in `recipe/business-rules.ts` from the cooked versions.
 - **Improvement** (a requested change with no cook behind it) is the **sole** source of `toTest: true`; cooking the version drops it.
 - **Tips** sit on the versioning envelope (never in `content`) and the lightbulb CTA rewrites them in place — no new version.
+- **Freemium**: the notebook is unlimited, only the AI is metered — `free` gets 3 imports + 5 iterations per calendar month (proposal, improvement and tips share the iteration meter), `premium` is unlimited and alone may import from a URL. Checked before the call, recorded after it succeeds; `QuotaQuery.planOf` is the seam in-app purchase will replace.
 - **AI wording rules** (prompts in `server/system/ai/index.ts`): ingredient variety in the name's parentheses; `changeSummary` = `old → new` deltas (arrow U+2192, named explicitly in the prompt) joined by `, `.
 
 ## Database Migrations
@@ -103,7 +104,7 @@ Full release flow — changelog written at release time, latest **final** Xcode 
 
 ## Gemini API Key & Secrets
 
-- The AI (import + proposals) is **Gemini 2.5 Flash** in `server/system/ai/`, key in `NITRO_GOOGLE_API_KEY`; `POST /admin/migrate` is gated by `NITRO_ADMIN_TOKEN`; `NITRO_SENTRY_DSN` optional. Local `.env` (see `.env.example`); in production, GCP Secret Manager (project `shuhari-polyforms`). Never commit a key.
+- The AI (import + proposals) is **Gemini 2.5 Flash** in `server/system/ai/`, key in `NITRO_GOOGLE_API_KEY`; `POST /admin/migrate` is gated by `NITRO_ADMIN_TOKEN`; `NITRO_SENTRY_DSN` and `NITRO_PREMIUM_USER_IDS` (the Premium cooks, until in-app purchase ships) optional. Local `.env` (see `.env.example`); in production, GCP Secret Manager (project `shuhari-polyforms`). Never commit a key.
 
 ## iOS Simulator
 
