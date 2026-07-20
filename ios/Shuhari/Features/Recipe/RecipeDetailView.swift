@@ -245,7 +245,7 @@ struct RecipeDetailView: View {
             Button {
                 showImprove = true
             } label: {
-                Image(systemName: "lightbulb")
+                Image(systemName: "sparkles")
             }
             .accessibilityIdentifier("improve-recipe-button")
             .accessibilityLabel("Proposer une amélioration")
