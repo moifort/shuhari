@@ -135,7 +135,8 @@ For mutations, build inputs with the nullable helper; enum bridging (generated
 Use the Observation framework (`@Observable`), not `ObservableObject`. Guard against stale or
 concurrent loads (an in-flight task, or a generation token when the list paginates — see the real
 `LibraryStore`). **Every network call shows a loading state** — flip `isLoading` around the fetch,
-never a silent fetch that leaves the UI frozen.
+never a silent fetch that leaves the UI frozen. For a call fired by a CTA rather than by a screen
+appearing, see [CTA + network](#cta--network--never-a-silent-wait).
 
 ```swift
 @MainActor @Observable
@@ -264,6 +265,27 @@ ToolbarItem(placement: .cancellationAction) {
 
 This keeps every modal's chrome to the compact Liquid Glass icon buttons. It applies to sheet
 toolbars only — pushed pages and tab roots keep the platform's standard text actions.
+
+## CTA + network — never a silent wait
+
+The rule and its rationale live in
+[swiftui-best-practices.md](swiftui-best-practices.md#a-cta-that-fires-a-network-call-never-waits-in-silence).
+Here is what implements it in this app:
+
+| Shape | This app |
+|-------|----------|
+| Inline spinner in the button | `ActionIcon` (`Shared/Components/ActionIcon.swift`), fed by `ErrorPresenter.isRunning` (`Shared/ErrorPresenter.swift`) whenever the action already runs through `error.run { }` |
+| Full-bleed loader for long/AI work | `AIThinkingCard` (`Shared/Components/AIThinkingIndicator.swift`) — every Gemini wait (import analysis, iteration proposal) |
+| Optimistic + background for one-way actions | `LibraryStore.delete(recipeId:)` — the recipe sheet closes at once, the mutation follows, a failure goes to Sentry via `reportError` and the reload puts the row back |
+
+```swift
+Button {
+    Task { await error.run { try await RecipeAPI.updateRecipe(id: id, title: title) } }
+} label: {
+    ActionIcon(systemImage: "checkmark", isRunning: error.isRunning)
+}
+.disabled(error.isRunning)
+```
 
 ## Previews as a Storybook + DebugGallery
 

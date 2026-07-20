@@ -123,7 +123,8 @@ The **only** French in the repo is user-facing copy — `CHANGELOG.fr.md` (the c
 
 ## iOS Patterns (SwiftUI)
 
-> Full iOS guide: [docs/ios-guide.md](docs/ios-guide.md).
+> Full iOS guide: [docs/ios-guide.md](docs/ios-guide.md) — project wiring; the portable SwiftUI
+> rules (reusable in any project) live in [docs/swiftui-best-practices.md](docs/swiftui-best-practices.md).
 
 - Target: iOS 26.0, Swift 6 (strict concurrency). Xcode project `ios/Shuhari.xcodeproj`, scheme `Shuhari`, bundle id `com.polyforms.shuhari.app`, team `46C337T7YN`.
 - Architecture: MVVM with `@Observable`. `@MainActor` on ViewModels, `Sendable` on model types. Apollo iOS codegen for typed GraphQL operations.

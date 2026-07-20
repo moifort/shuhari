@@ -102,7 +102,7 @@ struct ProposalPage: View {
                 Button {
                     onValidate(currentProposal)
                 } label: {
-                    if isWorking { ProgressView() } else { Image(systemName: "checkmark") }
+                    ActionIcon(systemImage: "checkmark", isRunning: isWorking)
                 }
                 .disabled(isWorking)
                 .accessibilityIdentifier("validate-proposal-button")

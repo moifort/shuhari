@@ -49,7 +49,7 @@ struct CapturePage: View {
                     guard let rating else { return }
                     onSave(rating, remarks.trimmingCharacters(in: .whitespacesAndNewlines), photos.first?.base64)
                 } label: {
-                    if isSaving { ProgressView() } else { Image(systemName: "checkmark") }
+                    ActionIcon(systemImage: "checkmark", isRunning: isSaving)
                 }
                 .disabled(rating == nil || isSaving)
                 .accessibilityIdentifier("save-attempt-button")

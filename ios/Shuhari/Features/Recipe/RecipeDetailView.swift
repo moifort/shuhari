@@ -9,24 +9,29 @@ struct RecipeDetailView: View {
     let focusVersionNumber: Int?
     @Binding var path: NavigationPath
     let onReload: () -> Void
+    /// Hands the deletion to the library, which drops the row and runs the call in the
+    /// background — this screen closes without waiting for it.
+    let onDelete: (String) -> Void
 
     @State private var viewModel: RecipeViewModel
     @State private var showEdit = false
     @State private var showHistory = false
     @State private var recordRequest: ExecutionRequest?
     @State private var showDeleteConfirm = false
-    @State private var actionError = ErrorPresenter()
+    @State private var favoriteError = ErrorPresenter()
 
     init(
         recipeId: String,
         focusVersionNumber: Int? = nil,
         path: Binding<NavigationPath>,
-        onReload: @escaping () -> Void
+        onReload: @escaping () -> Void,
+        onDelete: @escaping (String) -> Void
     ) {
         self.recipeId = recipeId
         self.focusVersionNumber = focusVersionNumber
         self._path = path
         self.onReload = onReload
+        self.onDelete = onDelete
         self._viewModel = State(initialValue: RecipeViewModel(recipeId: recipeId))
     }
 
@@ -36,12 +41,14 @@ struct RecipeDetailView: View {
         previewRecipe: Recipe,
         path: Binding<NavigationPath>,
         onReload: @escaping () -> Void = {},
+        onDelete: @escaping (String) -> Void = { _ in },
         focusVersionNumber: Int? = nil
     ) {
         self.recipeId = previewRecipe.id
         self.focusVersionNumber = focusVersionNumber
         self._path = path
         self.onReload = onReload
+        self.onDelete = onDelete
         self._viewModel = State(initialValue: RecipeViewModel(previewRecipe: previewRecipe))
     }
 
@@ -78,14 +85,10 @@ struct RecipeDetailView: View {
                 .alert("Supprimer cette recette ?", isPresented: $showDeleteConfirm) {
                     Button("Annuler", role: .cancel) {}
                     Button("Supprimer", role: .destructive) {
-                        Task {
-                            await actionError.run {
-                                try await RecipeAPI.deleteRecipe(id: recipeId)
-                            } onSuccess: {
-                                onReload()
-                                if !path.isEmpty { path.removeLast() }
-                            }
-                        }
+                        // One-way action: leave immediately, the library drops the row
+                        // and carries the call — nothing to wait for here.
+                        onDelete(recipeId)
+                        if !path.isEmpty { path.removeLast() }
                     }
                     .accessibilityIdentifier("confirm-delete-recipe")
                 } message: {
@@ -97,7 +100,7 @@ struct RecipeDetailView: View {
                 ProgressView()
             }
         }
-        .errorAlert(actionError)
+        .errorAlert(favoriteError)
         .task { if viewModel.recipe == nil { await viewModel.load() } }
     }
 
@@ -156,9 +159,13 @@ struct RecipeDetailView: View {
             Button {
                 Task { await toggleFavorite(recipe) }
             } label: {
-                Image(systemName: recipe.favorite ? "heart.fill" : "heart")
+                ActionIcon(
+                    systemImage: recipe.favorite ? "heart.fill" : "heart",
+                    isRunning: favoriteError.isRunning
+                )
             }
             .tint(recipe.favorite ? Theme.Status.favorite : .primary)
+            .disabled(favoriteError.isRunning)
             .accessibilityIdentifier("favorite-recipe-button")
             .accessibilityLabel(recipe.favorite ? "Retirer des favoris" : "Ajouter aux favoris")
         }
@@ -209,11 +216,13 @@ struct RecipeDetailView: View {
     /// Flip the favourite and reload — the sheet redraws its heart, and the library
     /// behind refreshes so the favourites lens gains or loses the recipe.
     private func toggleFavorite(_ recipe: Recipe) async {
-        await actionError.run {
+        await favoriteError.run {
             try await RecipeAPI.updateRecipe(id: recipeId, favorite: !recipe.favorite)
+            // Reloading inside the run keeps the spinner up until the heart can
+            // actually redraw in its new state.
+            await viewModel.load()
         } onSuccess: {
             onReload()
-            Task { await viewModel.load() }
         }
     }
 

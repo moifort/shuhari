@@ -6,13 +6,16 @@ struct ImportExportSettingsView: View {
     /// Called after a successful "replace all data" import so the caller can refresh
     /// its recipe list — the whole notebook was just overwritten.
     var onDataReplaced: () async -> Void = {}
+    /// The network action in flight, so the spinner sits on the row that was tapped.
+    private enum Work { case export, restore }
+
     @State private var isExporting = false
     @State private var isImporting = false
     @State private var pendingExport: ExportDocument?
     @State private var pendingImportURL: URL?
     @State private var status: String?
     @State private var error: String?
-    @State private var isWorking = false
+    @State private var working: Work?
     @State private var showImportConfirm = false
 
     var body: some View {
@@ -21,9 +24,9 @@ struct ImportExportSettingsView: View {
                 Button {
                     Task { await prepareExport() }
                 } label: {
-                    Label("Exporter mes données", systemImage: "square.and.arrow.up")
+                    row("Exporter mes données", systemImage: "square.and.arrow.up", running: working == .export)
                 }
-                .disabled(isWorking)
+                .disabled(working != nil)
             } header: {
                 Text("Exporter")
             } footer: {
@@ -34,9 +37,9 @@ struct ImportExportSettingsView: View {
                 Button {
                     isImporting = true
                 } label: {
-                    Label("Importer un fichier JSON", systemImage: "square.and.arrow.down")
+                    row("Importer un fichier JSON", systemImage: "square.and.arrow.down", running: working == .restore)
                 }
-                .disabled(isWorking)
+                .disabled(working != nil)
             } header: {
                 Text("Importer")
             } footer: {
@@ -48,9 +51,6 @@ struct ImportExportSettingsView: View {
             }
             if let error {
                 Section { Text(error).foregroundStyle(.red) }
-            }
-            if isWorking {
-                Section { ProgressView() }
             }
         }
         .navigationTitle("Importer / Exporter")
@@ -89,6 +89,15 @@ struct ImportExportSettingsView: View {
         }
     }
 
+    /// A form row that grows a trailing spinner while its own action runs.
+    private func row(_ title: String, systemImage: String, running: Bool) -> some View {
+        HStack {
+            Label(title, systemImage: systemImage)
+            Spacer()
+            if running { ProgressView() }
+        }
+    }
+
     private var defaultFilename: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -96,8 +105,8 @@ struct ImportExportSettingsView: View {
     }
 
     private func prepareExport() async {
-        isWorking = true
-        defer { isWorking = false }
+        working = .export
+        defer { working = nil }
         error = nil
         status = nil
         do {
@@ -114,8 +123,8 @@ struct ImportExportSettingsView: View {
     }
 
     private func runImport(url: URL) async {
-        isWorking = true
-        defer { isWorking = false }
+        working = .restore
+        defer { working = nil }
         error = nil
         status = nil
         let didStart = url.startAccessingSecurityScopedResource()

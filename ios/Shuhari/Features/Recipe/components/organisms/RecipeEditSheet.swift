@@ -30,6 +30,7 @@ struct RecipeEditSheet: View {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark")
                     }
+                    .disabled(error.isRunning)
                     .accessibilityLabel("Annuler")
                 }
                 ToolbarItem(placement: .confirmationAction) {
@@ -40,7 +41,7 @@ struct RecipeEditSheet: View {
                             } onSuccess: { dismiss() }
                         }
                     } label: {
-                        Image(systemName: "checkmark")
+                        ActionIcon(systemImage: "checkmark", isRunning: error.isRunning)
                     }
                     .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || error.isRunning)
                     .accessibilityLabel("Enregistrer")
@@ -48,6 +49,8 @@ struct RecipeEditSheet: View {
             }
             .errorAlert(error)
         }
+        // A swipe while the rename is being written would orphan the task.
+        .interactiveDismissDisabled(error.isRunning)
     }
 }
 

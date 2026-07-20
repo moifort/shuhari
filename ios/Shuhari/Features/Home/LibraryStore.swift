@@ -112,6 +112,21 @@ final class LibraryStore {
         isLoadingMore = false
     }
 
+    /// Delete a recipe optimistically, in the background: the row leaves the library at
+    /// once — the recipe sheet closes without waiting — and the call follows. A failure
+    /// is reported and the reload puts the recipe back where it was.
+    func delete(recipeId: String) {
+        items.removeAll { $0.id == recipeId }
+        Task {
+            do {
+                try await RecipeAPI.deleteRecipe(id: recipeId)
+            } catch {
+                self.error = reportError(error)
+                await load()
+            }
+        }
+    }
+
     /// Trigger the next page when a row near the end appears (infinite scroll).
     func prefetchIfNeeded(for recipeId: String) {
         guard hasMore, !isLoadingMore else { return }

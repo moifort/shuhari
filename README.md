@@ -229,6 +229,7 @@ Workload Identity Federation, deploys the function and runs the migration endpoi
 | [Error handling](docs/error-handling.md) | How failures are represented and surfaced to the app |
 | [Migrations](docs/migrations.md) | How to change the shape of stored data safely |
 | [iOS guide](docs/ios-guide.md) | How to add screens to the iOS app |
+| [SwiftUI best practices](docs/swiftui-best-practices.md) | Portable SwiftUI rules, reusable in any project |
 | [Git workflow](docs/git-workflow.md) | How commits and pushes are handled |
 | [README guide](docs/readme-guide.md) | How to write and maintain this file |
 | [Sign in with Apple](docs/apple-sign-in.md) | How the Apple authentication is configured |

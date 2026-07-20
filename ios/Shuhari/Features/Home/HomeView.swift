@@ -57,9 +57,11 @@ struct HomeView: View {
                     )
                 }
             }
-            .recipeFlow(path: $path) {
-                Task { await reloadAll() }
-            }
+            .recipeFlow(
+                path: $path,
+                onReload: { Task { await reloadAll() } },
+                onDelete: { library.delete(recipeId: $0) }
+            )
         }
         .task {
             await loadLibraryIfNeeded()

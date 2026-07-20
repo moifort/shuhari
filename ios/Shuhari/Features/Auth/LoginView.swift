@@ -34,6 +34,10 @@ struct LoginView: View {
             }
             .signInWithAppleButtonStyle(.black)
             .frame(height: 50)
+            // The Apple button takes no custom label: dim it and lay the spinner
+            // over it so the sign-in round-trip is never a silent wait.
+            .overlay { if isSigningIn { ProgressView().tint(.white) } }
+            .opacity(isSigningIn ? 0.6 : 1)
             .padding(.horizontal, 32)
             .disabled(isSigningIn)
             .accessibilityIdentifier("sign-in-apple")

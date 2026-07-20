@@ -133,7 +133,7 @@ struct ImportPreviewPage: View {
                 Button {
                     onSave(edited)
                 } label: {
-                    if isSaving { ProgressView() } else { Image(systemName: "checkmark") }
+                    ActionIcon(systemImage: "checkmark", isRunning: isSaving)
                 }
                 .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
                 .accessibilityLabel("Valider")

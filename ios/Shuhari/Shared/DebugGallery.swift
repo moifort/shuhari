@@ -92,11 +92,17 @@ struct DebugGallery: View {
             AIThinkingCard(message: "Analyse IA…")
         case "import-nothing-found":
             ImportReviewSheet(galleryPhase: .nothingFound)
+        case "login":
+            LoginView()
+        case "settings-data":
+            NavigationStack {
+                ImportExportSettingsView()
+            }
         default:
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : cuisine, cuisine-course, cuisine-favorites, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found")
+                description: Text("Écrans : cuisine, cuisine-course, cuisine-favorites, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found, login, settings-data")
             )
         }
     }
