@@ -94,6 +94,7 @@ struct ToTestSheet: View {
     }
 }
 
+#if DEBUG
 #Preview("À tester") {
     Color.clear
         .sheet(isPresented: .constant(true)) {
@@ -107,3 +108,4 @@ struct ToTestSheet: View {
             ToTestSheet(versions: [], onSelect: { _ in })
         }
 }
+#endif

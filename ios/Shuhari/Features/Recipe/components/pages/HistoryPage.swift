@@ -66,6 +66,8 @@ struct HistoryPage: View {
     }
 }
 
+#if DEBUG
 #Preview {
     HistoryPage(recipe: Fixtures.bourguignon, onSelect: { _ in })
 }
+#endif

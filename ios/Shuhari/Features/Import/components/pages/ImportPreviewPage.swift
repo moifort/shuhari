@@ -213,6 +213,7 @@ private extension Array {
     }
 }
 
+#if DEBUG
 #Preview("Plat") {
     NavigationStack {
         ImportPreviewPage(analysis: Fixtures.importAnalysis, isSaving: false, onCancel: {}, onSave: { _ in })
@@ -224,3 +225,4 @@ private extension Array {
         ImportPreviewPage(analysis: Fixtures.importAnalysisThermomix, isSaving: false, onCancel: {}, onSave: { _ in })
     }
 }
+#endif

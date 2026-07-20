@@ -57,9 +57,11 @@ struct IngredientsGrid: View {
     }
 }
 
+#if DEBUG
 #Preview {
     List {
         IngredientsSection(ingredients: Fixtures.bourguignonV3.ingredients)
         IngredientsSection(ingredients: Fixtures.risottoV2.ingredients)
     }
 }
+#endif

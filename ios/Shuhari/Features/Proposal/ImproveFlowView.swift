@@ -158,6 +158,7 @@ struct ImproveFlowView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     Color.clear
         .sheet(isPresented: .constant(true)) {
@@ -172,3 +173,4 @@ struct ImproveFlowView: View {
             )
         }
 }
+#endif

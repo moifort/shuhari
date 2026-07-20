@@ -25,9 +25,11 @@ struct ReferenceVersionSection: View {
     }
 }
 
+#if DEBUG
 #Preview {
     List {
         ReferenceVersionSection(version: Fixtures.bourguignonV3)
         ReferenceVersionSection(version: Fixtures.risottoV2)
     }
 }
+#endif

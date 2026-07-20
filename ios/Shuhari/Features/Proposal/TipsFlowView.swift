@@ -121,6 +121,7 @@ struct TipsFlowView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     Color.clear
         .sheet(isPresented: .constant(true)) {
@@ -131,3 +132,4 @@ struct TipsFlowView: View {
             )
         }
 }
+#endif

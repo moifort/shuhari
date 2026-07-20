@@ -106,6 +106,7 @@ struct RecipeDetailPage: View {
     }
 }
 
+#if DEBUG
 #Preview("Plat — ouvre la mieux notée") {
     NavigationStack {
         RecipeDetailPage(recipe: Fixtures.bourguignon)
@@ -130,3 +131,4 @@ struct RecipeDetailPage: View {
         )
     }
 }
+#endif

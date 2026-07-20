@@ -139,6 +139,7 @@ struct HomePage: View {
     }
 }
 
+#if DEBUG
 private struct HomePagePreview: View {
     @State private var lens: LibraryLens = .all
     @State private var sort: RecipeSortOption = .lastModified
@@ -206,3 +207,4 @@ private struct HomePagePreview: View {
         )
     }
 }
+#endif

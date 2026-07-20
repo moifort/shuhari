@@ -68,6 +68,7 @@ struct LibrarySection: View {
     }
 }
 
+#if DEBUG
 #Preview("Par mois") {
     NavigationStack {
         List {
@@ -83,3 +84,4 @@ struct LibrarySection: View {
         }
     }
 }
+#endif

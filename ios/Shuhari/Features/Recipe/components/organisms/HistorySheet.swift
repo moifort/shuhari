@@ -50,9 +50,11 @@ struct HistorySheet: View {
     }
 }
 
+#if DEBUG
 #Preview {
     Color.clear
         .sheet(isPresented: .constant(true)) {
             HistorySheet(previewRecipe: Fixtures.bourguignon)
         }
 }
+#endif

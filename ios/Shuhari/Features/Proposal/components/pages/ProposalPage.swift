@@ -316,6 +316,7 @@ struct ProposalPage: View {
     }
 }
 
+#if DEBUG
 #Preview {
     NavigationStack {
         ProposalPage(
@@ -332,3 +333,4 @@ struct ProposalPage: View {
         )
     }
 }
+#endif
