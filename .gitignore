@@ -76,3 +76,6 @@ infra/apple.p8
 
 # Generated server assets
 server/system/changelog-content.ts
+
+# JetBrains IDE settings (local, not shared)
+.idea/
