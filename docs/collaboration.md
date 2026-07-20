@@ -33,6 +33,20 @@ the single source for collaboration conventions, replacing any machine-local ass
   lines — Créés / Modifiés / Supprimés — listing the affected domains (`server/domain/*`, iOS
   features), before the detailed body. The blast radius is how plans are scanned.
 
+## Closing a task: surfaces, then diff size
+
+Every finished task closes with two lines in the reply, in this order:
+
+1. **The surfaces touched** — one sentence naming which of the three the task changed:
+   **the database** (a Firestore document shape, a new collection, a migration), **the backend**
+   (anything under `server/`), **the iOS app** (anything under `ios/`). Name the ones changed and
+   say plainly that the others were not — "Backend et app iOS modifiés, BDD inchangée". A
+   doc-only or tooling-only task says so too ("aucune des trois"). It is the deployment blast
+   radius: the database tells whether data already stored needs a migration, the backend whether
+   a `main` deploy is needed, the app whether a new build has to reach the phone.
+2. **The diff size** — `git show --stat HEAD | tail -1` right after committing (see
+   [git-workflow](git-workflow.md)). A refactor that only adds is a refactor that forgot to delete.
+
 ## Work inline, never through subagents
 
 Do the work **in the main conversation**: exploration, code review, debugging, refactors. Never

@@ -50,7 +50,9 @@ The **only** French in the repo is user-facing copy — `CHANGELOG.fr.md` (the c
 2. Run `bun run prepare` before `bun tsc` if routes were added/modified
 3. After each completed task: review the diff yourself, **inline**, before committing — never delegate to a subagent (see [docs/collaboration.md](docs/collaboration.md#work-inline-never-through-subagents))
 4. **Commit freely, one task = one commit**: commit each finished task without asking — you decide the boundaries. Keep tasks in separate commits so a rollback is a clean `git revert`; never bundle several tasks into one commit. English messages, Conventional Commits, `Co-Authored-By:` trailer.
-5. **Report the diff size after every task**: right after committing, run `git show --stat HEAD | tail -1` and state the lines added / removed in the reply (e.g. "+412 / −587 over 23 files"). A refactor that only adds is a refactor that forgot to delete — the number is the check.
+5. **Close every task with the surfaces touched, then the diff size** (see [docs/collaboration.md](docs/collaboration.md#closing-a-task-surfaces-then-diff-size)):
+   - one sentence saying which of **the database**, **the backend** and **the iOS app** the task changed, and which it left alone (e.g. "Back et app iOS modifiés, BDD inchangée") — that is the deployment blast radius;
+   - then run `git show --stat HEAD | tail -1` and state the lines added / removed (e.g. "+412 / −587 over 23 files"). A refactor that only adds is a refactor that forgot to delete — the number is the check.
 6. **Rollback** = `git revert` the task's commit (see [docs/git-workflow.md](docs/git-workflow.md)).
 7. **Never push until the user explicitly says "push".** Commits accumulate locally; pushing is user-gated.
 8. **Never open a PR.** A "push" goes straight to `origin/main` (`git push origin HEAD:main`), whatever the working branch — see [docs/git-workflow.md](docs/git-workflow.md).
