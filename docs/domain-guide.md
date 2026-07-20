@@ -7,6 +7,24 @@ come from the real `recipe` (persisted) and `proposal` (ephemeral) domains.
 > The rules below are enforced by `server/architecture.unit.test.ts` — run `bun test` and it
 > will fail if a new domain breaks a convention.
 
+## Ubiquitous Language
+
+One business concept = **one word**, and it is the word the feature speaks (Evans's ubiquitous
+language). When the functional conversation says *"une amélioration"*, the code says
+`improvement` at **every** layer — domain (`ProposalUseCase.fromImprovement`), GraphQL
+(`requestImprovement(improvement:)`), iOS (`ImproveFlowView`), tests — so a grep for the
+functional word finds the whole feature. The app's on-screen French is the *translation* of
+that vocabulary, not a second vocabulary.
+
+Corollaries:
+
+- **Never introduce a synonym at one layer** (`wish`, `suggestion`, `idea` for an
+  improvement): six months later nobody knows whether two words are two concepts.
+- **Renaming the concept renames it everywhere** in the same task — half-renamed vocabulary
+  is worse than the old name.
+- The reverse also holds: if two different business concepts share a word, split the word,
+  not the concept (e.g. `attempt` — the cook — vs `proposal` — the AI's answer).
+
 ## 1. Create the Domain Directory
 
 ```
