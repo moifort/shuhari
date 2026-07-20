@@ -23,6 +23,9 @@ struct RecipeDetailView: View {
     @State private var showImprove = false
     @State private var recordRequest: ExecutionRequest?
     @State private var showDeleteConfirm = false
+    /// The version picked in the history / to-cook sheet, opened once that sheet has
+    /// finished closing (see `openPickedVersion`).
+    @State private var pickedVersion: Int?
     @State private var favoriteError = ErrorPresenter()
 
     init(
@@ -81,18 +84,18 @@ struct RecipeDetailView: View {
                 }
                 // Picking a version closes the history and opens that version's
                 // recipe sheet in this stack — the sheet never pushes it itself.
-                .sheet(isPresented: $showHistory) {
+                .sheet(isPresented: $showHistory, onDismiss: openPickedVersion) {
                     HistorySheet(recipeId: recipeId) { versionNumber in
+                        pickedVersion = versionNumber
                         showHistory = false
-                        path.append(RecipeRoute.attempt(recipeId: recipeId, versionNumber: versionNumber))
                     }
                 }
                 // The to-cook list: picking a version closes it and opens that
                 // version's recipe sheet, exactly like the history does.
-                .sheet(isPresented: $showToTest) {
+                .sheet(isPresented: $showToTest, onDismiss: openPickedVersion) {
                     ToTestSheet(versions: recipe.versionsToTest) { versionNumber in
+                        pickedVersion = versionNumber
                         showToTest = false
-                        path.append(RecipeRoute.attempt(recipeId: recipeId, versionNumber: versionNumber))
                     }
                 }
                 .sheet(isPresented: $showImprove) {
@@ -307,6 +310,16 @@ struct RecipeDetailView: View {
         }
         onDeleteVersion(recipeId, displayedVersion(recipe).number)
         if !path.isEmpty { path.removeLast(path.count) }
+    }
+
+    /// Open the version picked in a sheet, once that sheet is fully dismissed.
+    /// Pushing while it is still closing loses the entry underneath: the version
+    /// opens, but the back button then jumps straight back to the library instead of
+    /// returning to the recipe it was picked from.
+    private func openPickedVersion() {
+        guard let number = pickedVersion else { return }
+        pickedVersion = nil
+        path.append(RecipeRoute.attempt(recipeId: recipeId, versionNumber: number))
     }
 
     /// Flip the favourite and reload — the sheet redraws its heart, and the library
