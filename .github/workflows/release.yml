@@ -51,9 +51,10 @@ jobs:
           # Printed unconditionally: the first attempt failed here with no output at
           # all, and one listing answers "did the checkout land where we expect?"
           echo "--- SourcePackages ---"
-          ls build/spm/SourcePackages/checkouts 2>&1 || true
           ls -d build/spm/SourcePackages/checkouts/apollo-ios/CLI 2>&1 || true
-          DERIVED_DATA_PATH=build/spm bun run generate:ios
+          # Called directly, not through `bun run`: the environment variable that
+          # `bun run` was meant to pass along never reached the script.
+          ./scripts/apollo-codegen.sh
 
       # Debug configuration on purpose: DebugGallery sits behind #if DEBUG, and without it the
       # -gallery argument is ignored and every capture returns the same screen.

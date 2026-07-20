@@ -33,6 +33,17 @@ if [ -n "${DERIVED_DATA_PATH:-}" ]; then
   cli=$(look_in "$DERIVED_DATA_PATH/SourcePackages/checkouts/apollo-ios/CLI")
 fi
 
+# A derived-data folder inside the repo, which is what CI asks xcodebuild for. Probed
+# without being told: relying on an environment variable surviving a `bun run` cost
+# two release attempts, and this needs no variable at all.
+if [ -z "$cli" ]; then
+  for candidate in build/*; do
+    [ -d "$candidate" ] || continue
+    cli=$(look_in "$candidate/SourcePackages/checkouts/apollo-ios/CLI")
+    [ -n "$cli" ] && break
+  done
+fi
+
 if [ -z "$cli" ]; then
   searched="${searched}  $HOME/Library/Developer/Xcode/DerivedData/Shuhari-*/SourcePackages/checkouts/apollo-ios/CLI"$'\n'
   for candidate in "$HOME"/Library/Developer/Xcode/DerivedData/Shuhari-*; do
@@ -53,6 +64,10 @@ if [ -z "$cli" ]; then
   echo "or point DERIVED_DATA_PATH at a folder where they are already resolved." >&2
   exit 1
 fi
+
+# Absolute before the `cd`: a path found under ./build is relative to the repo root
+# and stops resolving the moment we step into ios/.
+cli="$(cd "$(dirname "$cli")" && pwd)/$(basename "$cli")"
 
 echo "Using $cli"
 cd ios && "$cli" generate
