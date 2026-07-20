@@ -1,0 +1,16 @@
+query Quota {
+  quota {
+    plan
+    imports {
+      used
+      limit
+      remaining
+    }
+    iterations {
+      used
+      limit
+      remaining
+    }
+    renewsOn
+  }
+}

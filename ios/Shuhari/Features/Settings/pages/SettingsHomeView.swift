@@ -7,6 +7,9 @@ struct SettingsHomeView: View {
     @Environment(AuthSession.self) private var authSession
     @Environment(\.dismiss) private var dismiss
     @State private var signOutError: String?
+    /// The AI allowance, loaded on appear. Absent until it answers — the section
+    /// stays out of the list rather than showing empty meters.
+    @State private var quota: QuotaState?
 
     var body: some View {
         NavigationStack {
@@ -26,6 +29,27 @@ struct SettingsHomeView: View {
                             Image(systemName: "doc.text.fill").foregroundStyle(.indigo)
                         }
                     }
+                }
+
+                if let quota {
+                    QuotaSection(
+                        isPremium: quota.isPremium,
+                        meters: [
+                            .init(
+                                title: "Imports IA",
+                                icon: "square.and.arrow.down",
+                                used: quota.imports.used,
+                                limit: quota.imports.limit
+                            ),
+                            .init(
+                                title: "Itérations IA",
+                                icon: "sparkles",
+                                used: quota.iterations.used,
+                                limit: quota.iterations.limit
+                            ),
+                        ],
+                        renewsOn: quota.renewsOn
+                    )
                 }
 
                 Section("Données") {
@@ -54,6 +78,7 @@ struct SettingsHomeView: View {
                     .accessibilityIdentifier("sign-out-button")
                 }
             }
+            .task { quota = try? await QuotaAPI.load() }
             .navigationTitle("Réglages")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

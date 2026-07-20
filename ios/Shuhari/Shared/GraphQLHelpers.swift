@@ -128,7 +128,15 @@ enum APIError: LocalizedError {
             return "Réponse invalide du serveur"
         case .httpError(let code):
             return "Erreur serveur (\(code))"
-        case .graphQL(let messages, _):
+        case .graphQL(let messages, let codes):
+            // The server answers a refused AI call with a bare sentinel
+            // ("quota-exhausted"): the app is what turns it into a sentence.
+            if codes.contains("QUOTA_EXHAUSTED") {
+                return "Vous avez utilisé toute votre IA du mois. Vos compteurs repartent à zéro le 1er du mois prochain."
+            }
+            if codes.contains("PREMIUM_REQUIRED") {
+                return "L’import par lien est réservé à la formule Premium. Vous pouvez importer cette recette par photo ou en collant son texte."
+            }
             return messages.joined(separator: " — ")
         }
     }

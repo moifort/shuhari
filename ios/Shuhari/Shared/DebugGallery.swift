@@ -175,12 +175,49 @@ struct DebugGallery: View {
             NavigationStack {
                 ImportExportSettingsView()
             }
+        case "quota":
+            QuotaGalleryScreen()
+        case "quota-premium":
+            QuotaGalleryScreen(isPremium: true)
         default:
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : cuisine, cuisine-course, cuisine-favorites, cuisine-thermomix, cuisine-loading, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, to-test, to-test-empty, recipe-edit, improve, viewfinder, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found, login, settings-data")
+                description: Text("Écrans : cuisine, cuisine-course, cuisine-favorites, cuisine-thermomix, cuisine-loading, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, to-test, to-test-empty, recipe-edit, improve, viewfinder, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found, login, settings-data, quota, quota-premium")
             )
+        }
+    }
+}
+
+/// The settings' subscription section, offline: the free plan with one import
+/// left and the iteration meter spent, or the unlimited Premium plan.
+private struct QuotaGalleryScreen: View {
+    var isPremium = false
+
+    var body: some View {
+        NavigationStack {
+            List {
+                QuotaSection(
+                    isPremium: isPremium,
+                    meters: [
+                        .init(
+                            title: "Imports IA",
+                            icon: "square.and.arrow.down",
+                            used: isPremium ? 12 : 2,
+                            limit: isPremium ? nil : 3
+                        ),
+                        .init(
+                            title: "Itérations IA",
+                            icon: "sparkles",
+                            used: isPremium ? 47 : 5,
+                            limit: isPremium ? nil : 5
+                        ),
+                    ],
+                    renewsOn: Date(timeIntervalSince1970: 1_785_542_400)
+                )
+            }
+            .navigationTitle("Réglages")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }

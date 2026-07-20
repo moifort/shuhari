@@ -8,7 +8,8 @@
       "Shuhari/Features/Execution/GraphQL/*.graphql",
       "Shuhari/Features/Proposal/GraphQL/*.graphql",
       "Shuhari/Features/Import/GraphQL/*.graphql",
-      "Shuhari/Features/Settings/GraphQL/*.graphql"
+      "Shuhari/Features/Settings/GraphQL/*.graphql",
+      "Shuhari/Features/Quota/GraphQL/*.graphql"
     ]
   },
   "output": {
