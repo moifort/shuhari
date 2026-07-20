@@ -41,14 +41,13 @@ struct LibraryRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if let bestRating {
-                RatingStars(rating: Double(bestRating))
+                RatingStars(rating: Double(bestRating), font: .caption2)
                     .frame(maxHeight: .infinity, alignment: .top)
                     .accessibilityLabel("Meilleure note \(bestRating) sur 5")
             }
 
             if favorite {
                 Image(systemName: "heart.fill")
-                    .font(.footnote)
                     .foregroundStyle(Theme.Status.favorite)
                     .frame(maxHeight: .infinity, alignment: .top)
                     .accessibilityLabel("Favori")

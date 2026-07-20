@@ -4,6 +4,9 @@ import SwiftUI
 /// The mirror of the `StarRating` input, for showing a rating already given.
 struct RatingStars: View {
     let rating: Double
+    /// How big the stars read — dropped to `.caption2` where the rating closes a list
+    /// row, so the five of them stay a discreet trailing mark next to the heart.
+    var font: Font = .footnote
 
     private var filled: Int { Int(rating.rounded()) }
 
@@ -14,7 +17,7 @@ struct RatingStars: View {
                     .foregroundStyle(star <= filled ? Color.yellow : Color(.tertiaryLabel))
             }
         }
-        .font(.footnote)
+        .font(font)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Note \(RatingFormat.average(rating))")
     }
