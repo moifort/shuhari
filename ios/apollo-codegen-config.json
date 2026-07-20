@@ -1,9 +1,7 @@
 {
   "schemaNamespace": "ShuhariGraphQL",
   "input": {
-    "schemaSearchPaths": [
-      "../shared/schema.graphql"
-    ],
+    "schemaSearchPaths": ["../shared/schema.graphql"],
     "operationSearchPaths": [
       "Shuhari/Features/Home/GraphQL/*.graphql",
       "Shuhari/Features/Recipe/GraphQL/*.graphql",
