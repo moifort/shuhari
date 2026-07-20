@@ -26,12 +26,14 @@ enum LibraryLens: Hashable, Identifiable, Sendable {
     }
 
     /// The lens icon, in its outline or filled form — filled marks the lens that is on,
-    /// matching how the type icons already read.
+    /// matching how the type icons already read. The heart is the exception: it stays
+    /// filled either way, since an outlined heart reads as "not a favourite" rather
+    /// than as a lens that is off (the row's own heart already uses that contrast).
     func iconImage(filled: Bool) -> Image {
         switch self {
         case .all: Image(systemName: filled ? "square.grid.2x2.fill" : "square.grid.2x2")
         case .type(let type): type.iconImage(filled: filled)
-        case .favorites: Image(systemName: filled ? "heart.fill" : "heart")
+        case .favorites: Image(systemName: "heart.fill")
         }
     }
 
