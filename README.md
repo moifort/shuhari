@@ -224,6 +224,8 @@ Workload Identity Federation, deploys the function and runs the migration endpoi
 | [Architecture](docs/architecture.md) | How the backend is organized, and where each kind of code lives |
 | [Domain guide](docs/domain-guide.md) | How to add a new domain, step by step |
 | [GraphQL patterns](docs/graphql-patterns.md) | How the GraphQL layer is built and kept fast |
+| [DDD best practices](docs/ddd-best-practices.md) | The portable DDD/CQRS rules this backend follows |
+| [GraphQL best practices](docs/graphql-best-practices.md) | The portable code-first schema rules |
 | [Branded types](docs/branded-types.md) | How values are validated once and stay trustworthy |
 | [Code style](docs/code-style.md) | The conventions the code follows, and which ones the tests enforce |
 | [Error handling](docs/error-handling.md) | How failures are represented and surfaced to the app |
@@ -231,6 +233,7 @@ Workload Identity Federation, deploys the function and runs the migration endpoi
 | [iOS guide](docs/ios-guide.md) | How to add screens to the iOS app |
 | [SwiftUI best practices](docs/swiftui-best-practices.md) | Portable SwiftUI rules, reusable in any project |
 | [Git workflow](docs/git-workflow.md) | How commits and pushes are handled |
+| [Git best practices](docs/git-best-practices.md) | Portable commit and history rules |
 | [README guide](docs/readme-guide.md) | How to write and maintain this file |
 | [Sign in with Apple](docs/apple-sign-in.md) | How the Apple authentication is configured |
 

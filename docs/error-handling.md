@@ -1,116 +1,94 @@
 # Error Handling
 
+Portable rules — nothing here names this project. Examples use a fictional `bean` domain; this
+repo's wiring (the `domainError` helper, the Sentry plugin) is in
+[graphql-patterns.md](graphql-patterns.md) and [architecture.md](architecture.md#observability).
+
 ## Principle
 
-Domain-level outcomes are modelled as **discriminated unions**, not exceptions. Exceptions are
-reserved for truly unexpected failures (impossible states, infrastructure errors).
+Domain outcomes are modelled as **discriminated unions**, not exceptions. Exceptions are reserved
+for genuinely unexpected failures: impossible states and infrastructure faults.
 
-This implements Wlaschin's **Railway-Oriented Programming**: a command returns the entity on
-success or an explicit sentinel for each legitimate business miss. The GraphQL resolver maps
-every branch with `match().exhaustive()`, so no outcome is silently dropped.
+This is Wlaschin's **Railway-Oriented Programming**: a command returns the entity on success, or an
+explicit sentinel for each legitimate business miss, and the API layer maps every branch
+exhaustively so no outcome is silently dropped.
 
 ## Sentinels are bare strings, returned directly
 
-Shuhari does **not** wrap outcomes in `{ outcome: … }` objects. The success payload is the
-domain entity itself; a miss is a bare string literal with `as const`:
+Don't wrap outcomes in `{ outcome: … }` envelopes. The success payload is the domain entity itself;
+a miss is a bare string literal with `as const`, which lets the return type be inferred:
 
 ```ts
-// Return type inferred: Promise<RecipeVersion | 'not-found'>
-export const recordAttempt = async (userId: UserId, input: RecordAttemptInput) => {
-  const recipe = await repository.findBy(userId, input.recipeId)
-  if (!recipe) return 'not-found' as const
-  const version = await repository.findVersion(input.recipeId, input.versionNumber)
-  if (!version) return 'not-found' as const
-  const executed: RecipeVersion = { ...version, executedAt: new Date(), rating: input.rating, remarks: input.remarks }
-  return atomically(async (batch) => {
-    await repository.saveVersion(executed, batch)
-    await repository.save({ ...recipe, updatedAt: new Date() }, batch)
-    return executed
-  })
+// Inferred: Promise<Bean | 'not-found'>
+export const rename = async (userId: UserId, id: BeanId, name: BeanName) => {
+  const bean = await repository.findBy(userId, id)
+  if (!bean) return 'not-found' as const
+  return repository.save({ ...bean, name })
 }
 ```
 
-Sentinels are **rare and business-oriented** — use one only when the caller must distinguish
-multiple legitimate results. Most queries just return the data (or `'not-found'` on a single-item
-lookup). Void commands return `undefined | 'not-found'`.
+Sentinels are **rare and business-oriented**: add one only when the caller must distinguish several
+legitimate results. Most queries just return the data (or `'not-found'` on a single-item lookup);
+void commands return `undefined | 'not-found'`.
 
-## Mapping Sentinels in GraphQL
+Keeping every sentinel a **string** is what lets the success arm of the mapping be written as "not a
+string". A non-string sentinel would be silently captured as success instead of forcing a new arm.
 
-A domain error **is** the sentinel const. The single `domainError` helper from
-`server/domain/shared/graphql/errors.ts` throws the sentinel as the `GraphQLError` message and
-derives its `extensions.code` mechanically (`'not-found'` → `NOT_FOUND`,
-`'no-recipe-found'` → `NO_RECIPE_FOUND`) — no per-site message strings. Because the sentinel is the
-handler's argument, each arm is just `.with('<sentinel>', domainError)`. The resolver maps every
-branch with `match().exhaustive()` from `ts-pattern`; the success arm matches "not a string"
-(`P.not(P.string)`) and returns the domain value:
+## Mapping sentinels at the API boundary
+
+A domain error **is** the sentinel. One `never`-returning helper turns it into a transport error,
+using the sentinel as the message and deriving the error code mechanically (`'not-found'` →
+`NOT_FOUND`) — no per-site message strings. Each arm then reads `.with('<sentinel>', helper)`, and
+the mapping is **exhaustive**: adding a sentinel to the command becomes a compile error until the
+resolver handles it.
 
 ```ts
-import { match, P } from 'ts-pattern'
-import { domainError } from '~/domain/shared/graphql/errors'
-
-const result = await RecipeCommand.recordAttempt(userId, input)
+const result = await BeanCommand.rename(userId, id, name)
 return match(result)
   .with('not-found', domainError)
-  .with(P.not(P.string), (version) => version)
+  .with(P.not(P.string), (bean) => bean)
   .exhaustive()
 ```
 
-The helper's `never` return type lets it sit in a `match` arm while the success arm keeps the
-resolver's inferred type. **Never `.otherwise()` for terminal outcome mapping** — `.exhaustive()`
-gives totality: adding a new sentinel to the command turns this into a compile error until the
-resolver handles it.
-
-> The `P.not(P.string)` success arm relies on the invariant that **every sentinel is a string** (see
-> "Sentinels are bare strings" above). A non-string sentinel would be silently captured as success
-> instead of forcing a new arm — one more reason sentinels stay bare strings.
+Never a catch-all `otherwise` for terminal outcome mapping — totality is the whole point.
 
 ### Where `if` guards stay
 
-`ts-pattern` is a project dependency and `match` is the standard for **terminal outcome mapping**
-in resolvers. `if` guards remain idiomatic for **narrowing** — unwrapping a query result mid-flow
-inside a use-case, then continuing with the narrowed value:
+Exhaustive matching is for **terminal outcome mapping**. Plain `if` guards remain idiomatic for
+**narrowing** — unwrapping a query result mid-flow, then continuing with the narrowed value:
 
 ```ts
-const recipe = await RecipeQuery.byId(userId, recipeId)
-if (recipe === 'not-found') return 'not-found'
-// recipe is now Recipe — keep going
+const bean = await BeanQuery.byId(userId, id)
+if (bean === 'not-found') return 'not-found'
+// bean is a Bean from here on
 ```
 
-This is the same shape as a command's own guard (`if (!recipe) return 'not-found' as const`), not
-an outcome map, so `match` would add noise without adding totality.
+That is the same shape as a command's own guard, not an outcome map: matching would add noise
+without adding totality.
 
-## Error-handling levels
+## The three levels
 
-1. **Domain layer** (`query.ts` / `command.ts`) — returns discriminated unions for expected
-   outcomes; **⛔ never `throw new Error`** (enforced by the arch test). Throws only for truly
-   impossible states, and that logic lives outside these two files. The same rule reaches beyond the
-   domain: **system services (`server/system/…`) also return bare-string sentinels for
-   business-visible misses** (e.g. `Ai.analyzeImport` → `'no-recipe-found'` when the source holds no
-   recipe); throws there stay reserved for infra faults (an empty API reply, an incoherent state).
-2. **GraphQL layer** — maps sentinels to `GraphQLError` + `extensions.code`; maps invalid input
-   to `BAD_USER_INPUT` at the scalar boundary.
-3. **Plugin layer** — `plugins/01-sentry.ts` reports unexpected server faults (via `NITRO_SENTRY_DSN`).
+1. **Domain** (`query.ts` / `command.ts`) — returns discriminated unions for expected outcomes and
+   **never throws** (worth enforcing with an architecture test). The rule reaches beyond the domain
+   folder: system services return bare-string sentinels for business-visible misses too (an AI
+   engine answering "nothing found" is an outcome, not a fault); throws there stay for infra faults.
+2. **API** — maps sentinels to transport errors with a stable code, and invalid input to
+   `BAD_USER_INPUT` at the validation boundary.
+3. **Reporting** — an error reporter captures unexpected server faults only. Expected 4xx (missing
+   user, not found, bad input) are business outcomes, not incidents, and must not page anyone.
 
 ## Throw for impossible states
 
-If data *must* exist (just referenced, produced by a prior step) and doesn't, that is an
-incoherent state — **throw**, don't return a sentinel. The framework turns it into a 500 and
-Sentry captures it. Because the domain `query`/`command` files may not `throw`, put this check in
-a `use-case.ts` or a resolver.
+If data *must* exist — it was just referenced, or produced by the previous step — and it doesn't,
+that is an incoherent state: **throw**. It becomes a 500 and the reporter captures it. Since the
+domain's `query`/`command` files may not throw, that check belongs in a use-case or a resolver.
 
 **Rule of thumb:** if the caller can meaningfully recover from the absence (the user deleted
-something that may not exist), return a sentinel. If it can't, it's a bug → throw.
+something that may no longer exist), return a sentinel. If it can't, it's a bug → throw.
 
-## Zod validation errors → `BAD_USER_INPUT`
+## Invalid input fails at the boundary
 
-Invalid input is rejected at the GraphQL scalar boundary. Each branded scalar's `parseValue`
-runs its Zod constructor through `validatedParse`, which converts a `ZodError` into:
-
-```ts
-throw new GraphQLError(`Invalid value for ${name}: ${message}`, {
-  extensions: { code: 'BAD_USER_INPUT' },
-})
-```
-
-The domain never re-validates — branded types guarantee validity downstream. See
-[branded-types.md](./branded-types.md) and [graphql-patterns.md](./graphql-patterns.md).
+Input validation rejects at the API edge: the scalar's parse runs the domain's validation
+constructor and converts a validation failure into a `BAD_USER_INPUT` error before any resolver
+runs. The domain never re-validates — the brand is the proof. See
+[branded-types.md](./branded-types.md).

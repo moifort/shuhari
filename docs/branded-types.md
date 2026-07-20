@@ -1,133 +1,109 @@
-# Branded Types + Zod
+# Branded Types + Validation Constructors
 
-## Overview
+Portable rules — nothing here names this project. The examples use a fictional `bean` domain; the
+brands this repo actually owns are listed in [domain-guide.md](domain-guide.md#the-brands-in-this-repo).
 
-We use [ts-brand](https://github.com/kourge/ts-brand) to create nominal types that prevent
-accidental mixing of semantically different values (e.g. `RecipeId` vs `UserId`), combined with
-[Zod](https://zod.dev/) for runtime validation.
+## Why
 
-This implements two DDD concepts: Evans' **Value Objects** (defined by their value, no identity)
-and Wlaschin's **making illegal states unrepresentable** — once a value exists as a branded
-type, it has already been validated, so no downstream code re-checks it.
+Nominal types ([ts-brand](https://github.com/kourge/ts-brand)) prevent semantically different
+values from being mixed (a `BeanId` is not a `UserId`, even though both are strings), and a
+validation library ([Zod](https://zod.dev/)) makes the brand a *proof*: a value that carries the
+brand has already been validated.
 
-The split is strict and enforced by `server/architecture.unit.test.ts`:
+Two DDD concepts at once: Evans's **Value Objects** (defined by their value, not an identity) and
+Wlaschin's **making illegal states unrepresentable** — once branded, no downstream code re-checks.
 
-- **`types.ts`** declares the brands (imports `ts-brand` only, no Zod).
-- **`primitives.ts`** declares the constructors (must import **both** `ts-brand` and `zod`).
+The split is strict, and worth enforcing with an architecture test:
 
-## Pattern
+- **`types.ts`** declares the brands — imports the branding library only, no validation library.
+- **`primitives.ts`** declares the constructors — imports **both**.
+
+## The pattern
 
 ### 1. Declare the brand (`types.ts`)
 
 ```ts
 import type { Brand } from 'ts-brand'
 
-export type RecipeId = Brand<string, 'RecipeId'>
-export type VersionNumber = Brand<number, 'VersionNumber'>
-export type ParamValue = Brand<string, 'ParamValue'>
+export type BeanId = Brand<string, 'BeanId'>
+export type BeanName = Brand<string, 'BeanName'>
+export type BatchNumber = Brand<number, 'BatchNumber'>
 ```
 
-### 2. Write the Zod constructor (`primitives.ts`)
+### 2. Write the constructor (`primitives.ts`)
 
-`zod` parse → `ts-brand` `make`:
+Parse, then brand — one factory per brand, named exactly like the type:
 
 ```ts
 import { make } from 'ts-brand'
 import { z } from 'zod'
-import type { RecipeId as RecipeIdType } from '~/domain/recipe/types'
+import type { BeanId as BeanIdType, BeanName as BeanNameType } from '~/domain/bean/types'
 
-export const RecipeId = (value: unknown) => {
+export const BeanId = (value: unknown) => {
   const v = z.string().uuid().parse(value)
-  return make<RecipeIdType>()(v)
+  return make<BeanIdType>()(v)
+}
+
+export const BeanName = (value: unknown) => {
+  const v = z.string().trim().min(1).max(200).parse(value)
+  return make<BeanNameType>()(v)
 }
 
 // A convenience generator for new ids.
-export const randomRecipeId = () => RecipeId(crypto.randomUUID())
+export const randomBeanId = () => BeanId(crypto.randomUUID())
 ```
 
-Real constraints from `recipe/primitives.ts`:
+### 3. Validate at the boundary, once
 
-```ts
-export const RecipeTitle = (value: unknown) => {
-  const v = z.string().trim().min(1).max(200).parse(value)
-  return make<RecipeTitleType>()(v)
-}
-export const ParamValue = (value: unknown) => {
-  const v = z.string().trim().min(1).max(120).parse(value)
-  return make<ParamValueType>()(v)
-}
-```
+Raw input is validated where it enters — the API scalar — and never again. Inside the domain,
+values are already branded. See
+[graphql-best-practices.md](./graphql-best-practices.md#validate-at-the-boundary-once-through-scalars).
 
-### 3. Validate at the boundary
+**Never `as SomeBrand` on raw input.** The cast bypasses the only thing the brand promises.
 
-Validation happens **once**, at the GraphQL scalar boundary. Each branded scalar's `parseValue`
-runs its constructor (see [graphql-patterns.md](./graphql-patterns.md)); a `ZodError` becomes a
-`BAD_USER_INPUT` `GraphQLError`. Inside the domain, values are already branded — never
-re-validate.
+## Brands are primitives at runtime
 
-## Branded types are primitives at runtime
+The brand is **compile-time only**: a branded string IS a `string`, a branded number IS a `number`.
+Never wrap one with `String()` / `Number()`, and use it directly in arithmetic or string operations.
 
-The brand is **compile-time only**. `RecipeTitle` IS a `string`, `VersionNumber` IS a `number` at
-runtime — never wrap them with `String()` or `Number()`. A branded `VersionNumber` is directly
-usable in arithmetic (that is how `nextVersionNumber` does `versionCount + 1` on a plain number).
+## Enum / union brands parse, they don't `make`
 
-## Enum / Union Brands
-
-String-literal unions live as a `const` tuple in `types.ts` and are parsed (not `make`d) in
-`primitives.ts` — the parse result is cast to the union type:
+A string-literal union lives as a `const` tuple in `types.ts` and is parsed — then cast to the union
+type — in `primitives.ts`. Casting an already-validated value to its own union is the one safe cast:
 
 ```ts
 // types.ts
-export const RECIPE_TYPE_VALUES = ['dish', 'thermomix'] as const
-export type RecipeType = (typeof RECIPE_TYPE_VALUES)[number]
+export const ROAST_VALUES = ['light', 'medium', 'dark'] as const
+export type Roast = (typeof ROAST_VALUES)[number]
 
 // primitives.ts
-export const RecipeType = (value: unknown) =>
-  z.enum(RECIPE_TYPE_VALUES).parse(value) as RecipeTypeType
+export const Roast = (value: unknown) => z.enum(ROAST_VALUES).parse(value) as RoastType
 ```
 
-**Never use `as SomeType` on raw input** — always go through the Zod constructor. (The cast above
-is on an already-Zod-validated value, which is safe.)
+## Coerce before validating when the wire is loose
 
-## Numeric Types with String Coercion
-
-For values that may arrive as strings, preprocess before validating:
+For values that may arrive as strings (query params, JSON from a model), preprocess inside the
+constructor rather than at every call site:
 
 ```ts
-export const VersionNumber = (value: unknown) => {
+export const BatchNumber = (value: unknown) => {
   const v = z
     .preprocess((n) => (typeof n === 'string' ? Number(n) : n), z.number().int().min(1))
     .parse(value)
-  return make<VersionNumberType>()(v)
+  return make<BatchNumberType>()(v)
 }
 ```
 
-## Every Brand Gets a GraphQL Scalar
+## Every brand exposed in the API gets its own scalar
 
-Every branded type used in the schema has a matching custom scalar in
-`server/domain/shared/graphql/scalars.ts` and an entry in the `Scalars` map in `builder.ts`. The
-scalar validates and brands input at parse time, so resolvers receive **pre-validated branded args**
-and never call the constructor themselves. Invalid input becomes a `BAD_USER_INPUT` GraphQL error
-before the resolver runs:
+A branded type that appears in the schema has a matching custom scalar, whose `parseValue` runs the
+constructor. Resolvers then receive **pre-validated branded arguments** and never call a constructor
+themselves; invalid input fails before the resolver runs. Adding a brand to the schema means adding
+it in three places: the builder's scalar map, the scalar registration, and the client's codegen
+scalar mapping.
 
-```ts
-builder.scalarType('RecipeId', {
-  description: 'Recipe unique identifier (UUID v4)',
-  serialize: (value) => value as string,
-  parseValue: validatedParse('RecipeId', RecipeId),
-})
-```
+## Where brands live
 
-When you add a new branded type, also update the Apollo iOS codegen scalar mapping under
-`ios/Shuhari/Generated/GraphQL/`. See [graphql-patterns.md](./graphql-patterns.md).
-
-## Shared Types
-
-Cross-domain primitives live in `server/domain/shared/`:
-
-- `UserId` — Firebase Auth user identifier (non-empty string), in `types.ts` / `primitives.ts`
-- `Count` — a branded number (constructed from an already-numeric value: `make<CountType>()(value)`)
-
-Domain-specific brands stay in their own domain — the persisted `recipe` domain owns them all:
-`RecipeId`, `VersionNumber`, `Rating`, `Remarks`, `IngredientName`/`IngredientQuantity`, `StepText`,
-`Thermomix*`.
+Cross-domain primitives (a user id, a count) belong to a shared module; everything else belongs to
+the domain that owns the concept. A brand imported from another domain is a sign the concept is in
+the wrong context.

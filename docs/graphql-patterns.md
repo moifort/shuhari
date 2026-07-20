@@ -4,8 +4,10 @@ Shuhari is GraphQL-first: a single endpoint `POST /graphql` (Apollo Server 5 + P
 code-first). There is **no REST CRUD** — the only other HTTP route is `POST /admin/migrate`.
 This guide covers how the schema is built and the conventions to follow.
 
-> Prefer the repo's `graphql-pothos` skill for the authoritative, task-level checklist. This
-> doc is the architectural overview and the shuhari-specific rules.
+> The portable rules — validate at the boundary, thin resolvers, exhaustive sentinel mapping, read
+> budgets, `@oneOf` mirrors, functional descriptions — are in
+> [graphql-best-practices.md](./graphql-best-practices.md). This doc is where they land in shuhari.
+> For a task-level checklist, prefer the repo's `graphql-pothos` skill.
 
 ## Layout — per-domain slices + shared plumbing
 
@@ -65,8 +67,10 @@ scopes its data access to it.
 ## Branded Scalars — validation at the boundary
 
 Each branded type is a GraphQL scalar. Its `parseValue` runs the domain's Zod constructor
-through `validatedParse`, which converts a `ZodError` into a `BAD_USER_INPUT` `GraphQLError`.
-This is the Anti-Corruption Layer: raw input is validated **once**, here.
+through `validatedParse`, which converts a `ZodError` into a `BAD_USER_INPUT` `GraphQLError` —
+the boundary validation of
+[graphql-best-practices.md](./graphql-best-practices.md#validate-at-the-boundary-once-through-scalars),
+in Zod.
 
 ```ts
 const validatedParse =
@@ -147,12 +151,13 @@ per-request loaders — the forward declaration is what makes that cross-domain 
 
 ## Satellite Loaders — the N+1 budget
 
-Derived satellite fields (`versions`, `versionToOpen`, `bestRating`) must **never** scan a
-collection or read one doc per parent row. They resolve through per-request loaders
+The read-budget rule is
+[here](./graphql-best-practices.md#derived-fields-have-a-read-budget--batch-them). Shuhari's
+satellite fields (`versions`, `versionToOpen`, `bestRating`) resolve through per-request loaders
 (`server/domain/shared/graphql/loaders.ts`), built once per request in
 `recipeSatelliteLoaders(userId)`.
 
-`batchedBy` is a DataLoader-style batcher: it memoizes per key, collects every `load(...)` call
+`batchedBy` is the DataLoader-style batcher: it memoizes per key, collects every `load(...)` call
 in the resolution tick, flushes on `process.nextTick`, and performs **one keyed read** per batch.
 The single `versionsByRecipe` loader groups the whole lineage by recipe from one scan:
 
@@ -193,13 +198,11 @@ builder.queryField('recipes', (t) =>
 
 ## Mapping Sentinels to GraphQLError
 
-Commands return the entity or a **string sentinel**. Map the sentinel to a `GraphQLError` with a
-stable `extensions.code` using `match().exhaustive()` from `ts-pattern` and the single
-`never`-returning `domainError` helper from `server/domain/shared/graphql/errors.ts` — never
-`.otherwise()`, so adding a new sentinel becomes a compile error rather than a silent fall-through.
-`domainError` **is** the sentinel: it throws the sentinel as the message and derives its
-`extensions.code` mechanically (`'not-found'` → `NOT_FOUND`), so each arm is just
-`.with('<sentinel>', domainError)`. The success arm matches "not a string" (`P.not(P.string)`):
+The exhaustive-mapping rule is
+[here](./graphql-best-practices.md#map-sentinels-to-errors-exhaustively); shuhari implements it with
+`match().exhaustive()` from `ts-pattern` and the `never`-returning `domainError` helper from
+`server/domain/shared/graphql/errors.ts`. The success arm matches "not a string"
+(`P.not(P.string)`):
 
 ```ts
 import { match, P } from 'ts-pattern'
@@ -309,27 +312,13 @@ export const ThermomixSettingsInput = builder.inputType('ThermomixSettingsInput'
 
 ## Document everything — functionally, for a non-technical reader
 
-Every type, field, enum value and argument gets a Pothos `description` — the SDL is the contract
-shared with the iOS app and shows up in Apollo Sandbox. An undocumented field is an incomplete
-field.
-
-Write descriptions **functionally**: explain the *business meaning* in the cook's language, as if
-the reader had never seen the code. The Sandbox schema screen is documentation for a non-technical
-reader, not a type annotation. Concretely:
-
-- **Say what it means in the domain, not what it is technically.** Prefer "The version to open
-  first when you enter the recipe" over "The versionToOpen resolver". Name the Shu-Ha-Ri concept
-  (recipe, version = attempt, iteration, best rating) rather than the storage or GraphQL mechanics.
-- **Give a concrete example** wherever it sharpens understanding — real values in the culinary
-  domain: `e.g. "Grandma’s lasagna"`, `e.g. "250 g"`, `e.g. "Baked at 180°C instead of 200°C"`,
-  `1 (bad) to 5 (excellent)`. Examples beat abstract prose for a non-tech reader.
-- **Explain nullability in plain words**: what does `null` *mean* here? ("Null until you have
-  cooked it", "Null while the recipe is still being dialled in").
-- **Cross-reference sibling fields by name** so the reader can navigate the graph: "see
-  `versionToOpen`", "ask for a proposal separately (see `requestProposal`)".
-- **Flag destructive actions** in the mutation description ("WARNING: this REPLACES everything…").
-- Keep the domain vocabulary consistent across the schema (an *attempt* is a cook, a *version* is
-  one entry in the chain, an *iteration* is an accepted AI proposal).
+The rule and its checklist are
+[here](./graphql-best-practices.md#document-every-field-functionally-for-a-non-technical-reader).
+In shuhari, "business language" means the cook's: name the Shu-Ha-Ri concepts (recipe, version =
+attempt, iteration, best rating) rather than the storage mechanics, and take examples from the
+culinary domain — `e.g. "Grandma’s lasagna"`, `e.g. "250 g"`, `e.g. "Baked at 180°C instead of
+200°C"`, `1 (bad) to 5 (excellent)`. Keep the vocabulary stable across the schema: an *attempt* is a
+cook, a *version* is one entry in the chain, an *iteration* is an accepted AI proposal.
 
 ```typescript
 rating: t.field({

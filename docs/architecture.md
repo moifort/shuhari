@@ -7,36 +7,17 @@ The backend follows a strict Domain-Driven Design (DDD) / CQRS architecture buil
 TypeScript, **native Firestore** storage (`firebase-admin`), branded types, and a single
 GraphQL endpoint (Apollo Server + Pothos).
 
-## Theoretical Foundations
+## The rules behind it
 
-This architecture draws from two foundational DDD books:
+The DDD/CQRS rules this structure implements — bounded-context layout, sentinels over exceptions,
+private repositories, pure business rules, derived reads — are written project-agnostically in
+[ddd-best-practices.md](./ddd-best-practices.md). This document only describes **where** they land
+here. Most of them are **enforced by `server/architecture.unit.test.ts`**, the executable source of
+truth; the style rules that go with them are in the [code style guide](./code-style.md).
 
-- **Eric Evans** — *Domain-Driven Design: Tackling Complexity in the Heart of Software* (2003)
-- **Scott Wlaschin** — *Domain Modeling Made Functional* (2018)
-
-**Evans concepts used in this project:**
-
-| Concept | Where |
-|---------|-------|
-| Bounded Context | Each `server/domain/{domain}/` is a self-contained context with clear boundaries |
-| Ubiquitous Language | Function and type names carry business meaning, not technical jargon |
-| Value Objects | Branded types in `types.ts` — identity through value, not reference |
-| Entities | Domain types with an `id` (`Recipe`) in `types.ts` |
-| Repository | `infrastructure/repository.ts` — abstracts Firestore, private to the bounded context |
-| Application Services | `query.ts`, `command.ts`, `use-case.ts` — orchestrate domain operations |
-| Anti-Corruption Layer | Zod validation at the GraphQL boundary (scalars) prevents invalid data from entering |
-
-**Wlaschin concepts used in this project:**
-
-| Concept | Where |
-|---------|-------|
-| Making illegal states unrepresentable | Branded types + Zod constructors in `primitives.ts` |
-| Railway-Oriented Programming | Discriminated-union returns in commands (the entity, or a string sentinel like `'not-found'`) — reserved for expected business outcomes only. `throw` for impossible states. |
-| Types as documentation | Branded types make the domain model self-documenting |
-| Pure domain functions | `business-rules.ts` — no IO, no `async`, pure input/output |
-
-Many of these rules are **enforced by `server/architecture.unit.test.ts`** — that file is
-the executable source of truth. See the [code style guide](./code-style.md).
+Concretely, in this repo: a bounded context is `server/domain/{domain}/`; Value Objects and Entities
+are the branded types in `types.ts`; the Anti-Corruption Layer is the Zod validation carried by the
+GraphQL scalars; `'not-found' as const` is the sentinel shape.
 
 ## Directory Structure
 
@@ -94,26 +75,18 @@ proposal is validated and applied, never saved). The read-only `changelog` aggre
 
 ### Domain Layer (`server/domain/`)
 
-Each domain is a self-contained bounded context:
+Each domain is a self-contained bounded context. The per-file responsibilities are the generic ones
+([ddd-best-practices.md](./ddd-best-practices.md#the-building-blocks-and-where-they-live)); what is
+specific here:
 
-- **types.ts** — Branded types via `ts-brand`, plus plain domain shapes. No Zod here.
-  Evans: Value Objects and Entities.
-- **primitives.ts** — Zod constructors that validate and brand raw values. Wlaschin: making
-  illegal states unrepresentable — if it parses, it is valid. Must import both `ts-brand`
-  and `zod` (checked by the arch test).
-- **command.ts** — Public write operations, exported as a `namespace` (e.g. `RecipeCommand`).
-  Returns the entity or a **string sentinel** (e.g. `'not-found'`). See
-  [error handling](./error-handling.md).
-- **query.ts** — Public read operations (e.g. `RecipeQuery`). Thin pass-through to the
-  repository; single-item lookups return `'not-found' as const` on absence.
-- **business-rules.ts** — (optional) Pure, **synchronous** functions. Names ARE the business
-  concept (`bestRating`, `versionToOpen`, `nextVersionNumber` — never `computeX`).
-  100% test coverage (`business-rules.unit.test.ts`).
-- **use-case.ts** — (optional) Multi-domain orchestration. Goes through commands/queries
-  only — **may not import any repository or touch storage** (enforced). Names carry intent
-  (`removeCompletely`, never `handleX`).
-- **infrastructure/repository.ts** — The **only** place `db()` is used. Private to the domain.
-- **infrastructure/graphql/** — The domain's slice of the Pothos schema.
+- **types.ts** — branded types via `ts-brand`. No Zod here.
+- **primitives.ts** — Zod constructors; must import both `ts-brand` and `zod` (checked by the arch test).
+- **command.ts** / **query.ts** — exported as a `namespace` (`RecipeCommand`, `RecipeQuery`).
+  See [error handling](./error-handling.md) for the sentinel → `GraphQLError` mapping.
+- **business-rules.ts** — 100% covered by `business-rules.unit.test.ts`.
+- **use-case.ts** — e.g. `ProposalUseCase`; the no-repository rule is enforced by the arch test.
+- **infrastructure/repository.ts** — the **only** place `db()` is used.
+- **infrastructure/graphql/** — the domain's slice of the Pothos schema.
 
 The `recipe` domain adds a **version content variant** split (a "make illegal states unrepresentable"
 application). A version is a type-agnostic *versioning envelope* (`version.ts` — `number`, `basedOn`,
@@ -203,19 +176,13 @@ Infrastructure concerns: `ai` (Gemini), `config`, `migration`, `firebase` (`db()
 `request-cache`. It also hosts two mini-domains that follow the domain rules:
 `changelog` (application release notes) and `portability` (user-data export/import).
 
-## Cross-Domain Rules (enforced by `architecture.unit.test.ts`)
+## Cross-Domain Rules
 
-1. **Repositories are private** — a domain may import only its *own*
-   `infrastructure/repository`. The test fails on any cross-domain repository import. Other
-   domains go through the public `Query`/`Command` namespaces.
-2. **Validation at the boundary** — data entering the domain is validated/branded once, at the
-   GraphQL scalar boundary. No re-validation internally. Evans: Anti-Corruption Layer.
-3. **No storage outside repositories** — `use-case.ts` and `business-rules.ts` may not touch
-   storage; `business-rules.ts` may not even be `async`.
-4. **Names carry intent** — exported `query`/`command`/`business-rules` names may not start with
-   `get`/`compute`/`handle`/`process`/`manage`/`perform`/`fetch` + a capital. `findAll`/`findBy`
-   stay (repository idiom).
-5. **No `throw new Error` in `query.ts`/`command.ts`** — expected absence is a returned sentinel.
+The five isolation rules — private repositories, validation at the boundary, no storage outside
+repositories, names that carry intent, no `throw` for expected outcomes — are stated in
+[ddd-best-practices.md](./ddd-best-practices.md#purity-and-isolation-rules). Here they are
+**executable**: `server/architecture.unit.test.ts` walks `server/` and fails `bun test` on any
+violation.
 
 ## Data Flow
 

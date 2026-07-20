@@ -1,29 +1,23 @@
 # Adding a New Domain
 
-Step-by-step guide to adding a backend domain. Each step maps to a DDD building block from
-Evans (*Domain-Driven Design*) or Wlaschin (*Domain Modeling Made Functional*). The examples
-come from the real `recipe` (persisted) and `proposal` (ephemeral) domains.
+Step-by-step guide to adding a backend domain **in this repo** — the stack-specific how-to.
+The rules it applies (why a repository is private, why a command returns a sentinel, why
+`business-rules.ts` is pure) are stated project-agnostically in
+[ddd-best-practices.md](./ddd-best-practices.md); read that first if a step surprises you. The
+examples come from the real `recipe` (persisted) and `proposal` (ephemeral) domains.
 
 > The rules below are enforced by `server/architecture.unit.test.ts` — run `bun test` and it
 > will fail if a new domain breaks a convention.
 
 ## Ubiquitous Language
 
-One business concept = **one word**, and it is the word the feature speaks (Evans's ubiquitous
-language). When the functional conversation says *"une amélioration"*, the code says
-`improvement` at **every** layer — domain (`ProposalUseCase.fromImprovement`), GraphQL
-(`requestImprovement(improvement:)`), iOS (`ImproveFlowView`), tests — so a grep for the
-functional word finds the whole feature. The app's on-screen French is the *translation* of
-that vocabulary, not a second vocabulary.
-
-Corollaries:
-
-- **Never introduce a synonym at one layer** (`wish`, `suggestion`, `idea` for an
-  improvement): six months later nobody knows whether two words are two concepts.
-- **Renaming the concept renames it everywhere** in the same task — half-renamed vocabulary
-  is worse than the old name.
-- The reverse also holds: if two different business concepts share a word, split the word,
-  not the concept (e.g. `attempt` — the cook — vs `proposal` — the AI's answer).
+The rule — one business concept, one word, at every layer — is in
+[ddd-best-practices.md](./ddd-best-practices.md#ubiquitous-language--one-concept-one-word).
+Here it means: the word the functional conversation uses travels through the domain
+(`ProposalUseCase.fromImprovement`), GraphQL (`requestImprovement(improvement:)`), iOS
+(`ImproveFlowView`) and the tests identically, and the app's on-screen French is its
+*translation*, not a second vocabulary. Two concepts that share a word get split instead
+(`attempt` — the cook — vs `proposal` — the AI's answer).
 
 ## 1. Create the Domain Directory
 
@@ -100,6 +94,13 @@ export const Roast = (value: unknown) => z.enum(ROAST_VALUES).parse(value) as Ro
 ```
 
 See [branded-types.md](./branded-types.md) for the full pattern (string coercion, etc.).
+
+### The brands in this repo
+
+- **Shared** (`server/domain/shared/`): `UserId` (Firebase Auth identifier, non-empty string) and
+  `Count` (branded from an already-numeric value: `make<CountType>()(value)`).
+- **`recipe`**, the only persisted domain, owns all the rest: `RecipeId`, `VersionNumber`, `Rating`,
+  `Remarks`, `IngredientName` / `IngredientQuantity`, `StepText`, `Thermomix*`.
 
 ## 4. Create the Repository (`infrastructure/repository.ts`)
 

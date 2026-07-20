@@ -4,6 +4,9 @@ Guide for writing and maintaining the top-level `README.md`. The README is the f
 reads — it should answer "what is this, how do I install it, how do I run it" without requiring prior
 knowledge of the codebase. Deep architecture belongs in `docs/`, not here.
 
+The **Principles** and **Maintenance** sections below are portable — they hold for any project's
+README. Everything between them is this repo's section-by-section template, examples included.
+
 ## Principles
 
 1. **Explain what things do, not how they're built.** "A notebook to perfect your recipes" — not
@@ -149,6 +152,7 @@ what it covers.
 | [Domain guide](docs/domain-guide.md) | How to add a new domain |
 | [GraphQL patterns](docs/graphql-patterns.md) | How the GraphQL layer is built |
 | [iOS guide](docs/ios-guide.md) | How to add screens to the iOS app |
+| [SwiftUI best practices](docs/swiftui-best-practices.md) | Portable SwiftUI rules, reusable in any project |
 | [Git workflow](docs/git-workflow.md) | How commits and pushes are handled |
 ```
 

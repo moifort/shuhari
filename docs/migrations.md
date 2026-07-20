@@ -28,16 +28,11 @@ server/system/migration/
 
 ## When to Migrate
 
-**Migration needed:**
-- Renaming a field
-- Changing a field's structure
-- Changing enum values (e.g. a new `RecipeType`)
-- Removing stale data
-
-**No migration needed:**
-- Adding a new optional (`?`) field
-- Adding a new collection
-- Changing query logic or routes
+The rule is
+[here](./ddd-best-practices.md#migrations-are-forward-only-and-owned-by-a-runner): migrate when a
+field is renamed, restructured or removed, or when an enum value changes meaning (a new
+`RecipeType` value is *additive* — no migration); don't migrate for a new optional (`?`) field, a
+new collection, or a change in query logic or routes.
 
 ## Types
 

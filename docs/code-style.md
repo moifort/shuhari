@@ -1,33 +1,31 @@
 # Code Style Guide
 
-Some rules here are **enforced** by `server/architecture.unit.test.ts` (marked ⛔ — a violation
-fails `bun test`); the rest are **conventions** the codebase follows by preference. Many implement
-DDD principles from Evans (*Domain-Driven Design*) and Wlaschin (*Domain Modeling Made Functional*).
+Portable rules — nothing here names this project. Many implement DDD principles from Evans
+(*Domain-Driven Design*) and Wlaschin (*Domain Modeling Made Functional*). Examples use a fictional
+`bean` domain.
 
-## Formatter — Biome
+Rules marked ⛔ are meant to be **enforced by an architecture test** that walks the source tree, so a
+violation fails the build; the rest are conventions the codebase follows by preference. The concrete
+tools this repo picks (formatter settings, utility libraries, runtime) are recorded in
+[CLAUDE.md](../CLAUDE.md#backend-patterns-typescript--nitro).
 
-- Spaces (width 2), single quotes, **no semicolons**
-- Line width: 100
+## Formatting is a decision made once
 
-```bash
-bun run lint        # bunx biome check
-bun run lint:fix    # autofix
-```
+A formatter with its settings committed to the repo, run in CI, and never argued about in review.
+Nobody hand-formats; nobody debates a line break. Same for the runtime and package manager: one
+choice, used everywhere.
 
-Runtime is always `bun`/`bunx`, never `npm`/`npx`.
-
-## TypeScript Rules
+## TypeScript rules
 
 ### Never type return values
 
 Let TypeScript infer — the annotation duplicates what the body already proves, and drifts from it.
-This includes command outcomes: the discriminated union follows from the `as const` sentinels and
-the returned entity, so `addVersion` infers `Promise<Recipe | 'not-found'>` on its own.
+That includes command outcomes: the discriminated union follows from the `as const` sentinels and
+the returned entity.
 
 ```ts
 // Bad
-export const all = async (userId: UserId): Promise<Recipe[]> => repository.findAllByUser(userId)
-
+export const all = async (userId: UserId): Promise<Bean[]> => repository.findAllByUser(userId)
 // Good
 export const all = async (userId: UserId) => repository.findAllByUser(userId)
 ```
@@ -37,132 +35,125 @@ export const all = async (userId: UserId) => repository.findAllByUser(userId)
 Required for the union to narrow. Sentinels are **bare strings**, not objects:
 
 ```ts
-if (!recipe) return 'not-found' as const
+if (!bean) return 'not-found' as const
 ```
 
 ### Full variable names
 
-> **Evans:** Ubiquitous Language — code reads like the domain. `recipe` says what it is; `r` says nothing.
+> **Evans:** Ubiquitous Language — code reads like the domain. `bean` says what it is; `b` says nothing.
 
 ```ts
 // Bad
-versions.filter((v) => v.number > current)
+beans.filter((b) => b.roast === 'dark')
 // Good
-versions.filter((version) => version.number > current)
+beans.filter((bean) => bean.roast === 'dark')
 ```
 
 ### Destructure in callbacks
 
 ```ts
 // Bad
-sortBy(versions, (v) => v.number)
+sortBy(beans, (b) => b.name)
 // Good
-sortBy(versions, ({ number }) => number)
+sortBy(beans, ({ name }) => name)
 ```
 
 ### Inline single-line guards
 
 ```ts
 // Bad
-if (!recipe) {
+if (!bean) {
   return 'not-found' as const
 }
 // Good
-if (!recipe) return 'not-found' as const
+if (!bean) return 'not-found' as const
 ```
 
-### Use `Date`, not `string`, for timestamps
+### Use a date type, not a string, for timestamps
 
 ```ts
-type Recipe = { createdAt: Date; updatedAt: Date }
+type Bean = { createdAt: Date; updatedAt: Date }
 ```
 
-The Firestore converter (`genericDataConverter`) restores `Timestamp` → `Date` on read.
+The storage converter is responsible for restoring the database's timestamp type to a real `Date` on
+read — a string date in the domain is a bug that surfaces months later, at a sort.
 
-### Arrays never optional
+### Arrays are never optional
 
 > **Wlaschin:** make illegal states unrepresentable — `[]` is a valid array. An optional array
 > creates two representations of "empty" (`undefined` vs `[]`), an illegal state.
 
 ```ts
 // Bad
-type RecipeVersion = { ingredients?: Ingredient[] }
+type Bean = { tastingNotes?: Note[] }
 // Good
-type RecipeVersion = { ingredients: Ingredient[] }  // [] is the neutral state
+type Bean = { tastingNotes: Note[] }   // [] is the neutral state
 ```
 
 **Items are never optional either** — an array is *total*: neither the list nor any of its slots can
-be absent. A parallel array aligned by index (`tmxSteps` mirrors `steps`) must not spell "nothing
-here" as a hole; give the element type a neutral value instead.
+be absent. A parallel array aligned by index must not spell "nothing here" as a hole; give the
+element type a neutral value instead.
 
 ```ts
-// Bad — two spellings of "no setting", and a hole Firestore can't store
-tmxSteps: (TmxSettings | undefined)[]
-// Good — every field of TmxSettings is optional, so `{}` IS "plain step"
-tmxSteps: TmxSettings[]
+// Bad — two spellings of "no setting", and a hole most databases can't store
+settings: (Settings | undefined)[]
+// Good — every field of Settings is optional, so `{}` IS "nothing set"
+settings: Settings[]
 ```
 
-At the GraphQL boundary this means **`[T!]!` everywhere**, in output types *and* inputs/args —
-never `[T]`, `[T]!` or `[T!]`. A client sends `[]` for "none", never `null`, and an empty element
-for "this slot carries nothing".
+At the API boundary this means **`[T!]!` everywhere**, in output types *and* inputs/args — never
+`[T]`, `[T]!` or `[T!]`. A client sends `[]` for "none", never `null`, and a neutral element for "this
+slot carries nothing". The same rule applies on the client (Swift: `[Settings]`, never `[Settings?]`
+nor `[Settings]?`).
 
-Applies to both backend TypeScript and iOS Swift (`[TmxSettings]`, never `[TmxSettings?]` nor
-`[TmxSettings]?`). When absence seems meaningful, derive it from a real field instead of the array's
-presence — a Thermomix recipe is `type === 'tmx'`, not "`tmxSteps` is present" (see the next rule).
+When absence seems meaningful, derive it from a real field instead of the array's presence — a
+variant is `type === 'x'`, not "the `x` array is present" (see the next rule but one).
 
 ### ⛔ No `null` in the domain — absence is `?` / `undefined`
 
 > **Wlaschin:** one representation per state. `null` and `undefined` are two spellings of "absent";
-> keeping both makes every guard a coin flip (`=== null`? `== null`? `?? `?).
+> keeping both makes every guard a coin flip (`=== null`? `== null`? `??`?).
 
-The domain (`types.ts`, `primitives.ts`, `command.ts`, `query.ts`, `business-rules.ts`,
-`use-case.ts`, `infrastructure/repository.ts`, `server/system/**`, `server/utils/**`) never spells
-absence `null`: an absent field is `field?: T` (and the key is simply **not written**), a lookup that
-finds nothing returns `T | undefined` — or the discriminated `'not-found' as const` sentinel where
-the flow already uses one.
+The domain never spells absence `null`: an absent field is `field?: T` (and the key is simply **not
+written**), a lookup that finds nothing returns `T | undefined` — or the discriminated
+`'not-found' as const` sentinel where the flow already uses one.
 
 ```ts
 // Bad
-type RecipeVersion = { basedOn: VersionNumber | null; rating: Rating | null }
-export const bestRating = (versions: RecipeVersion[]): RecipeVersion | null => …
+type Bean = { openedAt: Date | null; score: Score | null }
+export const best = (beans: Bean[]): Bean | null => …
 // Good
-type RecipeVersion = { basedOn?: VersionNumber; rating?: Rating }
-export const bestRating = (versions: RecipeVersion[]): RecipeVersion | undefined => …
+type Bean = { openedAt?: Date; score?: Score }
+export const best = (beans: Bean[]): Bean | undefined => …
 ```
 
-`null` survives only at the **boundaries**, where a protocol imposes it, and it is converted on the
-spot:
+`null` survives only at the **boundaries**, where a protocol imposes it, and is converted on the
+spot: the API layer maps `undefined` → `null` on the way out and strips `null` keys on the way in;
+the storage layer drops absent fields on write and turns stored nulls back into `undefined` on read;
+a model returning loose JSON is normalised at parse time.
 
-| Boundary | Direction | Conversion |
-| --- | --- | --- |
-| GraphQL (`infrastructure/graphql/*.ts`) | out | `nullable: true` + `resolve: (v) => v.x ?? null` |
-| GraphQL inputs | in | `stripNulls` (`server/utils/input.ts`) drops the null keys |
-| Firestore (`infrastructure/repository.ts`) | both | `withoutAbsentFields` on write, `withoutStoredNulls` on read (`server/utils/firestore.ts`) |
-| Gemini JSON (`system/ai/primitives.ts`) | in | `nullAsAbsent` / Zod `.nullish()` transforms |
-
-Two Firestore consequences to keep in mind: a write must be a full `set` for a dropped key to
-**erase** the stored field (an omitted key in an `update`/`merge` leaves the old value untouched),
-and an array element cannot be absent — a positional hole (a plain step in `tmxSteps`) is encoded as
-a stored `null` and decoded back to `undefined` on read.
+Two storage consequences worth knowing: a write must be a **full replace** for a dropped key to
+*erase* the stored field (an omitted key in a merge leaves the old value untouched), and an array
+element cannot be absent — a positional hole is stored as `null` and decoded back to `undefined`.
 
 ### No boolean derivable from another field
 
-Never store a boolean whose truth is already implied by another field (`toTest !== null` implies "has
-a pending version"; `type === 'tmx'` implies "is Thermomix"). Derive it in a pure function or a
-resolver instead.
+Never store a boolean whose truth is already implied by another field (`pending !== undefined`
+implies "has something pending"; `type === 'x'` implies "is an x"). Derive it in a pure function or a
+resolver.
 
-### ⛔ Never `as SomeBrand` on raw input — go through the Zod constructor
+### ⛔ Never cast raw input to a brand — go through the constructor
 
 ```ts
 // Bad
-const id = body.id as RecipeId
+const id = body.id as BeanId
 // Good
-const id = RecipeId(body.id)
+const id = BeanId(body.id)
 ```
 
-(Casting an already-Zod-validated value to its union type, as enum primitives do, is fine.)
+(Casting an already-validated value to its own union type, as enum constructors do, is fine.)
 
-### ⛔ No `throw new Error` in domain `query.ts` / `command.ts`
+### ⛔ No `throw` in domain `query.ts` / `command.ts`
 
 Expected absence is a returned sentinel, not an exception. `throw` is reserved for impossible
 states, and lives outside these two files. See [error-handling.md](./error-handling.md).
@@ -171,86 +162,69 @@ states, and lives outside these two files. See [error-handling.md](./error-handl
 
 Exported names in `query.ts` / `command.ts` / `business-rules.ts` may not start with
 `get`/`compute`/`handle`/`process`/`manage`/`perform`/`fetch` + a capital. Reads read as `all`,
-`byId`, `versionsOf`; writes as the action (`create`, `addVersion`, `recordAttempt`); rules as
-the concept (`bestRating`, `versionToOpen`, `nextVersionNumber`). `findAll`/`findBy` stay — that is
-the repository idiom.
+`byId`, `versionsOf`; writes as the action (`add`, `remove`, `recordAttempt`); rules as the concept
+(`bestScore`, `nextNumber`). `findAll` / `findBy` stay — that is the repository idiom.
 
 ### ⛔ `business-rules.ts` is pure — no `async`, no storage
 
-Pure, synchronous functions only. No `useStorage`, no `async`, no `db()`.
+Pure, synchronous functions only.
 
 ### ⛔ No cross-domain repository imports
 
 A domain may import only its own `infrastructure/repository`. Reach other domains through their
-public `Query`/`Command` namespaces.
+public `Query` / `Command` namespaces.
 
-### Never `switch` — use `match().exhaustive()`
+### Never `switch` — use exhaustive pattern matching
 
-> **Wlaschin:** totality — `.exhaustive()` forces every case; a new sentinel becomes a compile
-> error, not a silent fall-through.
+> **Wlaschin:** totality — exhaustiveness forces every case; a new sentinel becomes a compile error,
+> not a silent fall-through.
 
-`ts-pattern` is a project dependency (`ts-pattern@5.9.0`). Map a command's sentinels in the
-resolver, terminating with `.exhaustive()` (never `.otherwise()`); throw through the shared
-`errors.ts` `domainError` helper, whose `never` return type sits in a `match` arm while the success
-arm keeps the resolver's inferred type. The helper **is** the sentinel — it throws the sentinel as
-the message and derives its `extensions.code` mechanically — so each arm is just
-`.with('<sentinel>', domainError)`:
+Map a command's sentinels with a pattern-matching library, terminating on an exhaustiveness check —
+never a catch-all. The error helper's `never` return type sits in one arm while the success arm
+keeps the resolver's inferred type:
 
 ```ts
-import { match, P } from 'ts-pattern'
-import { domainError } from '~/domain/shared/graphql/errors'
-
 match(result)
   .with('not-found', domainError)
-  .with('no-recipe-found', domainError)
-  .with(P.not(P.string), (recipe) => recipe)
+  .with(P.not(P.string), (bean) => bean)
   .exhaustive()
 ```
 
-### Use `lodash-es`
+### Prefer a tree-shakeable utility library over hand-rolled helpers
 
-Utilities come from `lodash-es` (tree-shakeable). The codebase uses `chunk`, `sortBy`, etc.
+`chunk`, `sortBy`, `groupBy` and friends are solved problems; a private `utils/array.ts` reinvents
+them with fewer tests.
 
-```ts
-import { chunk, sortBy } from 'lodash-es'
-```
-
-### Never `for`/`while` loops — use functional style
+### Never `for` / `while` loops — use functional style
 
 > **Wlaschin:** functional composition — `map`/`filter`/`reduce` express intent declaratively.
 
 ```ts
 // Bad
-for (const change of changes) { ... }
+for (const change of changes) { … }
 // Good
-changes.reduce((params, change) => ..., params)
+changes.reduce((params, change) => …, params)
 ```
 
-The one pragmatic exception is a bounded loop over Firestore batch chunks (writing under the 500-op
-cap is inherently sequential) and the per-request loader dispatch — see `utils/firestore.ts` and
-`shared/graphql/loaders.ts`.
+The pragmatic exceptions are inherently sequential infrastructure loops: writing under a database's
+batch-operation cap, or a batched loader's dispatch.
 
 ### Error handling at the caller level
 
-Don't wrap each unit in try/catch; let the orchestrator handle failure once (e.g. the migration
-runner wraps each migration). See [error-handling.md](./error-handling.md).
+Don't wrap each unit in try/catch; let the orchestrator handle failure once (a migration runner
+wrapping each migration). See [error-handling.md](./error-handling.md).
 
-### `console`
+### ⛔ No `console` in server code
 
-⛔ No `console.log`/`console.error`/`console.warn` in server code. `console.info` is tolerated for
-the one deliberate site (the migration runner) — error reporting otherwise goes through Sentry
-(`plugins/01-sentry.ts`).
+Error reporting goes through the reporter, not stdout. A single deliberate `console.info` site (a
+migration runner narrating its work) is tolerated; `console.log` / `error` / `warn` are not.
 
 ## Language
 
-All code, comments, commit messages, and documentation are in **English** — including `CHANGELOG.md`,
-the source of truth. The only French in the repo is user-facing copy (`CHANGELOG.fr.md`, the copy
-served to the app, and the iOS app's on-screen text).
-
-### The whole backend is English
-
-Identifiers, folder and file names, comments, GraphQL descriptions, AI prompts, test names: not one
-French word. A reader of `server/` should never need to know French to read the model.
+**One language for everything versioned and technical: English.** Code, identifiers, folder and file
+names, comments, commit messages, documentation, API descriptions, model prompts, test names, and —
+on mobile — accessibility *identifiers*. A reader should never need to know the product's UI
+language to read the model.
 
 ```ts
 // Bad
@@ -261,68 +235,51 @@ export const recordAttempt = async (userId: UserId, input: RecordAttemptInput) =
 
 ### Enum values, unions and discriminants are English technical symbols
 
-> **Evans:** Ubiquitous Language — but the language of the *domain model*, not of the *reader*.
-> A schema value is an identity, not a label; the moment it doubles as a label it can never be
+> **Evans:** Ubiquitous Language — but the language of the *domain model*, not of the *reader*. A
+> schema value is an identity, not a label; the moment it doubles as a label it can never be
 > translated, renamed or reused.
 
-Enum members (`DISH`, `STARTER`, `AI_PROPOSAL`), their backing values (`dish`, `starter`,
-`ai-proposal`) and every discriminant (`origin.kind`, `'not-found'`) are English symbols. The
-front-end owns the wording: `RecipeType.DISH` travels over the wire, and
-`ios/Shuhari/Shared/RecipeType.swift` maps `.dish` to the on-screen label "Plat". The schema never
-speaks the user's language.
+Enum members, their backing values (`dish`, `starter`, `ai-proposal`) and every discriminant
+(`origin.kind`, `'not-found'`) are English symbols. The front-end owns the wording: the symbol
+travels over the wire and the client maps it to a translated label. The schema never speaks the
+user's language.
 
 ```ts
-// Bad — the label leaks into the schema; the day the app speaks English, the data is wrong
-export const RECIPE_TYPE_VALUES = ['plat', 'tmx'] as const
+// Bad — the label leaks into the schema; the day the app speaks another language, the data is wrong
+export const TYPE_VALUES = ['plat', 'boisson'] as const
 // Good — a symbol the app translates
-export const RECIPE_TYPE_VALUES = ['dish', 'tmx'] as const
+export const TYPE_VALUES = ['dish', 'drink'] as const
 ```
 
-### Same rule on iOS — French is display copy only
+### The UI language is display copy only
 
-Identifiers, file names, comments and accessibility **identifiers** (`"home-settings-button"`) are
-English. French is reserved for the copy the user actually reads: `Text`, `label`,
-`navigationTitle`, `accessibilityLabel`, and Xcode preview names (`#Preview("Plat")`) — the previews
-are a developer-facing gallery of the French UI, so they are named in the UI's language.
+On the client, identifiers, file names, comments and accessibility **identifiers**
+(`"home-settings-button"`) stay English. The product's language is reserved for the copy the user
+actually reads: labels, titles, accessibility *labels*, and preview names (a preview gallery of the
+translated UI is legitimately named in that UI's language).
 
 ```swift
 // Bad
 button.accessibilityIdentifier = "bouton-reglages"
-// Good — English identifier, French label
+// Good — English identifier, translated label
 Button("Historique") { … }.accessibilityIdentifier("recipe-history-button")
 ```
 
-### The deliberate exceptions
+### Declare the exceptions, and control them
 
-Everything below is French **on purpose** — nothing else is:
+Every project has a short list of files and values that are legitimately in the product's language:
+the user-facing changelog, data values quoted as examples in prompts or fixtures, a fallback string
+the server produces. **List them explicitly** and keep a cheap control — a grep for the language's
+accented range over the server tree — that must return nothing but that list. It is a smoke test,
+not a proof: unaccented words slip through, so read the names too.
 
-- `CHANGELOG.fr.md` (the copy served to the app) and its generated asset
-  `server/system/changelog-content.ts`.
-- French **data values** quoted as examples in code, comments, GraphQL descriptions and AI prompts:
-  the Thermomix speed vocabulary (`"mijotage"`, `"Varoma"`, the accented kneading speed),
-  ingredient names (`"Pommes de terre"`), quantities. The AI must produce them verbatim — they are
-  user data, not vocabulary of the model.
-- The French fallback title used when an import yields no title
-  (`server/system/ai/primitives.ts`, `raw.title || …`) — user-visible copy the server produces.
-- Test fixtures that simulate user data (recipe titles, ingredient names, step text).
+This repo's list is in [CLAUDE.md](../CLAUDE.md#language).
 
-The control is a grep for accented letters (the Latin-1 range, so the command itself stays ASCII),
-which must return only the above:
+## Client-side rules
 
-```bash
-grep -rnP '[\x{00C0}-\x{00FF}]' server/
-```
+See [swiftui-best-practices.md](./swiftui-best-practices.md) for the portable UI rules and
+[ios-guide.md](./ios-guide.md) for this app's conventions. The two style rules that cross the
+boundary:
 
-It is a smoke test, not a proof: `plat`, `essai` or `note` carry no accent — read the names too.
-
-## Swift Rules
-
-See [ios-guide.md](./ios-guide.md) for the full iOS conventions. In short:
-
-- `@MainActor @Observable` on ViewModels (`*Store` / `*ViewModel`) — the Observation framework,
-  not `ObservableObject`.
-- Model types are `Sendable` (Swift 6 strict concurrency).
-- Leaf views take **primitives**, never domain structs.
-- Arrays are never optional (same rule as TypeScript).
-- Write accented French copy as actual UTF-8 characters, never as `"\u{00E9}"`-style escapes.
-- Every component below page level is previewable (`#Preview`).
+- Arrays are never optional (same rule as above), on the wire and in the client model.
+- Write the UI language's accented copy as real UTF-8 characters, never as `"\u{00E9}"` escapes.

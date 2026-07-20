@@ -9,8 +9,14 @@ the single source for collaboration conventions, replacing any machine-local ass
   practices" means make the code conform to them, not invent new rules. When code diverges from
   a doc, change the **code**, not the doc (exception: an explicit user request to update a
   specific doc).
-- **`docs/code-style.md` is law and must never be modified.** If it ends up with a stale
-  reference, flag it to the user instead of editing it.
+- **`docs/code-style.md` is law.** Align the code to it, never the reverse — it is never edited to
+  match what the code happens to do. It changes only on an explicit user request; a stale reference
+  gets flagged, not silently patched.
+- **Rules are written project-agnostic; wiring is written per project.** A practice that would hold
+  in any codebase belongs in a `*-best-practices.md` (or `code-style.md`) with neutral examples and
+  no product noun in sight; how *this* repo implements it — paths, library names, domain examples —
+  belongs in the matching project guide, which links to the rule. A rule that can only be read
+  through this product's vocabulary can't be reused, reviewed, or challenged.
 - **Codify corrections.** When the user corrects an architecture/style point in conversation
   (e.g. "a domain error should just be a const"), two things must happen in the same task:
   1. Apply the correction **repo-wide** — migrate the existing code, not just the new feature.

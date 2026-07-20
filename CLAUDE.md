@@ -17,7 +17,8 @@ The **only** French in the repo is user-facing copy — `CHANGELOG.fr.md` (the c
 > Full working agreement: [docs/collaboration.md](docs/collaboration.md) — read it at the start
 > of any session. Key rules:
 
-- **Docs are the spec**: align code to `docs/`, never the reverse; `docs/code-style.md` is law and must never be modified. Corrections given in conversation are applied repo-wide **and** codified in the matching doc, in the same task.
+- **Docs are the spec**: align code to `docs/`, never the reverse; `docs/code-style.md` is law and is never edited to match the code (it changes only on an explicit user request). Corrections given in conversation are applied repo-wide **and** codified in the matching doc, in the same task.
+- **Rules generic, wiring specific**: a practice that would hold in any codebase goes in a `*-best-practices.md` with neutral examples; how this repo implements it goes in the matching project guide, which links to the rule.
 - **Design talk is not a go**: in architecture discussions, "je veux faire X" is design intent — implement only on an explicit "vas-y" / "implémente" / "lance".
 - **Every plan opens with a "Domaines impactés" block** (Créés / Modifiés / Supprimés) before the body.
 - **Never open a PR**: on "push", everything goes straight to `origin/main`.
@@ -41,7 +42,8 @@ The **only** French in the repo is user-facing copy — `CHANGELOG.fr.md` (the c
 
 ## Development Workflow
 
-> **Git commit & push rules live in [docs/git-workflow.md](docs/git-workflow.md)** — read it at
+> **Git commit & push rules live in [docs/git-workflow.md](docs/git-workflow.md)** (this repo's
+> policy; the portable rules are in [docs/git-best-practices.md](docs/git-best-practices.md)) — read it at
 > the start of any coding session. This section is the quick reference.
 
 1. Always verify the build before committing (backend `bun tsc --noEmit` + `xcodebuild` depending on what was touched)
@@ -66,10 +68,12 @@ The **only** French in the repo is user-facing copy — `CHANGELOG.fr.md` (the c
 
 ## Backend Patterns (TypeScript / Nitro)
 
-> Extended guides live in `docs/`: [architecture](docs/architecture.md),
-> [domain-guide](docs/domain-guide.md), [graphql-patterns](docs/graphql-patterns.md),
-> [branded-types](docs/branded-types.md), [code-style](docs/code-style.md),
-> [error-handling](docs/error-handling.md), [migrations](docs/migrations.md),
+> Extended guides live in `docs/`, split in two: the **rules**, written project-agnostic —
+> [ddd-best-practices](docs/ddd-best-practices.md), [graphql-best-practices](docs/graphql-best-practices.md),
+> [code-style](docs/code-style.md), [branded-types](docs/branded-types.md),
+> [error-handling](docs/error-handling.md) — and this repo's **wiring** —
+> [architecture](docs/architecture.md), [domain-guide](docs/domain-guide.md),
+> [graphql-patterns](docs/graphql-patterns.md), [migrations](docs/migrations.md),
 > [readme-guide](docs/readme-guide.md), [collaboration](docs/collaboration.md). This section is the
 > quick reference; the docs go deeper with examples.
 
@@ -90,7 +94,7 @@ The **only** French in the repo is user-facing copy — `CHANGELOG.fr.md` (the c
 - **GraphQL** (Apollo Server + Pothos, single endpoint `POST /graphql`): satellite `RecipeType` fields (versions, versionToOpen, bestRating) must never scan a collection or read one doc per parent row (N+1). They resolve through the per-request `versionsByRecipe` loader in `server/domain/shared/graphql/loaders.ts` (memoized + micro-batched by key, built per request on the GraphQL context) — a page of recipes selecting `versionToOpen`/`bestRating` costs one `getAll`, an unselected satellite costs nothing. Read budgets are asserted in tests via `fake.reads`/`fake.docReads`/`fake.queryReads`.
 - **Naming**: function names carry the business concept, not the technical pattern. The name IS the rule or action. **Ubiquitous language**: one business concept = one word, the one the feature speaks, used identically at every layer (domain, GraphQL, iOS, tests — the app's French copy being its translation). If the feature says "amélioration", the code says `improvement` everywhere — never a synonym (`wish`, `suggestion`) introduced by a single layer. See [docs/domain-guide.md](docs/domain-guide.md#ubiquitous-language).
 - **Tests**: `*.unit.test.ts` with `bun:test`. Firestore is mocked via `server/test/fake-firestore.ts` (`mock.module('~/system/firebase', () => ({ db: fakeDb }))`) — records batches, direct writes and read counts (`fake.reads`) to assert atomicity and read budgets.
-- Formatter: Biome (spaces width 2, single quotes, no semicolons, line width 100).
+- Formatter: Biome (spaces width 2, single quotes, no semicolons, line width 100). Pattern matching: `ts-pattern` (`match().exhaustive()`); utilities: `lodash-es` (tree-shakeable) — the concrete picks behind the generic rules in [docs/code-style.md](docs/code-style.md).
 
 ## Key Business Rules
 
