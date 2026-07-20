@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// A library row: the course icon, the title, a subtitle with the version count closed
-/// by the recipe type as a chip ("Plat", "Thermomix"), the recipe's best rating ("the
+/// by the recipe type as an icon-only chip, the recipe's best rating ("the
 /// highest star" across every version it ever cooked) as trailing stars, and the
 /// favourite heart closing the line. The icon, the stars and the heart sit on the
 /// title's line. Designed as a List row — the List provides insets and separators.
@@ -31,7 +31,8 @@ struct LibraryRow: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
-                    Chip(image: type.iconImage(filled: false), text: type.label, compact: true)
+                    Chip(image: type.iconImage(filled: false), compact: true)
+                        .accessibilityLabel(type.label)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

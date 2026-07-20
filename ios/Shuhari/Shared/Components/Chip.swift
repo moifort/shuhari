@@ -1,12 +1,13 @@
 import SwiftUI
 
-/// The shared neutral chip layout: optional icon + text in a systemFill capsule.
+/// The shared neutral chip layout: optional icon + optional text in a systemFill
+/// capsule — an icon alone reads as a badge, and carries its own accessibility label.
 /// Backs `TypeChip` and any future informational chip so they all share one
 /// geometry — the version chip on a timeline notch, the type chip on a recipe.
 struct Chip: View {
     var icon: String? = nil
     var image: Image? = nil
-    let text: String
+    var text: String? = nil
     /// Tightens the capsule for a chip that trails a row rather than heading a
     /// screen — the version chip closing a version row.
     var compact: Bool = false
@@ -21,7 +22,9 @@ struct Chip: View {
             } else if let icon {
                 Image(systemName: icon)
             }
-            Text(text)
+            if let text {
+                Text(text)
+            }
         }
         .font((compact ? Font.caption2 : .caption).weight(.medium))
         .foregroundStyle(highlighted ? Theme.Status.attempt : .secondary)
