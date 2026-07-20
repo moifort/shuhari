@@ -25,8 +25,8 @@ struct RecipeDetailPage: View {
 
     var body: some View {
         List {
-            changeCard
             header
+            changeCard
 
             IngredientsSection(
                 ingredients: displayedVersion.ingredients,
@@ -79,30 +79,27 @@ struct RecipeDetailPage: View {
     // MARK: - Header
 
     // The badges + rating line: a normal list row, so it scrolls with the page and
-    // fades under the soft scroll edge. Focus mode drops it — the version number is
-    // already the screen's subject and its rating is read in the version list, so
-    // the sheet reads like the proposal it came from: card, ingredients, steps.
-    @ViewBuilder
+    // fades under the soft scroll edge. It sits right under the title pill in both
+    // modes — a focused version still says which type, which number and how it was
+    // rated, before the card saying what it changes.
     private var header: some View {
-        if focusVersion == nil {
-            Section {
-                VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                    HStack {
-                        RecipeHeaderBadges(
-                            type: recipe.type,
-                            versionNumber: displayedVersion.number,
-                            attemptCount: recipe.attempts.count
-                        )
-                        Spacer(minLength: Theme.Spacing.s)
-                        if let average = recipe.overallAverageRating {
-                            RatingStars(rating: average)
-                        }
+        Section {
+            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                HStack {
+                    RecipeHeaderBadges(
+                        type: recipe.type,
+                        versionNumber: displayedVersion.number,
+                        attemptCount: recipe.attempts.count
+                    )
+                    Spacer(minLength: Theme.Spacing.s)
+                    if let average = recipe.overallAverageRating {
+                        RatingStars(rating: average)
                     }
                 }
-                .listRowInsets(EdgeInsets(top: -1, leading: 0, bottom: -1, trailing: 0))
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
             }
+            .listRowInsets(EdgeInsets(top: -1, leading: 0, bottom: -1, trailing: 0))
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
         }
     }
 }
