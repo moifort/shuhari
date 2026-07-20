@@ -71,6 +71,24 @@ Enforcement is not left to good intentions: `.claude/settings.json` denies the `
 That includes the post-task code review of step 3 of the workflow: read your own diff, state
 what you checked and what you found, in the reply.
 
+## One checkout, no worktrees
+
+Work in the primary checkout. **Never create a git worktree** for a session — neither by hand
+(`git worktree add`) nor through the harness's `EnterWorktree` tool, and never invoke
+`superpowers:using-git-worktrees`. Only an explicit user request overrides this.
+
+The isolation a worktree would buy is already bought by *one task = one commit*: a session that
+closes its task leaves a clean tree for the next one. What the worktree adds is pure cost — an
+untracked `.env` to copy over, a `bun install` plus `bun run prepare` to redo, and above all a
+cold Xcode DerivedData (keyed by project path), so the first iOS build restarts from zero. The
+iOS simulator is global anyway: two sessions driving `simctl launch` still overwrite each other's
+screen, worktree or not.
+
+The consequence to respect: several sessions may share this checkout at the same time, so a dirty
+tree is not necessarily yours. Stage the explicit paths of your task and commit those — never
+`git add -A`, `git add .` or `git commit -a`, which would swallow another session's work in
+progress (see [git-workflow](git-workflow.md#staging-only-your-own-task)).
+
 ## Ops autonomy
 
 For infra/setup/ops tasks, **do everything technically possible yourself** rather than handing

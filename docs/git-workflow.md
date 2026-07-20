@@ -18,6 +18,14 @@ surgery, reshape before pushing) are in [git-best-practices.md](./git-best-pract
 - **Commit trailer**: every message ends with the `Co-Authored-By:` trailer.
 - **Scopes** used here: `ios`, `server`, `infra`, `changelog`, or a domain name.
 
+## Staging: only your own task
+
+Sessions share the primary checkout (no worktrees, see
+[collaboration.md](./collaboration.md#one-checkout-no-worktrees)), so files you did not touch may
+belong to a session still running or to work left in progress. **Stage the explicit paths of
+your task**, then commit — never `git add -A`, `git add .` or `git commit -a`. Check `git show
+--stat HEAD` after committing: an unexpected file in the list means you took someone else's work.
+
 ## Branching
 
 Commit on the working branch (usually **`main`**) — this project commits freely to `main` by

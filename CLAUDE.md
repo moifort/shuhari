@@ -17,6 +17,7 @@ Everything versioned and technical is **English**: commits, code, comments, docs
 - **Rules generic, wiring specific**: a practice that would hold in any codebase goes in a `*-best-practices.md` with neutral examples; how this repo implements it goes in the matching project guide, which links to the rule.
 - **Work inline, never through subagents**: exploration, review, debugging and planning all happen in the main conversation — never `Task`/`Agent`, never a parallel-worker or subagent-driven skill, plan mode included.
 - **Design talk is not a go**: in architecture discussions, "je veux faire X" is design intent — implement only on an explicit "vas-y" / "implémente" / "lance".
+- **One checkout, no worktrees**: never `git worktree add`, never `EnterWorktree` — sessions share the primary checkout, so stage the explicit paths of your task (never `git add -A` / `commit -a`).
 - **Every plan opens with a "Domaines impactés" block** (Créés / Modifiés / Supprimés) before the body.
 - **No machine-local assistant memory**: collaboration learnings are written into `docs/`, nothing else.
 - **Ops autonomy**: execute everything CLI-doable yourself; hand off only credential-gated steps, with numbered instructions.
