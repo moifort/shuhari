@@ -53,7 +53,7 @@ struct ExecutePage: View {
                         .foregroundStyle(.secondary)
                     Spacer()
                     Text(ingredient.quantity)
-                        .font(.largeTitle.weight(.semibold))
+                        .font(.title.weight(.medium))
                         .monospacedDigit()
                 }
                 .padding(.vertical, 12)
