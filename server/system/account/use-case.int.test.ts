@@ -1,16 +1,8 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test'
 import type { UserId } from '~/domain/shared/types'
-import { fakeDb, resetFakeFirestore } from '~/test/fake-firestore'
+import { deletedUsers, fakeFirebase, resetFakeFirestore } from '~/test/fake-firestore'
 
-const deleted: string[] = []
-mock.module('~/system/firebase', () => ({
-  db: fakeDb,
-  auth: () => ({
-    deleteUser: async (uid: string) => {
-      deleted.push(uid)
-    },
-  }),
-}))
+mock.module('~/system/firebase', fakeFirebase)
 
 const { AccountUseCase } = await import('~/system/account/use-case')
 
@@ -20,7 +12,6 @@ const other = 'user-2' as UserId
 let fake = resetFakeFirestore()
 beforeEach(() => {
   fake = resetFakeFirestore()
-  deleted.length = 0
 
   fake.seed('recipes', 'r1', { id: 'r1', userId: cook, title: 'Bourguignon' })
   fake.seed('recipes', 'r2', { id: 'r2', userId: other, title: 'Risotto' })
@@ -56,7 +47,7 @@ describe('AccountUseCase.remove', () => {
   test('deletes the authentication account itself', async () => {
     await AccountUseCase.remove(cook)
 
-    expect(deleted).toEqual([cook])
+    expect(deletedUsers).toEqual([cook])
   })
 
   test('deletes the account only after the data, never before', async () => {
@@ -66,7 +57,7 @@ describe('AccountUseCase.remove', () => {
     // failure would strand documents keyed to a user nobody can authenticate as.
     expect(fake.snapshot('recipes').has('r1')).toBe(false)
     expect(fake.snapshot('entitlements').has(cook)).toBe(false)
-    expect(deleted).toEqual([cook])
+    expect(deletedUsers).toEqual([cook])
   })
 
   test('leaves every other cook untouched', async () => {
@@ -75,6 +66,6 @@ describe('AccountUseCase.remove', () => {
     expect(fake.snapshot('recipes').get('r2')).toMatchObject({ userId: other })
     expect(fake.snapshot('ai-quotas').get(`${other}_2026-07`)).toMatchObject({ imports: 3 })
     expect(fake.snapshot('entitlements').get(other)).toMatchObject({ userId: other })
-    expect(deleted).not.toContain(other)
+    expect(deletedUsers).not.toContain(other)
   })
 })

@@ -17,9 +17,9 @@ import type {
   VersionNumber,
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
-import { fakeDb, resetFakeFirestore } from '~/test/fake-firestore'
+import { fakeFirebase, resetFakeFirestore } from '~/test/fake-firestore'
 
-mock.module('~/system/firebase', () => ({ db: fakeDb }))
+mock.module('~/system/firebase', fakeFirebase)
 
 const { RecipeCommand } = await import('~/domain/recipe/command')
 

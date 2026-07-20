@@ -19,9 +19,9 @@ import type {
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
 import type { Proposal as AiProposal, ImportAnalysis } from '~/system/ai/types'
-import { fakeDb, resetFakeFirestore } from '~/test/fake-firestore'
+import { fakeFirebase, resetFakeFirestore } from '~/test/fake-firestore'
 
-mock.module('~/system/firebase', () => ({ db: fakeDb }))
+mock.module('~/system/firebase', fakeFirebase)
 
 // The AI is mocked: each test sets `proposal`/`analysis`/`mergedTips`, and the
 // use-case returns it (branded for a proposal or tips, raw for an import analysis).

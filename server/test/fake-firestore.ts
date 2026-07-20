@@ -6,7 +6,13 @@
  *
  * Test files mock the firebase module with the shared holder so file ordering
  * does not matter:
- *   mock.module('~/system/firebase', () => ({ db: fakeDb }))
+ *   mock.module('~/system/firebase', fakeFirebase)
+ *
+ * Always the whole `fakeFirebase` factory, never a hand-rolled `{ db: fakeDb }`:
+ * `mock.module` REPLACES a module wholesale and is global to the test process, so a
+ * partial factory silently strips the exports it omits — for every test file, not
+ * just its own. That is how five tests that only needed `db` broke a use case that
+ * needed `auth`, and only on CI, where the file ordering differed.
  */
 import type { Firestore } from 'firebase-admin/firestore'
 
@@ -242,8 +248,13 @@ export type FakeFirestore = ReturnType<typeof createFakeFirestore>
 
 const holder = { current: createFakeFirestore() }
 
+/// Accounts deleted through the fake auth, in order, so a test can assert both that
+/// the deletion happened and that it happened after the data went.
+export const deletedUsers: string[] = []
+
 export const resetFakeFirestore = () => {
   holder.current = createFakeFirestore()
+  deletedUsers.length = 0
   // Give each test a fresh, stable request context so memoizedPerRequest() caches
   // within the test (mirroring one HTTP request) and is cleared between tests.
   const context: Record<string, unknown> = {}
@@ -252,3 +263,13 @@ export const resetFakeFirestore = () => {
 }
 
 export const fakeDb = () => holder.current.db
+
+export const fakeAuth = () => ({
+  deleteUser: async (uid: string) => {
+    deletedUsers.push(uid)
+  },
+})
+
+/// The whole `~/system/firebase` module, faked. Pass this factory itself to
+/// `mock.module` — see the note at the top of this file.
+export const fakeFirebase = () => ({ db: fakeDb, auth: fakeAuth })

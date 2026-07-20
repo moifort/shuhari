@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test'
 import type { UserId } from '~/domain/shared/types'
 import type { AppleNotification, AppleTransaction } from '~/system/apple/types'
-import { fakeDb, resetFakeFirestore } from '~/test/fake-firestore'
+import { fakeFirebase, resetFakeFirestore } from '~/test/fake-firestore'
 
-mock.module('~/system/firebase', () => ({ db: fakeDb }))
+mock.module('~/system/firebase', fakeFirebase)
 mock.module('~/system/config', () => ({ config: () => ({ premiumUserIds: [] }) }))
 
 // Apple's signature check is mocked: these tests are about what the domain does
