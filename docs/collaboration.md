@@ -132,12 +132,5 @@ When a feature exists in vinarium, **replicate its pattern rather than inventing
 
 Temporal facts — **delete each note once it no longer holds.**
 
-- **2026-07 — production Firestore is empty.** The app is pre-first-release; no real data
-  exists. Schema-shape refactors therefore need **no migration** while this holds (see the
-  note in [migrations.md](migrations.md)). Obsolete as soon as real data lands.
-- **2026-07 — Sentry migration tail.** The `fixme-nitro` → `@sentry/node` migration is almost
-  done: the server plugin (`server/plugins/01-sentry.ts`) and the infra rename
-  (`infra/variables.tf` / `infra/secrets.tf` use `sentry_dsn`) are shipped, but
-  `.github/workflows/deploy.yml` still passes `fixme_dsn = secrets.FIXME_DSN`. Until the
-  workflow passes `sentry_dsn` (and the GitHub secret is renamed accordingly), **Sentry
-  reporting is OFF in prod**.
+- **2026-07-20 — production Firestore holds real data.** Every schema-shape change needs its
+  migration (see [migrations.md](migrations.md)); the pre-release shortcut is over.
