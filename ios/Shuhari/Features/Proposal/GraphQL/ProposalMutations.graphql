@@ -6,3 +6,17 @@ mutation AcceptProposal($recipeId: RecipeId!, $proposal: ProposalInput!) {
     createdVersion
   }
 }
+
+mutation RequestImprovement(
+  $recipeId: RecipeId!
+  $versionNumber: VersionNumber!
+  $improvement: Remarks!
+) {
+  requestImprovement(
+    recipeId: $recipeId
+    versionNumber: $versionNumber
+    improvement: $improvement
+  ) {
+    ...ProposalFields
+  }
+}

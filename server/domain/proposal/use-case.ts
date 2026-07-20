@@ -37,24 +37,29 @@ const contextSteps = (content: VersionContent): ImportStep[] =>
     ? content.steps.map((s) => ({ text: s.text as string, settings: s.settings }))
     : content.steps.map((text) => ({ text: text as string, settings: {} }))
 
+// What asks for the next version: the cook that was run, or the improvement the cook
+// described. Everything else about the proposal is the same either way.
+type ProposalRequest =
+  | { attempts: { rating: Rating; remarks: Remarks }[] }
+  | { improvement: string }
+
 export namespace ProposalUseCase {
-  // Ask the AI for the next version after an attempt. The attempt comes from the
-  // caller, not from storage: nothing is written until the proposal is accepted, so
-  // the cook that motivates it exists only in the request. Loads the cooked version
-  // by key — recipe + version, two keyed doc reads, no lineage scan — feeds both to
-  // the AI, brands the result into domain shapes and returns it stamped with
+  // Ask the AI for the next version. What motivates it comes from the caller, not
+  // from storage: nothing is written until the proposal is accepted, so the cook (or
+  // the improvement) exists only in the request. Loads the version iterated on by key
+  // — recipe + version, two keyed doc reads, no lineage scan — feeds both to the AI,
+  // brands the result into domain shapes and returns it stamped with
   // `basedOn = versionNumber`. Nothing is persisted.
-  export const fromAttempt = async (
+  const nextVersion = async (
     userId: UserId,
     recipeId: RecipeId,
     versionNumber: VersionNumber,
-    attempt: { rating: Rating; remarks: Remarks },
+    request: ProposalRequest,
   ) => {
     const recipe = await RecipeQuery.byId(userId, recipeId)
     if (recipe === 'not-found') return 'not-found'
     const version = await RecipeQuery.versionBy(recipeId, versionNumber)
     if (version === 'not-found') return 'not-found'
-    const attempts = [{ rating: attempt.rating, remarks: attempt.remarks }]
 
     const context: ProposalContext = {
       type: recipe.type,
@@ -64,7 +69,8 @@ export namespace ProposalUseCase {
         quantity: i.quantity as string,
       })),
       currentSteps: contextSteps(version.content),
-      attempts,
+      attempts: 'attempts' in request ? request.attempts : [],
+      ...('improvement' in request ? { improvement: request.improvement } : {}),
     }
     const proposal = await Ai.proposeNext(context)
 
@@ -77,6 +83,23 @@ export namespace ProposalUseCase {
     return branded
   }
 
+  // The next version answering the cook that was just run.
+  export const fromAttempt = async (
+    userId: UserId,
+    recipeId: RecipeId,
+    versionNumber: VersionNumber,
+    attempt: { rating: Rating; remarks: Remarks },
+  ) => nextVersion(userId, recipeId, versionNumber, { attempts: [attempt] })
+
+  // The next version answering an improvement asked for outright — no cook behind it,
+  // so the version it produces is one to test.
+  export const fromImprovement = async (
+    userId: UserId,
+    recipeId: RecipeId,
+    versionNumber: VersionNumber,
+    improvement: Remarks,
+  ) => nextVersion(userId, recipeId, versionNumber, { improvement })
+
   // Analyze an import source (photos, a URL or raw text) into a structured recipe
   // preview. The proposal domain is the sole caller of the import AI; confirming
   // this preview persists a brand-new recipe via `RecipeCommand.create` (the recipe
@@ -87,15 +110,17 @@ export namespace ProposalUseCase {
 
   // Accept a proposal as an iteration: append version n+1 from the client-supplied
   // content, stamping the version it iterated on (`basedOn`, threaded back through the
-  // payload so no lineage rescan is needed) and the attempt that asked for it. This is
-  // the only moment that cook is written down — on the version it produced, never on
-  // the one it iterates from, which keeps whatever outcome it already had.
+  // payload so no lineage rescan is needed) and the attempt that asked for it, if a
+  // cook did. This is the only moment that cook is written down — on the version it
+  // produced, never on the one it iterates from, which keeps whatever outcome it
+  // already had. Without an attempt (an improvement), the version created is one to
+  // test.
   export const accept = async (userId: UserId, recipeId: RecipeId, proposal: AcceptedProposal) =>
     RecipeCommand.addVersion(userId, recipeId, {
       change: proposal.changeSummary,
       basedOn: proposal.basedOn,
       ...(proposal.rationale ? { why: proposal.rationale } : {}),
       content: proposal.content,
-      attempt: proposal.attempt,
+      ...(proposal.attempt ? { attempt: proposal.attempt } : {}),
     })
 }

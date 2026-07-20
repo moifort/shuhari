@@ -148,6 +148,42 @@ describe('RecipeCommand.addVersion', () => {
     expect(fake.directWrites).toEqual([])
   })
 
+  test('an improvement-born version is one to test, and v1 never was', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    // Only an improvement puts a version on the to-cook list — v1 is not one.
+    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)).not.toHaveProperty('toTest')
+
+    await RecipeCommand.addVersion(userId, recipe.id, {
+      change: 'Version végétarienne',
+      basedOn: 1 as VersionNumber,
+      content: { kind: 'dish', ingredients: [], steps: steps('Saisir') },
+    })
+    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_2`)?.toTest).toBe(true)
+  })
+
+  test('an attempt-born version is not to test, and clears the flag of the one it answers', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    // v2 comes from an improvement: it is waiting to be cooked.
+    await RecipeCommand.addVersion(userId, recipe.id, {
+      change: 'Version végétarienne',
+      basedOn: 1 as VersionNumber,
+      content: { kind: 'dish', ingredients: [], steps: steps('Saisir') },
+    })
+
+    // Cooking it with remarks answers it with v3 — v2 owes nothing anymore.
+    await RecipeCommand.addVersion(userId, recipe.id, {
+      change: 'Moins de sel',
+      basedOn: 2 as VersionNumber,
+      content: { kind: 'dish', ingredients: [], steps: steps('Saisir') },
+      attempt: { rating: 3 as Rating, remarks: 'Trop salé' as Remarks },
+    })
+
+    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_2`)).not.toHaveProperty('toTest')
+    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_3`)).not.toHaveProperty('toTest')
+  })
+
   test('records the attempt that produced v2 on v2, leaving v1 untouched', async () => {
     const recipe = await RecipeCommand.create(userId, newInput())
     if (typeof recipe === 'string') throw new Error('expected a recipe')
@@ -251,6 +287,23 @@ describe('RecipeCommand.recordAttempt', () => {
     // Outcome + recipe bump land in a single batch (all-or-nothing).
     expect(fake.directWrites).toEqual([])
     expect(fake.batches.length).toBe(batchesBefore + 1)
+  })
+
+  test('cooking a version takes it off the to-cook list', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    await RecipeCommand.addVersion(userId, recipe.id, {
+      change: 'Version végétarienne',
+      basedOn: 1 as VersionNumber,
+      content: { kind: 'dish', ingredients: [], steps: steps('Saisir') },
+    })
+
+    await RecipeCommand.recordAttempt(userId, {
+      recipeId: recipe.id,
+      versionNumber: 2 as VersionNumber,
+      rating: 4 as Rating,
+    })
+    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_2`)).not.toHaveProperty('toTest')
   })
 
   test('records a bare rating, and a re-cook without remarks erases the earlier ones', async () => {

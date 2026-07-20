@@ -41,8 +41,8 @@ export type CachedImport = {
   cachedAt: Date
 }
 
-// Context handed to the proposal model: the full current version and the attempts
-// run against it, so the AI can propose the next version.
+// Context handed to the proposal model: the full current version, plus what asks for
+// the next one — the attempts run against it, or the improvement the cook wants.
 export type ProposalContext = {
   type: RecipeType
   category: DishCategory
@@ -53,6 +53,9 @@ export type ProposalContext = {
     rating: number
     remarks: string
   }[]
+  // What the cook asked to improve, in their own words. Present instead of the
+  // attempts when the proposal comes from the improvement flow.
+  improvement?: string
 }
 
 // Raw next-version proposal produced by Gemini — a full ingredient/step list

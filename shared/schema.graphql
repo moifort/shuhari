@@ -192,7 +192,7 @@ scalar IngredientQuantity
 
 type Mutation {
   """
-  Accept an AI suggestion (optionally after editing it). It becomes the next version in the chain, ready to cook, and it carries the attempt that asked for it — the rating, remarks and photo of the cook you just did. The version it iterates on is left exactly as it was.
+  Accept an AI suggestion (optionally after editing it). It becomes the next version in the chain, ready to cook. Coming from a cook (requestProposal), it carries that attempt — the rating, remarks and photo you just gave — and the version it iterates on is left exactly as it was. Coming from an improvement (requestImprovement), it carries no attempt and lands on your to-cook list instead.
   
   ```graphql
   acceptProposal(recipeId: "9f1c-a3b2", proposal: {
@@ -304,6 +304,33 @@ type Mutation {
   ): Version!
 
   """
+  Ask the AI for a next version answering something you want changed — no cook needed, just say what to improve. Nothing is saved yet: you get a proposal to review, and accepting it (see acceptProposal) creates the version, which lands on your to-cook list.
+  
+  ```graphql
+  requestImprovement(
+    recipeId: "9f1c-a3b2"
+    versionNumber: 2
+    improvement: "A vegetarian version, for 6"
+  ) {
+    changeSummary
+    rationale
+  }
+  ```
+  """
+  requestImprovement(
+    """
+    What you want changed, in your own words, e.g. `"A vegetarian version, for 6"` — this is what the proposal answers
+    """
+    improvement: Remarks!
+
+    """The recipe to improve, e.g. the id of `"Grandma’s lasagna"`"""
+    recipeId: RecipeId!
+
+    """The version to improve on, e.g. `2`"""
+    versionNumber: VersionNumber!
+  ): Proposal!
+
+  """
   Ask the AI for a suggested next version. It looks at the version you just cooked and at how the cook went — the rating and remarks you send here — and proposes one improvement. Nothing is saved yet, not even your rating: it is recorded on the new version when you accept the proposal (see acceptProposal).
   
   ```graphql
@@ -407,17 +434,17 @@ input ProposalInput {
   photo: String
 
   """
-  How the cook that asked for this version turned out, `1` to `5`, e.g. `3`
+  How the cook that asked for this version turned out, `1` to `5`, e.g. `3` (leave out when the proposal came from requestImprovement)
   """
-  rating: Rating!
+  rating: Rating
 
   """The reasoning behind the change, e.g. `"You noted it was too sweet"`"""
   rationale: String!
 
   """
-  What you noticed on that cook, e.g. `"Still a touch too sweet"` — the remarks this version answers
+  What you noticed on that cook, e.g. `"Still a touch too sweet"` — the remarks this version answers (leave out when the proposal came from requestImprovement)
   """
-  remarks: Remarks!
+  remarks: Remarks
 }
 
 type Query {
@@ -843,6 +870,11 @@ type Version {
   Your free notes on how it turned out, e.g. `"Still a touch too sweet, but the texture is spot on"`. `null` until you have cooked it.
   """
   remarks: Remarks
+
+  """
+  Whether this version is on your to-cook list, e.g. `true` for the version you just got out of requestImprovement. Only an improvement puts a version there; cooking it (a rating, a photo, remarks) takes it off.
+  """
+  toTest: Boolean!
 
   """
   The quick yes/no of the field above: `true` once you have cooked and rated it, `false` while it is still waiting to be tried

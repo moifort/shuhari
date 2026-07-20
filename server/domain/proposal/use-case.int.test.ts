@@ -183,6 +183,39 @@ describe('ProposalUseCase.fromAttempt', () => {
   })
 })
 
+describe('ProposalUseCase.fromImprovement', () => {
+  test('proposes from what the cook asked, with no attempt behind it', async () => {
+    const recipe = await RecipeCommand.create(userId, recipeInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    const docReadsBefore = fake.docReads
+    const batchesBefore = fake.batches.length
+
+    const result = await ProposalUseCase.fromImprovement(
+      userId,
+      recipe.id,
+      V1,
+      'Version végétarienne' as Remarks,
+    )
+    if (result === 'not-found') throw new Error('expected a proposal')
+    expect(result.basedOn).toBe(V1)
+    expect(result.content).toEqual({
+      kind: 'dish',
+      ingredients: PROPOSAL_INGREDIENTS,
+      steps: stepList('Saisir', 'Mijoter'),
+    })
+
+    // Same budget as fromAttempt: the recipe pointer + the version, nothing written.
+    expect(fake.docReads - docReadsBefore).toBe(2)
+    expect(fake.batches.length).toBe(batchesBefore)
+  })
+
+  test('returns not-found for an unknown recipe', async () => {
+    expect(
+      await ProposalUseCase.fromImprovement(userId, 'nope' as RecipeId, V1, 'x' as Remarks),
+    ).toBe('not-found')
+  })
+})
+
 describe('ProposalUseCase.fromPhoto', () => {
   test('returns the AI import analysis without persisting anything', async () => {
     const batchesBefore = fake.batches.length
@@ -231,6 +264,27 @@ describe('ProposalUseCase.accept', () => {
     })
     expect(v2?.origin).toEqual({ kind: 'ai-proposal' })
     expect(fake.queryReads - queryReadsBefore).toBe(0)
+  })
+
+  test('accepting an improvement creates a version to test, with no outcome', async () => {
+    const recipe = await RecipeCommand.create(userId, recipeInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+
+    await ProposalUseCase.accept(userId, recipe.id, {
+      basedOn: V1,
+      changeSummary: 'Version végétarienne',
+      rationale: 'Demandé',
+      content: {
+        kind: 'dish',
+        ingredients: PROPOSAL_INGREDIENTS,
+        steps: stepList('Saisir'),
+      },
+    })
+
+    const v2 = fake.snapshot('recipe-versions').get(`${recipe.id}_2`)
+    expect(v2?.toTest).toBe(true)
+    expect(v2).not.toHaveProperty('executedAt')
+    expect(v2).not.toHaveProperty('rating')
   })
 
   test('returns not-found for an unknown recipe', async () => {

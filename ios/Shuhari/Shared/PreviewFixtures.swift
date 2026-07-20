@@ -120,6 +120,7 @@ enum Fixtures {
         originDetail: nil,
         content: .dish(ingredients: bourguignonIngredients, steps: bourguignonStepsV4),
         recipeId: "bourguignon",
+        toTest: true,
         rating: nil,
         remarks: nil,
         executedAt: nil,

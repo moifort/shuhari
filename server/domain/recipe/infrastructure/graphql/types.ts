@@ -208,6 +208,13 @@ export const VersionType = builder.objectRef<RecipeVersion>('Version').implement
         'while it is still waiting to be tried',
       resolve: (v) => v.executedAt !== undefined,
     }),
+    toTest: t.boolean({
+      description:
+        'Whether this version is on your to-cook list, e.g. `true` for the version you just got ' +
+        'out of requestImprovement. Only an improvement puts a version there; cooking it (a ' +
+        'rating, a photo, remarks) takes it off.',
+      resolve: (v) => v.toTest === true,
+    }),
     rating: t.field({
       type: 'Rating',
       nullable: true,

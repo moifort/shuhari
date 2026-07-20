@@ -105,6 +105,9 @@ struct RecipeVersion: Identifiable, Sendable {
     let content: VersionContent
     /// The recipe this version belongs to.
     let recipeId: String
+    /// On the to-cook list: an improvement asked for this version, and it has not
+    /// been cooked yet. Only an improvement raises it; cooking clears it.
+    var toTest: Bool = false
     /// The attempt rating (1..5), or nil while the version hasn't been executed yet.
     let rating: Int?
     /// The attempt remarks, or nil while not yet executed.
@@ -188,6 +191,12 @@ struct Recipe: Identifiable, Sendable {
 
     /// The version number the next iteration would take.
     var nextVersionNumber: Int { (versions.map(\.number).max() ?? 0) + 1 }
+
+    /// The versions waiting to be cooked, most recent first — what the to-cook
+    /// sheet lists and what lights the flask CTA's dot.
+    var versionsToTest: [RecipeVersion] {
+        versions.filter(\.toTest).sorted { $0.number > $1.number }
+    }
 
     /// The attempt journal: every tried version, most recent first.
     var attempts: [RecipeVersion] {

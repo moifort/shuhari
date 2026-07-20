@@ -95,14 +95,68 @@ builder.mutationField('requestProposal', (t) =>
   }),
 )
 
+builder.mutationField('requestImprovement', (t) =>
+  t.field({
+    type: ProposalType,
+    description: [
+      'Ask the AI for a next version answering something you want changed — no cook needed, ' +
+        'just say what to improve. Nothing is saved yet: you get a proposal to review, and ' +
+        'accepting it (see acceptProposal) creates the version, which lands on your to-cook list.',
+      '',
+      '```graphql',
+      'requestImprovement(',
+      '  recipeId: "9f1c-a3b2"',
+      '  versionNumber: 2',
+      '  improvement: "A vegetarian version, for 6"',
+      ') {',
+      '  changeSummary',
+      '  rationale',
+      '}',
+      '```',
+    ].join('\n'),
+    args: {
+      recipeId: t.arg({
+        type: 'RecipeId',
+        required: true,
+        description: 'The recipe to improve, e.g. the id of `"Grandma’s lasagna"`',
+      }),
+      versionNumber: t.arg({
+        type: 'VersionNumber',
+        required: true,
+        description: 'The version to improve on, e.g. `2`',
+      }),
+      improvement: t.arg({
+        type: 'Remarks',
+        required: true,
+        description:
+          'What you want changed, in your own words, e.g. `"A vegetarian version, for 6"` — ' +
+          'this is what the proposal answers',
+      }),
+    },
+    resolve: async (_root, { recipeId, versionNumber, improvement }, { userId }) => {
+      const result = await ProposalUseCase.fromImprovement(
+        userId,
+        recipeId,
+        versionNumber,
+        improvement,
+      )
+      return match(result)
+        .with('not-found', domainError)
+        .with(P.not(P.string), (proposal) => proposal)
+        .exhaustive()
+    },
+  }),
+)
+
 builder.mutationField('acceptProposal', (t) =>
   t.field({
     type: AcceptProposalResultType,
     description: [
       'Accept an AI suggestion (optionally after editing it). It becomes the next version in ' +
-        'the chain, ready to cook, and it carries the attempt that asked for it — the rating, ' +
-        'remarks and photo of the cook you just did. The version it iterates on is left ' +
-        'exactly as it was.',
+        'the chain, ready to cook. Coming from a cook (requestProposal), it carries that ' +
+        'attempt — the rating, remarks and photo you just gave — and the version it iterates on ' +
+        'is left exactly as it was. Coming from an improvement (requestImprovement), it carries ' +
+        'no attempt and lands on your to-cook list instead.',
       '',
       '```graphql',
       'acceptProposal(recipeId: "9f1c-a3b2", proposal: {',
@@ -138,12 +192,18 @@ builder.mutationField('acceptProposal', (t) =>
         changeSummary: proposal.changeSummary,
         rationale: proposal.rationale,
         content: versionContentInput(proposal.content),
-        attempt: {
-          rating: proposal.rating,
-          remarks: proposal.remarks,
-          // photo stays a placeholder, as on recordAttempt: accepted on the contract,
-          // not stored until GCS photo storage is provisioned.
-        },
+        // The cook that asked for it, when one did — an improvement has none, and the
+        // version created is then the one to test.
+        ...(proposal.rating !== null && proposal.rating !== undefined && proposal.remarks
+          ? {
+              attempt: {
+                rating: proposal.rating,
+                remarks: proposal.remarks,
+                // photo stays a placeholder, as on recordAttempt: accepted on the
+                // contract, not stored until GCS photo storage is provisioned.
+              },
+            }
+          : {}),
       }
       const result = await ProposalUseCase.accept(userId, recipeId, accepted)
       const recipe = ensureRecipe(result)

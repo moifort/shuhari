@@ -16,6 +16,8 @@ struct RecipeDetailView: View {
     @State private var viewModel: RecipeViewModel
     @State private var showEdit = false
     @State private var showHistory = false
+    @State private var showToTest = false
+    @State private var showImprove = false
     @State private var recordRequest: ExecutionRequest?
     @State private var showDeleteConfirm = false
     @State private var favoriteError = ErrorPresenter()
@@ -74,6 +76,24 @@ struct RecipeDetailView: View {
                     HistorySheet(recipeId: recipeId) { versionNumber in
                         showHistory = false
                         path.append(RecipeRoute.attempt(recipeId: recipeId, versionNumber: versionNumber))
+                    }
+                }
+                // The to-cook list: picking a version closes it and opens that
+                // version's recipe sheet, exactly like the history does.
+                .sheet(isPresented: $showToTest) {
+                    ToTestSheet(versions: recipe.versionsToTest) { versionNumber in
+                        showToTest = false
+                        path.append(RecipeRoute.attempt(recipeId: recipeId, versionNumber: versionNumber))
+                    }
+                }
+                .sheet(isPresented: $showImprove) {
+                    ImproveFlowView(
+                        recipeId: recipeId,
+                        version: displayedVersion(recipe),
+                        nextVersionNumber: recipe.nextVersionNumber
+                    ) {
+                        onReload()
+                        Task { await viewModel.load() }
                     }
                 }
                 .sheet(isPresented: $showEdit) {
@@ -183,9 +203,11 @@ struct RecipeDetailView: View {
             .accessibilityIdentifier("recipe-menu")
         }
 
-        // Floating glass action bar: record attempt (left) then the history opener
-        // (right). Any version is cookable and an attempt is overwritable, so the
-        // record CTA is always available and targets the displayed version.
+        // Floating glass action bar, in two capsules: what you do to this version
+        // (rate a cook, ask for an improvement) on the left, what you browse (the
+        // versions to cook, then all of them) on the right. Any version is cookable
+        // and an attempt is overwritable, so the record CTA is always available and
+        // targets the displayed version.
         ToolbarItem(placement: .bottomBar) {
             Button {
                 presentRecordAttempt(versionNumber: displayedVersion(recipe).number)
@@ -195,7 +217,38 @@ struct RecipeDetailView: View {
             .accessibilityIdentifier("record-attempt-button")
             .accessibilityLabel("Noter un essai")
         }
+        ToolbarItem(placement: .bottomBar) {
+            Button {
+                showImprove = true
+            } label: {
+                Image(systemName: "lightbulb")
+            }
+            .accessibilityIdentifier("improve-recipe-button")
+            .accessibilityLabel("Proposer une amélioration")
+        }
         ToolbarSpacer(.flexible, placement: .bottomBar)
+        ToolbarItem(placement: .bottomBar) {
+            Button {
+                showToTest = true
+            } label: {
+                Image(systemName: "flask")
+                    // A dot on the flask while versions are waiting to be cooked.
+                    .overlay(alignment: .topTrailing) {
+                        if !recipe.versionsToTest.isEmpty {
+                            Circle()
+                                .fill(Theme.Status.attempt)
+                                .frame(width: 7, height: 7)
+                                .offset(x: 5, y: -3)
+                        }
+                    }
+            }
+            .accessibilityIdentifier("to-test-button")
+            .accessibilityLabel(
+                recipe.versionsToTest.isEmpty
+                    ? "Versions à tester"
+                    : "Versions à tester, \(recipe.versionsToTest.count) en attente"
+            )
+        }
         ToolbarItem(placement: .bottomBar) {
             Button {
                 showHistory = true

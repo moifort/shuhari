@@ -39,6 +39,7 @@ fragment VersionFields on Version {
   remarks
   executedAt
   tried
+  toTest
   photoUrl
   createdAt
 }

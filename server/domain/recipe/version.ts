@@ -23,6 +23,10 @@ export type RecipeVersion = {
   // The recipe body, discriminated by `kind` (mirrors the recipe type): ingredients
   // plus steps, plain-text for a dish, each carrying Thermomix settings otherwise.
   content: VersionContent
+  // Waiting to be cooked, and listed as such. Only an improvement raises it — the
+  // cook asked for this version, so it owes it a try; it drops as soon as the version
+  // is cooked (a rating, a photo, remarks). Absent rather than false.
+  toTest?: true
   // The attempt outcome, written once when the version is executed. All absent
   // while the version is still a planned attempt (no `executedAt`).
   executedAt?: Date

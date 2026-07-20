@@ -15,6 +15,8 @@ export type Proposal = {
 
 // The client-supplied proposal to accept: everything that becomes version n+1,
 // including the `basedOn` it iterates on (threaded back so accept never rescans
-// the lineage to recover it) and the attempt that asked for it — the cook whose
-// remarks the AI answered, recorded on the version it gives birth to.
-export type AcceptedProposal = Proposal & { attempt: Attempt }
+// the lineage to recover it) and — when a cook asked for it — the attempt whose
+// remarks the AI answered, recorded on the version it gives birth to. Absent when
+// the proposal answers an improvement instead: nothing was cooked, and the version
+// created is the one to test.
+export type AcceptedProposal = Proposal & { attempt?: Attempt }

@@ -39,8 +39,8 @@ export type NewVersionInput = {
   basedOn?: VersionNumberT
   why?: string
   content: VersionContent
-  // The attempt that produced this version — absent when the version is appended
-  // without a cook behind it, in which case it starts as a planned attempt.
+  // The attempt that produced this version — absent when an improvement asked for it
+  // instead, in which case the version created is one to test.
   attempt?: Attempt
 }
 
@@ -93,8 +93,10 @@ export namespace RecipeCommand {
   // Accepted AI iteration → append version n+1 to the lineage, stamping the version
   // it was proposed from (`basedOn`). No reference/pending pointer to maintain: the
   // recipe just bumps its `versionCount` and `updatedAt`. The attempt that asked for
-  // this version lands on it, never on the version it iterates on — that one is left
-  // exactly as it was.
+  // this version lands on it, never on the version it iterates on — that one only
+  // loses its `toTest` flag, since the cook that answers it is the cook it owed.
+  // Born of an improvement instead (no attempt), the version is the one waiting to be
+  // cooked: it is the sole way a version becomes `toTest`.
   export const addVersion = async (userId: UserId, recipeId: RecipeId, input: NewVersionInput) => {
     const recipe = await repository.findBy(userId, recipeId)
     if (!recipe) return 'not-found' as const
@@ -112,7 +114,7 @@ export namespace RecipeCommand {
       ...(input.why ? { why: input.why } : {}),
       content: input.content,
       // The outcome of the attempt that produced it, when there was one; without it
-      // the version is a planned attempt, awaiting its cook.
+      // the version is what the cook asked for and still owes a try.
       ...(input.attempt
         ? {
             executedAt: new Date(),
@@ -120,15 +122,18 @@ export namespace RecipeCommand {
             remarks: input.attempt.remarks,
             ...(input.attempt.photoPath ? { photoPath: input.attempt.photoPath } : {}),
           }
-        : {}),
+        : { toTest: true as const }),
     }
     const updated: Recipe = {
       ...recipe,
       versionCount: number,
       updatedAt: new Date(),
     }
+    // The version this one answers has been cooked: it owes nothing anymore.
+    const cooked = input.attempt ? await cookedBase(recipeId, input.basedOn) : undefined
     return atomically(async (batch) => {
       await repository.saveVersion(version, batch)
+      if (cooked) await repository.saveVersion(cooked, batch)
       await repository.save(updated, batch)
       return updated
     })
@@ -147,8 +152,14 @@ export namespace RecipeCommand {
     const version = await repository.findVersion(input.recipeId, input.versionNumber)
     if (!version) return 'not-found' as const
     // Drop the previous photo and remarks before spreading: a re-cook that leaves
-    // them out must erase what the earlier attempt left behind, not inherit it.
-    const { photoPath: _replacedPhoto, remarks: _replacedRemarks, ...rest } = version
+    // them out must erase what the earlier attempt left behind, not inherit it. The
+    // `toTest` flag goes too — the version has just been cooked.
+    const {
+      photoPath: _replacedPhoto,
+      remarks: _replacedRemarks,
+      toTest: _cooked,
+      ...rest
+    } = version
     const executed: RecipeVersion = {
       ...rest,
       executedAt: new Date(),
@@ -200,6 +211,16 @@ export namespace RecipeCommand {
     await repository.removeAllByUser(userId)
     await bulkSave(recipes, (recipe) => repository.save(recipe))
     await bulkSave(versions, (version) => repository.saveVersion(version))
+  }
+
+  // The version an attempt-born iteration is based on, stripped of its `toTest` flag —
+  // or nothing when there is no base, or it was not waiting to be cooked.
+  const cookedBase = async (recipeId: RecipeId, basedOn?: VersionNumberT) => {
+    if (basedOn === undefined) return undefined
+    const base = await repository.findVersion(recipeId, basedOn)
+    if (!base?.toTest) return undefined
+    const { toTest: _cooked, ...rest } = base
+    return rest
   }
 
   const firstVersion = (

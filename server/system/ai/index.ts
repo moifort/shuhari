@@ -244,12 +244,17 @@ export namespace Ai {
         // Each step carries its own settings — an empty settings object is a plain step.
         .map((s, i) => `${i + 1}. ${s.text}${formatThermomix(s.settings)}`)
         .join('\n') || '—'
-    const attempts =
-      context.attempts
-        .map((t) => `- Note ${t.rating}/5. Remarks: ${t.remarks || '—'}.`)
-        .join('\n') || '—'
+    // The proposal answers either the cooks that were run, or — when the cook asked
+    // for one outright — the improvement they described.
+    const request = context.improvement
+      ? `Improvement requested by the cook:\n${context.improvement}`
+      : `Attempts made:\n${
+          context.attempts
+            .map((t) => `- Note ${t.rating}/5. Remarks: ${t.remarks || '—'}.`)
+            .join('\n') || '—'
+        }`
 
-    return `You are the assistant of a culinary experimentation notebook. Analyse the attempts and propose the NEXT version of the recipe.
+    return `You are the assistant of a culinary experimentation notebook. Analyse what is asked below and propose the NEXT version of the recipe.
 
 MANDATORY: write every generated value — change summary, rationale, ingredient names and quantities, step text — in French. The reader is a French speaker; never answer in English.
 
@@ -261,8 +266,7 @@ ${ingredients}
 Current steps:
 ${steps}
 
-Attempts made:
-${attempts}
+${request}
 
 Propose an iteration: an improvement of this recipe. Fill changeSummary (a short summary of what changes), rationale (why), ingredients and steps (the COMPLETE list of the next version).
 

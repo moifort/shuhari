@@ -63,6 +63,7 @@ func mapVersion(_ v: ShuhariGraphQL.VersionFields) -> RecipeVersion {
         originDetail: v.originDetail,
         content: mapVersionContent(v.content.fragments.versionContentFields),
         recipeId: v.recipeId,
+        toTest: v.toTest,
         rating: v.rating,
         remarks: v.remarks,
         executedAt: v.executedAt.flatMap { GraphQLHelpers.parseISO8601($0) },
