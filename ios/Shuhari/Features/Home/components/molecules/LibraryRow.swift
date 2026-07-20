@@ -1,12 +1,13 @@
 import SwiftUI
 
-/// A library row: the course icon, the title, a subtitle with the version count, the
-/// recipe's best rating ("the highest star" across every version it ever cooked) as
-/// trailing stars, and the favourite heart closing the line. The icon, the stars and
-/// the heart sit on the title's line. Designed as a List row — the List provides
-/// insets and separators.
+/// A library row: the course icon, the title, a subtitle with the version count closed
+/// by the recipe type as a chip ("Plat", "Thermomix"), the recipe's best rating ("the
+/// highest star" across every version it ever cooked) as trailing stars, and the
+/// favourite heart closing the line. The icon, the stars and the heart sit on the
+/// title's line. Designed as a List row — the List provides insets and separators.
 struct LibraryRow: View {
     let title: String
+    let type: RecipeType
     let category: DishCategory
     let versionCount: Int
     let bestRating: Int?
@@ -25,10 +26,13 @@ struct LibraryRow: View {
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                Text(versionCountText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                HStack(spacing: Theme.Spacing.xs) {
+                    Text(versionCountText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    Chip(image: type.iconImage(filled: false), text: type.label, compact: true)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -56,8 +60,8 @@ struct LibraryRow: View {
 
 #Preview {
     List {
-        LibraryRow(title: "Bœuf bourguignon", category: .main, versionCount: 4, bestRating: 5, favorite: true)
-        LibraryRow(title: "Tarte au citron meringuée", category: .dessert, versionCount: 1, bestRating: 3)
-        LibraryRow(title: "Velouté de courge", category: .soup, versionCount: 2, bestRating: nil, favorite: true)
+        LibraryRow(title: "Bœuf bourguignon", type: .dish, category: .main, versionCount: 4, bestRating: 5, favorite: true)
+        LibraryRow(title: "Tarte au citron meringuée", type: .thermomix, category: .dessert, versionCount: 1, bestRating: 3)
+        LibraryRow(title: "Velouté de courge", type: .thermomix, category: .soup, versionCount: 2, bestRating: nil, favorite: true)
     }
 }
