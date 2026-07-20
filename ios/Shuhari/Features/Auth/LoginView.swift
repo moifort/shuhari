@@ -6,7 +6,7 @@ struct LoginView: View {
     @State private var nonce: String = ""
     @State private var error: String?
     @State private var isSigningIn = false
-    @ScaledMetric(relativeTo: .largeTitle) private var logoSize: CGFloat = 64
+    @ScaledMetric(relativeTo: .largeTitle) private var logoSize: CGFloat = 96
 
     var body: some View {
         VStack(spacing: 32) {
