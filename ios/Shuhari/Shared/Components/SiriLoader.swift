@@ -7,8 +7,10 @@ import SwiftUI
 /// driven here by a seamless oscillation. The phase oscillates smoothly between the
 /// two end poses (a cosine ease), so the motion reads as one endless loop with no
 /// visible start or end — unlike a sawtooth, which would snap pose-B back to pose-A
-/// every cycle. Designed for a dark backdrop (the analysing screen goes black behind
-/// it). Respects Reduce Motion by holding a single static frame. Purely presentational.
+/// every cycle. Self-contained and transparent: the `.hardLight` blend is confined to
+/// a local black stage, and that stage is then keyed out by its own luminance, so the
+/// orb floats on a light or a dark backdrop alike.
+/// Respects Reduce Motion by holding a single static frame. Purely presentational.
 struct SiriLoader: View {
     /// Layout footprint; the artwork (largest layer ≈ 640 pt) is scaled to fit it.
     var size: CGFloat = 260
@@ -24,29 +26,46 @@ struct SiriLoader: View {
 
     var body: some View {
         TimelineView(.animation(paused: reduceMotion)) { context in
-            orb(phase: reduceMotion ? 0.5 : phase(at: context.date))
+            let t = reduceMotion ? 0.5 : phase(at: context.date)
+            // The stage is drawn twice: once as the visible artwork, once as its own
+            // mask. `luminanceToAlpha` turns the mask copy's brightness into opacity,
+            // so the black backdrop the blend needs becomes fully transparent while
+            // the lit blobs stay opaque — the orb floats on whatever is behind it
+            // instead of dragging a black disc along.
+            stage(phase: t)
+                .mask {
+                    stage(phase: t)
+                        .luminanceToAlpha()
+                        .mask { fadeToRound }
+                }
         }
-        .blendMode(.hardLight)
-        .scaleEffect(scale)
         .frame(width: size, height: size)
-        // Composite over a local black backdrop (the `.hardLight` blend the orb
-        // needs), then fade that composite into a circle with a radial mask so the
-        // wobbling blobs read as one steady round orb. Keeping the backdrop local
-        // means the mask can isolate the layer without breaking the blend.
-        .background(Color.black)
-        .mask {
-            RadialGradient(
-                stops: [
-                    .init(color: .black, location: 0),
-                    .init(color: .black, location: 0.30),
-                    .init(color: .clear, location: 0.66),
-                ],
-                center: .center,
-                startRadius: 0,
-                endRadius: size / 2
-            )
-        }
         .accessibilityHidden(true)
+    }
+
+    /// The orb composited over the local black backdrop its `.hardLight` blend
+    /// requires, sealed into one layer so the blend never reaches the enclosing view.
+    private func stage(phase t: Double) -> some View {
+        orb(phase: t)
+            .blendMode(.hardLight)
+            .scaleEffect(scale)
+            .frame(width: size, height: size)
+            .background(Color.black)
+            .compositingGroup()
+    }
+
+    /// Radial fade that rounds off the wobbling blobs so they read as one steady orb.
+    private var fadeToRound: some View {
+        RadialGradient(
+            stops: [
+                .init(color: .black, location: 0),
+                .init(color: .black, location: 0.30),
+                .init(color: .clear, location: 0.66),
+            ],
+            center: .center,
+            startRadius: 0,
+            endRadius: size / 2
+        )
     }
 
     /// Cycle position in `0...1` (0 and 1 are the two end poses); starts at 0.5.
@@ -115,7 +134,15 @@ struct SiriLoader: View {
     }
 }
 
-#Preview("Siri loader") {
+#Preview("Sur fond clair") {
+    ZStack {
+        Color(.systemBackground).ignoresSafeArea()
+        SiriLoader()
+    }
+    .preferredColorScheme(.light)
+}
+
+#Preview("Sur fond sombre") {
     ZStack {
         Color.black.ignoresSafeArea()
         SiriLoader()

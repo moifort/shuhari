@@ -1,26 +1,34 @@
 import SwiftUI
 
-/// The analysing stage of the import review sheet: the listening Siri orb
-/// (`SiriLoader`) over a full-bleed black backdrop with its message. The dark
-/// stage is deliberate — the orb's `.hardLight` compositing only reads correctly
-/// on black, matching the reference animation. Purely presentational.
+/// The analysing stage of an AI wait: the listening Siri orb (`SiriLoader`) over a
+/// full-bleed scrim with its message. The scrim is a native material, so the stage
+/// follows the system appearance instead of forcing the screen to black — the orb
+/// carries its own dark stage. Purely presentational.
 struct AIThinkingCard: View {
     let message: String
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .ignoresSafeArea()
             VStack(spacing: Theme.Spacing.xl) {
                 SiriLoader()
                 Text(message)
                     .font(.headline)
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.secondary)
             }
         }
     }
 }
 
-#Preview("Card") {
+#Preview("Clair") {
     AIThinkingCard(message: "Analyse IA…")
+        .preferredColorScheme(.light)
+}
+
+#Preview("Sombre") {
+    AIThinkingCard(message: "Analyse IA…")
+        .preferredColorScheme(.dark)
 }
