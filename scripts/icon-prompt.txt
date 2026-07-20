@@ -1,0 +1,11 @@
+A premium iOS app icon artwork, square 1:1.
+
+CRITICAL FRAMING RULE: the artwork is a FULL BLEED SQUARE. The orange gradient background must reach all four corners and all four edges of the image, completely filling the square. Do NOT draw rounded corners. Do NOT draw a white border, a white margin, a frame, a drop shadow around the artwork, or an icon floating on a background. There is no icon-shaped object in the image — the image IS the icon, edge to edge, corner to corner, as a plain square.
+
+CRITICAL CONTENT RULE: the flask is the ONLY object in the image. Do NOT add glass panes, glass plates, glass cards, floating rectangles, panels, sheets or any secondary shapes behind or around it. The background is a pure gradient, nothing else.
+
+Background: a rich warm gradient filling the whole square, running from saturated tangerine orange at the top left to a deeper coral red at the bottom right. Perfectly smooth, no objects, no texture.
+
+Subject: a single chemistry Erlenmeyer flask, large and centred, rendered as Apple's Liquid Glass material — thick, refractive, physically believable glass with real light bending, caustics and crisp specular highlights along its rim and edges. It holds a glowing golden-orange liquid that lights the glass from within, with a soft bloom around the liquid surface and a gentle caustic pool of light cast beneath the flask.
+
+Style: Apple design language. Clean, minimal, no text, no letters, no numbers, no logos. Soft studio lighting from the upper left. The flask silhouette must stay legible at very small sizes: keep it large, centred, high contrast against the background.
