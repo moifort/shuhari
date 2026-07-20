@@ -9,8 +9,14 @@ enum ImportAPI {
         case text(String)
     }
 
-    /// The AI scan ran fine but detected no recipe in the source.
-    enum ImportError: Error { case noRecipeFound }
+    /// The refusals the review sheet answers with a dedicated screen instead of
+    /// an alert: the AI found no recipe, the monthly allowance is spent, or the
+    /// source was a link on the free plan.
+    enum ImportError: Error {
+        case noRecipeFound
+        case quotaExhausted
+        case premiumRequired
+    }
 
     /// Analyze an import source into a structured, editable recipe preview.
     static func analyze(_ source: Source) async throws -> ImportAnalysis {
@@ -31,8 +37,10 @@ enum ImportAPI {
                 mutation: ShuhariGraphQL.AnalyzeImportMutation(photos: photos, url: url, text: text)
             )
         } catch let error as APIError {
-            if case .graphQL(_, let codes) = error, codes.contains("NO_RECIPE_FOUND") {
-                throw ImportError.noRecipeFound
+            if case .graphQL(_, let codes) = error {
+                if codes.contains("NO_RECIPE_FOUND") { throw ImportError.noRecipeFound }
+                if codes.contains("QUOTA_EXHAUSTED") { throw ImportError.quotaExhausted }
+                if codes.contains("PREMIUM_REQUIRED") { throw ImportError.premiumRequired }
             }
             throw error
         }

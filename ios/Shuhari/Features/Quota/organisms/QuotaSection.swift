@@ -1,10 +1,11 @@
 import SwiftUI
 
-/// The "Abonnement" settings section: the plan in force and, on the free plan,
-/// what is left of each AI meter this month. Primitive-first — it knows nothing
-/// of the API types, only numbers and labels.
+/// The "Abonnement" settings section: the plan in force, what is left of each AI
+/// meter this month, and — on the free plan — the door to the Premium sheet.
+/// Primitive-first: it knows nothing of the API types nor of the sheet, only
+/// numbers, labels and a callback.
 struct QuotaSection: View {
-    /// One meter to show. `limit` absent means unlimited, so only `used` is shown.
+    /// One meter to show. `limit` absent means unlimited, so only the word is shown.
     struct Meter: Identifiable {
         let title: String
         let icon: String
@@ -17,6 +18,8 @@ struct QuotaSection: View {
     let isPremium: Bool
     let meters: [Meter]
     let renewsOn: Date?
+    /// Opens the Premium sheet — the row only exists on the free plan.
+    var onUpgrade: () -> Void = {}
 
     var body: some View {
         Section {
@@ -26,6 +29,17 @@ struct QuotaSection: View {
             }
             ForEach(meters) { meter in
                 QuotaMeterRow(title: meter.title, icon: meter.icon, used: meter.used, limit: meter.limit)
+            }
+            if !isPremium {
+                Button(action: onUpgrade) {
+                    Label {
+                        Text("Découvrir Premium")
+                    } icon: {
+                        // Not sparkles: the iterations meter above already wears it.
+                        Image(systemName: "crown.fill").foregroundStyle(Color.accentColor)
+                    }
+                }
+                .accessibilityIdentifier("discover-premium-button")
             }
         } header: {
             Text("Abonnement")
@@ -47,7 +61,9 @@ struct QuotaSection: View {
     }
 }
 
-/// One meter: what it counts, how much is spent, and a bar when it is capped.
+/// One meter: what it counts on the left, what is left of it in plain words on
+/// the right — "1 restant", "Épuisé", "Illimité" — and a thin gauge underneath
+/// when the meter is capped.
 private struct QuotaMeterRow: View {
     let title: String
     let icon: String
@@ -55,31 +71,56 @@ private struct QuotaMeterRow: View {
     let limit: Int?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Theme.Spacing.s) {
             HStack {
                 Label(title, systemImage: icon)
                 Spacer()
-                Text(valueLabel)
-                    .font(.subheadline)
+                Text(remainingLabel)
+                    .font(.subheadline.weight(isExhausted ? .semibold : .regular))
                     .foregroundStyle(isExhausted ? Color.red : .secondary)
                     .monospacedDigit()
             }
             if let limit {
-                ProgressView(value: Double(min(used, limit)), total: Double(limit))
-                    .tint(isExhausted ? .red : .accentColor)
+                ThinGauge(
+                    fraction: Double(min(used, limit)) / Double(limit),
+                    tint: isExhausted ? .red : .accentColor
+                )
+                .accessibilityLabel("\(used) sur \(limit) utilisés")
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, Theme.Spacing.xs)
     }
 
-    private var valueLabel: String {
+    private var remainingLabel: String {
         guard let limit else { return "Illimité" }
-        return "\(used) / \(limit) ce mois-ci"
+        let remaining = max(0, limit - used)
+        if remaining == 0 { return "Épuisé" }
+        return remaining == 1 ? "1 restant" : "\(remaining) restants"
     }
 
     private var isExhausted: Bool {
         guard let limit else { return false }
         return used >= limit
+    }
+}
+
+/// A thin rounded bar filling up as the month is spent — full and red once the
+/// meter is exhausted. Quieter than the system ProgressView in a list row.
+private struct ThinGauge: View {
+    /// Share of the allowance already spent, `0...1`.
+    let fraction: Double
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color(.systemFill))
+                Capsule()
+                    .fill(tint)
+                    .frame(width: max(0, geometry.size.width * fraction))
+            }
+        }
+        .frame(height: 5)
     }
 }
 

@@ -10,6 +10,7 @@ struct SettingsHomeView: View {
     /// The AI allowance, loaded on appear. Absent until it answers — the section
     /// stays out of the list rather than showing empty meters.
     @State private var quota: QuotaState?
+    @State private var showPremium = false
 
     var body: some View {
         NavigationStack {
@@ -48,7 +49,8 @@ struct SettingsHomeView: View {
                                 limit: quota.iterations.limit
                             ),
                         ],
-                        renewsOn: quota.renewsOn
+                        renewsOn: quota.renewsOn,
+                        onUpgrade: { showPremium = true }
                     )
                 }
 
@@ -79,6 +81,7 @@ struct SettingsHomeView: View {
                 }
             }
             .task { quota = try? await QuotaAPI.load() }
+            .sheet(isPresented: $showPremium) { PremiumSheet() }
             .navigationTitle("Réglages")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

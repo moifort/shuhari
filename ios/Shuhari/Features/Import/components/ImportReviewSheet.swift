@@ -30,10 +30,13 @@ struct ImportReviewSheet: View {
         case form(ImportAnalysis)
         case failed
         case nothingFound
+        case quotaExhausted
+        case premiumRequired
     }
 
     @State private var phase: Phase = .analyzing
     @State private var isSaving = false
+    @State private var showPremium = false
     @State private var errorPresenter = ErrorPresenter()
     // A frozen sheet renders its initial phase and never runs the analysis —
     // keeps every phase previewable in the gallery without a server.
@@ -78,10 +81,17 @@ struct ImportReviewSheet: View {
                 case .nothingFound:
                     nothingFoundView
                         .transition(.opacity)
+                case .quotaExhausted:
+                    quotaExhaustedView
+                        .transition(.opacity)
+                case .premiumRequired:
+                    premiumRequiredView
+                        .transition(.opacity)
                 }
             }
             .animation(.easeInOut(duration: 0.35), value: phase)
         }
+        .sheet(isPresented: $showPremium) { PremiumSheet() }
         .errorAlert(errorPresenter)
         // While a recipe is being created, block Fermer and swipe-to-dismiss so a
         // cancel can't orphan the create task (which would still fire onCreated).
@@ -151,6 +161,68 @@ struct ImportReviewSheet: View {
         }
     }
 
+    /// The monthly allowance is spent: no retry — it would refuse again — just
+    /// when the meters reset, and the way out that Premium is.
+    private var quotaExhaustedView: some View {
+        ContentUnavailableView {
+            Label("Quota IA du mois épuisé", systemImage: "hourglass")
+        } description: {
+            Text("Tes imports IA du mois sont utilisés. Ils repartent à zéro le \(Self.renewalLabel).")
+        } actions: {
+            Button("Découvrir Premium") { showPremium = true }
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
+                .padding(.top, 44)
+        }
+        .navigationTitle("Analyse")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button { onCancel() } label: {
+                    Image(systemName: "xmark")
+                }
+                .accessibilityLabel("Fermer")
+            }
+        }
+    }
+
+    /// A link on the free plan: point at the sources that stay open, and at the
+    /// subscription that opens this one.
+    private var premiumRequiredView: some View {
+        ContentUnavailableView {
+            Label("L’import par lien est Premium", systemImage: "link")
+        } description: {
+            Text("Importe cette recette par photo ou en collant son texte — ou passe au Premium pour lire les pages web.")
+        } actions: {
+            Button("Découvrir Premium") { showPremium = true }
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
+                .padding(.top, 44)
+        }
+        .navigationTitle("Analyse")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button { onCancel() } label: {
+                    Image(systemName: "xmark")
+                }
+                .accessibilityLabel("Fermer")
+            }
+        }
+    }
+
+    /// When the meters reset, e.g. `"1er août 2026"` — always the 1st of next
+    /// month, so it is computed here rather than fetched.
+    private static var renewalLabel: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.setLocalizedDateFormatFromTemplate("LLLL yyyy")
+        let calendar = Calendar.current
+        let nextMonth = calendar.date(byAdding: .month, value: 1, to: Date()) ?? Date()
+        let firstOfNext = calendar.date(from: calendar.dateComponents([.year, .month], from: nextMonth)) ?? nextMonth
+        return "1er \(formatter.string(from: firstOfNext))"
+    }
+
     // MARK: - Work
 
     private func run() async {
@@ -171,6 +243,12 @@ struct ImportReviewSheet: View {
         } catch ImportAPI.ImportError.noRecipeFound {
             minimumShown.cancel()
             phase = .nothingFound
+        } catch ImportAPI.ImportError.quotaExhausted {
+            minimumShown.cancel()
+            phase = .quotaExhausted
+        } catch ImportAPI.ImportError.premiumRequired {
+            minimumShown.cancel()
+            phase = .premiumRequired
         } catch {
             minimumShown.cancel()
             errorPresenter.message = reportError(error)
