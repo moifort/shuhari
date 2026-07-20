@@ -108,6 +108,11 @@ struct DebugGallery: View {
                         onFinished: {}
                     )
                 }
+        case "viewfinder":
+            ZStack {
+                Color(white: 0.35).ignoresSafeArea()
+                ViewfinderOverlay()
+            }
         case "import-preview":
             NavigationStack {
                 ImportPreviewPage(analysis: Fixtures.importAnalysis, isSaving: false, onCancel: {}, onSave: { _ in })
@@ -130,7 +135,7 @@ struct DebugGallery: View {
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : cuisine, cuisine-course, cuisine-favorites, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, to-test, to-test-empty, recipe-edit, improve, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found, login, settings-data")
+                description: Text("Écrans : cuisine, cuisine-course, cuisine-favorites, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, to-test, to-test-empty, recipe-edit, improve, viewfinder, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found, login, settings-data")
             )
         }
     }

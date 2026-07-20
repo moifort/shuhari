@@ -5,8 +5,8 @@ import SwiftUI
 struct ViewfinderOverlay: View {
     var body: some View {
         GeometryReader { geo in
-            let width = geo.size.width * 0.8
-            let height = geo.size.height * 0.45
+            let width = geo.size.width * 0.9
+            let height = geo.size.height * 0.65
             let x = (geo.size.width - width) / 2
             let y = (geo.size.height - height) / 2
 
