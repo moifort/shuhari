@@ -31,12 +31,10 @@ platform :ios do
       export_method: "app-store",
       # The build number comes from the workflow run, which only ever grows — App Store
       # Connect rejects a number it has already seen.
+      # Passed to the export invocation too, by gym itself — repeating them in
+      # `export_xcargs` makes xcodebuild refuse the command outright:
+      # "option '-authenticationKeyPath' may only be provided once".
       xcargs: "#{signing_args} CURRENT_PROJECT_VERSION=#{ENV.fetch('BUILD_NUMBER')}",
-      # `gym` runs -exportArchive as a separate xcodebuild invocation, which inherits
-      # nothing from `xcargs`. Without the credentials repeated here, the export asks the
-      # cloud for a distribution certificate it has no permission to request, and fails on
-      # an archive that signed perfectly a minute earlier.
-      export_xcargs: signing_args,
       output_directory: "build",
       output_name: "Shuhari.ipa"
     )
