@@ -2,7 +2,7 @@ import { bestRating, toTestCount, versionToOpen } from '~/domain/recipe/business
 import type { DishContent } from '~/domain/recipe/content/dish'
 import type { ThermomixContent, ThermomixStep } from '~/domain/recipe/content/thermomix'
 import type { VersionContent } from '~/domain/recipe/content/types'
-import { type RecipeLibraryPage, RecipeQuery } from '~/domain/recipe/query'
+import type { RecipeLibraryPage } from '~/domain/recipe/query'
 import { builder } from '~/domain/shared/graphql/builder'
 import type {
   Ingredient,
@@ -325,10 +325,14 @@ RecipeType.implement({
         return toTestCount(versions)
       },
     }),
+    // Satellite: the lineage itself, through the same batched loader as everything
+    // derived from it. A per-recipe query here would be one read per parent on a page
+    // — and even on a single recipe sheet it duplicated the scan that versionToOpen
+    // already pays for.
     versions: t.field({
       type: [VersionType],
       description: 'The whole history, oldest first, e.g. `v1 → v2 → v3`',
-      resolve: (r) => RecipeQuery.versionsOf(r.id),
+      resolve: async (r, _a, { loaders }) => (await loaders.versionsByRecipe.load(r.id)) ?? [],
     }),
     // Satellite: the version the recipe sheet opens on, derived from the full lineage via
     // the batched loader (shares the scan with bestRating — no extra reads).

@@ -169,15 +169,20 @@ versionsByRecipe: batchedBy(
     const versions = (await RecipeQuery.allVersions(userId)).filter((v) => wanted.has(v.recipeId))
     const grouped = new Map<string, RecipeVersion[]>(recipeIds.map((id) => [id, []]))
     for (const version of versions) grouped.get(version.recipeId)?.push(version)
+    for (const lineage of grouped.values()) lineage.sort((a, b) => a.number - b.number)
     return grouped
   },
 ),
 ```
 
 So a page of recipes selecting `versionToOpen` costs **one** scan; an unselected satellite costs
-**nothing**. `versionToOpen` and `bestRating` both derive from the full lineage, so they reuse the
-same `versionsByRecipe` batch — still one read. These budgets are asserted in `.int.test.ts` via
-`fake.queryReads` / `fake.docReads` — keep them green.
+**nothing**. `versionToOpen`, `bestRating`, the counts **and `versions` itself** all derive from the
+full lineage, so they reuse the same `versionsByRecipe` batch — still one read. That last one is the
+rule earning its keep: `versions` used to resolve through a per-recipe query, which was one read per
+parent on a page and, on a single recipe sheet, a second query duplicating the scan `versionToOpen`
+already paid for. A targeted `findVersionsOf` survives in the repository for the **commands** that
+rewrite a lineage, never for a read. These budgets are asserted in `.int.test.ts` and
+`.feat.test.ts` via `fake.queryReads` / `fake.docReads` — keep them green.
 
 ## Queries and Mutations delegate to the domain
 

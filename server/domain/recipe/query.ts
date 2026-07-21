@@ -61,8 +61,6 @@ export namespace RecipeQuery {
   export const byIds = async (userId: UserId, ids: RecipeId[]) =>
     repository.findManyByIds(userId, ids)
 
-  export const versionsOf = async (recipeId: RecipeId) => repository.findVersionsOf(recipeId)
-
   export const allVersions = async (userId: UserId) => repository.findAllVersionsByUser(userId)
 
   export const versionBy = async (recipeId: RecipeId, number: VersionNumber) => {

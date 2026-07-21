@@ -47,8 +47,10 @@ export type RecipeSatelliteLoaders = {
 
 export const recipeSatelliteLoaders = (userId: UserId): RecipeSatelliteLoaders => ({
   // The full lineage of each recipe, batched from a single recipe-versions scan —
-  // backs the recipe's derived best rating and the version to open (both read the
-  // whole lineage, so they share this one batch).
+  // backs every field derived from the whole lineage (the best rating, the version
+  // to open, the counts) and the lineage itself, which all share this one batch.
+  // Each lineage comes out oldest first: the scan has no order of its own, and
+  // `versions` is exposed as the history in order.
   versionsByRecipe: batchedBy(
     (recipeId) => recipeId,
     async (recipeIds) => {
@@ -56,6 +58,7 @@ export const recipeSatelliteLoaders = (userId: UserId): RecipeSatelliteLoaders =
       const versions = (await RecipeQuery.allVersions(userId)).filter((v) => wanted.has(v.recipeId))
       const grouped = new Map<string, RecipeVersion[]>(recipeIds.map((id) => [id, []]))
       for (const version of versions) grouped.get(version.recipeId)?.push(version)
+      for (const lineage of grouped.values()) lineage.sort((a, b) => a.number - b.number)
       return grouped
     },
   ),

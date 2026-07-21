@@ -96,6 +96,28 @@ describe('recipe query', () => {
     })
   })
 
+  test('reads the lineage once, however many fields are derived from it', async () => {
+    seedRecipe(r1, { category: 'main', updatedAt: 1000 })
+    seedVersion(r1, 1, 3)
+    seedVersion(r1, 2, 5)
+
+    // Exactly what the recipe sheet asks for.
+    const result = await execute(`
+      query {
+        recipe(id: "${r1}") {
+          bestRating
+          versionToOpen { number }
+          versions { number }
+        }
+      }
+    `)
+    expect(result.errors).toBeUndefined()
+    // The recipe itself by key, then one scan shared by everything derived from the
+    // lineage — `versions` included, which used to pay for a second, redundant query.
+    expect(fake.docReads).toBe(1)
+    expect(fake.queryReads).toBe(1)
+  })
+
   test('returns null for a recipe that does not exist', async () => {
     const result = await execute(`query { recipe(id: "${unknownId}") { title } }`)
     expect(result.errors).toBeUndefined()
@@ -163,14 +185,14 @@ describe('recipes query', () => {
     const result = await execute(`
       query {
         recipes(sort: UPDATED_AT, order: DESC, limit: 10) {
-          items { id bestRating versionCount toTestCount versionToOpen { number } }
+          items { id bestRating versionCount toTestCount versionToOpen { number } versions { number } }
         }
       }
     `)
     expect(result.errors).toBeUndefined()
-    // One scan for the page itself, one for every derived field of every recipe: the
-    // loader batches them all, so three recipes and four satellite fields never cost
-    // more than the single lineage scan they share.
+    // One scan for the page itself, one for every satellite field of every recipe: the
+    // loader batches them all, so three recipes and five satellite fields — the lineage
+    // itself included — never cost more than the single scan they share.
     expect(fake.queryReads - before).toBe(2)
     expect(fake.docReads).toBe(0)
   })
@@ -183,7 +205,11 @@ describe('recipes query', () => {
     }
     const before = fake.queryReads
     const result = await execute(`
-      query { recipes(sort: UPDATED_AT, order: DESC, limit: 12) { items { id bestRating } } }
+      query {
+        recipes(sort: UPDATED_AT, order: DESC, limit: 12) {
+          items { id bestRating versions { number } }
+        }
+      }
     `)
     expect(result.errors).toBeUndefined()
     expect((result.data as { recipes: { items: unknown[] } }).recipes.items.length).toBe(12)

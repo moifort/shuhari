@@ -128,6 +128,9 @@ export const findVersion = async (recipeId: RecipeId, number: VersionNumber) => 
   return data ? normalizeVersion(data) : undefined
 }
 
+// One recipe's lineage, for the commands that rewrite it (deleting a version has to
+// rebase its children). Reads go through the batched loader instead — see
+// `findAllVersionsByUser`.
 export const findVersionsOf = async (recipeId: RecipeId) => {
   const snap = await versions().where('recipeId', '==', recipeId).orderBy('number', 'asc').get()
   return snap.docs.map((doc) => normalizeVersion(doc.data()))
