@@ -22,9 +22,13 @@ store panels, archives, uploads, submits for review and publishes on approval.
    contents can be read from the tag itself without opening the changelog, and `ios-v` names the
    platform it releases — the workflow only listens to `ios-v*`:
    ```bash
-   git tag -a ios-v1.0 -m "$(bun scripts/release-notes.ts notes 1.0)"
+   git tag -a ios-v1.0 -m "$(bun scripts/release-notes.ts notes 1.0 en | sed 's/^/- /')"
    git push origin ios-v1.0
    ```
+
+   In English and as markdown: a tag is read in the repository and on GitHub, both of
+   which render it and neither of which speaks the cook's language. The French notes go to
+   the store, and nowhere else.
 
 `CURRENT_PROJECT_VERSION` is not edited by hand: the workflow passes the run number, which only
 ever grows. App Store Connect rejects a build number it has already seen.
