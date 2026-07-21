@@ -99,13 +99,15 @@ jobs:
         run: fastlane release
 
       # Last on purpose: a GitHub release announces a version that reached the App Store,
-      # so it must not exist when the delivery failed. The notes are the same ones the
-      # store shows, bulleted here because GitHub renders markdown and Apple does not.
+      # so it must not exist when the delivery failed. In English, from CHANGELOG.md: the
+      # store speaks the cook's language, the repository speaks the team's. Bulleted here
+      # because GitHub renders markdown and Apple does not.
       - name: Publish the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          sed 's/^/- /' fastlane/metadata/fr-FR/release_notes.txt > build/github-release.md
+          bun scripts/release-notes.ts notes "${{ steps.version.outputs.value }}" en \
+            | sed 's/^/- /' > build/github-release.md
           gh release create "$GITHUB_REF_NAME" \
             --title "iOS ${{ steps.version.outputs.value }}" \
             --notes-file build/github-release.md \

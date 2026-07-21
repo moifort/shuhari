@@ -27,11 +27,17 @@ export const releaseNotes = (markdown: string, version: string) => {
     .join('\n')
 }
 
-const [command, version] = process.argv.slice(2)
+/// Two changelogs, two audiences: the French one is what the App Store shows a cook,
+/// the English one is what the repository shows a developer. Both are versioned at the
+/// same moment, so both are guarded.
+const CHANGELOGS = { fr: 'CHANGELOG.fr.md', en: 'CHANGELOG.md' } as const
+type Locale = keyof typeof CHANGELOGS
+
+const [command, version, locale = 'fr'] = process.argv.slice(2)
 if (command) {
   const root = resolve(import.meta.dir, '..')
-  const markdown = readFileSync(resolve(root, 'CHANGELOG.fr.md'), 'utf8')
-  const notes = releaseNotes(markdown, version)
+  const notesOf = (which: Locale) =>
+    releaseNotes(readFileSync(resolve(root, CHANGELOGS[which]), 'utf8'), version)
 
   if (command === 'guard') {
     const project = readFileSync(resolve(root, 'ios/Shuhari.xcodeproj/project.pbxproj'), 'utf8')
@@ -40,18 +46,28 @@ if (command) {
       console.error(`tag says ${version}, MARKETING_VERSION says ${marketing}`)
       process.exit(1)
     }
-    if (notes === 'unreleased') {
-      console.error('CHANGELOG.fr.md still has an "## Unreleased" section — version it first')
-      process.exit(1)
-    }
-    if (notes === 'version-not-found') {
-      console.error(`CHANGELOG.fr.md has no "## ${version}" section`)
-      process.exit(1)
+    for (const which of Object.keys(CHANGELOGS) as Locale[]) {
+      const notes = notesOf(which)
+      if (notes === 'unreleased') {
+        console.error(
+          `${CHANGELOGS[which]} still has an "## Unreleased" section — version it first`,
+        )
+        process.exit(1)
+      }
+      if (notes === 'version-not-found') {
+        console.error(`${CHANGELOGS[which]} has no "## ${version}" section`)
+        process.exit(1)
+      }
     }
     console.log(`release ${version} is ready`)
   }
 
   if (command === 'notes') {
+    if (!(locale in CHANGELOGS)) {
+      console.error(`unknown locale '${locale}' — expected one of ${Object.keys(CHANGELOGS)}`)
+      process.exit(1)
+    }
+    const notes = notesOf(locale as Locale)
     if (notes === 'unreleased' || notes === 'version-not-found') {
       console.error(`cannot produce release notes: ${notes}`)
       process.exit(1)
