@@ -19,6 +19,9 @@ import { config } from '~/system/config/index'
 const GEMINI_API_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
 
+// Under the function's own 60 s budget, with room left to answer.
+const GEMINI_TIMEOUT_MS = 45_000
+
 type GeminiResponse = { candidates?: { content: { parts: { text?: string }[] } }[] }
 
 type GeminiPart = { text: string } | { inline_data: { mime_type: string; data: string } }
@@ -359,6 +362,11 @@ Reminder: all text values you produce must be written in French.`
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body,
+      // Give up before the function does (60 s, see nitro.config.ts): a Gemini call
+      // that hangs must fail as our error, while there is still a request to answer
+      // it with, rather than be killed mid-flight and surface as a platform 500.
+      // The quota is recorded after the answer, so giving up costs the cook nothing.
+      timeout: GEMINI_TIMEOUT_MS,
     })
     return response.candidates?.[0]?.content?.parts?.find((p) => p.text)?.text
   }
