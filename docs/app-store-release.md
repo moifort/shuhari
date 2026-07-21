@@ -1,7 +1,13 @@
 # App Store Release
 
-A release is a git tag. `.github/workflows/release.yml` does the rest: it guards, shoots the
-store panels, archives, uploads, submits for review and publishes on approval.
+A release is a git tag, and the tag is the last human act. `.github/workflows/release.yml` does
+the rest unattended: it guards the version, archives, uploads, submits for review, and the build
+goes on sale the moment Apple approves it. A version that should not ship on approval is a
+version that should not have been tagged.
+
+Screenshots are the one exception, and they are deliberate: see
+[Regenerating the screenshots](#regenerating-the-screenshots). A new version inherits the ones
+already on the listing, so a release that does not change the interface needs nothing.
 
 ## Releasing
 

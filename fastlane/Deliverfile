@@ -1,8 +1,8 @@
 app_identifier("com.polyforms.shuhari.app")
 
-# The whole listing lives in the repository: metadata and screenshots are pushed on every
-# release and overwrite whatever App Store Connect holds. Editing the listing in the web
-# console is therefore pointless — the next release wipes it.
+# The listing's texts live in the repository and are pushed on every release, overwriting
+# whatever App Store Connect holds. Editing them in the web console is therefore pointless —
+# the next release wipes them.
 metadata_path("./fastlane/metadata")
 
 # Screenshots are uploaded by hand, not by the pipeline. They change when the interface
@@ -29,6 +29,9 @@ force(true)
 # pipeline changes, so there is nothing here for precheck to catch.
 precheck_include_in_app_purchases(false)
 
+# The tag is the last human act: the build is submitted for review and goes on sale the
+# moment Apple approves it, with nobody in between. A version that should not ship on
+# approval is a version that should not have been tagged.
 submit_for_review(true)
 automatic_release(true)
 
