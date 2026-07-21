@@ -60,42 +60,6 @@ jobs:
           # `bun run` was meant to pass along never reached the script.
           ./scripts/apollo-codegen.sh
 
-      # Debug configuration on purpose: DebugGallery sits behind #if DEBUG, and without it the
-      # -gallery argument is ignored and every capture returns the same screen.
-      - name: Build for the simulator
-        run: |
-          xcodebuild -project ios/Shuhari.xcodeproj -scheme Shuhari -configuration Debug \
-            -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath build/sim build
-
-      # Bounded on its own: a simctl call that never returns once ate the job's whole
-      # ninety minutes and produced no readable log, because a cancelled run never
-      # flushes its step output. Failing at fifteen leaves something to read.
-      - name: Capture the screens
-        timeout-minutes: 15
-        run: |
-          scripts/screenshots/capture.sh \
-            build/sim/Build/Products/Debug-iphonesimulator/Shuhari.app \
-            build/screenshots/raw
-
-      - name: Compose the panels
-        run: |
-          bun scripts/screenshots/compose.ts build/screenshots/raw fastlane/screenshots/fr-FR
-          rm -rf fastlane/screenshots/fr-FR/.html
-          sips -g pixelWidth -g pixelHeight fastlane/screenshots/fr-FR/*.png
-
-      # Both the composed panels and the raw captures they came from: when a panel looks
-      # wrong, the first question is always whether the capture or the composition is at
-      # fault, and having only one of the two answers neither.
-      - name: Keep the panels reviewable even if the release fails
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-store-panels
-          path: |
-            fastlane/screenshots/fr-FR
-            build/screenshots/raw
-
       - name: Build, upload, submit and publish
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
@@ -112,14 +76,14 @@ jobs:
 
       # Last on purpose: a GitHub release announces a version that reached the App Store,
       # so it must not exist when the delivery failed. In English, from CHANGELOG.md: the
-      # store speaks the cook's language, the repository speaks the team's. Bulleted here
-      # because GitHub renders markdown and Apple does not.
+      # store speaks the cook's language, the repository speaks the team's. As markdown
+      # with its headings intact — GitHub renders them, the store would print them.
       - name: Publish the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          bun scripts/release-notes.ts notes "${{ steps.version.outputs.value }}" en \
-            | sed 's/^/- /' > build/github-release.md
+          bun scripts/release-notes.ts markdown "${{ steps.version.outputs.value }}" en \
+            > build/github-release.md
           gh release create "$GITHUB_REF_NAME" \
             --title "iOS ${{ steps.version.outputs.value }}" \
             --notes-file build/github-release.md \

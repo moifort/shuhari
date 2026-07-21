@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { marketingVersion, releaseNotes } from './release-notes'
+import { marketingVersion, releaseNotes, releaseNotesMarkdown } from './release-notes'
 
 const changelog = `# Journal des modifications
 
@@ -65,5 +65,25 @@ describe('releaseNotes', () => {
   test('does not mistake 1.1 for a prefix of 1.10', () => {
     const both = '## 1.10 (2026.10.01)\n\n- La dix.\n\n## 1.1 (2026.09.01)\n\n- La un.\n'
     expect(releaseNotes(both, '1.1')).toBe('La un.')
+  })
+})
+
+describe('releaseNotesMarkdown', () => {
+  test('keeps the headings and bullets the changelog wrote', () => {
+    expect(releaseNotesMarkdown(changelog, '1.0')).toBe(
+      '### New\n\n- Première version de Shuhari.\n- Import par photo.\n\n### Fixes\n\n- Un correctif.',
+    )
+  })
+
+  test('keeps the emphasis the App Store would have shown literally', () => {
+    const emphasised = '## 1.0 (2026.08.01)\n\n- Deux types : **Plat** et **Thermomix**.\n'
+    expect(releaseNotesMarkdown(emphasised, '1.0')).toBe(
+      '- Deux types : **Plat** et **Thermomix**.',
+    )
+  })
+
+  test('refuses an unreleased changelog like its plain-text sibling', () => {
+    const pending = '## Unreleased\n\n- Pas encore daté.\n'
+    expect(releaseNotesMarkdown(pending, '1.0')).toBe('unreleased')
   })
 })

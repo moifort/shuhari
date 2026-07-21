@@ -4,8 +4,14 @@ app_identifier("com.polyforms.shuhari.app")
 # release and overwrite whatever App Store Connect holds. Editing the listing in the web
 # console is therefore pointless — the next release wipes it.
 metadata_path("./fastlane/metadata")
-screenshots_path("./fastlane/screenshots")
-overwrite_screenshots(true)
+
+# Screenshots are uploaded by hand, not by the pipeline. They change when the interface
+# changes, which is not the same rhythm as a release, and generating them in CI cost more
+# than it ever returned: the simulator has to be brought to the front, the app has to have
+# finished drawing, and both failed silently — a set of home screens and then a set of
+# blank rectangles reached the listing before anyone looked. Regenerate them with
+# `scripts/screenshots/capture.sh` then `compose.ts`, look at them, and drop them in.
+skip_screenshots(true)
 
 # The age rating is deliberately NOT declared here. Apple now requires attributes
 # fastlane's rating config cannot express — advertising, messagingAndChat, lootBox,

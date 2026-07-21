@@ -6,10 +6,9 @@ import { resolve } from 'node:path'
 export const marketingVersion = (pbxproj: string) =>
   pbxproj.match(/MARKETING_VERSION = ([^;]+);/)?.[1]?.trim() ?? 'not-found'
 
-/// The bullets of one released version, as plain text for the App Store's "What's New" field.
-/// Section headings (`### New`, `### Fixes`) are dropped: the store shows one flat list, and a
-/// stray `###` would be printed literally. So would `**bold**`, hence the emphasis stripping.
-export const releaseNotes = (markdown: string, version: string) => {
+/// The lines of one released version's section, headings and all, exactly as the changelog
+/// writes them. Returns the two sentinels when there is nothing to hand back.
+const sectionOf = (markdown: string, version: string) => {
   if (/^## Unreleased\s*$/m.test(markdown)) return 'unreleased' as const
 
   // The word boundary is what keeps `1.1` from matching the `1.10` section above it.
@@ -19,12 +18,30 @@ export const releaseNotes = (markdown: string, version: string) => {
 
   const rest = markdown.slice(start).split('\n').slice(1)
   const nextVersion = rest.findIndex((line) => line.startsWith('## '))
-  const section = nextVersion === -1 ? rest : rest.slice(0, nextVersion)
+  return nextVersion === -1 ? rest : rest.slice(0, nextVersion)
+}
+
+/// The bullets of one released version, as plain text for the App Store's "What's New" field.
+/// Section headings (`### New`, `### Fixes`) are dropped: the store shows one flat list, and a
+/// stray `###` would be printed literally. So would `**bold**`, hence the emphasis stripping.
+export const releaseNotes = (markdown: string, version: string) => {
+  const section = sectionOf(markdown, version)
+  if (typeof section === 'string') return section
 
   return section
     .filter((line) => line.startsWith('- '))
     .map((line) => line.slice(2).replace(/\*\*/g, '').trim())
     .join('\n')
+}
+
+/// The same section as markdown, untouched — headings, bullets and emphasis kept. For git
+/// tags and GitHub releases, which render markdown and gain from the structure the store
+/// cannot show.
+export const releaseNotesMarkdown = (markdown: string, version: string) => {
+  const section = sectionOf(markdown, version)
+  if (typeof section === 'string') return section
+
+  return section.join('\n').trim()
 }
 
 /// Two changelogs, two audiences: the French one is what the App Store shows a cook,
@@ -62,12 +79,14 @@ if (command) {
     console.log(`release ${version} is ready`)
   }
 
-  if (command === 'notes') {
+  if (command === 'notes' || command === 'markdown') {
     if (!(locale in CHANGELOGS)) {
       console.error(`unknown locale '${locale}' — expected one of ${Object.keys(CHANGELOGS)}`)
       process.exit(1)
     }
-    const notes = notesOf(locale as Locale)
+    const source = readFileSync(resolve(root, CHANGELOGS[locale as Locale]), 'utf8')
+    const notes =
+      command === 'markdown' ? releaseNotesMarkdown(source, version) : releaseNotes(source, version)
     if (notes === 'unreleased' || notes === 'version-not-found') {
       console.error(`cannot produce release notes: ${notes}`)
       process.exit(1)

@@ -22,7 +22,7 @@ store panels, archives, uploads, submits for review and publishes on approval.
    contents can be read from the tag itself without opening the changelog, and `ios-v` names the
    platform it releases — the workflow only listens to `ios-v*`:
    ```bash
-   git tag -a ios-v1.0 -m "$(bun scripts/release-notes.ts notes 1.0 en | sed 's/^/- /')"
+   git tag -a ios-v1.0 -m "$(bun scripts/release-notes.ts markdown 1.0 en)"
    git push origin ios-v1.0
    ```
 
@@ -34,33 +34,55 @@ store panels, archives, uploads, submits for review and publishes on approval.
 ever grows. App Store Connect rejects a build number it has already seen.
 
 Once the build is delivered, the workflow publishes a **GitHub release** for the tag, carrying
-the same notes as a bulleted list. It runs last on purpose: a release announcing a version that
-never reached the App Store would be a lie the repository keeps.
+the same section of `CHANGELOG.md` as markdown — headings included, since GitHub renders them
+and the store would have printed them. It runs last on purpose: a release announcing a version
+that never reached the App Store would be a lie the repository keeps.
 
 ## What the listing is made of
 
-The whole listing lives in `fastlane/metadata/` and is overwritten on every release: texts,
-keywords, categories, price, screenshots. Editing it in App Store Connect is pointless — the
-next release wipes it. Change the files, commit, tag.
+The texts live in `fastlane/metadata/` and are overwritten on every release: description,
+subtitle, keywords, promotional text, release notes, categories, price. Editing those in App
+Store Connect is pointless — the next release wipes them. Change the files, commit, tag.
 
-Two things are **not** in there, on purpose, because they belong to the app rather than to a
-version and never change between releases: the **age rating** and the **privacy declarations**.
-The age rating is set once on the app's `ageRatingDeclaration`; fastlane's rating config cannot
-express the attributes Apple now requires (`advertising`, `messagingAndChat`, `lootBox`,
-`ageAssurance`, `parentalControls`, `userGeneratedContent`, `gunsOrOtherWeapons`,
-`healthOrWellnessTopics`), and a delivery that omits them is rejected outright.
+Three things are **not** pushed by a release, each for its own reason.
 
-The screenshots are shot on an `iPhone 17 Pro Max` simulator (1320×2868, the 6.9-inch size the
-App Store derives every other iPhone size from) and composed by `scripts/screenshots/compose.ts`
-from the CSS template in `scripts/screenshots/panel.ts`. The captions live in
-`scripts/screenshots/panels.json`.
+**The age rating** and the **privacy declarations** describe the app, not a version, and never
+change between releases. The rating is set once on the app's `ageRatingDeclaration`; fastlane's
+rating config cannot express the attributes Apple now requires (`advertising`,
+`messagingAndChat`, `lootBox`, `ageAssurance`, `parentalControls`, `userGeneratedContent`,
+`gunsOrOtherWeapons`, `healthOrWellnessTopics`), and a delivery that omits them is rejected.
 
-Two traps the pipeline already works around, worth knowing before touching it:
+**The screenshots** are uploaded by hand. They change when the interface changes, which is not
+the rhythm of a release, and producing them in CI cost far more than it returned — the simulator
+has to be brought to the front and the app has to have finished drawing, and both failed
+silently: a set of home screens, then a set of blank rectangles, reached the listing before
+anyone looked at them.
+
+## Regenerating the screenshots
+
+Done deliberately, from a machine where you can see the result:
+
+```bash
+xcodebuild -project ios/Shuhari.xcodeproj -scheme Shuhari -configuration Debug \
+  -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim build
+scripts/screenshots/capture.sh build/sim/Build/Products/Debug-iphonesimulator/Shuhari.app \
+  build/screenshots/raw
+bun scripts/screenshots/compose.ts build/screenshots/raw build/screenshots/panels
+```
+
+Four panels at **1242×2688** (6.5 inches — the store derives the other iPhone sizes from it),
+captions in `scripts/screenshots/panels.json`, design in the CSS of `scripts/screenshots/panel.ts`.
+Then **look at them** before uploading.
+
+Three traps the script works around, worth knowing before touching it:
 
 - The simulator build is made in **Debug**. `DebugGallery` sits behind `#if DEBUG`; a Release
   build ignores the `-gallery` argument and every capture returns the same screen.
 - Each capture **terminates the app before relaunching it**. `simctl launch` on a running app
   foregrounds it without re-reading its arguments, which silently returns the previous screen.
+- A booted simulator with no UI renders nothing: the script opens Simulator.app — or DeviceHub,
+  which is what Xcode 27 ships instead — and refuses any capture that matches SpringBoard or
+  comes back blank.
 
 ## Signing
 
