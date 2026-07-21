@@ -84,11 +84,17 @@ jobs:
           rm -rf fastlane/screenshots/fr-FR/.html
           sips -g pixelWidth -g pixelHeight fastlane/screenshots/fr-FR/*.png
 
+      # Both the composed panels and the raw captures they came from: when a panel looks
+      # wrong, the first question is always whether the capture or the composition is at
+      # fault, and having only one of the two answers neither.
       - name: Keep the panels reviewable even if the release fails
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: app-store-panels
-          path: fastlane/screenshots/fr-FR
+          path: |
+            fastlane/screenshots/fr-FR
+            build/screenshots/raw
 
       - name: Build, upload, submit and publish
         env:

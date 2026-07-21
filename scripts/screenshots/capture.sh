@@ -102,15 +102,34 @@ for SCREEN in $SCREENS; do
   sleep 1
   step "launch -gallery $SCREEN"
   xcrun simctl launch "$UDID" "$BUNDLE_ID" -gallery "$SCREEN" >/dev/null
-  sleep 12
-  step "screenshot $SCREEN"
-  xcrun simctl io "$UDID" screenshot "$OUT_DIR/$SCREEN.png" >/dev/null
 
-  if [ "$(md5 -q "$OUT_DIR/$SCREEN.png")" = "$SPRINGBOARD" ]; then
-    echo "'$SCREEN' captured SpringBoard, not the app — the app never came to the front" >&2
+  # Polled rather than slept: a cold runner renders far slower than a warm laptop, and
+  # a fixed wait produced four blank white panels — the app in front, drawn by nobody.
+  # A rendered screen of this app never compresses under ~200 kB; a blank one lands
+  # around 70 kB. Crude, dependency-free, and it separates the two cases cleanly.
+  captured=""
+  for attempt in 1 2 3 4 5 6 7 8; do
+    sleep 4
+    xcrun simctl io "$UDID" screenshot "$OUT_DIR/$SCREEN.png" >/dev/null 2>&1
+    size=$(stat -f%z "$OUT_DIR/$SCREEN.png")
+    if [ "$(md5 -q "$OUT_DIR/$SCREEN.png")" = "$SPRINGBOARD" ]; then
+      echo "   attempt $attempt: still SpringBoard"
+    elif [ "$size" -lt 200000 ]; then
+      echo "   attempt $attempt: blank ($size bytes)"
+    else
+      captured="yes"
+      break
+    fi
+  done
+
+  if [ -z "$captured" ]; then
+    echo "'$SCREEN' never rendered — last capture was $(stat -f%z "$OUT_DIR/$SCREEN.png") bytes" >&2
+    echo "--- what the app said ---" >&2
+    xcrun simctl spawn "$UDID" log show --last 3m --style compact \
+      --predicate 'process == "Shuhari"' 2>/dev/null | tail -40 >&2 || true
     exit 1
   fi
-  echo "captured $SCREEN"
+  echo "captured $SCREEN ($(stat -f%z "$OUT_DIR/$SCREEN.png") bytes)"
 done
 
 rm -f "$OUT_DIR/.springboard.png"
