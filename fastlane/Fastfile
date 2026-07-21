@@ -10,16 +10,26 @@ platform :ios do
       in_house: false
     )
 
+    # xcodebuild wants the key as a file and its identifiers as flags. `build_app` takes no
+    # `api_key` of its own — that belongs to `deliver` — so the credentials reach the archive
+    # through xcargs. Written under build/, which git ignores and CI throws away.
+    key_path = File.expand_path("../build/asc-key.p8", __dir__)
+    FileUtils.mkdir_p(File.dirname(key_path))
+    File.write(key_path, ENV.fetch("ASC_KEY_P8"))
+
     build_app(
       project: "ios/Shuhari.xcodeproj",
       scheme: "Shuhari",
       configuration: "Release",
       export_method: "app-store",
-      api_key: key,
       # Cloud signing: Xcode fetches the distribution certificate and profile itself, so no
       # .p12 has to be stored anywhere. The build number comes from the workflow run, which
       # only ever grows — App Store Connect rejects a number it has already seen.
-      xcargs: "-allowProvisioningUpdates CURRENT_PROJECT_VERSION=#{ENV.fetch('BUILD_NUMBER')}",
+      xcargs: "-allowProvisioningUpdates " \
+              "-authenticationKeyPath #{key_path} " \
+              "-authenticationKeyID #{ENV.fetch('ASC_KEY_ID')} " \
+              "-authenticationKeyIssuerID #{ENV.fetch('ASC_ISSUER_ID')} " \
+              "CURRENT_PROJECT_VERSION=#{ENV.fetch('BUILD_NUMBER')}",
       output_directory: "build",
       output_name: "Shuhari.ipa"
     )

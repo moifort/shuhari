@@ -18,9 +18,12 @@ store panels, archives, uploads, submits for review and publishes on approval.
    pipeline refuses a tag that disagrees with it.
 4. Push `main`. The Deploy workflow rebuilds `server/system/changelog-content.ts` from
    `CHANGELOG.fr.md`; **without this the in-app changelog stays stale**.
-5. Tag and push:
+5. Tag and push. The tag is **annotated and carries the release notes**, so the version's
+   contents can be read from the tag itself without opening the changelog, and `ios-` names the
+   platform it releases:
    ```bash
-   git tag v1.0 && git push origin v1.0
+   git tag -a ios-1.0 -m "$(bun scripts/release-notes.ts notes 1.0)"
+   git push origin ios-1.0
    ```
 
 `CURRENT_PROJECT_VERSION` is not edited by hand: the workflow passes the run number, which only
