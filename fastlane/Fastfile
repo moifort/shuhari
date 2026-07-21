@@ -17,19 +17,26 @@ platform :ios do
     FileUtils.mkdir_p(File.dirname(key_path))
     File.write(key_path, ENV.fetch("ASC_KEY_P8"))
 
+    # Cloud signing: Xcode fetches the distribution certificate and profile itself, so no
+    # .p12 has to be stored anywhere. Needed by both xcodebuild invocations below.
+    signing_args = "-allowProvisioningUpdates " \
+                   "-authenticationKeyPath #{key_path} " \
+                   "-authenticationKeyID #{ENV.fetch('ASC_KEY_ID')} " \
+                   "-authenticationKeyIssuerID #{ENV.fetch('ASC_ISSUER_ID')}"
+
     build_app(
       project: "ios/Shuhari.xcodeproj",
       scheme: "Shuhari",
       configuration: "Release",
       export_method: "app-store",
-      # Cloud signing: Xcode fetches the distribution certificate and profile itself, so no
-      # .p12 has to be stored anywhere. The build number comes from the workflow run, which
-      # only ever grows — App Store Connect rejects a number it has already seen.
-      xcargs: "-allowProvisioningUpdates " \
-              "-authenticationKeyPath #{key_path} " \
-              "-authenticationKeyID #{ENV.fetch('ASC_KEY_ID')} " \
-              "-authenticationKeyIssuerID #{ENV.fetch('ASC_ISSUER_ID')} " \
-              "CURRENT_PROJECT_VERSION=#{ENV.fetch('BUILD_NUMBER')}",
+      # The build number comes from the workflow run, which only ever grows — App Store
+      # Connect rejects a number it has already seen.
+      xcargs: "#{signing_args} CURRENT_PROJECT_VERSION=#{ENV.fetch('BUILD_NUMBER')}",
+      # `gym` runs -exportArchive as a separate xcodebuild invocation, which inherits
+      # nothing from `xcargs`. Without the credentials repeated here, the export asks the
+      # cloud for a distribution certificate it has no permission to request, and fails on
+      # an archive that signed perfectly a minute earlier.
+      export_xcargs: signing_args,
       output_directory: "build",
       output_name: "Shuhari.ipa"
     )
