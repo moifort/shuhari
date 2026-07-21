@@ -8,7 +8,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  # write, because the last step publishes the GitHub release for the tag.
+  contents: write
 
 jobs:
   release:
@@ -96,3 +97,16 @@ jobs:
           BUILD_NUMBER: ${{ github.run_number }}
           FASTLANE_SKIP_UPDATE_CHECK: '1'
         run: fastlane release
+
+      # Last on purpose: a GitHub release announces a version that reached the App Store,
+      # so it must not exist when the delivery failed. The notes are the same ones the
+      # store shows, bulleted here because GitHub renders markdown and Apple does not.
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sed 's/^/- /' fastlane/metadata/fr-FR/release_notes.txt > build/github-release.md
+          gh release create "$GITHUB_REF_NAME" \
+            --title "iOS ${{ steps.version.outputs.value }}" \
+            --notes-file build/github-release.md \
+            --verify-tag

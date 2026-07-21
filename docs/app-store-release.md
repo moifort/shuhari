@@ -29,6 +29,10 @@ store panels, archives, uploads, submits for review and publishes on approval.
 `CURRENT_PROJECT_VERSION` is not edited by hand: the workflow passes the run number, which only
 ever grows. App Store Connect rejects a build number it has already seen.
 
+Once the build is delivered, the workflow publishes a **GitHub release** for the tag, carrying
+the same notes as a bulleted list. It runs last on purpose: a release announcing a version that
+never reached the App Store would be a lie the repository keeps.
+
 ## What the listing is made of
 
 The whole listing lives in `fastlane/metadata/` and is overwritten on every release: texts,
