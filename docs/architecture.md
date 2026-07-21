@@ -191,8 +191,11 @@ Infrastructure concerns: `ai` (Gemini), `config`, `migration`, `firebase` (`db()
 The five isolation rules — private repositories, validation at the boundary, no storage outside
 repositories, names that carry intent, no `throw` for expected outcomes — are stated in
 [ddd-best-practices.md](./ddd-best-practices.md#purity-and-isolation-rules). Here they are
-**executable**: `server/architecture.unit.test.ts` walks `server/` and fails `bun test` on any
-violation.
+**executable**: `server/architecture.unit.test.ts` walks `server/` and fails `bun run test:unit`
+on any violation. It also pins where Firestore may be reached (`db()` is imported by the
+repositories, `utils/firestore.ts` and the migration runner — nothing else) and that each test
+tier does what its suffix claims: every `.int.test.ts` drives the fake Firestore, every
+`.feat.test.ts` executes the GraphQL schema.
 
 ## Data Flow
 

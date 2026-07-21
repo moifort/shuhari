@@ -1,4 +1,4 @@
-name: Unit Tests
+name: Tests
 
 on:
   push:
@@ -10,7 +10,11 @@ permissions:
   contents: read
 
 jobs:
+  # The tiers run as separate workflows sharing the "Tests" name, so a failure names
+  # itself on the commit: a broken pure function reads as "Unit", a broken read budget
+  # as "Integration", a broken GraphQL contract as "Feature".
   unit:
+    name: 🧪 Unit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -19,7 +23,7 @@ jobs:
       - run: bunx nitro prepare
       - run: bun tsc --noEmit
       - run: bunx biome check
-      - run: bun test
+      - run: bun run test:unit
 
   # Guard: the Cloud Function build on GCP runs `npm install` (strict peer deps)
   # on the package.json that Nitro generates in .output/server. bun is lenient
@@ -27,6 +31,7 @@ jobs:
   # firebase-admin 14 vs firebase-functions) pass locally but only fail at
   # `terraform apply`. This reproduces that resolution here so it fails fast.
   deploy-deps:
+    name: 📦 Prod deps (npm strict)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

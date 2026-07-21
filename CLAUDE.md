@@ -27,7 +27,7 @@ Everything versioned and technical is **English**: commits, code, comments, docs
 - **Backend typecheck**: `bun tsc --noEmit`
 - **Regenerate types** (if routes changed): `bun run prepare` (= `generate:assets` + `nitro prepare`); run it before `bun tsc`
 - **Dev server**: `bun run dev` — Nitro on `http://localhost:3000` (GraphQL at `POST /graphql`)
-- **Unit tests**: `bun test` (or `bun run test` to regenerate assets first)
+- **Tests**: `bun run test` (all three tiers), or one tier: `bun run test:unit` / `test:int` / `test:feat`. Never bare `bun test` — it walks `build/` and `.output/` and dies; pass explicit `./`-prefixed paths if you need a single file
 - **Test coverage**: `bun run test:coverage`
 - **Linter**: `bun run lint` (`bunx biome check`); autofix with `bun run lint:fix`
 - **Runtime**: always use `bun`/`bunx`, never `npm`/`npx`
@@ -67,7 +67,7 @@ Everything versioned and technical is **English**: commits, code, comments, docs
 - **Storage: native Firestore**, only inside `infrastructure/repository.ts`, via the `server/utils/firestore.ts` helpers (`genericDataConverter`, `atomically`, `bulkSave`, `deleteInBatches`) and the per-request cache (`memoizedPerRequest`) — see [docs/architecture.md](docs/architecture.md#storage--native-firestore). Aggregate root `recipes` + append-only satellite `recipe-versions` keyed `${recipeId}_${number}`; standalone `ai-quotas` keyed `${userId}_${month}` and `entitlements` keyed by `userId`.
 - **GraphQL** (single endpoint `POST /graphql`): satellite `RecipeType` fields resolve through the per-request `versionsByRecipe` loader — never a collection scan or one doc per parent (N+1); read budgets asserted in tests via `fake.reads`. See [docs/graphql-patterns.md](docs/graphql-patterns.md#satellite-loaders--the-n1-budget).
 - **Naming / ubiquitous language**: function names ARE the business concept (`bestRating`, `versionToOpen` — never `computeX`, `handleX`); one business concept = one word at every layer (domain, GraphQL, iOS, tests). See [docs/domain-guide.md](docs/domain-guide.md#ubiquitous-language).
-- **Tests**: `*.unit.test.ts` with `bun:test`; Firestore mocked via `server/test/fake-firestore.ts`, which records batches and read counts to assert atomicity and read budgets.
+- **Tests**: three tiers with `bun:test`, one CI job each — `*.unit.test.ts` (pure logic, plus the executable `server/architecture.unit.test.ts`), `*.int.test.ts` (commands/queries against the fake Firestore), `*.feat.test.ts` (business scenarios executed against the assembled GraphQL schema: error codes, freemium gates, N+1 budgets). Firestore mocked via `mock.module('~/system/firebase', fakeFirebase)` (`server/test/fake-firestore.ts`), which records batches and split `docReads`/`queryReads` to assert atomicity and read budgets. See [docs/domain-guide.md](docs/domain-guide.md#9-write-tests).
 
 ## Key Business Rules
 

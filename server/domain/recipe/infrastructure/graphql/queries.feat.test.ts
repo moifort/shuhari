@@ -1,0 +1,194 @@
+import { beforeEach, describe, expect, mock, test } from 'bun:test'
+import { graphql } from 'graphql'
+import type { DishCategory, RecipeId, VersionNumber } from '~/domain/recipe/types'
+import type { UserId } from '~/domain/shared/types'
+import { fakeFirebase, resetFakeFirestore } from '~/test/fake-firestore'
+
+mock.module('~/system/firebase', fakeFirebase)
+
+const { schema } = await import('~/domain/shared/graphql/schema')
+const { recipeSatelliteLoaders } = await import('~/domain/shared/graphql/loaders')
+const { categoryRank } = await import('~/domain/recipe/business-rules')
+
+const userId = 'user-1' as UserId
+const unknownId = '11111111-1111-4111-8111-111111111111'
+
+// Recipe ids are UUIDs (the `RecipeId` scalar rejects anything else), so the
+// fixtures use readable ones rather than `r1`/`r2`.
+const r1 = 'aaaaaaaa-0000-4000-8000-000000000001'
+const r2 = 'aaaaaaaa-0000-4000-8000-000000000002'
+const r3 = 'aaaaaaaa-0000-4000-8000-000000000003'
+const foreign = 'bbbbbbbb-0000-4000-8000-000000000001'
+
+let fake = resetFakeFirestore()
+beforeEach(() => {
+  fake = resetFakeFirestore()
+})
+
+// One request = one loader set, exactly as routes/graphql.ts builds it.
+const execute = (source: string) =>
+  graphql({
+    schema,
+    source,
+    contextValue: { userId, event: undefined as never, loaders: recipeSatelliteLoaders(userId) },
+  })
+
+const seedRecipe = (id: string, fields: { category: DishCategory; updatedAt: number }) => {
+  fake.seed('recipes', id, {
+    id,
+    userId,
+    type: 'dish',
+    category: fields.category,
+    categoryRank: categoryRank(fields.category),
+    title: `Recette ${id}`,
+    lastVersionNumber: 1,
+    createdAt: new Date(fields.updatedAt),
+    updatedAt: new Date(fields.updatedAt),
+  })
+}
+
+const seedVersion = (recipeId: string, number: number, rating?: number) => {
+  fake.seed('recipe-versions', `${recipeId}_${number}`, {
+    userId,
+    recipeId: recipeId as RecipeId,
+    number: number as VersionNumber,
+    createdAt: new Date(number * 1000),
+    origin: { kind: number === 1 ? 'import' : 'ai-proposal' },
+    content: { kind: 'dish', ingredients: [], steps: ['Cuire'] },
+    tips: [],
+    ...(rating === undefined ? {} : { executedAt: new Date(number * 1000), rating }),
+  })
+}
+
+describe('recipe query', () => {
+  test('returns the recipe with its lineage and everything derived from it', async () => {
+    seedRecipe(r1, { category: 'main', updatedAt: 1000 })
+    seedVersion(r1, 1, 3)
+    seedVersion(r1, 2, 5)
+    seedVersion(r1, 3)
+
+    const result = await execute(`
+      query {
+        recipe(id: "${r1}") {
+          title
+          versionCount
+          bestRating
+          versionToOpen { number rating }
+          versions { number rating }
+        }
+      }
+    `)
+    expect(result.errors).toBeUndefined()
+    expect(result.data?.recipe).toMatchObject({
+      title: `Recette ${r1}`,
+      versionCount: 3,
+      // Derived from the cooked versions — v2 scored highest, so that is the one
+      // the app opens, and the untried v3 changes neither.
+      bestRating: 5,
+      versionToOpen: { number: 2, rating: 5 },
+    })
+    expect(result.data?.recipe).toMatchObject({
+      versions: [
+        { number: 1, rating: 3 },
+        { number: 2, rating: 5 },
+        { number: 3, rating: null },
+      ],
+    })
+  })
+
+  test('returns null for a recipe that does not exist', async () => {
+    const result = await execute(`query { recipe(id: "${unknownId}") { title } }`)
+    expect(result.errors).toBeUndefined()
+    expect(result.data?.recipe).toBeNull()
+  })
+
+  test('returns null for another cook’s recipe', async () => {
+    fake.seed('recipes', foreign, {
+      id: foreign,
+      userId: 'user-2' as UserId,
+      type: 'dish',
+      category: 'main',
+      categoryRank: categoryRank('main'),
+      title: 'Pas la mienne',
+      lastVersionNumber: 1,
+      createdAt: new Date(1000),
+      updatedAt: new Date(1000),
+    })
+    const result = await execute(`query { recipe(id: "${foreign}") { title } }`)
+    expect(result.errors).toBeUndefined()
+    expect(result.data?.recipe).toBeNull()
+  })
+})
+
+describe('recipes query', () => {
+  beforeEach(() => {
+    seedRecipe(r1, { category: 'main', updatedAt: 1000 })
+    seedRecipe(r2, { category: 'starter', updatedAt: 2000 })
+    seedRecipe(r3, { category: 'dessert', updatedAt: 3000 })
+    for (const id of [r1, r2, r3]) {
+      seedVersion(id, 1, 4)
+      seedVersion(id, 2, 2)
+    }
+  })
+
+  test('pages the library and hands the cursor to the next page', async () => {
+    const first = await execute(`
+      query { recipes(sort: UPDATED_AT, order: DESC, limit: 2) { items { id } hasMore } }
+    `)
+    expect(first.errors).toBeUndefined()
+    expect(first.data?.recipes).toMatchObject({
+      items: [{ id: r3 }, { id: r2 }],
+      hasMore: true,
+    })
+
+    const next = await execute(`
+      query { recipes(sort: UPDATED_AT, order: DESC, limit: 2, after: "${r2}") { items { id } hasMore } }
+    `)
+    expect(next.data?.recipes).toMatchObject({ items: [{ id: r1 }], hasMore: false })
+  })
+
+  test('orders by the course rank when asked to sort by category', async () => {
+    const result = await execute(`
+      query { recipes(sort: CATEGORY, limit: 10) { items { id category } } }
+    `)
+    expect(result.errors).toBeUndefined()
+    // starter → main → dessert is the business rank, not the alphabet.
+    expect(
+      (result.data as { recipes: { items: { id: string }[] } }).recipes.items.map((r) => r.id),
+    ).toEqual([r2, r1, r3])
+  })
+
+  test('costs one lineage scan for the whole page, not one read per recipe', async () => {
+    const before = fake.queryReads
+    const result = await execute(`
+      query {
+        recipes(sort: UPDATED_AT, order: DESC, limit: 10) {
+          items { id bestRating versionCount toTestCount versionToOpen { number } }
+        }
+      }
+    `)
+    expect(result.errors).toBeUndefined()
+    // One scan for the page itself, one for every derived field of every recipe: the
+    // loader batches them all, so three recipes and four satellite fields never cost
+    // more than the single lineage scan they share.
+    expect(fake.queryReads - before).toBe(2)
+    expect(fake.docReads).toBe(0)
+  })
+
+  test('keeps that budget when the page grows', async () => {
+    for (let i = 4; i <= 12; i++) {
+      const id = `aaaaaaaa-0000-4000-8000-0000000000${String(i).padStart(2, '0')}`
+      seedRecipe(id, { category: 'main', updatedAt: i * 1000 })
+      seedVersion(id, 1, 3)
+    }
+    const before = fake.queryReads
+    const result = await execute(`
+      query { recipes(sort: UPDATED_AT, order: DESC, limit: 12) { items { id bestRating } } }
+    `)
+    expect(result.errors).toBeUndefined()
+    expect((result.data as { recipes: { items: unknown[] } }).recipes.items.length).toBe(12)
+    // Four times the recipes, same two reads — the proof that the budget is the
+    // page's, not the recipe's.
+    expect(fake.queryReads - before).toBe(2)
+  })
+})

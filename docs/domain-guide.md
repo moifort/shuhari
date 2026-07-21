@@ -277,16 +277,29 @@ bun run generate:ios                # regenerates Generated/GraphQL
 
 ## 9. Write Tests
 
-Co-located, `bun:test`. Valid suffixes: `.unit.test.ts` (pure logic), `.int.test.ts` (against
-the fake Firestore), `.feat.test.ts`. There is **no BDD DSL**.
+Co-located, `bun:test`. Three suffixes, each a tier with its own CI job and its own
+`bun run` script — the suffix says what the test drives, and the architecture test
+enforces it:
+
+| Suffix | Drives | Runs with |
+| --- | --- | --- |
+| `.unit.test.ts` | pure logic: primitives, business rules, no IO | `bun run test:unit` (+ `tsc` and Biome in CI) |
+| `.int.test.ts` | a command/query against the fake Firestore | `bun run test:int` |
+| `.feat.test.ts` | a business scenario executed against the assembled GraphQL schema | `bun run test:feat` |
+
+There is **no BDD DSL**. `bun run test` runs the three tiers together; plain `bun test`
+walks the whole checkout (`build/`, `.output/`, the iOS DerivedData) and chokes on it,
+which is why every script scopes the run to `server/` and `scripts/`.
 
 Integration tests mock Firestore and assert both behaviour **and read/write budgets**:
 
 ```ts
 import { beforeEach, describe, expect, mock, test } from 'bun:test'
-import { fakeDb, resetFakeFirestore } from '~/test/fake-firestore'
+import { fakeFirebase, resetFakeFirestore } from '~/test/fake-firestore'
 
-mock.module('~/system/firebase', () => ({ db: fakeDb }))
+// Always the whole factory, never a hand-rolled `{ db: fakeDb }`: `mock.module`
+// replaces the module wholesale, for every test file in the process.
+mock.module('~/system/firebase', fakeFirebase)
 const { BeanCommand } = await import('~/domain/bean/command')
 
 let fake = resetFakeFirestore()
@@ -301,6 +314,31 @@ test('add persists a bean', async () => {
 - **Atomicity**: `expect(fake.directWrites).toEqual([]); expect(fake.batches.length).toBe(1)`.
 - **Read budget**: `const before = fake.queryReads; …; expect(fake.queryReads - before).toBe(2)`.
 - **Cache**: a second read in the same request should add `0` to `fake.queryReads`.
+
+Feature tests execute the real schema, with the same context `routes/graphql.ts` builds —
+which is what makes them the place to pin error codes, the freemium gates and the N+1
+budget as the client actually sees them:
+
+```ts
+const { schema } = await import('~/domain/shared/graphql/schema')
+const { recipeSatelliteLoaders } = await import('~/domain/shared/graphql/loaders')
+
+const execute = (source: string) =>
+  graphql({
+    schema,
+    source,
+    contextValue: { userId, event: undefined as never, loaders: recipeSatelliteLoaders(userId) },
+  })
+
+test('refuses once the free monthly iterations are used up', async () => {
+  const result = await execute(`mutation { requestProposal(…) { basedOn } }`)
+  expect(result.errors?.[0]?.extensions?.code).toBe('QUOTA_EXHAUSTED')
+})
+```
+
+Branded scalars are validated at the boundary, so a fixture id must be a real one (an
+unknown `RecipeId` is a UUID, or the mutation fails as `BAD_USER_INPUT` and never reaches
+the code under test).
 
 `business-rules.ts` (if any) requires 100% coverage in `business-rules.unit.test.ts`.
 
@@ -458,7 +496,7 @@ needed for the new value alone (it is additive — no existing document carries 
 - [ ] New branded scalars registered in `shared/graphql/{builder,scalars}.ts`
 - [ ] Satellite fields (if any) resolved through a loader in `shared/graphql/loaders.ts`
 - [ ] Side-effect imports added to `shared/graphql/schema.ts`
-- [ ] Tests co-located (`.int.test.ts` with read-budget assertions; `.unit.test.ts` for rules)
+- [ ] Tests co-located (`.unit.test.ts` for rules; `.int.test.ts` with read-budget assertions; `.feat.test.ts` for the GraphQL operations and their error codes)
 - [ ] `bun run generate:graphql` + `bun run generate:ios` if the schema changed
-- [ ] `bun run prepare && bun tsc --noEmit` passes; `bun test` green
+- [ ] `bun run prepare && bun tsc --noEmit` passes; `bun run test` green
 - [ ] (optional) `business-rules.ts` (pure/sync, 100% coverage) / `use-case.ts` (no repo access)

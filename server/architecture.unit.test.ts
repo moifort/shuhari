@@ -12,7 +12,7 @@ const DOMAIN_DIR = join(SERVER_DIR, 'domain')
 // Mini-domains that live under server/system/ but must still obey the domain rules
 // (folder shape, purity, naming, no-throw). They escape the server/domain/* globs,
 // so their files are folded back into the relevant checks below.
-const SYSTEM_HOSTED = ['changelog', 'portability'] as const
+const SYSTEM_HOSTED = ['account', 'changelog', 'portability'] as const
 
 const domains = readdirSync(DOMAIN_DIR).filter((d) => statSync(join(DOMAIN_DIR, d)).isDirectory())
 
@@ -159,8 +159,8 @@ describe('architecture', () => {
         const violations: string[] = []
         const lines = content.split('\n')
         for (let i = 0; i < lines.length; i++) {
-          if (/useStorage/.test(lines[i])) {
-            violations.push(`${file}:${i + 1}: uses useStorage (must be pure)`)
+          if (/~\/system\/firebase|firebase-admin|\bdb\(/.test(lines[i])) {
+            violations.push(`${file}:${i + 1}: touches Firestore (must be pure)`)
           }
           if (/\basync\b/.test(lines[i])) {
             violations.push(`${file}:${i + 1}: uses async (must be pure/synchronous)`)
@@ -180,8 +180,12 @@ describe('architecture', () => {
         const violations: string[] = []
         const lines = content.split('\n')
         for (let i = 0; i < lines.length; i++) {
-          if (/useStorage/.test(lines[i])) {
-            violations.push(`${file}:${i + 1}: uses useStorage (must go through commands/queries)`)
+          // `db()` only — a use case may still reach for `auth` (deleting the account
+          // itself), which is not storage and has no command/query to go through.
+          if (/\bdb\(/.test(lines[i])) {
+            violations.push(
+              `${file}:${i + 1}: touches Firestore directly (must go through commands/queries)`,
+            )
           }
           const repoMatch = lines[i].match(
             /from\s+['"]~\/domain\/(\w+)\/infrastructure\/repository['"]/,
@@ -195,6 +199,41 @@ describe('architecture', () => {
         expect(violations).toEqual([])
       })
     }
+  })
+
+  describe('Firestore is reached only through the storage layer', () => {
+    // `db()` belongs to the repositories and to the shared Firestore utils. Everything
+    // else must go through a domain's command/query namespace. The migration runner is
+    // the storage layer of the migrations, so it holds the same licence.
+    const allowedDbImporters =
+      /^server\/(domain\/\w+\/infrastructure\/repository\.ts|system\/ai\/repository\.ts|utils\/firestore\.ts|system\/migration\/runner\.ts)$/
+    const serverFiles = glob('server/**/*.ts').filter((f) => !f.endsWith('.test.ts'))
+    // `db` as a named import — `auth` from the same module is not storage and is
+    // deliberately left to the auth middleware and the account use case.
+    const importsDb = /import\s+\{[^}]*\bdb\b[^}]*\}\s+from\s+['"]~\/system\/firebase['"]/
+
+    test('db() is imported only from the storage layer', () => {
+      const violations = serverFiles.filter(
+        (f) => !allowedDbImporters.test(f) && importsDb.test(readFile(join(SERVER_DIR, '..', f))),
+      )
+      expect(violations).toEqual([])
+    })
+  })
+
+  describe('test suffixes match what the test exercises', () => {
+    test('every .int.test.ts drives the fake Firestore', () => {
+      const violations = glob('server/**/*.int.test.ts').filter(
+        (f) => !/test\/fake-firestore/.test(readFile(join(SERVER_DIR, '..', f))),
+      )
+      expect(violations).toEqual([])
+    })
+
+    test('every .feat.test.ts executes the GraphQL schema', () => {
+      const violations = glob('server/**/*.feat.test.ts').filter(
+        (f) => !/from\s+['"]graphql['"]/.test(readFile(join(SERVER_DIR, '..', f))),
+      )
+      expect(violations).toEqual([])
+    })
   })
 
   describe('no throw in domain query.ts and command.ts', () => {
