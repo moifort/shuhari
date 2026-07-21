@@ -1,8 +1,15 @@
 /// One App Store panel: an orange stage, a caption, and the screenshot below it.
 /// Rendered to PNG by Chrome, so the whole design lives in CSS and is retouched there.
 
-export const PANEL_WIDTH = 1320
-export const PANEL_HEIGHT = 2868
+/// The 6.5-inch canvas the App Store listing uses. Every other iPhone size is derived
+/// from it, so it is the only one the pipeline produces.
+export const PANEL_WIDTH = 1242
+export const PANEL_HEIGHT = 2688
+
+/// Type sizes are expressed against the canvas width rather than in fixed pixels: the
+/// same template then holds its proportions if the store ever asks for another size,
+/// instead of quietly shrinking the copy relative to the frame.
+const scaled = (atFullWidth: number) => Math.round((atFullWidth / 1320) * PANEL_WIDTH)
 
 export type Panel = { caption: string; subtitle: string; screenshotPath: string }
 
@@ -32,7 +39,7 @@ export const panelHtml = ({ caption, subtitle, screenshotPath }: Panel) => `<!DO
       .head {
         height: 26%;
         width: 100%;
-        padding: 0 80px;
+        padding: 0 ${scaled(80)}px;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -40,25 +47,25 @@ export const panelHtml = ({ caption, subtitle, screenshotPath }: Panel) => `<!DO
       }
       .caption {
         color: #fff;
-        font-size: 78px;
+        font-size: ${scaled(78)}px;
         font-weight: 700;
         line-height: 1.22;
-        letter-spacing: -1.2px;
+        letter-spacing: ${scaled(-1.2)}px;
       }
       .subtitle {
-        margin-top: 30px;
+        margin-top: ${scaled(30)}px;
         color: rgba(255, 255, 255, 0.88);
-        font-size: 40px;
+        font-size: ${scaled(40)}px;
         line-height: 1.32;
       }
       .device {
         width: 78%;
         height: 74%;
         overflow: hidden;
-        border: 17px solid rgba(255, 255, 255, 0.94);
+        border: ${scaled(17)}px solid rgba(255, 255, 255, 0.94);
         border-bottom: 0;
-        border-radius: 85px 85px 0 0;
-        box-shadow: 0 40px 110px rgba(0, 0, 0, 0.3);
+        border-radius: ${scaled(85)}px ${scaled(85)}px 0 0;
+        box-shadow: 0 ${scaled(40)}px ${scaled(110)}px rgba(0, 0, 0, 0.3);
       }
       .device img {
         width: 100%;

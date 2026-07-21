@@ -8,11 +8,11 @@ describe('panelHtml', () => {
     screenshotPath: '/tmp/cuisine.png',
   })
 
-  test('renders at the size the App Store expects', () => {
-    expect(PANEL_WIDTH).toBe(1320)
-    expect(PANEL_HEIGHT).toBe(2868)
-    expect(html).toContain('width: 1320px')
-    expect(html).toContain('height: 2868px')
+  test('renders at the 6.5-inch size the App Store listing uses', () => {
+    expect(PANEL_WIDTH).toBe(1242)
+    expect(PANEL_HEIGHT).toBe(2688)
+    expect(html).toContain('width: 1242px')
+    expect(html).toContain('height: 2688px')
   })
 
   test('turns the newline of a caption into a line break', () => {
