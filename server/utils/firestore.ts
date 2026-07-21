@@ -3,6 +3,7 @@ import type {
   DocumentReference,
   FirestoreDataConverter,
   QueryDocumentSnapshot,
+  Transaction,
   WriteBatch,
 } from 'firebase-admin/firestore'
 import { chunk } from 'lodash-es'
@@ -70,3 +71,11 @@ export const atomically = async <T>(enlist: (batch: WriteBatch) => Promise<T>): 
   await batch.commit()
   return result
 }
+
+// Read-modify-write that cannot lose an update. Unlike `atomically`, the reads
+// inside DO see the current state, and Firestore replays the whole body when a
+// concurrent writer touched a document it read — so `run` must be free of side
+// effects outside the transaction, and every read must come before every write.
+// This is what a counter needs; a write that depends on nothing read stays a batch.
+export const transactionally = <T>(run: (tx: Transaction) => Promise<T>): Promise<T> =>
+  db().runTransaction(run)

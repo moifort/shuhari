@@ -150,13 +150,15 @@ describe('ProposalUseCase.fromAttempt', () => {
     // The proposal carries the complete tips list of the version it would create.
     expect(result.tips).toEqual(['Servir avec du riz' as Tip])
 
-    // Four keyed doc reads: the entitlement (what plan the cook is on), the
+    // Five keyed doc reads: the entitlement (what plan the cook is on), the
     // recipe pointer, the cooked version — the attempt itself comes from the
-    // caller, so there is no collection scan and no N+1 — and the quota, read
-    // once and shared by the check before the call and the record after it
-    // (`memoizedPerRequest`). The only write is that quota: no version and no
-    // recipe is touched until the proposal is accepted.
-    expect(fake.docReads - docReadsBefore).toBe(4)
+    // caller, so there is no collection scan and no N+1 — and the quota twice.
+    // Twice on purpose: the memoized read is what the limit is checked against
+    // before the call, and the record after it re-reads inside its transaction,
+    // which is what stops two calls landing together from counting one. The only
+    // write is that quota: no version and no recipe is touched until the proposal
+    // is accepted.
+    expect(fake.docReads - docReadsBefore).toBe(5)
     expect(fake.queryReads - queryReadsBefore).toBe(0)
     expect(fake.batches.length).toBe(batchesBefore)
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.rating).toBeUndefined()
@@ -224,8 +226,10 @@ describe('ProposalUseCase.fromImprovement', () => {
       steps: stepList('Saisir', 'Mijoter'),
     })
 
-    // Same budget as fromAttempt: entitlement, recipe pointer, version, quota.
-    expect(fake.docReads - docReadsBefore).toBe(4)
+    // Same budget as fromAttempt: entitlement, recipe pointer, version, and the
+    // quota read twice — once to check the limit, once inside the recording
+    // transaction.
+    expect(fake.docReads - docReadsBefore).toBe(5)
     expect(fake.batches.length).toBe(batchesBefore)
   })
 
@@ -253,9 +257,9 @@ describe('ProposalUseCase.fromTips', () => {
     expect(result).toEqual(['Servir avec du riz' as Tip, 'Se congèle bien' as Tip])
 
     // Same budget as a version proposal — entitlement, recipe pointer, version,
-    // quota — and the version's own tips are left exactly as they were until
-    // updateTips.
-    expect(fake.docReads - docReadsBefore).toBe(4)
+    // and the quota twice (the limit check, then the recording transaction) — and
+    // the version's own tips are left exactly as they were until updateTips.
+    expect(fake.docReads - docReadsBefore).toBe(5)
     expect(fake.batches.length).toBe(batchesBefore)
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.tips).toEqual([])
   })

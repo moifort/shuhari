@@ -170,7 +170,13 @@ export const findManyByIds = async (userId: UserId, ids: RecipeId[]): Promise<Re
 Firestore helpers live in `server/utils/firestore.ts`:
 
 - `genericDataConverter<T>()` — typed reads; `Timestamp` → `Date`.
-- `atomically(batch => …)` — one committed `WriteBatch`, all-or-nothing.
+- `atomically(batch => …)` — one committed `WriteBatch`, all-or-nothing. Reads inside see
+  pre-batch state, so it is for writes that depend on nothing read.
+- `transactionally(tx => …)` — read-modify-write that cannot lose an update: the reads see
+  current state and Firestore replays the body when a concurrent writer touched what it read.
+  Reserved for the writes whose new value is a function of the stored one — a counter. Costs one
+  extra document read (the transactional one cannot be the memoized one), which is why it is not
+  the default.
 - `bulkSave(rows, save)` — bounded-concurrency individual sets (import/restore beyond the 500-op cap).
 - `deleteInBatches(refs)` — chunked batch deletes.
 

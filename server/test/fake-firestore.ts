@@ -40,6 +40,12 @@ export type FakeBatch = {
 
 export type DirectWrite = { type: 'set' | 'delete'; collection: string; id: string }
 
+export type FakeTransaction = {
+  get: (ref: FakeRef) => Promise<FakeSnapshot>
+  set: (ref: FakeRef, data: Doc) => FakeTransaction
+  delete: (ref: FakeRef) => FakeTransaction
+}
+
 type FakeQuery = {
   where: (field: string, op: string, value: unknown) => FakeQuery
   orderBy: (field: string, direction?: 'asc' | 'desc') => FakeQuery
@@ -64,6 +70,8 @@ export const createFakeFirestore = () => {
   const store = new Map<string, Map<string, Doc>>()
   const batches: FakeBatch[] = []
   const directWrites: DirectWrite[] = []
+  // The writes each committed transaction applied, in order.
+  const transactions: BatchOp[][] = []
   let commitError: Error | undefined
   let generatedIds = 0
   let docReads = 0
@@ -209,6 +217,45 @@ export const createFakeFirestore = () => {
     return batch
   }
 
+  // Transactions run one at a time, which is the property under test: a
+  // read-modify-write must not interleave with another. Real Firestore reaches it
+  // by replaying a losing transaction; serializing is the same guarantee, and it
+  // makes a concurrency test deterministic instead of retry-dependent.
+  let transactionQueue: Promise<unknown> = Promise.resolve()
+
+  const runTransaction = <T>(run: (tx: FakeTransaction) => Promise<T>): Promise<T> => {
+    const result = transactionQueue.then(async () => {
+      const writes: BatchOp[] = []
+      const tx: FakeTransaction = {
+        get: async (ref) => {
+          docReads += 1
+          const doc = docsOf(ref.collection).get(ref.id)
+          return { exists: doc !== undefined, id: ref.id, data: () => doc }
+        },
+        set: (ref, data) => {
+          writes.push({ type: 'set', ref, data })
+          return tx
+        },
+        delete: (ref) => {
+          writes.push({ type: 'delete', ref })
+          return tx
+        },
+      }
+      const value = await run(tx)
+      // Applied only once the body succeeded — a throw leaves the store untouched.
+      for (const op of writes) {
+        if (op.type === 'set') docsOf(op.ref.collection).set(op.ref.id, op.data)
+        else docsOf(op.ref.collection).delete(op.ref.id)
+      }
+      transactions.push(writes)
+      return value
+    })
+    // The queue must keep flowing even when a transaction throws, or every later
+    // one would inherit the rejection.
+    transactionQueue = result.catch(() => undefined)
+    return result
+  }
+
   const getAll = async (...refs: FakeRef[]) => {
     docReads += refs.length
     return refs.map((ref) => {
@@ -218,13 +265,19 @@ export const createFakeFirestore = () => {
   }
 
   return {
-    db: { collection: makeCollection, batch: makeBatch, getAll } as unknown as Firestore,
+    db: {
+      collection: makeCollection,
+      batch: makeBatch,
+      getAll,
+      runTransaction,
+    } as unknown as Firestore,
     seed: (collection: string, id: string, data: Doc) => {
       docsOf(collection).set(id, { ...data })
     },
     snapshot: (collection: string) => new Map(docsOf(collection)),
     batches,
     directWrites,
+    transactions,
     // Firestore round-trips (document gets + query gets) — lets tests assert read budgets
     get reads() {
       return docReads + queryReads

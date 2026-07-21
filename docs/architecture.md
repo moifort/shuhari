@@ -59,7 +59,7 @@ server/
 │   ├── firebase.ts              # firebase-admin init + db()
 │   └── request-cache.ts         # per-request memoization
 ├── utils/
-│   ├── firestore.ts             # genericDataConverter / atomically / bulkSave / deleteInBatches
+│   ├── firestore.ts             # genericDataConverter / atomically / transactionally / bulkSave / deleteInBatches
 │   ├── apollo.ts                # setApollo / useApollo holder
 │   └── input.ts
 └── test/fake-firestore.ts       # in-memory Firestore fake with read/write accounting
@@ -127,9 +127,11 @@ cook, keyed by `userId`, overwritten in place on every renewal; it also carries 
 `appAccountToken`, the one field queried rather than keyed (the App Store notifications name a
 cook only through it).
 
-Multi-document writes are made atomic with `atomically` (a single committed `WriteBatch`);
-import/restore use `bulkSave` (bounded-concurrency individual sets, above the 500-op batch
-cap); deletes use `deleteInBatches`. See the [domain guide](./domain-guide.md).
+Multi-document writes are made atomic with `atomically` (a single committed `WriteBatch`); a
+counter, whose new value is a function of the stored one, uses `transactionally` instead (the
+AI quota, where a batch would let two calls landing together count one); import/restore use
+`bulkSave` (bounded-concurrency individual sets, above the 500-op batch cap); deletes use
+`deleteInBatches`. See the [domain guide](./domain-guide.md).
 
 ### Read side — no `read-model/` layer
 

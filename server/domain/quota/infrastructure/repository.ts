@@ -3,7 +3,7 @@ import type { Quota, QuotaMonth } from '~/domain/quota/types'
 import type { UserId } from '~/domain/shared/types'
 import { db } from '~/system/firebase'
 import { evictFromRequestCache, memoizedPerRequest } from '~/system/request-cache'
-import { deleteInBatches, genericDataConverter } from '~/utils/firestore'
+import { deleteInBatches, genericDataConverter, transactionally } from '~/utils/firestore'
 
 const quotas = () => db().collection('ai-quotas').withConverter(genericDataConverter<Quota>())
 
@@ -28,6 +28,27 @@ export const save = async (quota: Quota): Promise<Quota> => {
   // same request (the `quota` query alongside a mutation) sees what was just spent.
   evictFromRequestCache(`quota:${quota.userId}:${quota.month}`)
   return quota
+}
+
+// Spend against the month's counter, atomically. The read has to happen inside the
+// transaction — the memoized one is the pre-call value the caller already checked
+// the limit against, and reusing it is exactly how two AI calls landing together
+// would both write "one spent" and record only one.
+export const consume = async (
+  userId: UserId,
+  month: QuotaMonth,
+  spend: (quota: Quota) => Quota,
+): Promise<Quota> => {
+  const ref = quotas().doc(quotaDocId(userId, month))
+  const spent = await transactionally(async (tx) => {
+    const doc = await tx.get(ref)
+    // Same storage boundary as `findBy`: an absent document is a fresh month.
+    const spent = spend(doc.data() ?? freshQuota(userId, month))
+    tx.set(ref, spent)
+    return spent
+  })
+  evictFromRequestCache(`quota:${userId}:${month}`)
+  return spent
 }
 
 // Every month this cook has ever spent anything in. Queried rather than derived:

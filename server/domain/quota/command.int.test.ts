@@ -39,7 +39,7 @@ describe('QuotaCommand.record', () => {
     })
   })
 
-  test('is a single-document write — one read, one set, no batch', async () => {
+  test('is a single-document read-modify-write, in one transaction and no batch', async () => {
     const docReadsBefore = fake.docReads
     const batchesBefore = fake.batches.length
 
@@ -48,7 +48,31 @@ describe('QuotaCommand.record', () => {
     expect(fake.docReads - docReadsBefore).toBe(1)
     expect(fake.queryReads).toBe(0)
     expect(fake.batches.length).toBe(batchesBefore)
-    expect(fake.directWrites).toEqual([{ type: 'set', collection: 'ai-quotas', id: docId }])
+    // The set rides in the transaction that read the counter, never on its own:
+    // that pairing is what makes the increment atomic.
+    expect(fake.directWrites).toEqual([])
+    expect(fake.transactions).toEqual([
+      [
+        {
+          type: 'set',
+          ref: expect.objectContaining({ collection: 'ai-quotas', id: docId }),
+          data: expect.anything(),
+        },
+      ],
+    ])
+  })
+
+  test('counts every concurrent call — the meter guards the AI bill', async () => {
+    // Two AI calls answering at the same moment. Read-then-set had them both read
+    // zero and both write one, so the cook spent two iterations and was billed for
+    // one — the freemium limit leaking by exactly the amount of concurrency.
+    await Promise.all([
+      QuotaCommand.record(userId, 'iteration'),
+      QuotaCommand.record(userId, 'iteration'),
+      QuotaCommand.record(userId, 'iteration'),
+    ])
+
+    expect(fake.snapshot('ai-quotas').get(docId)?.iterations).toBe(3)
   })
 
   test('keeps each cook on their own document', async () => {
