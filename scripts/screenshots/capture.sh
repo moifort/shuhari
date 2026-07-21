@@ -61,7 +61,8 @@ step "opening the Simulator UI"
 simulator_app=""
 for candidate in \
   "$(xcode-select -p)/Applications/Simulator.app" \
-  "$(xcode-select -p)/../Applications/Simulator.app"; do
+  "$(xcode-select -p)/../Applications/Simulator.app" \
+  "$(xcode-select -p)/../Applications/DeviceHub.app"; do
   [ -d "$candidate" ] && simulator_app="$candidate" && break
 done
 
@@ -83,9 +84,13 @@ step "freezing the status bar"
 xcrun simctl status_bar "$UDID" override \
   --time "9:41" --batteryState charged --batteryLevel 100 --wifiBars 3 --cellularBars 4
 
-# Shot before the app is even installed: this is what a failed capture looks like, and
-# every capture is checked against it.
+# What a failed capture looks like, recorded so every capture can be checked against
+# it. The app is terminated first and the wait is real: a previous run can still have
+# it on screen, and a reference photographed through it would match every capture and
+# reject them all — which is exactly what happened the first time.
 step "recording what SpringBoard looks like"
+xcrun simctl terminate "$UDID" "$BUNDLE_ID" 2>/dev/null || true
+sleep 4
 xcrun simctl io "$UDID" screenshot "$OUT_DIR/.springboard.png" >/dev/null
 SPRINGBOARD="$(md5 -q "$OUT_DIR/.springboard.png")"
 
