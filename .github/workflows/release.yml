@@ -4,7 +4,7 @@ on:
   push:
     # Prefixed by platform: the backend deploys from main and would otherwise have no way
     # to carry a tag of its own without colliding with the app's.
-    tags: ['ios-*']
+    tags: ['ios-v*']
   workflow_dispatch:
 
 permissions:
@@ -30,7 +30,7 @@ jobs:
 
       - name: Read the version out of the tag
         id: version
-        run: echo "value=${GITHUB_REF_NAME#ios-}" >> "$GITHUB_OUTPUT"
+        run: echo "value=${GITHUB_REF_NAME#ios-v}" >> "$GITHUB_OUTPUT"
 
       # Fails before anything reaches Apple: a tag that disagrees with MARKETING_VERSION, or a
       # changelog whose section is still called "Unreleased", is a release nobody meant to make.
