@@ -133,6 +133,13 @@ AI quota, where a batch would let two calls landing together count one); import/
 `bulkSave` (bounded-concurrency individual sets, above the 500-op batch cap); deletes use
 `deleteInBatches`. See the [domain guide](./domain-guide.md).
 
+A **restore writes before it deletes** (`replaceAllByUser`): the incoming rows land first, then
+only the rows the backup does not carry are removed. A restore is too big to be one atomic
+write, so it will always have a window where it can die halfway — and the window must never be
+one where the notebook is empty, since the backup being restored is often the cook's only other
+copy. A half-finished restore leaves stale rows, which re-running clears; a half-finished wipe
+leaves nothing.
+
 ### Read side — no `read-model/` layer
 
 There is **no** `read-model/` directory. Composite reads are served two ways:

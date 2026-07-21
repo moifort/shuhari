@@ -15,6 +15,7 @@ import type { UserId } from '~/domain/shared/types'
 import { db } from '~/system/firebase'
 import { isInRequestCache, memoizedPerRequest } from '~/system/request-cache'
 import {
+  bulkSave,
   deleteInBatches,
   genericDataConverter,
   withoutAbsentFields,
@@ -188,6 +189,37 @@ export const removeVersion = async (
 export const remove = async (id: RecipeId) => {
   const versionSnap = await versions().where('recipeId', '==', id).get()
   await deleteInBatches([recipes().doc(id), ...versionSnap.docs.map((doc) => doc.ref)])
+}
+
+// Restore: the cook's notebook becomes exactly what the export carried. The
+// incoming rows are written BEFORE anything is deleted, and only what the import
+// does not carry is then removed. The reverse order — wipe, then write — is a
+// window in which the notebook is empty: a crash or a function timeout inside it
+// left the cook with nothing at all, and the export they restored from was their
+// only copy. This way the worst a half-finished restore leaves is the imported
+// notebook plus a few rows it was meant to replace, and re-running it finishes
+// the job. Ids are deterministic, so writing over an existing row is an overwrite,
+// never a duplicate.
+export const replaceAllByUser = async (
+  userId: UserId,
+  incomingRecipes: Recipe[],
+  incomingVersions: RecipeVersion[],
+) => {
+  const [recipeSnap, versionSnap] = await Promise.all([
+    recipes().where('userId', '==', userId).get(),
+    versions().where('userId', '==', userId).get(),
+  ])
+  await bulkSave(incomingRecipes, (recipe) => save(recipe))
+  await bulkSave(incomingVersions, (version) => saveVersion(version))
+
+  const restoredRecipes = new Set(incomingRecipes.map((recipe) => String(recipe.id)))
+  const restoredVersions = new Set(
+    incomingVersions.map((version) => versionDocId(version.recipeId, version.number)),
+  )
+  await deleteInBatches([
+    ...recipeSnap.docs.filter((doc) => !restoredRecipes.has(doc.ref.id)).map((doc) => doc.ref),
+    ...versionSnap.docs.filter((doc) => !restoredVersions.has(doc.ref.id)).map((doc) => doc.ref),
+  ])
 }
 
 export const removeAllByUser = async (userId: UserId) => {

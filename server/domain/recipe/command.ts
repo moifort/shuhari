@@ -16,7 +16,7 @@ import type {
   VersionOrigin,
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
-import { atomically, bulkSave } from '~/utils/firestore'
+import { atomically } from '~/utils/firestore'
 
 const FIRST_VERSION = VersionNumber(1)
 
@@ -269,16 +269,15 @@ export namespace RecipeCommand {
     return undefined
   }
 
-  // Portability: wipe and restore the user's recipes and versions.
+  // Portability: the cook's recipes and versions become exactly what the backup
+  // carried. The restore writes before it deletes — see the repository: the
+  // notebook is never emptied first, because a restore that dies halfway through
+  // must not be what destroys the data it was recovering.
   export const replaceAllForUser = async (
     userId: UserId,
     recipes: Recipe[],
     versions: RecipeVersion[],
-  ) => {
-    await repository.removeAllByUser(userId)
-    await bulkSave(recipes, (recipe) => repository.save(recipe))
-    await bulkSave(versions, (version) => repository.saveVersion(version))
-  }
+  ) => repository.replaceAllByUser(userId, recipes, versions)
 
   // Everything this domain holds on one cook, erased: the notebook and every
   // version in it. Called only when the account itself goes.

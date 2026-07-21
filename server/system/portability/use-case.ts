@@ -52,12 +52,24 @@ export namespace PortabilityUseCase {
   }
 }
 
-const looseRecord = z.looseObject({ userId: z.string() })
+// Loose on purpose: a record keeps whatever fields the export carried, so a backup
+// written by an older build restores rather than being rejected for a field that
+// has since moved. What is NOT optional is the identity each document is keyed on —
+// a recipe's `id`, a version's `recipeId` + `number`. Those are not data, they are
+// the storage key: without them the restore writes documents under keys like
+// `undefined_undefined`, which is a corrupt notebook rather than a failed import.
+const recipeRecord = z.looseObject({ userId: z.string(), id: z.string().min(1) })
+
+const versionRecord = z.looseObject({
+  userId: z.string(),
+  recipeId: z.string().min(1),
+  number: z.number().int().positive(),
+})
 
 const envelopeSchema = z.object({
   schemaVersion: z.number(),
   exportedAt: z.union([z.string(), z.number(), z.date()]),
   userId: z.string(),
-  recipes: z.array(looseRecord),
-  versions: z.array(looseRecord),
+  recipes: z.array(recipeRecord),
+  versions: z.array(versionRecord),
 })
