@@ -17,6 +17,12 @@ overwrite_screenshots(true)
 # No interactive confirmation: this runs unattended in CI.
 force(true)
 
+# precheck screens the listing for things Apple rejects, but it cannot read in-app
+# purchases through an API key and fails the whole delivery rather than skipping them.
+# The subscriptions are configured once in App Store Connect and are not what this
+# pipeline changes, so there is nothing here for precheck to catch.
+precheck_include_in_app_purchases(false)
+
 submit_for_review(true)
 automatic_release(true)
 
