@@ -269,3 +269,52 @@ describe('RecipeQuery.library — limit clamp', () => {
     expect(page.hasMore).toBe(true)
   })
 })
+
+describe('RecipeQuery.versionsOfMany — the satellite loader’s read', () => {
+  // Seed a raw version doc — only what the loader groups on.
+  const seedVersion = (recipeId: string, number: number) => {
+    fake.seed('recipe-versions', `${recipeId}_${number}`, {
+      userId,
+      recipeId,
+      number,
+      createdAt: new Date(1000 * number),
+      origin: { kind: 'import' },
+      content: { kind: 'dish', ingredients: [], steps: [] },
+      tips: [],
+    })
+  }
+
+  test('reads the asked-for lineages and nothing else', async () => {
+    seedVersion('r1', 1)
+    seedVersion('r1', 2)
+    seedVersion('r2', 1)
+    seedVersion('untouched', 1)
+
+    const versions = await RecipeQuery.versionsOfMany(['r1', 'r2'] as RecipeId[])
+    // The whole notebook is never scanned: a recipe outside the page contributes
+    // nothing, however many versions it holds.
+    expect(versions.map((v) => `${v.recipeId}_${v.number}`).sort()).toEqual([
+      'r1_1',
+      'r1_2',
+      'r2_1',
+    ])
+  })
+
+  test('fans a page wider than the 30-value `in` cap into several queries', async () => {
+    for (let i = 0; i < 31; i++) seedVersion(`wide-${i}`, 1)
+    const before = fake.queryReads
+
+    const versions = await RecipeQuery.versionsOfMany(
+      Array.from({ length: 31 }, (_, i) => `wide-${i}`) as RecipeId[],
+    )
+    expect(versions.length).toBe(31)
+    // 31 ids over a cap of 30: two queries, not thirty-one reads.
+    expect(fake.queryReads - before).toBe(2)
+  })
+
+  test('costs nothing when the page holds no recipe', async () => {
+    const before = fake.queryReads
+    expect(await RecipeQuery.versionsOfMany([])).toEqual([])
+    expect(fake.queryReads - before).toBe(0)
+  })
+})

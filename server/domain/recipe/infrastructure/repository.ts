@@ -1,4 +1,5 @@
 import type { WriteBatch } from 'firebase-admin/firestore'
+import { chunk } from 'lodash-es'
 import { categoryRank } from '~/domain/recipe/business-rules'
 import type {
   DishCategory,
@@ -136,9 +137,26 @@ export const findVersionsOf = async (recipeId: RecipeId) => {
   return snap.docs.map((doc) => normalizeVersion(doc.data()))
 }
 
-// One memoized full scan per request backs every full-lineage read (the home
-// journal, the per-recipe best-rating loader) — the request pays a single query,
-// mirroring `findAllByUser` for recipes.
+// Firestore caps an `in` filter at 30 values, so a page wider than that fans out
+// into several parallel queries.
+const IN_FILTER_LIMIT = 30
+
+// The lineages of a bounded set of recipes — what the satellite loader pays for a
+// page: the versions of the recipes on screen, never the whole notebook. Scales with
+// the page, not with the size of the library, which is what a full scan did.
+// No `userId` filter: the ids come from recipes already resolved under the cook's
+// scope, and pairing `in` with an equality would demand a composite index where the
+// `recipeId` one already serves.
+export const findVersionsOfMany = async (recipeIds: RecipeId[]) => {
+  if (recipeIds.length === 0) return []
+  const pages = await Promise.all(
+    chunk(recipeIds, IN_FILTER_LIMIT).map((ids) => versions().where('recipeId', 'in', ids).get()),
+  )
+  return pages.flatMap((snap) => snap.docs.map((doc) => normalizeVersion(doc.data())))
+}
+
+// One memoized full scan per request, for the whole-notebook reads alone (the
+// export). Never a read path behind GraphQL: those go through `findVersionsOfMany`.
 export const findAllVersionsByUser = (userId: UserId) =>
   memoizedPerRequest(allVersionsCacheKey(userId), async () => {
     const snap = await versions().where('userId', '==', userId).get()

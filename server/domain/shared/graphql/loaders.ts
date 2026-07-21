@@ -1,6 +1,5 @@
 import { RecipeQuery } from '~/domain/recipe/query'
 import type { RecipeId, RecipeVersion } from '~/domain/recipe/types'
-import type { UserId } from '~/domain/shared/types'
 
 // Per-request loaders for the satellite fields of RecipeType. One loader set
 // lives on each GraphQL context (built per request in routes/graphql.ts), so
@@ -45,17 +44,16 @@ export type RecipeSatelliteLoaders = {
   versionsByRecipe: Loader<RecipeVersion[], RecipeId>
 }
 
-export const recipeSatelliteLoaders = (userId: UserId): RecipeSatelliteLoaders => ({
-  // The full lineage of each recipe, batched from a single recipe-versions scan —
-  // backs every field derived from the whole lineage (the best rating, the version
-  // to open, the counts) and the lineage itself, which all share this one batch.
-  // Each lineage comes out oldest first: the scan has no order of its own, and
-  // `versions` is exposed as the history in order.
+export const recipeSatelliteLoaders = (): RecipeSatelliteLoaders => ({
+  // The full lineage of each recipe, batched into a single keyed read of exactly the
+  // recipes in the batch — backs every field derived from the whole lineage (the best
+  // rating, the version to open, the counts) and the lineage itself, which all share
+  // this one read. Each lineage comes out oldest first: the read has no order of its
+  // own, and `versions` is exposed as the history in order.
   versionsByRecipe: batchedBy(
     (recipeId) => recipeId,
     async (recipeIds) => {
-      const wanted = new Set(recipeIds)
-      const versions = (await RecipeQuery.allVersions(userId)).filter((v) => wanted.has(v.recipeId))
+      const versions = await RecipeQuery.versionsOfMany(recipeIds)
       const grouped = new Map<string, RecipeVersion[]>(recipeIds.map((id) => [id, []]))
       for (const version of versions) grouped.get(version.recipeId)?.push(version)
       for (const lineage of grouped.values()) lineage.sort((a, b) => a.number - b.number)

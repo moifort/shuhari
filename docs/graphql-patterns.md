@@ -154,19 +154,17 @@ per-request loaders — the forward declaration is what makes that cross-domain 
 The read-budget rule is
 [here](./graphql-best-practices.md#derived-fields-have-a-read-budget--batch-them). Shuhari's
 satellite fields (`versions`, `versionToOpen`, `bestRating`) resolve through per-request loaders
-(`server/domain/shared/graphql/loaders.ts`), built once per request in
-`recipeSatelliteLoaders(userId)`.
+(`server/domain/shared/graphql/loaders.ts`), built once per request in `recipeSatelliteLoaders()`.
 
 `batchedBy` is the DataLoader-style batcher: it memoizes per key, collects every `load(...)` call
 in the resolution tick, flushes on `process.nextTick`, and performs **one keyed read** per batch.
-The single `versionsByRecipe` loader groups the whole lineage by recipe from one scan:
+The single `versionsByRecipe` loader groups the lineages of exactly the recipes in the batch:
 
 ```ts
 versionsByRecipe: batchedBy(
   (recipeId) => recipeId,
   async (recipeIds) => {
-    const wanted = new Set(recipeIds)
-    const versions = (await RecipeQuery.allVersions(userId)).filter((v) => wanted.has(v.recipeId))
+    const versions = await RecipeQuery.versionsOfMany(recipeIds)
     const grouped = new Map<string, RecipeVersion[]>(recipeIds.map((id) => [id, []]))
     for (const version of versions) grouped.get(version.recipeId)?.push(version)
     for (const lineage of grouped.values()) lineage.sort((a, b) => a.number - b.number)
@@ -175,14 +173,22 @@ versionsByRecipe: batchedBy(
 ),
 ```
 
-So a page of recipes selecting `versionToOpen` costs **one** scan; an unselected satellite costs
+So a page of recipes selecting `versionToOpen` costs **one** read; an unselected satellite costs
 **nothing**. `versionToOpen`, `bestRating`, the counts **and `versions` itself** all derive from the
 full lineage, so they reuse the same `versionsByRecipe` batch — still one read. That last one is the
 rule earning its keep: `versions` used to resolve through a per-recipe query, which was one read per
-parent on a page and, on a single recipe sheet, a second query duplicating the scan `versionToOpen`
-already paid for. A targeted `findVersionsOf` survives in the repository for the **commands** that
-rewrite a lineage, never for a read. These budgets are asserted in `.int.test.ts` and
-`.feat.test.ts` via `fake.queryReads` / `fake.docReads` — keep them green.
+parent on a page and, on a single recipe sheet, a second query duplicating the read `versionToOpen`
+already paid for.
+
+**The batch is keyed on the page, never on the notebook.** `versionsOfMany` filters
+`recipeId in <the batch>` (Firestore caps `in` at 30 values, so a wider page fans out into
+parallel queries), which is what keeps the cost proportional to the page. It used to reuse the
+memoized `allVersions` scan instead: one query, but every version document the cook owns, re-read
+on every page of an infinite scroll — a budget that grew with the library rather than with the
+screen. `findAllVersionsByUser` survives for the whole-notebook read it is actually named after
+(the export), and a targeted `findVersionsOf` for the **commands** that rewrite a lineage, never
+for a read. These budgets are asserted in `.int.test.ts` and `.feat.test.ts` via
+`fake.queryReads` / `fake.docReads` — keep them green.
 
 ## Queries and Mutations delegate to the domain
 

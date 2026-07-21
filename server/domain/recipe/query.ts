@@ -63,6 +63,12 @@ export namespace RecipeQuery {
 
   export const allVersions = async (userId: UserId) => repository.findAllVersionsByUser(userId)
 
+  // The lineages of the recipes being read, for the satellite loader to group. Takes
+  // the ids the page actually holds, so the read scales with the page and not with
+  // the library.
+  export const versionsOfMany = async (recipeIds: RecipeId[]) =>
+    repository.findVersionsOfMany(recipeIds)
+
   export const versionBy = async (recipeId: RecipeId, number: VersionNumber) => {
     const version = await repository.findVersion(recipeId, number)
     if (!version) return 'not-found' as const
