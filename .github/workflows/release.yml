@@ -64,7 +64,11 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath build/sim build
 
+      # Bounded on its own: a simctl call that never returns once ate the job's whole
+      # ninety minutes and produced no readable log, because a cancelled run never
+      # flushes its step output. Failing at fifteen leaves something to read.
       - name: Capture the screens
+        timeout-minutes: 15
         run: |
           scripts/screenshots/capture.sh \
             build/sim/Build/Products/Debug-iphonesimulator/Shuhari.app \
