@@ -18,4 +18,4 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bunx nitro prepare
-      - run: bun run test:int
+      - run: bun test .int.test

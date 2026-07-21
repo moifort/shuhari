@@ -23,7 +23,7 @@ jobs:
       - run: bunx nitro prepare
       - run: bun tsc --noEmit
       - run: bunx biome check
-      - run: bun run test:unit
+      - run: bun test .unit.test
 
   # Guard: the Cloud Function build on GCP runs `npm install` (strict peer deps)
   # on the package.json that Nitro generates in .output/server. bun is lenient

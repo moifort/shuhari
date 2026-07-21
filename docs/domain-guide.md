@@ -287,9 +287,9 @@ enforces it:
 | `.int.test.ts` | a command/query against the fake Firestore | `bun run test:int` |
 | `.feat.test.ts` | a business scenario executed against the assembled GraphQL schema | `bun run test:feat` |
 
-There is **no BDD DSL**. `bun run test` runs the three tiers together; plain `bun test`
-walks the whole checkout (`build/`, `.output/`, the iOS DerivedData) and chokes on it,
-which is why every script scopes the run to `server/` and `scripts/`.
+There is **no BDD DSL**. `bun test` runs the three tiers together; `bunfig.toml` keeps its
+file scan out of `build/` and `.output/`, where a dev machine piles up tens of gigabytes of
+Xcode artefacts (enough to exhaust the runner's file descriptors before a test runs).
 
 Integration tests mock Firestore and assert both behaviour **and read/write budgets**:
 

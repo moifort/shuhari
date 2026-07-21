@@ -27,7 +27,7 @@ Everything versioned and technical is **English**: commits, code, comments, docs
 - **Backend typecheck**: `bun tsc --noEmit`
 - **Regenerate types** (if routes changed): `bun run prepare` (= `generate:assets` + `nitro prepare`); run it before `bun tsc`
 - **Dev server**: `bun run dev` — Nitro on `http://localhost:3000` (GraphQL at `POST /graphql`)
-- **Tests**: `bun run test` (all three tiers), or one tier: `bun run test:unit` / `test:int` / `test:feat`. Never bare `bun test` — it walks `build/` and `.output/` and dies; pass explicit `./`-prefixed paths if you need a single file
+- **Tests**: `bun test` (all three tiers), or one tier: `bun run test:unit` / `test:int` / `test:feat` (`bun run test` regenerates the assets first)
 - **Test coverage**: `bun run test:coverage`
 - **Linter**: `bun run lint` (`bunx biome check`); autofix with `bun run lint:fix`
 - **Runtime**: always use `bun`/`bunx`, never `npm`/`npx`

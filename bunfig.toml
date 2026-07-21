@@ -1,2 +1,10 @@
 [install]
 exact = true
+
+[test]
+# The test runner walks the whole checkout to find its files, and a dev machine
+# accumulates tens of gigabytes of Xcode artefacts under build/ (archives, derived
+# data, screenshot panels) — enough that the scan runs out of file descriptors and
+# dies with EBADF before a single test runs. Both directories are gitignored build
+# output and hold no test.
+pathIgnorePatterns = ["**/build/**", "**/.output/**"]
