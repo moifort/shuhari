@@ -6,7 +6,13 @@ app_identifier("com.polyforms.shuhari.app")
 metadata_path("./fastlane/metadata")
 screenshots_path("./fastlane/screenshots")
 overwrite_screenshots(true)
-app_rating_config_path("./fastlane/metadata/app_rating_config.json")
+
+# The age rating is deliberately NOT declared here. Apple now requires attributes
+# fastlane's rating config cannot express — advertising, messagingAndChat, lootBox,
+# ageAssurance, parentalControls, userGeneratedContent, gunsOrOtherWeapons and
+# healthOrWellnessTopics — and a delivery that omits them is rejected outright.
+# It is set once, directly on the app's ageRatingDeclaration, and it belongs to the
+# app rather than to a version: nothing about it changes from one release to the next.
 
 # No interactive confirmation: this runs unattended in CI.
 force(true)

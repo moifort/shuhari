@@ -36,8 +36,15 @@ never reached the App Store would be a lie the repository keeps.
 ## What the listing is made of
 
 The whole listing lives in `fastlane/metadata/` and is overwritten on every release: texts,
-keywords, categories, price, age rating, screenshots. Editing it in App Store Connect is
-pointless — the next release wipes it. Change the files, commit, tag.
+keywords, categories, price, screenshots. Editing it in App Store Connect is pointless — the
+next release wipes it. Change the files, commit, tag.
+
+Two things are **not** in there, on purpose, because they belong to the app rather than to a
+version and never change between releases: the **age rating** and the **privacy declarations**.
+The age rating is set once on the app's `ageRatingDeclaration`; fastlane's rating config cannot
+express the attributes Apple now requires (`advertising`, `messagingAndChat`, `lootBox`,
+`ageAssurance`, `parentalControls`, `userGeneratedContent`, `gunsOrOtherWeapons`,
+`healthOrWellnessTopics`), and a delivery that omits them is rejected outright.
 
 The screenshots are shot on an `iPhone 17 Pro Max` simulator (1320×2868, the 6.9-inch size the
 App Store derives every other iPhone size from) and composed by `scripts/screenshots/compose.ts`
