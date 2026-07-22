@@ -14,6 +14,7 @@ import type {
   ThermomixTime,
   Tip,
   VersionNumber,
+  Warning,
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
 import type { RecipeSatelliteLoaders } from './loaders'
@@ -47,6 +48,7 @@ export const builder = new SchemaBuilder<{
     IngredientQuantity: { Input: IngredientQuantity; Output: IngredientQuantity }
     StepText: { Input: StepText; Output: StepText }
     Tip: { Input: Tip; Output: Tip }
+    Warning: { Input: Warning; Output: Warning }
     ThermomixTime: { Input: ThermomixTime; Output: ThermomixTime }
     ThermomixTemperature: { Input: ThermomixTemperature; Output: ThermomixTemperature }
     ThermomixSpeed: { Input: ThermomixSpeed; Output: ThermomixSpeed }

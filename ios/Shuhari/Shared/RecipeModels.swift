@@ -186,6 +186,11 @@ struct Recipe: Identifiable, Sendable {
     let category: DishCategory
     /// Marked as a favourite by the cook — what the library's favourites lens lists.
     let favorite: Bool
+    /// The cook's recipe-level cautions ("Le fouet doit être mis dès le début") —
+    /// the banner atop the recipe sheet, read before cooking starts. They outlive
+    /// every version, and are rewritten in place (never a new version). Empty when
+    /// there are none (the banner is then not rendered).
+    var warnings: [String] = []
     let createdAt: Date
     let updatedAt: Date
     /// The full lineage, oldest first.

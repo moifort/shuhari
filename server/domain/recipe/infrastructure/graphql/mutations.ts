@@ -200,6 +200,44 @@ builder.mutationField('updateTips', (t) =>
   }),
 )
 
+builder.mutationField('updateWarnings', (t) =>
+  t.field({
+    type: RecipeType,
+    description: [
+      'Replace a recipe’s cautions with this complete list — what the banner atop its sheet ' +
+        'shows before anything else, e.g. `"The whisk must go in from the very start"`. ' +
+        'Recipe-level, so the cautions outlive every version; rewritten in place, no version is ' +
+        'created. Returns the updated recipe.',
+      '',
+      '```graphql',
+      'updateWarnings(recipeId: "9f1c-a3b2", warnings: ["The whisk must go in from the very start"]) {',
+      '  id',
+      '  warnings',
+      '}',
+      '```',
+    ].join('\n'),
+    args: {
+      recipeId: t.arg({
+        type: 'RecipeId',
+        required: true,
+        description: 'Which recipe to pin the cautions on',
+      }),
+      warnings: t.arg({
+        type: ['Warning'],
+        required: true,
+        description: 'The complete new cautions list (send `[]` to clear the banner)',
+      }),
+    },
+    resolve: async (_root, { recipeId, warnings }, { userId }) => {
+      const result = await RecipeCommand.updateWarnings(userId, recipeId, [...warnings])
+      return match(result)
+        .with('not-found', domainError)
+        .with(P.not(P.string), (recipe) => recipe)
+        .exhaustive()
+    },
+  }),
+)
+
 builder.mutationField('recordAttempt', (t) =>
   t.field({
     type: VersionType,

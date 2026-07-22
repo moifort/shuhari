@@ -75,6 +75,15 @@ enum RecipeAPI {
             mutation: ShuhariGraphQL.UpdateRecipeMutation(id: id, input: input)
         )
     }
+
+    /// Replace the recipe's cautions with the complete list — rewritten in place,
+    /// no version created. An empty list clears the banner.
+    static func updateWarnings(id: String, warnings: [String]) async throws {
+        _ = try await GraphQLHelpers.perform(
+            GraphQLClient.shared.apollo,
+            mutation: ShuhariGraphQL.UpdateWarningsMutation(recipeId: id, warnings: warnings)
+        )
+    }
 }
 
 // MARK: - Mapping
@@ -86,6 +95,7 @@ func mapRecipe(_ r: ShuhariGraphQL.RecipeQuery.Data.Recipe) -> Recipe {
         type: RecipeType(graphql: r.type),
         category: DishCategory(graphql: r.category),
         favorite: r.favorite,
+        warnings: r.warnings,
         createdAt: GraphQLHelpers.parseISO8601(r.createdAt) ?? Date(),
         updatedAt: GraphQLHelpers.parseISO8601(r.updatedAt) ?? Date(),
         versions: r.versions.map { mapVersion($0.fragments.versionFields) },

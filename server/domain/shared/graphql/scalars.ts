@@ -13,6 +13,7 @@ import {
   ThermomixTime,
   Tip,
   VersionNumber,
+  Warning,
 } from '~/domain/recipe/primitives'
 import { UserId } from '~/domain/shared/primitives'
 import { builder } from './builder'
@@ -98,6 +99,14 @@ builder.scalarType('Tip', {
     'a step, e.g. `"Serve over rice"` (1 to 300 characters)',
   serialize: (value) => value as string,
   parseValue: validatedParse('Tip', Tip),
+})
+
+builder.scalarType('Warning', {
+  description:
+    'One recipe-level caution the cook pinned so it is read before cooking starts, e.g. `"The ' +
+    'whisk must go in from the very start"` (1 to 300 characters)',
+  serialize: (value) => value as string,
+  parseValue: validatedParse('Warning', Warning),
 })
 
 builder.scalarType('ThermomixTime', {

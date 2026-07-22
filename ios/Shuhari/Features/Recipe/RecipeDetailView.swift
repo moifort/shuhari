@@ -18,6 +18,7 @@ struct RecipeDetailView: View {
 
     @State private var viewModel: RecipeViewModel
     @State private var showEdit = false
+    @State private var showWarnings = false
     @State private var showHistory = false
     @State private var showToTest = false
     @State private var showImprove = false
@@ -118,6 +119,16 @@ struct RecipeDetailView: View {
                     TipsFlowView(recipeId: recipeId, version: displayedVersion(recipe)) {
                         onReload()
                         Task { await viewModel.load() }
+                    }
+                }
+                // The warnings sheet: rewrite the recipe's cautions in place —
+                // recipe-level, so no version is created; an emptied list clears
+                // the banner.
+                .sheet(isPresented: $showWarnings) {
+                    WarningsEditSheet(initialWarnings: recipe.warnings) { warnings in
+                        try await RecipeAPI.updateWarnings(id: recipeId, warnings: warnings)
+                        await viewModel.load()
+                        onReload()
                     }
                 }
                 .sheet(isPresented: $showEdit) {
@@ -224,10 +235,15 @@ struct RecipeDetailView: View {
         }
         ToolbarSpacer(.fixed, placement: .topBarTrailing)
 
-        // Top-right: the more menu (edit / delete).
+        // Top-right: the more menu (edit / warnings / delete).
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
                 Button("Modifier", systemImage: "pencil") { showEdit = true }
+                Button(
+                    recipe.warnings.isEmpty ? "Ajouter un avertissement" : "Modifier les avertissements",
+                    systemImage: "exclamationmark.triangle"
+                ) { showWarnings = true }
+                    .accessibilityIdentifier("edit-warnings-button")
                 Button("Supprimer", systemImage: "trash", role: .destructive) { showDeleteConfirm = true }
                     .accessibilityIdentifier("delete-recipe-button")
             } label: {

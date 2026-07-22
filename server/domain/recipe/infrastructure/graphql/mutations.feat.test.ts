@@ -160,6 +160,43 @@ describe('updateTips mutation', () => {
   })
 })
 
+describe('updateWarnings mutation', () => {
+  test('rewrites the cautions in place, without touching the lineage', async () => {
+    const id = await createdId()
+    const result = await execute(`
+      mutation {
+        updateWarnings(recipeId: "${id}", warnings: ["Mettre le fouet dès le début"]) {
+          warnings
+        }
+      }
+    `)
+    expect(result.errors).toBeUndefined()
+    expect(result.data?.updateWarnings).toMatchObject({
+      warnings: ['Mettre le fouet dès le début'],
+    })
+    expect([...fake.snapshot('recipe-versions').keys()]).toEqual([`${id}_1`])
+  })
+
+  test('full-replacement: [] clears the banner', async () => {
+    const id = await createdId()
+    await execute(
+      `mutation { updateWarnings(recipeId: "${id}", warnings: ["Sortir le beurre avant"]) { warnings } }`,
+    )
+    const result = await execute(
+      `mutation { updateWarnings(recipeId: "${id}", warnings: []) { warnings } }`,
+    )
+    expect(result.errors).toBeUndefined()
+    expect(result.data?.updateWarnings).toMatchObject({ warnings: [] })
+  })
+
+  test('surfaces an unknown recipe as NOT_FOUND', async () => {
+    const result = await execute(`
+      mutation { updateWarnings(recipeId: "11111111-1111-4111-8111-111111111111", warnings: []) { warnings } }
+    `)
+    expect(result.errors?.[0]?.extensions?.code).toBe('NOT_FOUND')
+  })
+})
+
 describe('deleteRecipe mutation', () => {
   test('erases the recipe and its whole lineage', async () => {
     const id = await createdId()

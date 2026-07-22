@@ -15,6 +15,7 @@ import type {
   ThermomixTime,
   Tip,
   VersionNumber,
+  Warning,
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
 import { fakeFirebase, resetFakeFirestore } from '~/test/fake-firestore'
@@ -583,5 +584,49 @@ describe('RecipeCommand.updateTips', () => {
     expect(await RecipeCommand.updateTips(userId, recipe.id, 9 as VersionNumber, [])).toBe(
       'not-found',
     )
+  })
+})
+
+describe('RecipeCommand.updateWarnings', () => {
+  const warnings = (...w: string[]) => w.map((x) => x as Warning)
+
+  test('replaces the warnings in place — no version touched, updatedAt bumped', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+
+    const result = await RecipeCommand.updateWarnings(
+      userId,
+      recipe.id,
+      warnings('Mettre le fouet dès le début'),
+    )
+    if (typeof result === 'string') throw new Error(`expected a recipe, got ${result}`)
+
+    expect(result.warnings).toEqual(warnings('Mettre le fouet dès le début'))
+    expect(result.updatedAt.getTime()).toBeGreaterThanOrEqual(recipe.updatedAt.getTime())
+    const stored = fake.snapshot('recipes').get(recipe.id)
+    expect(stored?.warnings).toEqual(warnings('Mettre le fouet dès le début'))
+    // Pinning a caution never touches the lineage.
+    expect(stored?.lastVersionNumber).toBe(1 as VersionNumber)
+    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.tips).toEqual([])
+  })
+
+  test('full-replacement: [] clears the banner', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    await RecipeCommand.updateWarnings(userId, recipe.id, warnings('Sortir le beurre 1 h avant'))
+
+    const cleared = await RecipeCommand.updateWarnings(userId, recipe.id, [])
+    if (typeof cleared === 'string') throw new Error(`expected a recipe, got ${cleared}`)
+
+    expect(cleared.warnings).toEqual([])
+    expect(fake.snapshot('recipes').get(recipe.id)?.warnings).toEqual([])
+  })
+
+  test('returns not-found for an unknown recipe or another cook’s recipe', async () => {
+    expect(await RecipeCommand.updateWarnings(userId, 'nope' as RecipeId, [])).toBe('not-found')
+
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    expect(await RecipeCommand.updateWarnings('user-2' as UserId, recipe.id, [])).toBe('not-found')
   })
 })

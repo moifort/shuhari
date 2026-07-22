@@ -118,6 +118,32 @@ describe('recipe query', () => {
     expect(fake.queryReads).toBe(1)
   })
 
+  test('serves the pinned warnings — and the empty list on a pre-feature document', async () => {
+    // Seeded raw without `warnings`, the shape every pre-feature document has.
+    seedRecipe(r1, { category: 'main', updatedAt: 1000 })
+    seedVersion(r1, 1)
+
+    const legacy = await execute(`query { recipe(id: "${r1}") { warnings } }`)
+    expect(legacy.errors).toBeUndefined()
+    expect(legacy.data?.recipe).toMatchObject({ warnings: [] })
+
+    fake.seed('recipes', r2, {
+      id: r2,
+      userId,
+      type: 'dish',
+      category: 'main',
+      categoryRank: categoryRank('main'),
+      title: 'Sauce mousseline',
+      warnings: ['Mettre le fouet dès le début'],
+      lastVersionNumber: 1,
+      createdAt: new Date(1000),
+      updatedAt: new Date(1000),
+    })
+    const pinned = await execute(`query { recipe(id: "${r2}") { warnings } }`)
+    expect(pinned.errors).toBeUndefined()
+    expect(pinned.data?.recipe).toMatchObject({ warnings: ['Mettre le fouet dès le début'] })
+  })
+
   test('returns null for a recipe that does not exist', async () => {
     const result = await execute(`query { recipe(id: "${unknownId}") { title } }`)
     expect(result.errors).toBeUndefined()

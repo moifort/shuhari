@@ -318,3 +318,17 @@ describe('RecipeQuery.versionsOfMany — the satellite loader’s read', () => {
     expect(fake.queryReads - before).toBe(0)
   })
 })
+
+describe('RecipeQuery — warnings storage boundary', () => {
+  test('a recipe written before the field existed reads as the empty list', async () => {
+    // Seeded raw, without `warnings` — the shape every pre-feature document has.
+    seedRecipe('legacy', { category: 'main', updatedAt: 1000 })
+
+    const byId = await RecipeQuery.byId(userId, 'legacy' as RecipeId)
+    if (byId === 'not-found') throw new Error('expected a recipe')
+    expect(byId.warnings).toEqual([])
+
+    const page = await RecipeQuery.library(userId, { sort: 'updatedAt', order: 'desc', limit: 10 })
+    expect(page.items[0]?.warnings).toEqual([])
+  })
+})

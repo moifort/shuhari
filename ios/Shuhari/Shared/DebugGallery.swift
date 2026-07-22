@@ -50,6 +50,11 @@ struct DebugGallery: View {
             RecipeDetailGalleryScreen(recipe: Fixtures.bourguignon)
         case "recipe-thermomix":
             RecipeDetailGalleryScreen(recipe: Fixtures.risotto)
+        case "warnings-edit":
+            Color.clear
+                .sheet(isPresented: .constant(true)) {
+                    WarningsEditSheet(initialWarnings: Fixtures.risotto.warnings) { _ in }
+                }
         case "recipe-fresh":
             RecipeDetailGalleryScreen(recipe: Fixtures.freshImport)
         case "recipe-delete":

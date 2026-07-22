@@ -14,6 +14,7 @@ import type {
   Tip,
   VersionNumber as VersionNumberT,
   VersionOrigin,
+  Warning,
 } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
 import { atomically } from '~/utils/firestore'
@@ -79,6 +80,7 @@ export namespace RecipeCommand {
       type: input.type,
       category: input.category,
       title: input.title,
+      warnings: [],
       lastVersionNumber: FIRST_VERSION,
       createdAt: now,
       updatedAt: now,
@@ -202,6 +204,20 @@ export namespace RecipeCommand {
       await repository.save(updatedRecipe, batch)
       return updated
     })
+  }
+
+  // Rewrite the recipe's warnings in place — the aggregate-level counterpart of
+  // `updateTips`: the cook is pinning cautions on the recipe, not iterating on it,
+  // so no version is created and no batch is needed (a single document).
+  // Full-replacement (the edited list is the complete one), `[]` clears the banner.
+  export const updateWarnings = async (
+    userId: UserId,
+    recipeId: RecipeId,
+    warnings: Warning[],
+  ): Promise<Recipe | 'not-found'> => {
+    const recipe = await repository.findBy(userId, recipeId)
+    if (!recipe) return 'not-found' as const
+    return repository.save({ ...recipe, warnings, updatedAt: new Date() })
   }
 
   // The touches a cook can make to the aggregate itself: its name, its course and

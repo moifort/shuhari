@@ -13,3 +13,10 @@ mutation UpdateRecipe($id: RecipeId!, $input: UpdateRecipeInput!) {
     category
   }
 }
+
+mutation UpdateWarnings($recipeId: RecipeId!, $warnings: [Warning!]!) {
+  updateWarnings(recipeId: $recipeId, warnings: $warnings) {
+    id
+    warnings
+  }
+}

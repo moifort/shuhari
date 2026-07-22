@@ -193,6 +193,9 @@ enum Fixtures {
         type: .thermomix,
         category: .main,
         favorite: true,
+        // The banner atop the recipe sheet — the whisk caution the feature was
+        // born from.
+        warnings: ["Le fouet doit être mis dès le début."],
         createdAt: date.addingTimeInterval(-86_400 * 12),
         updatedAt: date,
         versions: [risottoV2],

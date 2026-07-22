@@ -300,6 +300,15 @@ RecipeType.implement({
         'to. Drives the library’s favourites lens (see the `favorite` argument on `recipes`).',
       resolve: (recipe) => recipe.favorite === true,
     }),
+    warnings: t.field({
+      type: ['Warning'],
+      description:
+        'The cautions you pinned on this recipe, shown as a banner atop its sheet before ' +
+        'anything else, e.g. `"The whisk must go in from the very start"`. Recipe-level — a ' +
+        'caution outlives every version. Empty list when it has none. Rewritable in place ' +
+        '(see updateWarnings).',
+      resolve: (recipe) => recipe.warnings,
+    }),
     // Satellite: a real count of the remaining versions, not the highest number — a
     // deleted version leaves a numbering hole the aggregate's allocator never refills.
     // Resolved through the batched loader (shares the scan with bestRating — no extra

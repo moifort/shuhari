@@ -52,6 +52,7 @@ query Recipe($id: RecipeId!) {
     type
     category
     favorite
+    warnings
     createdAt
     updatedAt
     bestRating

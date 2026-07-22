@@ -21,6 +21,7 @@ import {
   type Tip as TipType,
   type VersionNumber as VersionNumberType,
   type VersionOriginKind as VersionOriginKindType,
+  type Warning as WarningType,
 } from '~/domain/recipe/types'
 
 export const RecipeId = (value: unknown) => {
@@ -68,6 +69,11 @@ export const StepText = (value: unknown) => {
 export const Tip = (value: unknown) => {
   const v = z.string().trim().min(1).max(RECIPE_MAX.tip).parse(value)
   return make<TipType>()(v)
+}
+
+export const Warning = (value: unknown) => {
+  const v = z.string().trim().min(1).max(RECIPE_MAX.warning).parse(value)
+  return make<WarningType>()(v)
 }
 
 export const ThermomixTime = (value: unknown) => {

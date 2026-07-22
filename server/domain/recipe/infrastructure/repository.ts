@@ -28,6 +28,14 @@ const versions = () =>
 
 const versionDocId = (recipeId: RecipeId, number: VersionNumber) => `${recipeId}_${number}`
 
+// Storage boundary, read side, for the aggregate. `warnings` is total in the
+// domain (exactly like a version's `tips`), so a recipe written before the field
+// existed — or restored from such an export — reads as the empty list.
+const normalizeRecipe = (stored: Recipe): Recipe => ({
+  ...stored,
+  warnings: stored.warnings ?? [],
+})
+
 // Storage boundary, read side. Firestore (and any document written before the
 // attempt outcome moved onto the version) spells an absent envelope field `null`,
 // while the domain spells it "absent" — so the top-level `null`s are erased on the
@@ -54,13 +62,13 @@ const allVersionsCacheKey = (userId: UserId) => `recipe-versions:all:${userId}`
 export const findAllByUser = (userId: UserId) =>
   memoizedPerRequest(allCacheKey(userId), async () => {
     const snap = await recipes().where('userId', '==', userId).orderBy('createdAt', 'desc').get()
-    return snap.docs.map((doc) => doc.data())
+    return snap.docs.map((doc) => normalizeRecipe(doc.data()))
   })
 
 export const findBy = async (userId: UserId, id: RecipeId) => {
   const doc = await recipes().doc(id).get()
   const data = doc.data()
-  return data && data.userId === userId ? data : undefined
+  return data && data.userId === userId ? normalizeRecipe(data) : undefined
 }
 
 // Batch-load recipes by id with a single getAll — reuse the memoized full scan
@@ -75,6 +83,7 @@ export const findManyByIds = async (userId: UserId, ids: RecipeId[]) => {
   return snaps
     .map((snap) => snap.data())
     .filter((recipe): recipe is Recipe => recipe !== undefined && recipe.userId === userId)
+    .map(normalizeRecipe)
 }
 
 export const save = async (recipe: Recipe, batch?: WriteBatch) => {
@@ -119,7 +128,7 @@ export const findPage = async (userId: UserId, args: RecipePageArgs): Promise<Re
     if (cursor.exists) query = query.startAfter(cursor)
   }
   const snap = await query.limit(args.limit + 1).get()
-  const docs = snap.docs.map((doc) => doc.data())
+  const docs = snap.docs.map((doc) => normalizeRecipe(doc.data()))
   const hasMore = docs.length > args.limit
   return { recipes: hasMore ? docs.slice(0, args.limit) : docs, hasMore }
 }

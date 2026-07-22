@@ -35,6 +35,7 @@ export type IngredientName = Brand<string, 'IngredientName'>
 export type IngredientQuantity = Brand<string, 'IngredientQuantity'>
 export type StepText = Brand<string, 'StepText'>
 export type Tip = Brand<string, 'Tip'>
+export type Warning = Brand<string, 'Warning'>
 export type ThermomixTime = Brand<string, 'ThermomixTime'>
 export type ThermomixTemperature = Brand<string, 'ThermomixTemperature'>
 export type ThermomixSpeed = Brand<string, 'ThermomixSpeed'>
@@ -77,6 +78,11 @@ export type Recipe = {
   // rather than false when it is not one — the library's favourites lens filters on
   // its presence.
   favorite?: true
+  // The cook's recipe-level cautions ("Le fouet doit être mis dès le début") — the
+  // banner atop the recipe sheet, so a critical gesture is read before cooking
+  // starts. Aggregate-level: a caution outlives every iteration, unlike the
+  // versioned `tips`. Rewritable in place (`updateWarnings`). `[]` = none.
+  warnings: Warning[]
   // Highest version number ever allocated — a monotonic allocator, never decremented
   // when a version is deleted, so a number is never reused by a later iteration.
   lastVersionNumber: VersionNumber

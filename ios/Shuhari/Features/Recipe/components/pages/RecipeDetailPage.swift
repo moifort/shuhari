@@ -25,6 +25,9 @@ struct RecipeDetailPage: View {
 
     var body: some View {
         List {
+            // Recipe-level cautions open the sheet in BOTH modes — a version under
+            // focus is still the recipe they guard.
+            WarningsBanner(warnings: recipe.warnings)
             header
             changeCard
 
@@ -113,7 +116,7 @@ struct RecipeDetailPage: View {
     }
 }
 
-#Preview("Thermomix") {
+#Preview("Thermomix — bannière d’avertissement") {
     NavigationStack {
         RecipeDetailPage(recipe: Fixtures.risotto)
     }
