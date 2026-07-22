@@ -69,22 +69,6 @@ Everything versioned and technical is **English**: commits, code, comments, docs
 - **Naming / ubiquitous language**: function names ARE the business concept (`bestRating`, `versionToOpen` — never `computeX`, `handleX`); one business concept = one word at every layer (domain, GraphQL, iOS, tests). See [docs/domain-guide.md](docs/domain-guide.md#ubiquitous-language).
 - **Tests**: three tiers with `bun:test`, one CI job each — `*.unit.test.ts` (pure logic, plus the executable `server/architecture.unit.test.ts`), `*.int.test.ts` (commands/queries against the fake Firestore), `*.feat.test.ts` (business scenarios executed against the assembled GraphQL schema: error codes, freemium gates, N+1 budgets). Firestore mocked via `mock.module('~/system/firebase', fakeFirebase)` (`server/test/fake-firestore.ts`), which records batches and split `docReads`/`queryReads` to assert atomicity and read budgets. See [docs/domain-guide.md](docs/domain-guide.md#9-write-tests).
 
-## Key Business Rules
-
-> Full model narrative: [docs/business-rules.md](docs/business-rules.md) — read it before touching
-> `recipe`, `proposal` or the AI prompts. The invariants in one glance:
-
-- **Two recipe types** (`dish`, `thermomix`); a version's `content` is a discriminated union (`VersionContent = DishContent | ThermomixContent`) with the invariant `content.kind === recipe.type`, mirrored in GraphQL (union + `@oneOf` input). Ratings are `1..5`; the dish-category order IS the library's sort rank.
-- **Linear lineage**: one chain `v1 → v2 → …`; `basedOn` = the version iterated from (absent on v1). No forks, no variations.
-- **A version *is* an attempt**: `content` and lineage are immutable; the outcome and `tips` are overwritable. Fields with no value are **absent**, never `null`.
-- **An attempt lands on the version it produces**: a bare rating → `recordAttempt` rewrites the version cooked in place; with remarks → the rating/remarks land on the accepted proposal's new version, and nothing is persisted if the proposal is refused.
-- **Everything derived, no promotion**: `bestRating` and `versionToOpen` are computed in `recipe/business-rules.ts` from the cooked versions.
-- **Improvement** (a requested change with no cook behind it) is the **sole** source of `toTest: true`; cooking the version drops it.
-- **Tips** sit on the versioning envelope (never in `content`) and the lightbulb CTA rewrites them in place — no new version.
-- **Freemium**: the notebook is unlimited, only the AI is metered — `free` gets 3 imports + 5 iterations per calendar month (proposal, improvement and tips share the iteration meter), `premium` is unlimited and alone may import from a URL. Checked before the call, recorded after it succeeds.
-- **Premium is a verified App Store transaction, never a client claim**: `EntitlementQuery.planOf` is the single answer, derived from the `entitlements` document written by `syncEntitlement` (signature checked against Apple's roots) and by the `POST /apple/notifications` webhook. A purchase must carry the cook's derived `appAccountToken` or it is refused. `NITRO_PREMIUM_USER_IDS` remains a comp-account override. Setup: [docs/in-app-purchase.md](docs/in-app-purchase.md).
-- **AI wording rules** (prompts in `server/system/ai/index.ts`): ingredient variety in the name's parentheses; `changeSummary` = `old → new` deltas (arrow U+2192, named explicitly in the prompt) joined by `, `.
-
 ## Database Migrations
 
 - `server/system/migration/` — forward-only sequential migrations, no rollback, triggered by `POST /admin/migrate` (CI deploy / provisioning). When to migrate, how to write and register one: [docs/migrations.md](docs/migrations.md).
