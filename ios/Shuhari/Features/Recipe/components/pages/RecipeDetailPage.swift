@@ -17,6 +17,11 @@ struct RecipeDetailPage: View {
     var change: String? = nil
     var why: String? = nil
 
+    /// Ephemeral quantity scaling of the ingredient list — lives only while the
+    /// sheet is open, the stored version is never rewritten. Only the plain sheet
+    /// scales; a focused attempt shows its version's exact quantities.
+    @State private var scaleFactor: Double = 1
+
     /// The version the recipe sheet presents: the focused attempt version when set,
     /// otherwise the recipe's `versionToOpen`.
     private var displayedVersion: RecipeVersion {
@@ -34,12 +39,16 @@ struct RecipeDetailPage: View {
             IngredientsSection(
                 ingredients: displayedVersion.ingredients,
                 modified: modifiedIngredients,
-                compactHeader: focusVersion == nil
+                compactHeader: focusVersion == nil,
+                scale: focusVersion == nil ? $scaleFactor : nil
             )
             ReferenceVersionSection(version: displayedVersion, modified: modifiedSteps)
             TipsSection(tips: displayedVersion.tips)
         }
         .listSectionSpacing(5)
+        // The factor never survives a version switch: the sheet lands back on the
+        // stored quantities of whatever version it now shows.
+        .onChange(of: displayedVersion.number) { scaleFactor = 1 }
         .contentMargins(.top, 0, for: .scrollContent)
         .scrollEdgeEffectStyle(.soft, for: .top)
         .navigationBarTitleDisplayMode(.inline)

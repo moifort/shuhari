@@ -31,4 +31,28 @@ struct RecipeDetailPage {
         try app.buttons["record-attempt-button"].tapOrFail()
         return CapturePage(app: app)
     }
+
+    // MARK: - Ingredient scaling
+
+    /// The displayed quantity of the ingredient at `index` in the shopping list.
+    func ingredientQuantity(_ index: Int) -> XCUIElement {
+        app.staticTexts["ingredient-quantity-\(index)"]
+    }
+
+    /// One −/+ tick on the ingredient at `index`. The stepper's inner buttons carry
+    /// system labels (locale-dependent), so fall back on their order: minus left,
+    /// plus right.
+    func stepIngredient(_ index: Int, down: Bool) throws {
+        let stepper = try app.steppers["ingredient-stepper-\(index)"].waitOrFail()
+        let label = down ? "Decrement" : "Increment"
+        let button = stepper.buttons[label].exists
+            ? stepper.buttons[label]
+            : stepper.buttons.element(boundBy: down ? 0 : 1)
+        try button.tapOrFail()
+    }
+
+    /// Drop the ephemeral scaling — back to the stored quantities.
+    func resetScaling() throws {
+        try app.buttons["ingredients-reset"].tapOrFail()
+    }
 }
