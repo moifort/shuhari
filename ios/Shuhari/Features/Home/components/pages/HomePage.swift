@@ -5,9 +5,9 @@ import SwiftUI
 /// server-sorted, infinitely scrolling page (`library` + the `library*` flags and
 /// callbacks).
 struct HomePage: View {
-    /// The lens picker offered on a multi-type tab (notebook), rendered as round
-    /// glass toolbar buttons — one per recipe type, then the favourites. `nil` on a
-    /// single-type tab, which needs no selector.
+    /// The lens picker of the notebook toolbar, rendered as round glass buttons —
+    /// the whole library, then the favourites. `nil` hides the selector (loading
+    /// gallery screens).
     struct LensPicker {
         let options: [LibraryLens]
         let selection: Binding<LibraryLens>
@@ -87,9 +87,9 @@ struct HomePage: View {
             }
     }
 
-    /// Empty-notebook copy. A filter that yields nothing (a type segment or a dish
-    /// category) isn't a first-run state — the tab may well hold other recipes — so
-    /// only the genuinely empty, unfiltered notebook nudges the user to import.
+    /// Empty-notebook copy. A facet that yields nothing (favourites, a dish category)
+    /// isn't a first-run state — the notebook may well hold other recipes — so only
+    /// the genuinely empty, unfiltered notebook nudges the user to import.
     private var emptyStateMessage: String {
         if categoryFilter.wrappedValue != nil {
             return "Aucune recette dans cette catégorie pour l’instant."
@@ -98,9 +98,6 @@ struct HomePage: View {
             return "Aucun favori pour l’instant — ajoute-les depuis la fiche d’une recette."
         }
         // The `.all` lens narrows nothing: an empty library there IS the first-run state.
-        if lensPicker != nil, lensPicker?.selection.wrappedValue != .all {
-            return "Aucune recette de ce type pour l’instant."
-        }
         return "Importe ta première recette depuis l’onglet Importer — photo, texte ou lien."
     }
 
@@ -150,7 +147,6 @@ private struct HomePagePreview: View {
             switch lens {
             case .all: true
             case .favorites: recipe.favorite
-            case .type(let type): recipe.type == type
             }
         }
         NavigationStack {
@@ -161,7 +157,7 @@ private struct HomePagePreview: View {
                 libraryHasMore: false,
                 libraryLoadMoreFailed: false,
                 title: "Cuisine",
-                lensPicker: .init(options: [.all, .type(.dish), .type(.thermomix), .favorites], selection: $lens),
+                lensPicker: .init(options: [.all, .favorites], selection: $lens),
                 sort: $sort,
                 categoryFilter: $category,
                 onSettings: {}

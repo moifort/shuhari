@@ -5,8 +5,6 @@ import SwiftUI
 /// attempt → proposal + execution cover), and a `LibraryStore` for the paginated,
 /// server-sorted recipe library that fills the screen.
 struct HomeView: View {
-    let title: String
-    let categoryTypes: Set<RecipeType>
     @Binding var importedRecipe: ImportedRecipe?
 
     @State private var library = LibraryStore()
@@ -14,15 +12,6 @@ struct HomeView: View {
     @State private var showSettings = false
     /// The notebook opens on the whole library — every type, no facet.
     @State private var lens: LibraryLens = .all
-
-    /// Multi-type tabs (cooking) offer the lens picker; single-type tabs don't.
-    private var isMultiType: Bool { categoryTypes.count > 1 }
-
-    /// The lenses in design order — everything first (the default), then the tab's
-    /// types, then the favourites, which cut across all of them.
-    private var lensOptions: [LibraryLens] {
-        [.all] + RecipeType.allCases.filter { categoryTypes.contains($0) }.map(LibraryLens.type) + [.favorites]
-    }
 
     var body: some View {
         @Bindable var library = library
@@ -46,10 +35,8 @@ struct HomeView: View {
                         libraryLoading: library.isLoading,
                         libraryHasMore: library.hasMore,
                         libraryLoadMoreFailed: library.loadMoreFailed,
-                        title: isMultiType ? lens.label : title,
-                        lensPicker: isMultiType
-                            ? .init(options: lensOptions, selection: $lens)
-                            : nil,
+                        title: lens.label,
+                        lensPicker: .init(options: [.all, .favorites], selection: $lens),
                         sort: $library.sort,
                         categoryFilter: $library.category,
                         onSettings: { showSettings = true },
@@ -79,20 +66,18 @@ struct HomeView: View {
         .onAppear { navigateToImportedIfNeeded() }
     }
 
-    /// Point the library at a lens: its facets, and the order it opens on. On a
-    /// single-type tab there is no lens picker, and the tab's own types apply.
+    /// Point the library at a lens: its facet, and the order it opens on.
     private func apply(_ lens: LibraryLens) {
         library.favorite = lens == .favorites
-        library.type = isMultiType ? lens.recipeType : nil
         library.sort = lens.defaultSort
     }
 
     /// Kick off the first library page. The facets reload via their `didSet` when they
-    /// change; on an unchanged lens (e.g. a single-type tab), load explicitly.
+    /// change; on an unchanged lens, load explicitly.
     private func loadLibraryIfNeeded() async {
-        let before = (library.type, library.favorite, library.sort)
+        let before = (library.favorite, library.sort)
         apply(lens)
-        if (library.type, library.favorite, library.sort) == before, library.items.isEmpty {
+        if (library.favorite, library.sort) == before, library.items.isEmpty {
             await library.load()
         }
     }
@@ -102,12 +87,13 @@ struct HomeView: View {
         await library.load()
     }
 
-    /// Push the freshly imported recipe's recipe sheet — but only in the tab that owns
-    /// its type. Handles both the already-mounted tab (`onChange`) and the tab
-    /// that mounts on selection right after the import (`onAppear`).
+    /// Push the freshly imported recipe's recipe sheet, back on the whole library —
+    /// a favourites lens would hide the newcomer behind the sheet. Handles both the
+    /// already-mounted tab (`onChange`) and the tab that mounts on selection right
+    /// after the import (`onAppear`).
     private func navigateToImportedIfNeeded() {
-        guard let recipe = importedRecipe, categoryTypes.contains(recipe.type) else { return }
-        if isMultiType { lens = .type(recipe.type) }
+        guard let recipe = importedRecipe else { return }
+        lens = .all
         path.append(RecipeRoute.recipe(id: recipe.id))
         importedRecipe = nil
         Task { await reloadAll() }
@@ -115,5 +101,5 @@ struct HomeView: View {
 }
 
 #Preview {
-    HomeView(title: "Cuisine", categoryTypes: [.dish, .thermomix], importedRecipe: .constant(nil))
+    HomeView(importedRecipe: .constant(nil))
 }

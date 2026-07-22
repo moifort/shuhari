@@ -31,8 +31,6 @@ struct DebugGallery: View {
             CuisineGalleryScreen(sort: .dishCategory)
         case "cuisine-favorites":
             CuisineGalleryScreen(lens: .favorites)
-        case "cuisine-thermomix":
-            CuisineGalleryScreen(lens: .type(.thermomix))
         case "cuisine-loading":
             NavigationStack {
                 HomePage(
@@ -258,8 +256,8 @@ private struct RecipeDetailGalleryScreen: View {
     }
 }
 
-/// The multi-type cooking tab with its round lens CTAs and sectioned library — needs
-/// local state for the selected lens and sort, so it lives in its own view. Defaults
+/// The notebook tab with its round lens CTAs and sectioned library — needs local
+/// state for the selected lens and sort, so it lives in its own view. Defaults
 /// to the whole library, as the app does; the sort picker is live, so both section
 /// axes (month, course) are reachable.
 private struct CuisineGalleryScreen: View {
@@ -284,7 +282,6 @@ private struct CuisineGalleryScreen: View {
                     switch lens {
                     case .all: true
                     case .favorites: recipe.favorite
-                    case .type(let type): recipe.type == type
                     }
                 },
                 libraryGrouping: sort == .lastModified ? .month : .course,
@@ -292,10 +289,7 @@ private struct CuisineGalleryScreen: View {
                 libraryHasMore: false,
                 libraryLoadMoreFailed: false,
                 title: lens.label,
-                lensPicker: .init(
-                    options: [.all, .type(.dish), .type(.thermomix), .favorites],
-                    selection: $lens
-                ),
+                lensPicker: .init(options: [.all, .favorites], selection: $lens),
                 sort: $sort,
                 categoryFilter: .constant(nil),
                 onSettings: {}

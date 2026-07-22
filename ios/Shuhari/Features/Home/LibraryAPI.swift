@@ -13,7 +13,6 @@ struct RecipePage: Sendable {
 /// and sorts server-side, and is the notebook's sole read model.
 enum LibraryAPI {
     static func list(
-        type: RecipeType?,
         category: DishCategory?,
         favorite: Bool,
         sort: RecipeSortOption,
@@ -21,7 +20,7 @@ enum LibraryAPI {
         after: String?
     ) async throws -> RecipePage {
         let query = ShuhariGraphQL.RecipeListQuery(
-            type: type.map { .some($0.graphQLValue) } ?? .none,
+            type: .none,
             category: category.map { .some($0.graphQLValue) } ?? .none,
             favorite: favorite ? .some(true) : .none,
             sort: .some(.case(gqlSort(sort))),

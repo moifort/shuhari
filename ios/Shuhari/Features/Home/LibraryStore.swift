@@ -2,7 +2,7 @@ import Foundation
 
 /// The paginated library read-model, backing the notebook's recipe list. Accumulates
 /// server pages of the `recipes(...)` query and reloads page 0 whenever the sort or
-/// the type filter changes. Mirrors the vinarium `WineListViewModel` pattern:
+/// a facet changes. Mirrors the vinarium `WineListViewModel` pattern:
 /// generation token against stale responses, prefetch threshold for infinite scroll,
 /// a `LoadMoreRow` sentinel that flips to a retry button on failure.
 @MainActor @Observable
@@ -21,11 +21,6 @@ final class LibraryStore {
     /// The dish-course vs. last-modified ordering. Any change reloads page 0.
     var sort: RecipeSortOption = .lastModified {
         didSet { if oldValue != sort { scheduleReload() } }
-    }
-
-    /// Server-side type facet ("Plat" / "Thermomix"). `nil` = both. Any change reloads.
-    var type: RecipeType? {
-        didSet { if oldValue != type { scheduleReload() } }
     }
 
     /// Server-side favourites facet: `true` keeps only the recipes marked as
@@ -152,7 +147,6 @@ final class LibraryStore {
 
     private func fetchPage(after: String?) async throws -> RecipePage {
         try await LibraryAPI.list(
-            type: type,
             category: category,
             favorite: favorite,
             sort: sort,

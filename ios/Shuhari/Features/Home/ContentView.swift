@@ -39,7 +39,7 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab("Carnet", image: "toque", value: RootTab.notebook) {
-                HomeView(title: "Carnet", categoryTypes: [.dish, .thermomix], importedRecipe: $importedRecipe)
+                HomeView(importedRecipe: $importedRecipe)
             }
             .accessibilityIdentifier("tab-notebook")
 
@@ -65,8 +65,8 @@ struct ContentView: View {
         .sheet(item: $reviewJob) { job in
             ImportReviewSheet(
                 input: job.input,
-                onCreated: { recipeId, type in
-                    importedRecipe = ImportedRecipe(id: recipeId, type: type)
+                onCreated: { recipeId, _ in
+                    importedRecipe = ImportedRecipe(id: recipeId)
                     selectedTab = .notebook
                     reviewJob = nil
                 },
