@@ -41,4 +41,21 @@ final class IngredientScalingTest: XCTestCase {
         XCTAssertEqual(recipe.ingredientQuantity(1).label, "200 g")
         XCTAssertFalse(app.buttons["ingredients-reset"].exists)
     }
+
+    func testSpoonQuantityRescalesItsGramEquivalent() throws {
+        let recipe = RecipeDetailPage(app: app)
+
+        // The AI writes spoon quantities with their gram estimate in parentheses.
+        let spoon = try recipe.ingredientQuantity(8).waitOrFail()
+        XCTAssertEqual(spoon.label, "1 c. à soupe (15 g)")
+
+        // One −½ tick on the spoon: the grams follow the count, and the whole
+        // list follows the factor 0,5.
+        try recipe.stepIngredient(8, down: true)
+        XCTAssertEqual(spoon.label, "0,5 c. à soupe (7,5 g)")
+        XCTAssertEqual(recipe.ingredientQuantity(0).label, "600 g") // beef 1,2 kg × 0,5
+
+        try recipe.resetScaling()
+        XCTAssertEqual(spoon.label, "1 c. à soupe (15 g)")
+    }
 }

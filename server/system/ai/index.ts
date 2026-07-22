@@ -43,7 +43,7 @@ const ingredientsSchemaProperty = {
       quantity: {
         type: 'string',
         description:
-          'Quantity with its unit, in French (e.g. "50 ml", "170 g", "3 pièces"), ≤60 characters',
+          'Quantity with its unit, in French (e.g. "50 ml", "170 g", "3 pièces"). When the unit is an imprecise kitchen measure (spoon, pinch, glass, cup…), append the estimated gram equivalent for THAT ingredient in parentheses: "1 c. à café (6 g)" for salt, "1 c. à soupe (8 g)" for flour. Metric weights/volumes and countable pieces stay as-is. ≤60 characters',
       },
     },
     required: ['name', 'quantity'],
@@ -184,7 +184,7 @@ Rules:
 - MANDATORY: write every generated value — title, ingredient names and quantities, step text — in French. The reader is a French speaker; never answer in English.
 - Determine the type: dish (cooked recipe) or thermomix (Thermomix recipe).
 - Determine the dish category: starter, main, dessert, soup, sauce, baking (pastry, bread, viennoiserie) or drink (cocktail, smoothie, hot or cold beverage). When in doubt, pick main.
-- ingredients: the ORDERED list of the recipe's components with their quantity (e.g. Gin → 50 ml, Beurre → 170 g, Fraise → 3 pièces). Include EVERY ingredient visible in the source, each with its quantity and unit. This is the recipe's "shopping list". The NAME stays short: the ingredient alone, never its transient preparation ("Pommes de terre", not "Pommes de terre épluchées et coupées en rondelles" — the preparation belongs in the steps). An intrinsic variety, type or grade stays in the name, in parentheses ("Pommes de terre (Marbella)", "Farine (T45)").
+- ingredients: the ORDERED list of the recipe's components with their quantity (e.g. Gin → 50 ml, Beurre → 170 g, Fraise → 3 pièces). Include EVERY ingredient visible in the source, each with its quantity and unit. This is the recipe's "shopping list". The NAME stays short: the ingredient alone, never its transient preparation ("Pommes de terre", not "Pommes de terre épluchées et coupées en rondelles" — the preparation belongs in the steps). An intrinsic variety, type or grade stays in the name, in parentheses ("Pommes de terre (Marbella)", "Farine (T45)"). A QUANTITY in an imprecise kitchen unit (spoon, pinch, glass, cup…) carries its estimated gram equivalent in parentheses, specific to that ingredient ("1 c. à café (6 g)" for salt) — quantities already in metric weight/volume and countable pieces stay as-is.
 - steps: short steps, imperative mood, in order. Precise settings (oven temperature, duration, ratio…) stay in the step text.
 - tips: the cooking tips found in the source — serving suggestions, storage/freezing advice, technique pointers ("Servir avec du riz", "Se congèle bien"). One short sentence per tip. A tip is neither an ingredient nor a step: never duplicate the method here. Empty array when the source carries none.
 - For a Thermomix recipe (type thermomix): for every step performed on the Thermomix, fill the nested settings object (time, temperature, speed, reverse) exactly as stated in the recipe (time "3 min" / "30 s" / "1 h 10 min"; temperature "100°C" or "Varoma"; speed "0,5" to "10", "pétrin", "mijotage" or "turbo"). ALWAYS return every step as an object: use null for every missing setting, and set settings to null (or leave its fields null) when the step is not done on the Thermomix or when the recipe is not of type thermomix — never omit or merge a step because it carries no setting.
@@ -372,15 +372,15 @@ Reminder: all text values you produce must be written in French.`
   }
 
   const hashSource = (source: ImportSource): ImportHashType => {
-    // 'v9' salts the cache: bumped from 'v8' because the import schema gained the
-    // `tips` extraction — so previously-analysed sources re-run instead of serving
-    // a stale, tip-less result.
+    // 'v10' salts the cache: bumped from 'v9' because quantities in imprecise
+    // kitchen units gained their gram equivalent — so previously-analysed sources
+    // re-run instead of serving a stale, gram-less result.
     const material =
       source.kind === 'photos'
-        ? `v9|${source.photos.join('|')}`
+        ? `v10|${source.photos.join('|')}`
         : source.kind === 'url'
-          ? `v9|url:${source.url}`
-          : `v9|text:${source.text}`
+          ? `v10|url:${source.url}`
+          : `v10|text:${source.text}`
     return ImportHash(createHash('sha256').update(material).digest('hex'))
   }
 }

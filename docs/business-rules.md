@@ -98,6 +98,10 @@ The prompts in `server/system/ai/index.ts`:
 - An ingredient **name** carries its intrinsic *variety/type/grade* in parentheses
   (`Pommes de terre (Marbella)`, `Farine (T45)`) — only *transient* preparation (peeled, sliced)
   goes in the steps.
+- An ingredient **quantity** in an imprecise kitchen unit (spoon, pinch, glass, cup…) carries
+  its estimated gram equivalent in parentheses, specific to that ingredient
+  (`1 c. à café (6 g)` for salt) — quantities already in metric weight/volume and countable
+  pieces stay bare.
 - A proposal must apply a remark's concrete value change into the right structured field (a
   Thermomix time/temperature/speed in the step `settings`, a duration in the dish step text, a
   quantity on the ingredient) and summarise each change in `changeSummary` as `old → new` — the

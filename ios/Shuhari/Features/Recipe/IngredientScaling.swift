@@ -58,6 +58,9 @@ enum IngredientScaling {
         let unit: String
         /// A count's free-text tail, carried through untouched ("gousse", "c. à s.").
         let suffix: String
+        /// The AI's estimated gram equivalent of the written quantity — the "(6 g)"
+        /// of "1 c. à café (6 g)" — rescaled with the count so the pair never lies.
+        let gramEquivalent: Double?
     }
 
     private static let unitScales: [String: (family: Family, toCanonical: Double)] = [
@@ -76,9 +79,15 @@ enum IngredientScaling {
         // A unit only counts when it is the whole tail: "kg" in "1,2 kg", but
         // "1 gousse" or "2 g râpé" fall through to a count with a free suffix.
         if let unit = unitScales[rest.lowercased()] {
-            return Parsed(value: figure * unit.toCanonical, family: unit.family, unit: rest.lowercased(), suffix: "")
+            return Parsed(value: figure * unit.toCanonical, family: unit.family, unit: rest.lowercased(), suffix: "", gramEquivalent: nil)
         }
-        return Parsed(value: figure, family: .count, unit: "", suffix: rest)
+        // An imprecise kitchen unit carries the AI's gram estimate in a trailing
+        // "(6 g)": detach it from the suffix so it rescales instead of freezing.
+        if let grams = rest.wholeMatch(of: /(.*?)\s*\(([0-9]+(?:[.,][0-9]+)?)\s*g\)/),
+           let equivalent = Double(grams.2.replacingOccurrences(of: ",", with: ".")) {
+            return Parsed(value: figure, family: .count, unit: "", suffix: String(grams.1), gramEquivalent: equivalent)
+        }
+        return Parsed(value: figure, family: .count, unit: "", suffix: rest, gramEquivalent: nil)
     }
 
     // MARK: - Rounding & stepping
@@ -118,10 +127,19 @@ enum IngredientScaling {
                 "\(number(value, maxFraction: 1)) ml"
             }
         case .count:
-            parsed.suffix.isEmpty
-                ? number(value, maxFraction: 1)
-                : "\(number(value, maxFraction: 1)) \(parsed.suffix)"
+            countFormat(value, as: parsed)
         }
+    }
+
+    private static func countFormat(_ value: Double, as parsed: Parsed) -> String {
+        let base = parsed.suffix.isEmpty
+            ? number(value, maxFraction: 1)
+            : "\(number(value, maxFraction: 1)) \(parsed.suffix)"
+        guard let equivalent = parsed.gramEquivalent else { return base }
+        // The grams follow the count as displayed (not the raw factor), so the
+        // pair stays coherent: "1 c. à soupe (15 g)" halved is "0,5 c. à soupe (7,5 g)".
+        let grams = rounded(equivalent * value / parsed.value, family: .mass)
+        return "\(base) (\(number(grams, maxFraction: 1)) g)"
     }
 
     private static func number(_ value: Double, maxFraction: Int) -> String {

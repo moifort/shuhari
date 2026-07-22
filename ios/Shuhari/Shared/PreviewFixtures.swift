@@ -40,6 +40,9 @@ enum Fixtures {
         Ingredient(name: "Bouillon", quantity: "50 cl"),
         Ingredient(name: "Farine", quantity: "30 g"),
         Ingredient(name: "Bouquet garni", quantity: "1"),
+        // A spoon quantity carrying the AI's gram estimate — the scaling test's
+        // proof that the "(15 g)" rescales with the count instead of freezing.
+        Ingredient(name: "Concentré de tomate", quantity: "1 c. à soupe (15 g)"),
     ]
 
     /// The wine before the v3 iteration (50 cl) — v1/v2 use this, so focusing v3
