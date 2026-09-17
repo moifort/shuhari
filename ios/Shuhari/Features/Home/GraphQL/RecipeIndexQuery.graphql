@@ -1,0 +1,9 @@
+query RecipeIndex($types: [RecipeType!]) {
+  recipeIndex(types: $types) {
+    id
+    title
+    category
+    method
+    favorite
+  }
+}

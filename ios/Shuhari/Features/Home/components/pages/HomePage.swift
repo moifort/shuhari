@@ -24,6 +24,23 @@ struct HomePage: View {
         let selection: Binding<String?>
     }
 
+    /// The title search, in primitives. `results` is `nil` while nothing is typed —
+    /// the library shows — and takes the list over as soon as something is.
+    struct Search {
+        struct Result: Identifiable {
+            let id: String
+            let title: String
+            let icon: Image
+            let iconLabel: String
+            let favorite: Bool
+        }
+
+        let text: Binding<String>
+        let results: [Result]?
+        /// The index is still on its way: no results is not "nothing found" yet.
+        var loading = false
+    }
+
     let library: [LibraryRecipe]
     /// The library section axis: month of last update, dish course, or brew method.
     let libraryGrouping: LibraryGrouping
@@ -35,6 +52,7 @@ struct HomePage: View {
     var sortOptions: [RecipeSortOption] = RecipeSortOption.cooking
     let sort: Binding<RecipeSortOption>
     let facet: Facet
+    let search: Search
     /// Copy for the genuinely empty, unfiltered library — the first-run nudge.
     var emptyFirstRunMessage = "Importe ta première recette depuis l’onglet Importer — photo, texte ou lien."
     let onSettings: () -> Void
@@ -44,6 +62,7 @@ struct HomePage: View {
     var body: some View {
         content
             .navigationTitle(title)
+            .searchable(text: search.text, prompt: "Rechercher une recette")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(action: onSettings) {
@@ -93,7 +112,28 @@ struct HomePage: View {
 
     @ViewBuilder
     private var content: some View {
-        if library.isEmpty {
+        if let results = search.results {
+            if results.isEmpty, search.loading {
+                ProgressView()
+            } else if results.isEmpty {
+                ContentUnavailableView.search(text: search.text.wrappedValue)
+            } else {
+                List(results) { result in
+                    ZStack {
+                        // A zero-opacity link keeps the row tappable without the chevron.
+                        NavigationLink(value: RecipeRoute.recipe(id: result.id)) { EmptyView() }
+                            .opacity(0)
+                        LibrarySearchRow(
+                            title: result.title,
+                            icon: result.icon,
+                            iconLabel: result.iconLabel,
+                            favorite: result.favorite
+                        )
+                    }
+                    .accessibilityIdentifier("search-result-\(result.id)")
+                }
+            }
+        } else if library.isEmpty {
             if libraryLoading {
                 // Cold functions make the first load slow: the looping flask
                 // (fill → boil away → refill) owns the wait instead of a bare spinner.
@@ -124,6 +164,31 @@ struct HomePage: View {
             .scrollEdgeEffectStyle(.soft, for: .top)
         }
     }
+}
+
+// MARK: - Search builder
+
+extension HomePage.Search {
+    /// Bridges the store's index entries to the page's primitives. A result wears what
+    /// the recipe is filed by, like a library row: its brew method, else its course.
+    init(text: Binding<String>, entries: [LibraryIndexEntry]?, loading: Bool) {
+        self.init(
+            text: text,
+            results: entries?.map { entry in
+                Result(
+                    id: entry.id,
+                    title: entry.title,
+                    icon: entry.method?.iconImage ?? entry.category.iconImage,
+                    iconLabel: entry.method?.label ?? entry.category.label,
+                    favorite: entry.favorite
+                )
+            },
+            loading: loading
+        )
+    }
+
+    /// No search going on — previews and gallery screens.
+    static var idle: Self { Self(text: .constant(""), results: nil) }
 }
 
 // MARK: - Facet builders
@@ -176,6 +241,7 @@ private struct HomePagePreview: View {
                 title: "Cuisine",
                 sort: $sort,
                 facet: .course(selection: $category),
+                search: .idle,
                 onSettings: {}
             )
         }
@@ -198,6 +264,7 @@ private struct CoffeePagePreview: View {
                 sortOptions: RecipeSortOption.coffee,
                 sort: $sort,
                 facet: .method(selection: $method),
+                search: .idle,
                 onSettings: {}
             )
         }
@@ -223,6 +290,7 @@ private struct CoffeePagePreview: View {
             title: "Cuisine",
             sort: .constant(.lastModified),
             facet: .course(selection: .constant(nil)),
+            search: .idle,
             onSettings: {}
         )
     }
@@ -239,6 +307,7 @@ private struct CoffeePagePreview: View {
             title: "Cuisine",
             sort: .constant(.lastModified),
             facet: .course(selection: .constant(nil)),
+            search: .idle,
             onSettings: {}
         )
     }

@@ -269,6 +269,10 @@ Everything is derived (`recipe/business-rules.ts`), nothing is promoted:
   `create` and `copyVersion` stamp it, a restore derives it again from the versions it brings
   (`replaceAllForUser`: an older backup carries none), and the fake Firestore drops such documents
   too so a forgotten stamp fails a test rather than emptying the notebook.
+- **`RecipeQuery.index`** = the notebook's index: every recipe of the asked types, unpaginated,
+  in **one** read (`recipeIndex`). It exists for the title search, which the client runs locally —
+  Firestore cannot match "contains". It is asked for what names a recipe and nothing a version
+  holds: the per-version fields stay with `recipes` / `recipe`, where the page bounds their cost.
 
 ## Improvement and `toTest`
 

@@ -36,6 +36,11 @@ struct CoffeeView: View {
                         sortOptions: RecipeSortOption.coffee,
                         sort: $library.sort,
                         facet: .method(selection: $library.method),
+                        search: .init(
+                            text: $library.searchText,
+                            entries: library.searchResults,
+                            loading: library.isSearching
+                        ),
                         emptyFirstRunMessage: "Photographie une recette de café depuis l’onglet Importer — ou saisis-la.",
                         onSettings: { showSettings = true },
                         onPrefetch: { library.prefetchIfNeeded(for: $0) },

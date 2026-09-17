@@ -35,6 +35,11 @@ struct HomeView: View {
                         sortOptions: RecipeSortOption.cooking,
                         sort: $library.sort,
                         facet: .course(selection: $library.category),
+                        search: .init(
+                            text: $library.searchText,
+                            entries: library.searchResults,
+                            loading: library.isSearching
+                        ),
                         onSettings: { showSettings = true },
                         onPrefetch: { library.prefetchIfNeeded(for: $0) },
                         onLoadMore: { await library.loadMore() }

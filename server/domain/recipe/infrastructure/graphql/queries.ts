@@ -85,6 +85,31 @@ builder.queryField('recipes', (t) =>
   }),
 )
 
+builder.queryField('recipeIndex', (t) =>
+  t.field({
+    type: [RecipeType],
+    description: [
+      'The index of your notebook: every recipe at once, unpaginated, to search by title on the ' +
+        'device. Ask it for what names a recipe — `id`, `title`, `category`, `method`, ' +
+        '`favorite` — and leave the per-version fields (`bestRating`, `versions`…) to `recipes` ' +
+        'and `recipe`: here they would load the lineage of the whole library.',
+      '',
+      '```graphql',
+      'recipeIndex(types: [DISH, THERMOMIX]) { id title category favorite }',
+      '```',
+    ].join('\n'),
+    args: {
+      types: t.arg({
+        type: [RecipeTypeEnum],
+        description:
+          'Keep only these recipe types, e.g. `[COFFEE]` for the coffee tab. Leave out for ' +
+          'every type.',
+      }),
+    },
+    resolve: async (_root, { types }, { userId }) => RecipeQuery.index(userId, types ?? undefined),
+  }),
+)
+
 builder.queryField('recipe', (t) =>
   t.field({
     type: RecipeType,

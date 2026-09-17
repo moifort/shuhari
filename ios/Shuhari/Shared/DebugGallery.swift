@@ -29,6 +29,8 @@ struct DebugGallery: View {
             CuisineGalleryScreen()
         case "cuisine-recent":
             CuisineGalleryScreen(sort: .lastModified)
+        case "cuisine-search":
+            CuisineGalleryScreen(searchText: "ri")
         case "coffee":
             CoffeeGalleryScreen()
         case "coffee-recent":
@@ -44,6 +46,7 @@ struct DebugGallery: View {
                     title: "Cuisine",
                     sort: .constant(.lastModified),
                     facet: .course(selection: .constant(nil)),
+                    search: .idle,
                     onSettings: {}
                 )
             }
@@ -296,7 +299,7 @@ struct DebugGallery: View {
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : cuisine, cuisine-recent, cuisine-thermomix, cuisine-loading, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, to-test, to-test-empty, recipe-edit, recipe-edit-thermomix, recipe-edit-oven, recipe-edit-oven-copy, recipe-edit-coffee, recipe-edit-fresh, improve, viewfinder, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found, login, settings-data, quota, quota-premium, premium, premium-live, import-quota-exhausted, import-premium-required, import-resumed")
+                description: Text("Écrans : cuisine, cuisine-recent, cuisine-search, cuisine-thermomix, cuisine-loading, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, to-test, to-test-empty, recipe-edit, recipe-edit-thermomix, recipe-edit-oven, recipe-edit-oven-copy, recipe-edit-coffee, recipe-edit-fresh, improve, viewfinder, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found, login, settings-data, quota, quota-premium, premium, premium-live, import-quota-exhausted, import-premium-required, import-resumed")
             )
         }
     }
@@ -447,9 +450,11 @@ private struct RecipeDetailGalleryScreen: View {
 /// picker is live, so both section axes (course, month) are reachable.
 private struct CuisineGalleryScreen: View {
     @State private var sort: RecipeSortOption
+    @State private var searchText: String
 
-    init(sort: RecipeSortOption = .dishCategory) {
+    init(sort: RecipeSortOption = .dishCategory, searchText: String = "") {
         self._sort = State(initialValue: sort)
+        self._searchText = State(initialValue: searchText)
     }
 
     private let library = [
@@ -472,6 +477,18 @@ private struct CuisineGalleryScreen: View {
                 sortOptions: RecipeSortOption.cooking,
                 sort: $sort,
                 facet: .course(selection: .constant(nil)),
+                // The real matcher over the rows above, so typing in the gallery
+                // searches for real.
+                search: .init(
+                    text: $searchText,
+                    entries: searchText.isEmpty ? nil : LibraryIndexEntry.matching(
+                        searchText,
+                        in: library.map {
+                            LibraryIndexEntry(id: $0.id, title: $0.title, category: $0.category, favorite: $0.favorite)
+                        }
+                    ),
+                    loading: false
+                ),
                 onSettings: {}
             )
         }
@@ -558,6 +575,7 @@ private struct CoffeeGalleryScreen: View {
                 sortOptions: RecipeSortOption.coffee,
                 sort: $sort,
                 facet: .method(selection: .constant(nil)),
+                search: .idle,
                 onSettings: {}
             )
         }

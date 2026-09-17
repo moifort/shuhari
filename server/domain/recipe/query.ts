@@ -58,6 +58,15 @@ export namespace RecipeQuery {
     return { items: recipes, hasMore, totalCount: recipes.length }
   }
 
+  // The notebook's index: every recipe of the asked types, the whole library in one
+  // read. What a title search runs on — Firestore cannot match "contains", and a
+  // paginated library cannot be searched past the pages already loaded, so the
+  // client takes the index once and matches locally, keystroke after keystroke.
+  export const index = async (userId: UserId, types?: RecipeType[]) => {
+    const recipes = await repository.findAllByUser(userId)
+    return types?.length ? recipes.filter(({ type }) => types.includes(type)) : recipes
+  }
+
   export const byId = async (userId: UserId, id: RecipeId) => {
     const recipe = await repository.findBy(userId, id)
     if (!recipe) return 'not-found' as const

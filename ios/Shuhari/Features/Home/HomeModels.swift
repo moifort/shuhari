@@ -17,6 +17,42 @@ struct LibraryRecipe: Identifiable, Sendable {
     let updatedAt: Date
 }
 
+/// One line of the notebook's index — what names a recipe and nothing about its
+/// versions. The whole library fits in one light read, which is what lets a title
+/// search reach recipes the paginated list has not loaded yet.
+struct LibraryIndexEntry: Identifiable, Sendable {
+    let id: String
+    let title: String
+    let category: DishCategory
+    /// How it is brewed — nil on anything that is not a coffee.
+    var method: BrewMethod? = nil
+    let favorite: Bool
+
+    /// The entries whose title holds what was typed, whatever the case and the
+    /// accents ("creme" finds "Crème brûlée"). Titles that START with it come first —
+    /// that is how a name is remembered — then the favourites, then the alphabet.
+    static func matching(_ typed: String, in index: [LibraryIndexEntry]) -> [LibraryIndexEntry] {
+        let needle = folded(typed.trimmingCharacters(in: .whitespaces))
+        guard !needle.isEmpty else { return [] }
+        return index
+            .compactMap { entry -> (entry: LibraryIndexEntry, title: String)? in
+                let title = folded(entry.title)
+                return title.contains(needle) ? (entry, title) : nil
+            }
+            .sorted { lhs, rhs in
+                let (lhsStarts, rhsStarts) = (lhs.title.hasPrefix(needle), rhs.title.hasPrefix(needle))
+                if lhsStarts != rhsStarts { return lhsStarts }
+                if lhs.entry.favorite != rhs.entry.favorite { return lhs.entry.favorite }
+                return lhs.title < rhs.title
+            }
+            .map(\.entry)
+    }
+
+    private static func folded(_ text: String) -> String {
+        text.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: nil)
+    }
+}
+
 /// How the library cuts its rows into sections — one axis per sort: the month of
 /// the last update, the dish course, or the brew method in the coffee tab.
 enum LibraryGrouping: Sendable {
@@ -34,8 +70,8 @@ struct LibraryCourseGroup: Identifiable, Sendable {
 
     /// Cut accumulated (already server-sorted) recipes into course sections. The
     /// section order is the course order itself — `DishCategory.allCases` mirrors the
-    /// server's `categoryRank` — and within a course the server's order (most
-    /// recently updated first) is kept as is. Empty courses have no section.
+    /// server's `categoryRank` — and within a course the server's order (favourites
+    /// first, then by best rating) is kept as is. Empty courses have no section.
     static func grouping(_ recipes: [LibraryRecipe]) -> [LibraryCourseGroup] {
         DishCategory.allCases.compactMap { course in
             let rows = recipes.filter { $0.category == course }
@@ -54,8 +90,8 @@ struct LibraryMethodGroup: Identifiable, Sendable {
 
     /// Cut accumulated (already server-sorted) coffees into method sections. The
     /// section order is the brewing order itself — `BrewMethod.allCases` mirrors
-    /// the server's `methodRank` — and within a method the server's order (most
-    /// recently updated first) is kept as is. Empty methods have no section.
+    /// the server's `methodRank` — and within a method the server's order
+    /// (favourites first, then by best rating) is kept as is. Empty methods have no section.
     static func grouping(_ recipes: [LibraryRecipe]) -> [LibraryMethodGroup] {
         BrewMethod.allCases.compactMap { method in
             let rows = recipes.filter { $0.method == method }

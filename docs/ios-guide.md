@@ -72,6 +72,16 @@ one question the filed order does not answer. On a `LibraryRow` the **heart repl
 one trailing mark per row: a favourite is ranked on its heart, so its rating beside it would be a
 number the order ignores.
 
+**Searching by title runs on the device.** `HomePage` is `.searchable`; its `Search` is
+primitive-first like the facet (`text` binding + `results`, `nil` while nothing is typed). The
+first character makes `LibraryStore` fetch the notebook's **index** (`recipeIndex(types:)` — every
+recipe of the tab, names only, one Firestore read) and `LibraryIndexEntry.matching` filters it
+locally on every keystroke: case- and accent-insensitive, titles starting with what was typed
+first, then the favourites. A paginated list cannot be searched past the pages it has loaded and
+Firestore cannot match "contains" — hence the index. It is dropped whenever the library reloads,
+and a result is a `LibrarySearchRow`: a name, what it is filed by and its heart, nothing a version
+holds.
+
 **The tab decides the import flow.** The entry is shared, what it runs is not: launched from Café
 it reads the source as a coffee, from Cuisine as something cooked. `ContentView` derives an
 `ImportFlow` from the tab it came from (`lastContentTab`) and threads it through `ImportJob` to

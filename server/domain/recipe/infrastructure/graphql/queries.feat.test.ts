@@ -248,6 +248,59 @@ describe('recipes query', () => {
   })
 })
 
+describe('recipeIndex query', () => {
+  beforeEach(() => {
+    seedRecipe(r1, { category: 'main', updatedAt: 1000 })
+    seedRecipe(r2, { category: 'dessert', updatedAt: 2000 })
+    fake.seed('recipes', r3, {
+      id: r3,
+      userId,
+      type: 'coffee',
+      category: 'drink',
+      method: 'v60',
+      title: 'V60 du matin',
+      lastVersionNumber: 1,
+      createdAt: new Date(3000),
+      updatedAt: new Date(3000),
+    })
+  })
+
+  const titles = (data: unknown) =>
+    (data as { recipeIndex: { title: string }[] }).recipeIndex.map(({ title }) => title).sort()
+
+  test('hands over the whole notebook in one read, versions untouched', async () => {
+    const before = fake.queryReads
+    const result = await execute('query { recipeIndex { id title category method favorite } }')
+
+    expect(result.errors).toBeUndefined()
+    expect(titles(result.data)).toEqual([`Recette ${r1}`, `Recette ${r2}`, 'V60 du matin'])
+    expect(fake.queryReads - before).toBe(1)
+  })
+
+  test('keeps to the types of the tab asking', async () => {
+    const result = await execute('query { recipeIndex(types: [COFFEE]) { title } }')
+
+    expect(result.errors).toBeUndefined()
+    expect(titles(result.data)).toEqual(['V60 du matin'])
+  })
+
+  test('never lists another cook’s recipe', async () => {
+    fake.seed('recipes', foreign, {
+      id: foreign,
+      userId: 'user-2' as UserId,
+      type: 'dish',
+      category: 'main',
+      title: 'Pas la mienne',
+      lastVersionNumber: 1,
+      createdAt: new Date(1000),
+      updatedAt: new Date(1000),
+    })
+    const result = await execute('query { recipeIndex { title } }')
+
+    expect(titles(result.data)).not.toContain('Pas la mienne')
+  })
+})
+
 describe('a recipe made of other recipes', () => {
   // The bread, linked to the recipes seeded beside it, each at its own weight.
   const seedComposed = (parentId: string, ...componentIds: string[]) => {

@@ -54,6 +54,24 @@ enum LibraryAPI {
     }
 }
 
+extension LibraryAPI {
+    /// The notebook's index — every recipe of the tab in one light read, for the
+    /// title search. Asks for nothing a version holds: see `recipeIndex`.
+    static func index(types: [RecipeType]) async throws -> [LibraryIndexEntry] {
+        let query = ShuhariGraphQL.RecipeIndexQuery(types: .some(types.map(\.graphQLValue)))
+        let data = try await GraphQLHelpers.fetch(GraphQLClient.shared.apollo, query: query)
+        return data.recipeIndex.map { recipe in
+            LibraryIndexEntry(
+                id: recipe.id,
+                title: recipe.title,
+                category: DishCategory(graphql: recipe.category),
+                method: BrewMethod(graphql: recipe.method),
+                favorite: recipe.favorite
+            )
+        }
+    }
+}
+
 // MARK: - Mapping helpers
 
 /// The category and method sorts are fixed business orders — the server ignores

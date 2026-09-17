@@ -50,6 +50,27 @@ final class LibraryStore {
         didSet { if oldValue != method { scheduleReload() } }
     }
 
+    /// What is typed in the search field. The first character fetches the index; the
+    /// matching itself is local, so every keystroke after it answers at once.
+    var searchText = "" {
+        didSet { if index == nil, !searchText.isEmpty { loadIndex() } }
+    }
+
+    /// The recipes whose title holds `searchText` — `nil` while nothing is typed (the
+    /// library shows), empty while the index is still on its way or matches nothing.
+    var searchResults: [LibraryIndexEntry]? {
+        guard !searchText.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
+        return LibraryIndexEntry.matching(searchText, in: index ?? [])
+    }
+
+    /// The index is on its way: the results are not "nothing found" yet.
+    var isSearching: Bool { index == nil && indexTask != nil }
+
+    /// Every recipe of the tab by name, fetched on the first search and dropped
+    /// whenever the library reloads — a mutation may have renamed, added or removed one.
+    private var index: [LibraryIndexEntry]?
+    private var indexTask: Task<Void, Never>?
+
     private let pageSize = 20
     // Well below pageSize, otherwise the next page would load as soon as the first
     // appears (unintended chain loading).
@@ -80,6 +101,7 @@ final class LibraryStore {
     /// cursor points at the pre-refresh last row) fails its generation guard and can't
     /// append a stale page onto the fresh list.
     func load() async {
+        dropIndex()
         generation += 1
         let requested = generation
         isLoadingMore = false
@@ -126,6 +148,7 @@ final class LibraryStore {
     /// is reported and the reload puts the recipe back where it was.
     func delete(recipeId: String) {
         items.removeAll { $0.id == recipeId }
+        index?.removeAll { $0.id == recipeId }
         Task {
             do {
                 try await RecipeAPI.deleteRecipe(id: recipeId)
@@ -157,6 +180,31 @@ final class LibraryStore {
         if items.count - index <= prefetchThreshold {
             Task { await loadMore() }
         }
+    }
+
+    private func loadIndex() {
+        guard indexTask == nil else { return }
+        indexTask = Task {
+            // A dropped index cancels this task: it must not land on top of its
+            // replacement, nor clear the handle of the task that took over.
+            do {
+                let fetched = try await LibraryAPI.index(types: types)
+                guard !Task.isCancelled else { return }
+                index = fetched
+            } catch {
+                guard !Task.isCancelled else { return }
+                self.error = reportError(error)
+            }
+            indexTask = nil
+        }
+    }
+
+    /// Forget the index; a search still open fetches a fresh one right away.
+    private func dropIndex() {
+        indexTask?.cancel()
+        indexTask = nil
+        index = nil
+        if !searchText.isEmpty { loadIndex() }
     }
 
     private func fetchPage(after: String?) async throws -> RecipePage {
