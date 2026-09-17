@@ -4,9 +4,11 @@ import {
   categoryRank,
   nextVersionNumber,
   standing,
+  tagsAtBirth,
   toTestCount,
   versionToOpen,
   withComponents,
+  withTags,
 } from '~/domain/recipe/business-rules'
 import {
   type ComponentScale,
@@ -16,6 +18,7 @@ import {
   type RecipeId,
   type RecipeTitle,
   type RecipeVersion,
+  type TagLabel,
   type VersionNumber,
 } from '~/domain/recipe/types'
 
@@ -166,5 +169,50 @@ describe('versionToOpen', () => {
   test('opens a lower-rated iteration only when it outranks nothing else', () => {
     const best = version(2, { rating: 5 })
     expect(versionToOpen([version(1, { rating: 3 }), best, version(3, { rating: 4 })])).toBe(best)
+  })
+})
+
+describe('withTags', () => {
+  const label = (text: string) => text as TagLabel
+  const recipe = { id: 'risotto' as RecipeId, title: 'Risotto' as RecipeTitle } as Recipe
+
+  test('keeps the tags in the order the cook wrote them', () => {
+    const tagged = withTags(recipe, [
+      { label: label('Thermomix'), icon: 'thermomix' },
+      { label: label('Invités') },
+    ])
+
+    expect(tagged.tags).toEqual([
+      { label: label('Thermomix'), icon: 'thermomix' },
+      { label: label('Invités') },
+    ])
+  })
+
+  test('a tag typed twice is one tag, whatever its case — the first spelling wins', () => {
+    const tagged = withTags(recipe, [
+      { label: label('Thermomix'), icon: 'thermomix' },
+      { label: label('thermomix') },
+    ])
+
+    expect(tagged.tags).toEqual([{ label: label('Thermomix'), icon: 'thermomix' }])
+  })
+
+  test('leaves no field behind once the last tag goes', () => {
+    const tagged = withTags(recipe, [{ label: label('Thermomix') }])
+
+    expect(withTags(tagged, [])).not.toHaveProperty('tags')
+  })
+})
+
+describe('tagsAtBirth', () => {
+  test('a Thermomix recipe is born saying so', () => {
+    expect(tagsAtBirth('thermomix')).toEqual([
+      { label: 'Thermomix' as TagLabel, icon: 'thermomix' },
+    ])
+  })
+
+  test('a dish and a coffee are born filed under nothing', () => {
+    expect(tagsAtBirth('dish')).toEqual([])
+    expect(tagsAtBirth('coffee')).toEqual([])
   })
 })

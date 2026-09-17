@@ -28,6 +28,7 @@ import {
   RecipeTitle,
   Remarks,
   StepText,
+  TagLabel,
   ThermomixSpeed,
   ThermomixTemperature,
   ThermomixTime,
@@ -161,6 +162,14 @@ builder.scalarType('Tip', {
     'a step, e.g. `"Serve over rice"` (1 to 300 characters)',
   serialize: (value) => value as string,
   parseValue: validatedParse('Tip', Tip),
+})
+
+builder.scalarType('TagLabel', {
+  description:
+    'What a tag says, in the cook’s own words, e.g. `"Thermomix"` or `"Batch cooking"` (1 to 30 ' +
+    'characters)',
+  serialize: (value) => value as string,
+  parseValue: validatedParse('TagLabel', TagLabel),
 })
 
 builder.scalarType('Warning', {

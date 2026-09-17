@@ -1,8 +1,9 @@
 import type { Brand } from 'ts-brand'
 import type { UserId } from '~/domain/shared/types'
 
-// The culinary experiment domains. Drives colour/icon in the app. `dish` is a
-// cooked dish, `thermomix` a Thermomix recipe, `coffee` a brewed coffee.
+// The culinary experiment domains. Drives the shape of a version's content and the
+// tab the recipe lives in — never a badge: what the cook reads on a row is its tags.
+// `dish` is a cooked dish, `thermomix` a Thermomix recipe, `coffee` a brewed coffee.
 export const RECIPE_TYPE_VALUES = ['dish', 'thermomix', 'coffee'] as const
 export type RecipeType = (typeof RECIPE_TYPE_VALUES)[number]
 
@@ -41,6 +42,27 @@ export const DISH_CATEGORY_VALUES = [
 ] as const
 export type DishCategory = (typeof DISH_CATEGORY_VALUES)[number]
 
+// The pictograms a tag can wear — what stands for it on a library row, where there is
+// no room for its words. Technical English symbols, never an icon file's name: the
+// app owns the drawing, so redrawing one costs nothing here. Unranked, like
+// `OVEN_PROGRAM_VALUES`: nothing sorts on a tag.
+export const TAG_ICON_VALUES = [
+  'thermomix',
+  'oven',
+  'microwave',
+  'barbecue',
+  'pan',
+  'freezer',
+  'quick',
+  'slow', // low and slow — the shoulder that takes the afternoon
+  'vegetarian',
+  'fish',
+  'guests',
+  'kids',
+  'festive',
+] as const
+export type TagIcon = (typeof TAG_ICON_VALUES)[number]
+
 // How the paginated library is ordered. `updatedAt` honours the requested
 // direction; `category` and `method` always follow their fixed business rank (see
 // `categoryRank` / `methodRank`), then the recipe's `standing` (hearted first, then
@@ -57,6 +79,7 @@ export type IngredientName = Brand<string, 'IngredientName'>
 export type IngredientQuantity = Brand<string, 'IngredientQuantity'>
 export type StepText = Brand<string, 'StepText'>
 export type Tip = Brand<string, 'Tip'>
+export type TagLabel = Brand<string, 'TagLabel'>
 export type Warning = Brand<string, 'Warning'>
 export type ThermomixTime = Brand<string, 'ThermomixTime'>
 export type ThermomixTemperature = Brand<string, 'ThermomixTemperature'>
@@ -151,6 +174,15 @@ export type Component = {
   scale: ComponentScale
 }
 
+// A word the cook files a recipe under, in their own words ("Thermomix", "Batch
+// cooking", "Noël"), with the pictogram that stands for it where there is no room
+// for the word. The icon is optional: a tag without one is read on the recipe sheet
+// and simply does not show on a library row.
+export type Tag = {
+  label: TagLabel
+  icon?: TagIcon
+}
+
 export type VersionOriginKind = 'import' | 'ai-proposal' | 'manual'
 export type VersionOrigin = { kind: VersionOriginKind; detail?: string }
 
@@ -187,6 +219,11 @@ export type Recipe = {
   // `favorite`, and restamped by the same commands; required on every document,
   // since Firestore silently drops from an ordered query the ones missing the field.
   standing: number
+  // What the cook files it under. Aggregate level like `category`: a tag says what
+  // the recipe IS (made on the Thermomix, for guests), which no iteration changes.
+  // Ordered as the cook wrote them, one entry per label (`withTags`). Absent rather
+  // than empty, like every other absence in the domain.
+  tags?: Tag[]
   // The recipes this one is made of, with the quantity it takes of each. Aggregate
   // level, deliberately: the cook links from the recipe sheet, the link holds for
   // every version of it, and no iteration has to carry it forward. Ordered by when

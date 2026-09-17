@@ -65,6 +65,27 @@ export const DishCategoryEnum = builder.enumType('DishCategory', {
   } as const,
 })
 
+export const TagIconEnum = builder.enumType('TagIcon', {
+  description:
+    'The pictogram a tag can wear — what stands for it on a library row, where there is no room ' +
+    'for its words. A name, not a drawing: the app draws it.',
+  values: {
+    THERMOMIX: { value: 'thermomix', description: 'Made on the Thermomix' },
+    OVEN: { value: 'oven', description: 'Goes in the oven, e.g. `"Gratin"`' },
+    MICROWAVE: { value: 'microwave', description: 'Made in the microwave, e.g. `"Mug cake"`' },
+    BARBECUE: { value: 'barbecue', description: 'Cooked over the fire, e.g. `"Ribs"`' },
+    PAN: { value: 'pan', description: 'A one-pan dish, e.g. `"Shakshuka"`' },
+    FREEZER: { value: 'freezer', description: 'Freezes well, e.g. `"Bolognese"`' },
+    QUICK: { value: 'quick', description: 'On the table in no time, e.g. `"Carbonara"`' },
+    SLOW: { value: 'slow', description: 'Low and slow, e.g. `"Pulled pork"`' },
+    VEGETARIAN: { value: 'vegetarian', description: 'No meat, no fish, e.g. `"Dahl"`' },
+    FISH: { value: 'fish', description: 'Fish and seafood, e.g. `"Ceviche"`' },
+    GUESTS: { value: 'guests', description: 'What you cook when people come over' },
+    KIDS: { value: 'kids', description: 'What the children actually eat' },
+    FESTIVE: { value: 'festive', description: 'For the big days, e.g. `"Christmas log"`' },
+  } as const,
+})
+
 export const OvenProgramEnum = builder.enumType('OvenProgram', {
   description:
     'An oven heating function — what the dial selects, e.g. `CONVECTION`. Model-independent: a ' +

@@ -19,9 +19,12 @@ query RecipeList(
     items {
       id
       title
-      type
       category
       method
+      tags {
+        label
+        icon
+      }
       favorite
       updatedAt
       versionCount

@@ -1,8 +1,15 @@
 import type { VersionContent } from '~/domain/recipe/content/types'
 import { VersionContent as brandVersionContent } from '~/domain/recipe/primitives'
+import type { Tag, TagIcon, TagLabel } from '~/domain/recipe/types'
 import { builder } from '~/domain/shared/graphql/builder'
 import { domainError } from '~/domain/shared/graphql/errors'
-import { BrewMethodEnum, DishCategoryEnum, OvenProgramEnum, RecipeTypeEnum } from './enums'
+import {
+  BrewMethodEnum,
+  DishCategoryEnum,
+  OvenProgramEnum,
+  RecipeTypeEnum,
+  TagIconEnum,
+} from './enums'
 
 export const IngredientInput = builder.inputType('IngredientInput', {
   description:
@@ -324,9 +331,34 @@ export const CreateRecipeInput = builder.inputType('CreateRecipeInput', {
   }),
 })
 
+export const TagInput = builder.inputType('TagInput', {
+  description:
+    'One tag to file a recipe under, e.g. label `"Thermomix"` + icon `THERMOMIX`. Order is kept.',
+  fields: (t) => ({
+    label: t.field({
+      type: 'TagLabel',
+      required: true,
+      description: 'What it says, e.g. `"Thermomix"`',
+    }),
+    icon: t.field({
+      type: TagIconEnum,
+      description:
+        'The pictogram that stands for it on a library row, e.g. `THERMOMIX`. Leave out for a ' +
+        'tag read on the recipe sheet only.',
+    }),
+  }),
+})
+
+// GraphQL spells an absent icon `null`; the domain spells it absent.
+export const tagInput = (input: { label: TagLabel; icon?: TagIcon | null }): Tag => ({
+  label: input.label,
+  ...(input.icon ? { icon: input.icon } : {}),
+})
+
 export const UpdateRecipeInput = builder.inputType('UpdateRecipeInput', {
   description:
-    'What you can retouch on a recipe: its name, its course or its brew method. Send only what ' +
+    'What you can retouch on a recipe: its name, its course, its brew method or its tags. Send ' +
+    'only what ' +
     'you want to change — anything you leave out stays as it was. Its type is fixed for good, ' +
     'and the heart is worn by a version (see updateFavorite).',
   fields: (t) => ({
@@ -345,6 +377,13 @@ export const UpdateRecipeInput = builder.inputType('UpdateRecipeInput', {
       description:
         'The new brew method, e.g. `CHEMEX` for a coffee the import filed as `V60` (leave out to ' +
         'keep the current one). Rejected on a recipe that is not a `COFFEE`.',
+    }),
+    tags: t.field({
+      type: [TagInput],
+      description:
+        'The complete list of tags it is filed under from now on, e.g. `"Thermomix"` then ' +
+        '`"Guests"` — `[]` takes every tag off (leave out to keep the current ones). Eight at ' +
+        'most, one per label.',
     }),
   }),
 })

@@ -395,6 +395,9 @@ struct Recipe: Identifiable, Sendable {
     /// How it is brewed — fixed at import, shared across all versions, and nil on
     /// anything that is not a coffee.
     var method: BrewMethod? = nil
+    /// What the cook files it under, in the order they wrote it. A recipe imported as
+    /// a Thermomix one is born wearing "Thermomix".
+    var tags: [Tag] = []
     /// Whether any of its versions is hearted — the derived mirror that puts the
     /// recipe at the head of its course. Never set directly: heart a version.
     let favorite: Bool

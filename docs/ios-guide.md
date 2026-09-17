@@ -514,9 +514,29 @@ present on all rows of a proposal, absent from all rows everywhere else, per
 [the shared leading edge](swiftui-best-practices.md#every-row-of-a-form-shares-one-leading-edge).
 Nothing in the form draws that column itself.
 
-The header capsule on a coffee says **how it is brewed** (ESPRESSO, V60, FRENCH PRESS) instead of
-the recipe type: the type is given away by the tab the recipe lives in, the method is what
-identifies it. `RecipeHeaderBadges(methodLabel:methodIcon:)` — nil on anything else.
+The leading header capsule on a coffee says **how it is brewed** (ESPRESSO, V60, FRENCH PRESS):
+the method is what identifies it. `RecipeHeaderBadges(methodLabel:methodIcon:)` — nil on anything
+else. The recipe type itself is never a badge — what a recipe wears is its
+[tags](#tags--the-badges-a-recipe-wears).
+
+### Tags — the badges a recipe wears
+
+A recipe's [tags](business-rules.md#tags--what-a-recipe-is-filed-under) are drawn in two places,
+and both take `[TagBadge]` (label + optional `Image`, mapped by the page through `Tag.badge`) —
+never the domain `Tag`:
+
+- `LibraryRow(tags:)` closes the subtitle with **icon-only** compact `Chip`s, one per tag that
+  wears an icon; a tag without one is not drawn there.
+- `RecipeHeaderBadges(tags:)` shows every tag, icon and words, ahead of the version capsule, in a
+  `FlowLayout` so several tags fold onto a second line. The badges are the **header of an empty
+  `Section`**, not a row: a row is clipped to the list's rounded corners, which bite into the
+  capsules as soon as there are two lines of them.
+
+`TagIcon` (`Shared/Tag.swift`) is the design-facing twin of the server's closed icon set — it
+owns the drawing (SF Symbol, or the `thermomix` asset) and the French name the picker shows.
+Tags are edited in `RecipeEditSheet` through `TagsEditSection` (icon menu + text field per row,
+eight rows at most) and travel with the title and the course in the single `updateRecipe` call.
+DebugGallery: `cuisine`, `recipe-thermomix`, `recipe-edit-thermomix`.
 
 ### Resizing a cup
 

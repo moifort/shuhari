@@ -1178,7 +1178,7 @@ type Mutation {
   ): Version!
 
   """
-  Retouch a recipe: rename it, refile it under another course, or both. To heart it, heart one of its versions (see updateFavorite). Returns the updated recipe.
+  Retouch a recipe: rename it, refile it under another course, retag it, or any of them at once. To heart it, heart one of its versions (see updateFavorite). Returns the updated recipe.
   
   ```graphql
   updateRecipe(id: "9f1c-a3b2", input: { title: "Nonna's lasagna", category: MAIN }) {
@@ -1759,6 +1759,11 @@ type Recipe {
   """
   method: BrewMethod
 
+  """
+  What it is filed under, in the order you wrote them, e.g. `"Thermomix"` then `"Guests"`. A recipe imported as a `THERMOMIX` is born wearing `"Thermomix"`. Empty on a recipe you never tagged.
+  """
+  tags: [Tag!]!
+
   """Its name, e.g. `"Grandma’s lasagna"`"""
   title: RecipeTitle!
 
@@ -1768,7 +1773,7 @@ type Recipe {
   toTestCount: Int!
 
   """
-  Whether it is a cooked dish (`DISH`), a Thermomix recipe (`THERMOMIX`) or a coffee (`COFFEE`)
+  Whether it is a cooked dish (`DISH`), a Thermomix recipe (`THERMOMIX`) or a coffee (`COFFEE`). It shapes what a version holds and the tab the recipe lives in — what a row shows of it is its `tags`.
   """
   type: RecipeType!
 
@@ -1904,6 +1909,81 @@ One instruction in the method, e.g. `"Fold in the egg whites"` (1 to 300 charact
 scalar StepText
 
 """
+A word a recipe is filed under, in the cook’s own words — `"Thermomix"`, `"Batch cooking"` — with the pictogram that stands for it where there is no room for the word. Worn by the recipe, so it holds for every version of it.
+"""
+type Tag {
+  """
+  The pictogram that stands for it on a library row, e.g. `THERMOMIX`. `null` on a tag that is read on the recipe sheet only.
+  """
+  icon: TagIcon
+
+  """What it says, e.g. `"Thermomix"`"""
+  label: TagLabel!
+}
+
+"""
+The pictogram a tag can wear — what stands for it on a library row, where there is no room for its words. A name, not a drawing: the app draws it.
+"""
+enum TagIcon {
+  """Cooked over the fire, e.g. `"Ribs"`"""
+  BARBECUE
+
+  """For the big days, e.g. `"Christmas log"`"""
+  FESTIVE
+
+  """Fish and seafood, e.g. `"Ceviche"`"""
+  FISH
+
+  """Freezes well, e.g. `"Bolognese"`"""
+  FREEZER
+
+  """What you cook when people come over"""
+  GUESTS
+
+  """What the children actually eat"""
+  KIDS
+
+  """Made in the microwave, e.g. `"Mug cake"`"""
+  MICROWAVE
+
+  """Goes in the oven, e.g. `"Gratin"`"""
+  OVEN
+
+  """A one-pan dish, e.g. `"Shakshuka"`"""
+  PAN
+
+  """On the table in no time, e.g. `"Carbonara"`"""
+  QUICK
+
+  """Low and slow, e.g. `"Pulled pork"`"""
+  SLOW
+
+  """Made on the Thermomix"""
+  THERMOMIX
+
+  """No meat, no fish, e.g. `"Dahl"`"""
+  VEGETARIAN
+}
+
+"""
+One tag to file a recipe under, e.g. label `"Thermomix"` + icon `THERMOMIX`. Order is kept.
+"""
+input TagInput {
+  """
+  The pictogram that stands for it on a library row, e.g. `THERMOMIX`. Leave out for a tag read on the recipe sheet only.
+  """
+  icon: TagIcon
+
+  """What it says, e.g. `"Thermomix"`"""
+  label: TagLabel!
+}
+
+"""
+What a tag says, in the cook’s own words, e.g. `"Thermomix"` or `"Batch cooking"` (1 to 30 characters)
+"""
+scalar TagLabel
+
+"""
 The body of a Thermomix version: its ingredient list and its steps, each carrying its own Thermomix settings.
 """
 type ThermomixContent {
@@ -2034,7 +2114,7 @@ type TipsProposal {
 }
 
 """
-What you can retouch on a recipe: its name, its course or its brew method. Send only what you want to change — anything you leave out stays as it was. Its type is fixed for good, and the heart is worn by a version (see updateFavorite).
+What you can retouch on a recipe: its name, its course, its brew method or its tags. Send only what you want to change — anything you leave out stays as it was. Its type is fixed for good, and the heart is worn by a version (see updateFavorite).
 """
 input UpdateRecipeInput {
   """
@@ -2046,6 +2126,11 @@ input UpdateRecipeInput {
   The new brew method, e.g. `CHEMEX` for a coffee the import filed as `V60` (leave out to keep the current one). Rejected on a recipe that is not a `COFFEE`.
   """
   method: BrewMethod
+
+  """
+  The complete list of tags it is filed under from now on, e.g. `"Thermomix"` then `"Guests"` — `[]` takes every tag off (leave out to keep the current ones). Eight at most, one per label.
+  """
+  tags: [TagInput!]
 
   """
   The new name, e.g. `"Nonna’s lasagna"` (leave out to keep the current one)

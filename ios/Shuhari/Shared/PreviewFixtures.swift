@@ -362,6 +362,11 @@ enum Fixtures {
         title: "Risotto au parmesan",
         type: .thermomix,
         category: .main,
+        tags: [
+            Tag(label: "Thermomix", icon: .thermomix),
+            Tag(label: "Invités", icon: .guests),
+            Tag(label: "Dimanche soir"),
+        ],
         favorite: true,
         versions: [risottoV2],
         bestRating: 4,
@@ -500,13 +505,13 @@ enum Fixtures {
     /// A page of coffees spanning several brewing methods — backs the coffee tab
     /// in previews and the debug gallery.
     static let coffeeRecipes = [
-        LibraryRecipe(id: "espresso", title: "Espresso Brésil Santa Lúcia", type: .coffee, category: .drink, method: .espresso, favorite: true, versionCount: 5, toTestCount: 1, bestRating: 5, updatedAt: Date()),
-        LibraryRecipe(id: "flat-white", title: "Flat white du matin", type: .coffee, category: .drink, method: .flatWhite, favorite: false, versionCount: 2, toTestCount: 0, bestRating: 4, updatedAt: Date().addingTimeInterval(-2 * 86_400)),
-        LibraryRecipe(id: "bialetti", title: "Bialetti 3 tasses", type: .coffee, category: .drink, method: .moka, favorite: false, versionCount: 1, toTestCount: 0, bestRating: 3, updatedAt: Date().addingTimeInterval(-9 * 86_400)),
-        LibraryRecipe(id: "v60", title: "V60 Éthiopie Guji", type: .coffee, category: .drink, method: .v60, favorite: true, versionCount: 2, toTestCount: 0, bestRating: 5, updatedAt: Date().addingTimeInterval(-12 * 86_400)),
-        LibraryRecipe(id: "chemex", title: "Chemex du dimanche", type: .coffee, category: .drink, method: .chemex, favorite: false, versionCount: 3, toTestCount: 1, bestRating: 4, updatedAt: Date().addingTimeInterval(-38 * 86_400)),
-        LibraryRecipe(id: "moccamaster", title: "Moccamaster 1 L", type: .coffee, category: .drink, method: .drip, favorite: false, versionCount: 1, toTestCount: 0, bestRating: nil, updatedAt: Date().addingTimeInterval(-41 * 86_400)),
-        LibraryRecipe(id: "french-press", title: "French press dosage double", type: .coffee, category: .drink, method: .frenchPress, favorite: false, versionCount: 2, toTestCount: 0, bestRating: 3, updatedAt: Date().addingTimeInterval(-44 * 86_400)),
+        LibraryRecipe(id: "espresso", title: "Espresso Brésil Santa Lúcia", category: .drink, method: .espresso, favorite: true, versionCount: 5, toTestCount: 1, bestRating: 5, updatedAt: Date()),
+        LibraryRecipe(id: "flat-white", title: "Flat white du matin", category: .drink, method: .flatWhite, favorite: false, versionCount: 2, toTestCount: 0, bestRating: 4, updatedAt: Date().addingTimeInterval(-2 * 86_400)),
+        LibraryRecipe(id: "bialetti", title: "Bialetti 3 tasses", category: .drink, method: .moka, favorite: false, versionCount: 1, toTestCount: 0, bestRating: 3, updatedAt: Date().addingTimeInterval(-9 * 86_400)),
+        LibraryRecipe(id: "v60", title: "V60 Éthiopie Guji", category: .drink, method: .v60, favorite: true, versionCount: 2, toTestCount: 0, bestRating: 5, updatedAt: Date().addingTimeInterval(-12 * 86_400)),
+        LibraryRecipe(id: "chemex", title: "Chemex du dimanche", category: .drink, method: .chemex, favorite: false, versionCount: 3, toTestCount: 1, bestRating: 4, updatedAt: Date().addingTimeInterval(-38 * 86_400)),
+        LibraryRecipe(id: "moccamaster", title: "Moccamaster 1 L", category: .drink, method: .drip, favorite: false, versionCount: 1, toTestCount: 0, bestRating: nil, updatedAt: Date().addingTimeInterval(-41 * 86_400)),
+        LibraryRecipe(id: "french-press", title: "French press dosage double", category: .drink, method: .frenchPress, favorite: false, versionCount: 2, toTestCount: 0, bestRating: 3, updatedAt: Date().addingTimeInterval(-44 * 86_400)),
     ]
 
     // MARK: - Fresh import (nothing rated yet, v1 never tried)
@@ -732,10 +737,10 @@ enum Fixtures {
     /// A page of library rows spanning both cooking types and a couple of months —
     /// backs the paginated notebook list in previews and the debug gallery.
     static let libraryRecipes = [
-        LibraryRecipe(id: "bourguignon", title: "Bœuf bourguignon", type: .dish, category: .main, favorite: true, versionCount: 4, toTestCount: 1, bestRating: 5, updatedAt: Date()),
-        LibraryRecipe(id: "joues", title: "Joues de bœuf confites", type: .dish, category: .main, favorite: false, versionCount: 1, toTestCount: 0, bestRating: 4, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
-        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .thermomix, category: .main, favorite: false, versionCount: 2, toTestCount: 1, bestRating: 4, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
-        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .thermomix, category: .soup, favorite: true, versionCount: 1, toTestCount: 0, bestRating: nil, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
+        LibraryRecipe(id: "bourguignon", title: "Bœuf bourguignon", category: .main, favorite: true, versionCount: 4, toTestCount: 1, bestRating: 5, updatedAt: Date()),
+        LibraryRecipe(id: "joues", title: "Joues de bœuf confites", category: .main, favorite: false, versionCount: 1, toTestCount: 0, bestRating: 4, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
+        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", category: .main, tags: [Tag(label: "Thermomix", icon: .thermomix)], favorite: false, versionCount: 2, toTestCount: 1, bestRating: 4, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+        LibraryRecipe(id: "veloute", title: "Velouté de courge", category: .soup, tags: [Tag(label: "Thermomix", icon: .thermomix)], favorite: true, versionCount: 1, toTestCount: 0, bestRating: nil, updatedAt: Date().addingTimeInterval(-45 * 86_400)),
     ]
 }
 #endif

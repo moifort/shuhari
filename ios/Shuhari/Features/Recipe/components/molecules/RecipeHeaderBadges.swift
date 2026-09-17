@@ -1,28 +1,39 @@
 import SwiftUI
 
 /// The recipe sheet's header badges, in the iOS Photos "CINÉMATIQUE" style: a capsule
-/// carrying the recipe type (icon + short uppercase label), then the displayed
-/// version and how many versions wait to be cooked. Primitive-first: no domain struct.
+/// per tag the recipe is filed under (icon when it wears one + short uppercase label),
+/// then the displayed version and how many versions wait to be cooked. They wrap
+/// onto a second line rather than squeeze: a recipe can wear several tags.
+/// Primitive-first: no domain struct.
 struct RecipeHeaderBadges: View {
-    let type: RecipeType
+    /// What the recipe is filed under — the same tags the library row shows the
+    /// icons of, with their words this time.
+    var tags: [TagBadge] = []
     let versionNumber: Int?
     /// The versions waiting to be cooked. Zero hides the flask badge.
     var toTestCount: Int = 0
-    /// On a coffee, the capsule says HOW it is brewed (ESPRESSO, V60) rather than
-    /// the obvious "CAFÉ": the type is given away by the tab it lives in, the
+    /// On a coffee, a leading capsule says HOW it is brewed (ESPRESSO, V60): the
     /// method is what actually identifies the recipe. Nil on anything else.
     var methodLabel: String? = nil
     var methodIcon: Image? = nil
 
     var body: some View {
-        HStack(spacing: Theme.Spacing.s) {
-            capsule {
-                methodIcon ?? type.iconImage(filled: false)
-                Text((methodLabel ?? type.label).uppercased())
+        FlowLayout(spacing: Theme.Spacing.s) {
+            if let methodLabel {
+                capsule {
+                    methodIcon
+                    Text(methodLabel.uppercased())
+                }
+                .accessibilityLabel("Méthode \(methodLabel)")
             }
-            .accessibilityLabel(
-                methodLabel.map { "Méthode \($0)" } ?? "Type \(type.label)"
-            )
+
+            ForEach(tags) { tag in
+                capsule {
+                    tag.icon
+                    Text(tag.label.uppercased())
+                }
+                .accessibilityLabel("Tag \(tag.label)")
+            }
 
             if let versionNumber {
                 capsule {
@@ -59,14 +70,26 @@ struct RecipeHeaderBadges: View {
 
 #Preview {
     VStack(alignment: .leading, spacing: 12) {
-        ForEach(RecipeType.allCases) { type in
-            RecipeHeaderBadges(type: type, versionNumber: 3, toTestCount: 2)
-        }
-        RecipeHeaderBadges(type: .dish, versionNumber: nil)
-        // A coffee wears its brew method instead of the word "café".
+        RecipeHeaderBadges(
+            tags: [Tag(label: "Thermomix", icon: .thermomix).badge],
+            versionNumber: 3,
+            toTestCount: 2
+        )
+        // Several tags wrap; one without an icon is its words alone.
+        RecipeHeaderBadges(
+            tags: [
+                Tag(label: "Thermomix", icon: .thermomix).badge,
+                Tag(label: "Invités", icon: .guests).badge,
+                Tag(label: "Dimanche soir").badge,
+            ],
+            versionNumber: 3,
+            toTestCount: 2
+        )
+        // Filed under nothing: the version leads.
+        RecipeHeaderBadges(versionNumber: 1)
+        // A coffee wears its brew method ahead of its tags.
         ForEach([BrewMethod.espresso, .v60, .frenchPress], id: \.self) { method in
             RecipeHeaderBadges(
-                type: .coffee,
                 versionNumber: 2,
                 methodLabel: method.label,
                 methodIcon: method.iconImage

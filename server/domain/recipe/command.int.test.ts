@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, mock, setSystemTime, test } fr
 import { type CoffeeContent, emptyCoffeeParameters } from '~/domain/recipe/content/coffee'
 import type { DishContent } from '~/domain/recipe/content/dish'
 import type { LooseThermomixSettings, ThermomixContent } from '~/domain/recipe/content/thermomix'
-import { COMPONENT_LIMITS } from '~/domain/recipe/limits'
+import { COMPONENT_LIMITS, TAG_LIMITS } from '~/domain/recipe/limits'
 import type {
   CoffeeBeanName,
   CoffeeDose,
@@ -21,6 +21,7 @@ import type {
   RecipeVersion,
   Remarks,
   StepText,
+  TagLabel,
   ThermomixSpeed,
   ThermomixTime,
   Tip,
@@ -89,6 +90,21 @@ describe('RecipeCommand.create', () => {
     // Both docs land in a single batch (all-or-nothing).
     expect(fake.directWrites).toEqual([])
     expect(fake.batches.length).toBe(1)
+  })
+
+  test('a Thermomix recipe is born tagged so, a dish filed under nothing', async () => {
+    const thermomix = await RecipeCommand.create(
+      userId,
+      newInput({ kind: 'thermomix', ingredients: [], steps: [] }),
+    )
+    const dish = await RecipeCommand.create(userId, newInput())
+    if (typeof thermomix === 'string' || typeof dish === 'string')
+      throw new Error('expected two recipes')
+
+    expect(fake.snapshot('recipes').get(thermomix.id)?.tags).toEqual([
+      { label: 'Thermomix', icon: 'thermomix' },
+    ])
+    expect(fake.snapshot('recipes').get(dish.id)).not.toHaveProperty('tags')
   })
 
   test('stores the version content verbatim, empty settings steps included', async () => {
@@ -192,6 +208,7 @@ describe('RecipeCommand.copyVersion', () => {
     await RecipeCommand.updateWarnings(userId, source.id, 1 as VersionNumber, [
       'Fouet dès le début' as Warning,
     ])
+    await RecipeCommand.update(userId, source.id, { tags: [{ label: 'Dimanche' as TagLabel }] })
     await RecipeCommand.recordAttempt(userId, {
       recipeId: source.id,
       versionNumber: 1 as VersionNumber,
@@ -216,6 +233,7 @@ describe('RecipeCommand.copyVersion', () => {
     // The identity of the recipe copied, cautions included.
     expect(copy.type).toBe('dish')
     expect(copy.category).toBe('main')
+    expect(copy.tags).toEqual([{ label: 'Dimanche' as TagLabel }])
     expect(copy.lastVersionNumber).toBe(1 as VersionNumber)
 
     const v1 = fake.snapshot('recipe-versions').get(`${copy.id}_1`)
@@ -499,6 +517,35 @@ describe('RecipeCommand.update', () => {
         title: 'Blanquette' as RecipeTitle,
       }),
     ).toBe('not-found')
+  })
+
+  test('files the recipe under the tags it is handed, replacing the ones it wore', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+
+    await RecipeCommand.update(userId, recipe.id, {
+      tags: [{ label: 'Invités' as TagLabel, icon: 'guests' }, { label: 'Dimanche' as TagLabel }],
+    })
+    expect(fake.snapshot('recipes').get(recipe.id)?.tags).toEqual([
+      { label: 'Invités', icon: 'guests' },
+      { label: 'Dimanche' },
+    ])
+
+    // A rename leaves them alone; an empty list takes them all off, field included.
+    await RecipeCommand.update(userId, recipe.id, { title: 'Blanquette de veau' as RecipeTitle })
+    expect(fake.snapshot('recipes').get(recipe.id)?.tags).toHaveLength(2)
+    await RecipeCommand.update(userId, recipe.id, { tags: [] })
+    expect(fake.snapshot('recipes').get(recipe.id)).not.toHaveProperty('tags')
+  })
+
+  test('refuses more tags than a header can hold', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    const tags = Array.from({ length: TAG_LIMITS.perRecipe + 1 }, (_, i) => ({
+      label: `Tag ${i}` as TagLabel,
+    }))
+
+    expect(await RecipeCommand.update(userId, recipe.id, { tags })).toBe('too-many-tags')
   })
 })
 

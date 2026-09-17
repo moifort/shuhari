@@ -2,9 +2,9 @@ import SwiftUI
 
 /// The one place a recipe is corrected. It carries the whole sheet: its title, the
 /// axis it is filed on — its dish course, or its brew method when it is a coffee —
-/// the note of the version on screen, then that version's content (its shopping list
-/// and its method, or a coffee's parameters), its oven settings, its cautions and its
-/// tips. The recipe sheet behind it reads and never writes.
+/// the tags it wears, the note of the version on screen, then that version's content
+/// (its shopping list and its method, or a coffee's parameters), its oven settings,
+/// its cautions and its tips. The recipe sheet behind it reads and never writes.
 ///
 /// Every list edits in place: type on a line, swipe it away, add one at the end. The
 /// type itself stays fixed — a dish never becomes a Thermomix recipe, its versions
@@ -55,6 +55,7 @@ struct RecipeEditSheet: View {
                         .accessibilityIdentifier("edit-title-field")
                     filing
                 }
+                TagsEditSection(draft: $draft.tags)
                 // The note belongs to the version on screen, not to the recipe, so it
                 // is a block of its own and says which version — but a row like every
                 // other one, its stars closing the line the way the course does.

@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// A library row: the filing icon, the title, a subtitle with the version count
-/// closed by the recipe type as an icon-only chip, and ONE trailing mark on the
+/// closed by the recipe's tags as icon-only chips, and ONE trailing mark on the
 /// title's line: the favourite heart, or else the recipe's best rating ("the
 /// highest star" across every version it ever cooked) as stars. The heart replaces
 /// the stars rather than joining them — "I would make this again" already says what
@@ -9,14 +9,16 @@ import SwiftUI
 ///
 /// The leading icon is what the recipe is filed by: its course for a dish, its
 /// brew method for a coffee — every coffee is a `drink`, so the course icon would
-/// say the same thing on every row of the coffee tab. For the same reason a coffee
-/// row carries no type chip: the coffee tab holds nothing else.
+/// say the same thing on every row of the coffee tab.
+///
+/// A row has no room for a tag's words, so it shows the tags that wear an icon and
+/// nothing of the others — those are read on the recipe sheet.
 struct LibraryRow: View {
     let title: String
-    let type: RecipeType
     let category: DishCategory
     /// Set on a coffee and on nothing else.
     var method: BrewMethod? = nil
+    var tags: [TagBadge] = []
     let versionCount: Int
     /// How many of those versions are waiting to be cooked — `0` drops the count from
     /// the subtitle rather than writing "0 essai".
@@ -42,12 +44,11 @@ struct LibraryRow: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
-                    // The type chip only tells a dish from a Thermomix: the coffee tab
-                    // holds nothing but coffees, so the chip would repeat itself on
-                    // every row — as the leading icon would.
-                    if type != .coffee {
-                        Chip(image: type.iconImage(filled: false), compact: true)
-                            .accessibilityLabel(type.label)
+                    ForEach(tags) { tag in
+                        if let icon = tag.icon {
+                            Chip(image: icon, compact: true)
+                                .accessibilityLabel(tag.label)
+                        }
                     }
                 }
             }
@@ -78,10 +79,10 @@ struct LibraryRow: View {
 
 #Preview {
     List {
-        LibraryRow(title: "Bœuf bourguignon", type: .dish, category: .main, versionCount: 4, toTestCount: 1, bestRating: 5, favorite: true)
-        LibraryRow(title: "Tarte au citron meringuée", type: .thermomix, category: .dessert, versionCount: 1, toTestCount: 1, bestRating: 3)
-        LibraryRow(title: "Velouté de courge", type: .thermomix, category: .soup, versionCount: 2, toTestCount: 0, bestRating: nil, favorite: true)
-        LibraryRow(title: "V60 Éthiopie Guji", type: .coffee, category: .drink, method: .v60, versionCount: 2, toTestCount: 0, bestRating: 5, favorite: true)
-        LibraryRow(title: "Bialetti 3 tasses", type: .coffee, category: .drink, method: .moka, versionCount: 1, toTestCount: 0, bestRating: 3)
+        LibraryRow(title: "Bœuf bourguignon", category: .main, tags: [Tag(label: "Invités", icon: .guests).badge, Tag(label: "Dimanche").badge], versionCount: 4, toTestCount: 1, bestRating: 5, favorite: true)
+        LibraryRow(title: "Tarte au citron meringuée", category: .dessert, tags: [Tag(label: "Thermomix", icon: .thermomix).badge], versionCount: 1, toTestCount: 1, bestRating: 3)
+        LibraryRow(title: "Velouté de courge", category: .soup, tags: [Tag(label: "Thermomix", icon: .thermomix).badge, Tag(label: "Congélation", icon: .freezer).badge], versionCount: 2, toTestCount: 0, bestRating: nil, favorite: true)
+        LibraryRow(title: "V60 Éthiopie Guji", category: .drink, method: .v60, versionCount: 2, toTestCount: 0, bestRating: 5, favorite: true)
+        LibraryRow(title: "Bialetti 3 tasses", category: .drink, method: .moka, versionCount: 1, toTestCount: 0, bestRating: 3)
     }
 }

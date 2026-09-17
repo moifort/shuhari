@@ -5,10 +5,11 @@ import Foundation
 struct LibraryRecipe: Identifiable, Sendable {
     let id: String
     let title: String
-    let type: RecipeType
     let category: DishCategory
     /// How it is brewed — nil on anything that is not a coffee.
     var method: BrewMethod? = nil
+    /// What the cook files it under — the row shows the ones that wear an icon.
+    var tags: [Tag] = []
     let favorite: Bool
     let versionCount: Int
     /// How many of those versions are waiting to be cooked — `0` when none is.

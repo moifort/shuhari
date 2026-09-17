@@ -164,6 +164,42 @@ struct TextListDraft: Equatable {
     }
 }
 
+/// One editable tag: its words and the icon it wears, if any.
+struct TagRow: Identifiable, Equatable {
+    let id = UUID()
+    var label: String
+    var icon: TagIcon?
+}
+
+/// The tags being edited. The server holds the same two limits: a tag is a word or
+/// two, and a recipe wears a handful of them, not a paragraph.
+struct TagListDraft: Equatable {
+    static let maxCount = 8
+    static let maxLabelLength = 30
+
+    var rows: [TagRow]
+
+    init(_ tags: [Tag]) {
+        rows = tags.map { TagRow(label: $0.label, icon: $0.icon) }
+    }
+
+    var isFull: Bool { rows.count >= Self.maxCount }
+
+    mutating func add() {
+        rows.append(TagRow(label: ""))
+    }
+
+    /// The tags as they will be stored: blank rows dropped — an emptied list is how
+    /// every tag is taken off — and an overlong label cut to what the server takes.
+    var tags: [Tag] {
+        rows.compactMap { row in
+            let label = row.label.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !label.isEmpty else { return nil }
+            return Tag(label: String(label.prefix(Self.maxLabelLength)), icon: row.icon)
+        }
+    }
+}
+
 /// Everything a recipe sheet can be corrected on, in one place: the aggregate's own
 /// fields, and the whole content of the version on screen. `RecipeEditSheet` binds to
 /// it and `RecipeAPI.correct` writes back only what moved. The type is not in it — a
@@ -173,6 +209,8 @@ struct RecipeDraft {
     var category: DishCategory
     /// Set on a coffee and on nothing else, which is filed by how it is brewed.
     var method: BrewMethod?
+    /// What the recipe is filed under — the recipe's own, like its course.
+    var tags: TagListDraft
     /// The note of the version on screen — nil while it has never been rated.
     var rating: Int?
     var ingredients: IngredientListDraft
@@ -191,6 +229,7 @@ struct RecipeDraft {
         title = recipe.title
         category = recipe.category
         method = recipe.method
+        tags = TagListDraft(recipe.tags)
         rating = version.rating
         ingredients = IngredientListDraft(version.ingredients)
         steps = StepListDraft(version.editableSteps, showsSettings: version.isThermomix)

@@ -9,6 +9,7 @@ export const RECIPE_MAX = {
   stepText: 300,
   tip: 300,
   warning: 300,
+  tagLabel: 30, // a word or two — it has to fit a capsule next to the version badge
   thermomix: 20,
   coffee: 30, // a grind setting spells out a grinder ("Niveau 12, Comandante")
   assistedProgram: 60, // "ASSIST_QUICHEANDTARTETHIN" and its longest cousins
@@ -32,4 +33,10 @@ export const OVEN_RANGE = {
 export const COMPONENT_LIMITS = {
   scale: { min: 0.01, max: 100 },
   perRecipe: 20,
+} as const
+
+/** How many tags one recipe can wear — past which the sheet's header is a paragraph
+ *  and no longer a line of badges. The cap `update` refuses on. */
+export const TAG_LIMITS = {
+  perRecipe: 8,
 } as const

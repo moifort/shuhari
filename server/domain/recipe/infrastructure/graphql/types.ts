@@ -20,6 +20,7 @@ import type {
   Ingredient,
   Recipe,
   RecipeVersion,
+  Tag,
   ThermomixSettings,
   VersionNumber,
 } from '../../types'
@@ -28,6 +29,7 @@ import {
   DishCategoryEnum,
   OvenProgramEnum,
   RecipeTypeEnum,
+  TagIconEnum,
   VersionOriginKindEnum,
 } from './enums'
 
@@ -43,6 +45,27 @@ export const IngredientType = builder.objectRef<Ingredient>('Ingredient').implem
     quantity: t.expose('quantity', {
       type: 'IngredientQuantity',
       description: 'How much of it, unit included, e.g. `"250 g"`, `"2 tbsp"`, `"1 pinch"`',
+    }),
+  }),
+})
+
+export const TagType = builder.objectRef<Tag>('Tag').implement({
+  description:
+    'A word a recipe is filed under, in the cook’s own words — `"Thermomix"`, `"Batch cooking"` ' +
+    '— with the pictogram that stands for it where there is no room for the word. Worn by the ' +
+    'recipe, so it holds for every version of it.',
+  fields: (t) => ({
+    label: t.expose('label', {
+      type: 'TagLabel',
+      description: 'What it says, e.g. `"Thermomix"`',
+    }),
+    icon: t.field({
+      type: TagIconEnum,
+      nullable: true,
+      description:
+        'The pictogram that stands for it on a library row, e.g. `THERMOMIX`. `null` on a tag ' +
+        'that is read on the recipe sheet only.',
+      resolve: ({ icon }) => icon ?? null,
     }),
   }),
 })
@@ -597,7 +620,8 @@ RecipeType.implement({
       type: RecipeTypeEnum,
       description:
         'Whether it is a cooked dish (`DISH`), a Thermomix recipe (`THERMOMIX`) or a coffee ' +
-        '(`COFFEE`)',
+        '(`COFFEE`). It shapes what a version holds and the tab the recipe lives in — what a ' +
+        'row shows of it is its `tags`.',
     }),
     category: t.expose('category', {
       type: DishCategoryEnum,
@@ -683,6 +707,14 @@ RecipeType.implement({
         const versions = (await loaders.versionsByRecipe.load(r.id)) ?? []
         return versionToOpen(versions)
       },
+    }),
+    tags: t.field({
+      type: [TagType],
+      description:
+        'What it is filed under, in the order you wrote them, e.g. `"Thermomix"` then ' +
+        '`"Guests"`. A recipe imported as a `THERMOMIX` is born wearing `"Thermomix"`. Empty on ' +
+        'a recipe you never tagged.',
+      resolve: ({ tags }) => tags ?? [],
     }),
     components: t.field({
       type: [ComponentType],

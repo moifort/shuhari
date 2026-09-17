@@ -127,6 +127,10 @@ query Recipe($id: RecipeId!) {
     method
     favorite
     bestRating
+    tags {
+      label
+      icon
+    }
     components {
       scale
       recipe {

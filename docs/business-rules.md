@@ -233,6 +233,30 @@ A bread is two recipes: the poolish and the dough. **A recipe holds the recipes 
   (`COMPONENT_LIMITS.scale`) — past either, it is a typo and not a recipe. A weight is corrected at
   the cap, since correcting one does not lengthen the list.
 
+## Tags — what a recipe is filed under
+
+- **A tag is the cook's own word, with an optional pictogram** (`Recipe.tags: Tag[]`,
+  `Tag = { label; icon? }`). The label is free text (`TagLabel`, 1–30 characters — "Thermomix",
+  "Batch cooking"); the icon comes from a closed set (`TAG_ICON_VALUES`: `thermomix`, `oven`,
+  `barbecue`, `guests`…), technical English symbols the app draws — never an icon file's name.
+- **The icon is what a library row shows, the label what the recipe sheet reads.** A row has no
+  room for words: it closes its subtitle with the icons of the tags that wear one, and a tag
+  without an icon simply does not appear there. The sheet's header shows every tag, icon and
+  words, where the type capsule used to be.
+- **Tags replace the type badge — not the type.** `Recipe.type` still shapes a version's content
+  and decides the tab; it is no longer shown as a badge anywhere. A recipe created as a
+  `thermomix` is **born tagged `"Thermomix"`** (`tagsAtBirth`), which is what its row used to
+  say; from then on it is a tag like any other, the cook's to reword or take off.
+- **Aggregate-level, like `category`**: a tag says what the recipe IS, which no iteration
+  changes. Retagging goes through `update` (`UpdateRecipeInput.tags`, full replacement: `[]`
+  takes every tag off, leaving the field out keeps them), creates no version and does not
+  redate the recipe. `copyVersion` carries the tags over — they are part of the identity copied.
+- **One entry per label** (`withTags`): typed twice, a tag is one tag, whatever its case, and the
+  first spelling wins. Absent rather than empty. **Eight per recipe** (`TAG_LIMITS.perRecipe`);
+  past that `update` answers `'too-many-tags'`.
+- **Tags live on the recipe, not in a library of their own**: nothing suggests the tags already
+  used elsewhere, and nothing filters the notebook on one. Both would want a `tag` domain.
+
 ## Derivation — no promotion
 
 Everything is derived (`recipe/business-rules.ts`), nothing is promoted:

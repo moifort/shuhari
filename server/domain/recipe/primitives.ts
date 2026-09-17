@@ -45,6 +45,9 @@ import {
   type RecipeType as RecipeTypeType,
   type Remarks as RemarksType,
   type StepText as StepTextType,
+  TAG_ICON_VALUES,
+  type TagIcon as TagIconType,
+  type TagLabel as TagLabelType,
   type ThermomixSpeed as ThermomixSpeedType,
   type ThermomixTemperature as ThermomixTemperatureType,
   type ThermomixTime as ThermomixTimeType,
@@ -143,6 +146,13 @@ export const Tip = (value: unknown) => {
   const v = z.string().trim().min(1).max(RECIPE_MAX.tip).parse(value)
   return make<TipType>()(v)
 }
+
+export const TagLabel = (value: unknown) => {
+  const v = z.string().trim().min(1).max(RECIPE_MAX.tagLabel).parse(value)
+  return make<TagLabelType>()(v)
+}
+
+export const TagIcon = (value: unknown) => z.enum(TAG_ICON_VALUES).parse(value) as TagIconType
 
 export const Warning = (value: unknown) => {
   const v = z.string().trim().min(1).max(RECIPE_MAX.warning).parse(value)

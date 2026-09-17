@@ -245,6 +245,36 @@ describe('updateRecipe mutation', () => {
     expect(result.errors?.[0]?.extensions?.code).toBe('NOT_FOUND')
   })
 
+  test('retags the recipe, an icon being optional', async () => {
+    const id = await createdId()
+    const result = await execute(`
+      mutation {
+        updateRecipe(id: "${id}", input: { tags: [
+          { label: "Invités", icon: GUESTS }
+          { label: "Dimanche" }
+        ] }) {
+          tags { label icon }
+        }
+      }
+    `)
+    expect(result.errors).toBeUndefined()
+    expect(result.data?.updateRecipe).toEqual({
+      tags: [
+        { label: 'Invités', icon: 'GUESTS' },
+        { label: 'Dimanche', icon: null },
+      ],
+    })
+  })
+
+  test('refuses a ninth tag as TOO_MANY_TAGS', async () => {
+    const id = await createdId()
+    const tags = Array.from({ length: 9 }, (_, i) => `{ label: "Tag ${i}" }`).join(' ')
+    const result = await execute(`
+      mutation { updateRecipe(id: "${id}", input: { tags: [${tags}] }) { id } }
+    `)
+    expect(result.errors?.[0]?.extensions?.code).toBe('TOO_MANY_TAGS')
+  })
+
   test('refuses to hang a brew method on a recipe that is not a coffee', async () => {
     const id = await createdId()
     const result = await execute(`

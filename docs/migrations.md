@@ -159,6 +159,7 @@ The `/admin/*` routes are gated by the admin bearer token (`middleware/auth.ts`,
 | 8 | `components-onto-the-recipe` | Moves a link to another recipe off the ingredient LINE and onto the recipe, at weight `1`, and writes `componentIds` beside it so the link can be read backwards. |
 | 9 | `profile-onto-the-gear` | Moves the coffee “profile” off the beans and onto the gear, where it names the preset the machine runs. Nothing is carried over: the stored `beans.roast` goes, the vocabulary's `roasts` goes with it, and `profiles` starts empty — the values typed described a torrefaction, and promoting them would file a wrong answer under a right question. |
 | 10 | `standing-onto-the-recipe` | Writes `standing` on every recipe — 10 when any version is hearted, else its best rating, else 0 — the field the course and method sorts now order on. A recipe seen without its lineage gets 0 rather than nothing: a document missing the field drops out of the ordered query. |
+| 11 | `thermomix-tag-onto-the-recipe` | Tags `"Thermomix"` (icon `thermomix`) every Thermomix recipe stored before tags existed — the tag a new one is born with, now that a library row wears the recipe's tags and no longer its type. A recipe already carrying tags is left alone. |
 
 ## Rules
 

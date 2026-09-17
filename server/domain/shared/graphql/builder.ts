@@ -29,6 +29,7 @@ import type {
   RecipeTitle,
   Remarks,
   StepText,
+  TagLabel,
   ThermomixSpeed,
   ThermomixTemperature,
   ThermomixTime,
@@ -73,6 +74,7 @@ export const builder = new SchemaBuilder<{
     IngredientQuantity: { Input: IngredientQuantity; Output: IngredientQuantity }
     StepText: { Input: StepText; Output: StepText }
     Tip: { Input: Tip; Output: Tip }
+    TagLabel: { Input: TagLabel; Output: TagLabel }
     Warning: { Input: Warning; Output: Warning }
     ThermomixTime: { Input: ThermomixTime; Output: ThermomixTime }
     ThermomixTemperature: { Input: ThermomixTemperature; Output: ThermomixTemperature }

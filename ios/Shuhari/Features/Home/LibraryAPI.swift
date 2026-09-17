@@ -38,9 +38,9 @@ enum LibraryAPI {
                 LibraryRecipe(
                     id: recipe.id,
                     title: recipe.title,
-                    type: RecipeType(graphql: recipe.type),
                     category: DishCategory(graphql: recipe.category),
                     method: BrewMethod(graphql: recipe.method),
+                    tags: recipe.tags.map { Tag(label: $0.label, icon: TagIcon(graphql: $0.icon)) },
                     favorite: recipe.favorite,
                     versionCount: recipe.versionCount,
                     toTestCount: recipe.toTestCount,

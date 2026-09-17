@@ -76,17 +76,27 @@ enum RecipeAPI {
     }
 
     /// Retouch the aggregate: rename it, refile it under another course or another
-    /// brew method, or any combination. A field left nil is left alone. The type
-    /// itself is fixed for good, and the heart is worn by a version.
+    /// brew method, retag it, or any combination. A field left nil is left alone —
+    /// `tags` is the complete list, so `[]` takes every tag off. The type itself is
+    /// fixed for good, and the heart is worn by a version.
     static func updateRecipe(
         id: String,
         title: String? = nil,
         category: DishCategory? = nil,
-        method: BrewMethod? = nil
+        method: BrewMethod? = nil,
+        tags: [Tag]? = nil
     ) async throws {
         let input = ShuhariGraphQL.UpdateRecipeInput(
             category: GraphQLHelpers.graphQLNullable(category?.graphQLValue),
             method: GraphQLHelpers.graphQLNullable(method?.graphQLValue),
+            tags: GraphQLHelpers.graphQLNullable(
+                tags?.map {
+                    ShuhariGraphQL.TagInput(
+                        icon: GraphQLHelpers.graphQLNullable($0.icon?.graphQLValue),
+                        label: $0.label
+                    )
+                }
+            ),
             title: GraphQLHelpers.graphQLNullable(title)
         )
         _ = try await GraphQLHelpers.perform(
@@ -264,7 +274,7 @@ enum RecipeAPI {
 
     /// Write back a corrected recipe sheet: what the cook moved in the edit sheet,
     /// and nothing else. Each concern keeps the mutation it always had — the
-    /// aggregate's title and course, the version's note, its content, its oven, its
+    /// aggregate's title, course and tags, the version's note, its content, its oven, its
     /// cautions and its tips — so a sheet closed on one retouched quantity costs one
     /// write, not eight. None of them creates a version: correcting what the recipe
     /// always said is not iterating on it.
@@ -274,12 +284,17 @@ enum RecipeAPI {
         from: RecipeDraft,
         to: RecipeDraft
     ) async throws {
-        if to.title != from.title || to.category != from.category || to.method != from.method {
+        let retagged = to.tags.tags != from.tags.tags
+        if to.title != from.title || to.category != from.category || to.method != from.method
+            || retagged
+        {
             try await updateRecipe(
                 id: recipeId,
                 title: to.title,
                 category: to.category,
-                method: to.method
+                method: to.method,
+                // The complete list or nothing: untouched tags are not rewritten.
+                tags: retagged ? to.tags.tags : nil
             )
         }
         // The note lives on the version, not on the recipe, so it travels in its own
@@ -348,6 +363,7 @@ func mapRecipe(_ r: ShuhariGraphQL.RecipeQuery.Data.Recipe) -> Recipe {
         type: RecipeType(graphql: r.type),
         category: DishCategory(graphql: r.category),
         method: BrewMethod(graphql: r.method),
+        tags: r.tags.map { Tag(label: $0.label, icon: TagIcon(graphql: $0.icon)) },
         favorite: r.favorite,
         versions: r.versions.map { mapVersion($0.fragments.versionFields) },
         bestRating: r.bestRating,

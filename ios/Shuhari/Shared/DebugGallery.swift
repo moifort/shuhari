@@ -458,11 +458,11 @@ private struct CuisineGalleryScreen: View {
     }
 
     private let library = [
-        LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .dish, category: .main, favorite: true, versionCount: 4, toTestCount: 1, bestRating: 5, updatedAt: Date()),
-        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .thermomix, category: .main, favorite: false, versionCount: 3, toTestCount: 1, bestRating: 4, updatedAt: Date()),
-        LibraryRecipe(id: "gratin", title: "Gratin dauphinois", type: .dish, category: .main, favorite: false, versionCount: 2, toTestCount: 0, bestRating: 3, updatedAt: Date().addingTimeInterval(-12 * 86_400)),
-        LibraryRecipe(id: "curry", title: "Curry de pois chiches", type: .dish, category: .main, favorite: false, versionCount: 1, toTestCount: 0, bestRating: nil, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
-        LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .thermomix, category: .soup, favorite: true, versionCount: 1, toTestCount: 0, bestRating: nil, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
+        LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", category: .main, favorite: true, versionCount: 4, toTestCount: 1, bestRating: 5, updatedAt: Date()),
+        LibraryRecipe(id: "risotto", title: "Risotto au parmesan", category: .main, tags: [Tag(label: "Thermomix", icon: .thermomix)], favorite: false, versionCount: 3, toTestCount: 1, bestRating: 4, updatedAt: Date()),
+        LibraryRecipe(id: "gratin", title: "Gratin dauphinois", category: .main, favorite: false, versionCount: 2, toTestCount: 0, bestRating: 3, updatedAt: Date().addingTimeInterval(-12 * 86_400)),
+        LibraryRecipe(id: "curry", title: "Curry de pois chiches", category: .main, favorite: false, versionCount: 1, toTestCount: 0, bestRating: nil, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
+        LibraryRecipe(id: "veloute", title: "Velouté de courge", category: .soup, tags: [Tag(label: "Thermomix", icon: .thermomix)], favorite: true, versionCount: 1, toTestCount: 0, bestRating: nil, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
     ]
 
     var body: some View {

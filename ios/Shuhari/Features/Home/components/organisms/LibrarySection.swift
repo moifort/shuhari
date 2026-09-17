@@ -60,9 +60,9 @@ struct LibrarySection: View {
                 .opacity(0)
             LibraryRow(
                 title: recipe.title,
-                type: recipe.type,
                 category: recipe.category,
                 method: recipe.method,
+                tags: recipe.tags.map(\.badge),
                 versionCount: recipe.versionCount,
                 toTestCount: recipe.toTestCount,
                 bestRating: recipe.bestRating,

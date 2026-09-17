@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The recipe sheet, iOS Photos style: header badges (type + version), the
+/// The recipe sheet, iOS Photos style: header badges (tags + version), the
 /// ingredients and the best-rated version step by step. Attempts live in the
 /// history. Navigation and mutations are owned by `RecipeDetailView`.
 ///
@@ -189,31 +189,38 @@ struct RecipeDetailPage: View {
 
     // MARK: - Header
 
-    // The badges + rating line: a normal list row, so it scrolls with the page and
-    // fades under the soft scroll edge. It sits right under the title pill in both
-    // modes — a focused version still says which type, which number and how it was
+    // The badges + rating line: the header of an empty section, so it scrolls with the
+    // page and fades under the soft scroll edge like a row would — but a row is clipped
+    // to the list's rounded corners, which bite into the capsules as soon as the tags
+    // fold onto a second line. It sits right under the title pill in both
+    // modes — a focused version still says which tags, which number and how it was
     // rated, before the card saying what it changes. The stars are the displayed
     // version's own rating, not a recipe-wide average: a version never cooked shows none.
     private var header: some View {
         Section {
-            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                HStack {
-                    RecipeHeaderBadges(
-                        type: recipe.type,
-                        versionNumber: displayedVersion.number,
-                        toTestCount: recipe.versionsToTest.count,
-                        methodLabel: recipe.method?.label,
-                        methodIcon: recipe.method?.iconImage
-                    )
-                    Spacer(minLength: Theme.Spacing.s)
-                    if let rating = displayedVersion.rating {
-                        RatingStars(rating: Double(rating))
-                    }
+        } header: {
+            HStack(alignment: .top) {
+                RecipeHeaderBadges(
+                    tags: recipe.tags.map(\.badge),
+                    versionNumber: displayedVersion.number,
+                    toTestCount: recipe.versionsToTest.count,
+                    methodLabel: recipe.method?.label,
+                    methodIcon: recipe.method?.iconImage
+                )
+                // The badges wrap: they take the width the stars leave.
+                .layoutPriority(1)
+                Spacer(minLength: Theme.Spacing.s)
+                if let rating = displayedVersion.rating {
+                    RatingStars(rating: Double(rating))
                 }
             }
-            .listRowInsets(EdgeInsets(top: -1, leading: 0, bottom: -1, trailing: 0))
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
+            // A header dims and uppercases what it holds; the badges are neither a
+            // title nor a caption, and keep the look they have everywhere else.
+            .textCase(nil)
+            .foregroundStyle(Color.primary)
+            .padding(.top, Theme.Spacing.s)
+            .padding(.bottom, Theme.Spacing.m)
+            .listRowInsets(EdgeInsets())
         }
     }
 }

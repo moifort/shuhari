@@ -1,4 +1,5 @@
-import { VersionNumber as toVersionNumber } from '~/domain/recipe/primitives'
+import { uniqBy } from 'lodash-es'
+import { TagLabel, VersionNumber as toVersionNumber } from '~/domain/recipe/primitives'
 import {
   BREW_METHOD_VALUES,
   type BrewMethod,
@@ -7,7 +8,9 @@ import {
   type DishCategory,
   type Rating,
   type Recipe,
+  type RecipeType,
   type RecipeVersion,
+  type Tag,
   type VersionNumber,
 } from '~/domain/recipe/types'
 
@@ -46,6 +49,23 @@ export const withComponents = (recipe: Recipe, components: Component[]): Recipe 
   if (components.length === 0) return rest
   return { ...rest, components, componentIds: components.map(({ recipe: id }) => id) }
 }
+
+// The recipe wearing this list of tags. One entry per label — typed twice, a tag is
+// still one tag, whatever the case it was typed in, and the first spelling wins. An
+// emptied list leaves no field behind: absence IS "filed under nothing", the same
+// spelling as `withComponents`.
+export const withTags = (recipe: Recipe, tags: Tag[]): Recipe => {
+  const { tags: _, ...rest } = recipe
+  const worn = uniqBy(tags, ({ label }) => label.toLowerCase())
+  return worn.length === 0 ? rest : { ...rest, tags: worn }
+}
+
+// What a recipe is filed under the day it is created, before the cook has written a
+// word: a Thermomix recipe says so. It is the only thing a row ever told apart from
+// a plain dish, and the tag is what says it now — a tag like any other from then on,
+// the cook's to reword or to take off.
+export const tagsAtBirth = (type: RecipeType): Tag[] =>
+  type === 'thermomix' ? [{ label: TagLabel('Thermomix'), icon: 'thermomix' }] : []
 
 export const nextVersionNumber = (lastVersionNumber: VersionNumber) =>
   toVersionNumber(lastVersionNumber + 1)

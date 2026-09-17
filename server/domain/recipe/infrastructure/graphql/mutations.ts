@@ -15,6 +15,7 @@ import {
   IngredientInput,
   OvenProfileInput,
   RecordAttemptInput,
+  tagInput,
   UpdateRecipeInput,
   VersionStepInput,
   versionContentInput,
@@ -122,8 +123,9 @@ builder.mutationField('updateRecipe', (t) =>
   t.field({
     type: RecipeType,
     description: [
-      'Retouch a recipe: rename it, refile it under another course, or both. To heart it, heart ' +
-        'one of its versions (see updateFavorite). Returns the updated recipe.',
+      'Retouch a recipe: rename it, refile it under another course, retag it, or any of them at ' +
+        'once. To heart it, heart one of its versions (see updateFavorite). Returns the updated ' +
+        'recipe.',
       '',
       '```graphql',
       'updateRecipe(id: "9f1c-a3b2", input: { title: "Nonna\'s lasagna", category: MAIN }) {',
@@ -146,10 +148,12 @@ builder.mutationField('updateRecipe', (t) =>
         ...(input.title ? { title: input.title } : {}),
         ...(input.category ? { category: input.category } : {}),
         ...(input.method ? { method: input.method } : {}),
+        ...(input.tags ? { tags: input.tags.map(tagInput) } : {}),
       })
       return match(result)
         .with('not-found', domainError)
         .with('method-mismatch', domainError)
+        .with('too-many-tags', domainError)
         .with(P.not(P.string), (recipe) => recipe)
         .exhaustive()
     },

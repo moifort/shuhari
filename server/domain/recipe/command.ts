@@ -5,14 +5,16 @@ import {
   methodMatchesType,
   nextVersionNumber,
   standing,
+  tagsAtBirth,
   withComponents,
+  withTags,
 } from '~/domain/recipe/business-rules'
 import type { CoffeeParameters } from '~/domain/recipe/content/coffee'
 import type { OvenProfile } from '~/domain/recipe/content/oven'
 import { thermomixSteps } from '~/domain/recipe/content/thermomix'
 import type { VersionContent } from '~/domain/recipe/content/types'
 import * as repository from '~/domain/recipe/infrastructure/repository'
-import { COMPONENT_LIMITS } from '~/domain/recipe/limits'
+import { COMPONENT_LIMITS, TAG_LIMITS } from '~/domain/recipe/limits'
 import { type LooseVersionStep, randomRecipeId, VersionNumber } from '~/domain/recipe/primitives'
 import type {
   BrewMethod,
@@ -26,6 +28,7 @@ import type {
   RecipeType,
   RecipeVersion,
   Remarks,
+  Tag,
   Tip,
   VersionNumber as VersionNumberT,
   VersionOrigin,
@@ -93,6 +96,9 @@ export type UpdateRecipeInput = {
   // Refiling a coffee under another brew method. Rejected on a recipe that is not
   // one — the type itself is never editable.
   method?: BrewMethod
+  // The complete list the recipe is filed under from now on — full replacement, like
+  // the warnings of a version: `[]` takes every tag off, leaving it out keeps them.
+  tags?: Tag[]
 }
 
 // Which version becomes a recipe of its own, and under what name. The name is
@@ -124,23 +130,27 @@ export namespace RecipeCommand {
     // A brew method belongs to a coffee and to nothing else.
     if (!methodMatchesType(input)) return 'method-mismatch' as const
     const now = new Date()
-    const recipe: Recipe = {
-      id: randomRecipeId(),
-      userId,
-      type: input.type,
-      // A coffee is a drink, whatever the AI guessed: the course axis says nothing
-      // about it, its `method` is what the coffee tab reads on.
-      category: input.type === 'coffee' ? 'drink' : input.category,
-      ...(input.method ? { method: input.method } : {}),
-      title: input.title,
-      lastVersionNumber: FIRST_VERSION,
-      createdAt: now,
-      // `lastWorkedOn` of a lineage of one: the v1 born with it, this instant. No
-      // lineage to read — there is nothing else in it yet.
-      updatedAt: now,
-      // Never cooked, never hearted: it stands last in its course until it is.
-      standing: standing([]),
-    }
+    const recipe: Recipe = withTags(
+      {
+        id: randomRecipeId(),
+        userId,
+        type: input.type,
+        // A coffee is a drink, whatever the AI guessed: the course axis says nothing
+        // about it, its `method` is what the coffee tab reads on.
+        category: input.type === 'coffee' ? 'drink' : input.category,
+        ...(input.method ? { method: input.method } : {}),
+        title: input.title,
+        lastVersionNumber: FIRST_VERSION,
+        createdAt: now,
+        // `lastWorkedOn` of a lineage of one: the v1 born with it, this instant. No
+        // lineage to read — there is nothing else in it yet.
+        updatedAt: now,
+        // Never cooked, never hearted: it stands last in its course until it is.
+        standing: standing([]),
+      },
+      // Filed from birth under what its type says of it — a Thermomix recipe says so.
+      tagsAtBirth(input.type),
+    )
     const origin: VersionOrigin = {
       kind: 'import',
       ...(sourceLabel ? { detail: sourceLabel } : {}),
@@ -190,6 +200,8 @@ export namespace RecipeCommand {
       // the verdict with it, so the copy stands where that one plate puts it.
       ...(version.favorite ? { favorite: true as const } : {}),
       standing: standing([version]),
+      // What the recipe is filed under is part of that identity, and comes along.
+      ...(source.tags ? { tags: source.tags } : {}),
     }
     const copied: RecipeVersion = {
       userId,
@@ -592,25 +604,27 @@ export namespace RecipeCommand {
     })
   }
 
-  // The touches a cook can make to the aggregate itself: its name, its course or its
-  // brew method. Each is optional — what is left out stays as it was. A category or
-  // method change keeps the library's sort honest on its own: `repository.save`
-  // re-derives `categoryRank` and `methodRank`. None of these is cooking, so none of
-  // them moves the recipe's date: renaming a recipe must not shuffle the notebook.
+  // The touches a cook can make to the aggregate itself: its name, its course, its
+  // brew method or its tags. Each is optional — what is left out stays as it was. A
+  // category or method change keeps the library's sort honest on its own:
+  // `repository.save` re-derives `categoryRank` and `methodRank`. None of these is
+  // cooking, so none of them moves the recipe's date: renaming or retagging a recipe
+  // must not shuffle the notebook.
   export const update = async (userId: UserId, recipeId: RecipeId, input: UpdateRecipeInput) => {
     const recipe = await repository.findBy(userId, recipeId)
     if (!recipe) return 'not-found' as const
     // A brew method belongs to a coffee: a dish never grows one, since the type
     // itself is not editable.
     if (input.method && recipe.type !== 'coffee') return 'method-mismatch' as const
-    const updated: Recipe = {
+    if (input.tags && input.tags.length > TAG_LIMITS.perRecipe) return 'too-many-tags' as const
+    const retouched: Recipe = {
       ...recipe,
       ...(input.title ? { title: input.title } : {}),
       // A coffee stays a drink — refiling it means changing its method.
       ...(input.category && recipe.type !== 'coffee' ? { category: input.category } : {}),
       ...(input.method ? { method: input.method } : {}),
     }
-    return repository.save(updated)
+    return repository.save(input.tags ? withTags(retouched, input.tags) : retouched)
   }
 
   // Heart one version, or take the heart off it — the attempt the cook would make
