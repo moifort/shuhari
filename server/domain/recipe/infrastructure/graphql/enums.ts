@@ -120,14 +120,16 @@ export const RecipeSortEnum = builder.enumType('RecipeSort', {
     CATEGORY: {
       value: 'category',
       description:
-        'Dish course order (`STARTER → MAIN → DESSERT → SOUP → SAUCE → BAKING → DRINK`), ' +
-        'most recently modified first within a course',
+        'Dish course order (`STARTER → MAIN → DESSERT → SOUP → SAUCE → BAKING → DRINK`); ' +
+        'within a course, the hearted recipes first, then by best rating, the ones never ' +
+        'cooked last — most recently modified first among equals',
     },
     METHOD: {
       value: 'method',
       description:
-        'Brewing order (`ESPRESSO → … → COLD_BREW → OTHER`), most recently modified first ' +
-        'within a method — the coffee tab’s own order',
+        'Brewing order (`ESPRESSO → … → COLD_BREW → OTHER`) — the coffee tab’s own order; ' +
+        'within a method, the hearted recipes first, then by best rating, the ones never ' +
+        'brewed last — most recently modified first among equals',
     },
   } as const,
 })

@@ -82,6 +82,18 @@ export const toTestCount = (versions: RecipeVersion[]): number =>
 export const favorited = (versions: RecipeVersion[]): boolean =>
   versions.some(({ favorite }) => favorite === true)
 
+// Where a recipe stands within its course (or its brew method) — what the library
+// ranks on inside a section, highest first: a hearted recipe stands above everything,
+// then the best rating decides, and a recipe never cooked stands last. A heart
+// deliberately flattens the rating under it: the row of a favourite shows the heart
+// and no stars, so ranking favourites on a number the cook cannot see would be an
+// order nothing on screen explains — `updatedAt` desc orders them instead, as it
+// breaks every other tie. Denormalized onto the recipe document (`Recipe.standing`)
+// so Firestore can order and page on it, like `lastWorkedOn` onto `updatedAt`.
+export const HEARTED_STANDING = 10
+export const standing = (versions: RecipeVersion[]): number =>
+  favorited(versions) ? HEARTED_STANDING : (bestRating(versions)?.rating ?? 0)
+
 // Which version the recipe sheet opens on when entered from the home: the best-rated
 // one, falling back to the latest version when nothing was ever cooked (a brand-new,
 // untried recipe). A version that still owes a cook is never opened — the sheet shows

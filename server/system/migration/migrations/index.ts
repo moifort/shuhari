@@ -7,6 +7,7 @@ import { migration0006 } from '~/system/migration/migrations/0006-warnings-onto-
 import { migration0007 } from '~/system/migration/migrations/0007-favorite-onto-the-version'
 import { migration0008 } from '~/system/migration/migrations/0008-components-onto-the-recipe'
 import { migration0009 } from '~/system/migration/migrations/0009-profile-onto-the-gear'
+import { migration0010 } from '~/system/migration/migrations/0010-standing-onto-the-recipe'
 import type { Migration } from '~/system/migration/types'
 
 // Forward-only migrations, applied in order by the runner. Register new
@@ -21,4 +22,5 @@ export const migrations: Migration[] = [
   migration0007,
   migration0008,
   migration0009,
+  migration0010,
 ]

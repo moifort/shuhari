@@ -43,7 +43,8 @@ export type DishCategory = (typeof DISH_CATEGORY_VALUES)[number]
 
 // How the paginated library is ordered. `updatedAt` honours the requested
 // direction; `category` and `method` always follow their fixed business rank (see
-// `categoryRank` / `methodRank`) with `updatedAt` desc as the secondary key.
+// `categoryRank` / `methodRank`), then the recipe's `standing` (hearted first, then
+// the best rating), with `updatedAt` desc as the last key.
 export type RecipeSort = 'updatedAt' | 'category' | 'method'
 export type SortOrder = 'asc' | 'desc'
 
@@ -181,6 +182,11 @@ export type Recipe = {
   // lineage restamps this. Absent rather than false, so presence is the single
   // spelling the query matches on.
   favorite?: true
+  // Where the recipe stands within its course — `standing(versions)`: hearted first,
+  // then the best rating, never cooked last. Denormalized for the same reason as
+  // `favorite`, and restamped by the same commands; required on every document,
+  // since Firestore silently drops from an ordered query the ones missing the field.
+  standing: number
   // The recipes this one is made of, with the quantity it takes of each. Aggregate
   // level, deliberately: the cook links from the recipe sheet, the link holds for
   // every version of it, and no iteration has to carry it forward. Ordered by when

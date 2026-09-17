@@ -148,6 +148,12 @@ export const createFakeFirestore = () => {
         state.filters.every((filter) => matchesFilter(data, filter)),
       )
       if (state.orders.length > 0) {
+        // Firestore silently drops from an ordered query every document missing an
+        // ordered field — mirror it, so a recipe written without its sort key goes
+        // missing here too rather than only in production.
+        matching = matching.filter(([, data]) =>
+          state.orders.every(({ field }) => data[field] !== undefined),
+        )
         // Firestore appends an implicit __name__ tie-break in the direction of the
         // LAST orderBy — mirror it so equal-key rows page deterministically.
         const lastDir = state.orders[state.orders.length - 1]?.direction ?? 'asc'

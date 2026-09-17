@@ -43,14 +43,14 @@ export namespace RecipeQuery {
     userId: UserId,
     criteria: RecipeLibraryCriteria,
   ): Promise<RecipeLibraryPage> => {
-    // A category or method filter pins the order to updatedAt desc: ranking recipes
-    // within a single course (or a single brew method) is meaningless, and coercing
-    // here keeps the composite-index surface bounded (no per-facet × sort index
-    // explosion).
+    // Narrowed to one course (or one brew method), the page reads like that section of
+    // the whole library: by `standing` under the category/method sort — the repository
+    // leaves out the rank, the same on every row — and newest first under the date
+    // sort, whatever direction was asked, which keeps the composite-index surface
+    // bounded (no ascending twin per facet).
+    const narrowed = criteria.category !== undefined || criteria.method !== undefined
     const effective: RecipeLibraryCriteria =
-      criteria.category || criteria.method
-        ? { ...criteria, sort: 'updatedAt', order: 'desc' }
-        : criteria
+      narrowed && criteria.sort === 'updatedAt' ? { ...criteria, order: 'desc' } : criteria
     const { recipes, hasMore } = await repository.findPage(userId, {
       ...effective,
       limit: clampLimit(effective.limit),

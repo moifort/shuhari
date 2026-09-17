@@ -3,6 +3,7 @@ import {
   bestRating,
   categoryRank,
   nextVersionNumber,
+  standing,
   toTestCount,
   versionToOpen,
   withComponents,
@@ -21,18 +22,19 @@ import {
 const v = (n: number) => n as VersionNumber
 const rating = (n: number) => n as Rating
 
-// Minimal RecipeVersion fixture: bestRating/versionToOpen/toTestCount only read
-// `number`, `rating`, `toTest` and `basedOn`. An absent rating means the version was
+// Minimal RecipeVersion fixture: bestRating/versionToOpen/toTestCount/standing only
+// read `number`, `rating`, `toTest`, `basedOn` and `favorite`. An absent rating means the version was
 // never cooked — the domain always writes the rating and the cook date together.
 const version = (
   number: number,
-  opts: { rating?: number; basedOn?: number; toTest?: true } = {},
+  opts: { rating?: number; basedOn?: number; toTest?: true; favorite?: true } = {},
 ): RecipeVersion =>
   ({
     number: v(number),
     ...(opts.rating === undefined ? {} : { rating: rating(opts.rating), executedAt: new Date() }),
     ...(opts.basedOn === undefined ? {} : { basedOn: v(opts.basedOn) }),
     ...(opts.toTest === undefined ? {} : { toTest: opts.toTest }),
+    ...(opts.favorite === undefined ? {} : { favorite: opts.favorite }),
   }) as RecipeVersion
 
 describe('categoryRank', () => {
@@ -89,6 +91,27 @@ describe('bestRating', () => {
   test('ignores never-cooked versions', () => {
     const v1 = version(1, { rating: 4 })
     expect(bestRating([v1, version(2), version(3)])).toBe(v1)
+  })
+})
+
+describe('standing', () => {
+  test('a recipe never cooked stands last', () => {
+    expect(standing([version(1), version(2, { toTest: true })])).toBe(0)
+  })
+
+  test('a cooked recipe stands at its best rating', () => {
+    expect(standing([version(1, { rating: 2 }), version(2, { rating: 4 }), version(3)])).toBe(4)
+  })
+
+  test('a heart on any version stands above the best possible rating', () => {
+    const hearted = standing([version(1, { rating: 2, favorite: true }), version(2, { rating: 3 })])
+    expect(hearted).toBeGreaterThan(standing([version(1, { rating: 5 })]))
+  })
+
+  test('a heart flattens the rating under it — favourites are not ranked on stars', () => {
+    expect(standing([version(1, { rating: 2, favorite: true })])).toBe(
+      standing([version(1, { rating: 5, favorite: true })]),
+    )
   })
 })
 

@@ -4,6 +4,7 @@ import {
   lastWorkedOn,
   methodMatchesType,
   nextVersionNumber,
+  standing,
   withComponents,
 } from '~/domain/recipe/business-rules'
 import type { CoffeeParameters } from '~/domain/recipe/content/coffee'
@@ -137,6 +138,8 @@ export namespace RecipeCommand {
       // `lastWorkedOn` of a lineage of one: the v1 born with it, this instant. No
       // lineage to read — there is nothing else in it yet.
       updatedAt: now,
+      // Never cooked, never hearted: it stands last in its course until it is.
+      standing: standing([]),
     }
     const origin: VersionOrigin = {
       kind: 'import',
@@ -183,8 +186,10 @@ export namespace RecipeCommand {
       // `lastWorkedOn` of a lineage of one, born this instant — whatever the age of
       // the plate copied.
       updatedAt: now,
-      // The mirror of the single version below, which carries the heart over.
+      // The mirror of the single version below, which carries the heart over — and
+      // the verdict with it, so the copy stands where that one plate puts it.
       ...(version.favorite ? { favorite: true as const } : {}),
+      standing: standing([version]),
     }
     const copied: RecipeVersion = {
       userId,
@@ -630,12 +635,15 @@ export namespace RecipeCommand {
     // write erases what is left out, which is what absence means here.
     const { favorite: _unhearted, ...rest } = version
     const updated: RecipeVersion = { ...rest, ...(favorite ? { favorite: true as const } : {}) }
-    // The mirror alone, written by hand rather than through `restamped`: the recipe's
-    // date must NOT move, and everything else `restamped` derives is unchanged.
+    // The mirror and the standing it decides, written by hand rather than through
+    // `restamped`: the recipe's date must NOT move. The heart does move the recipe
+    // within its course — to the top of it, which is what hearting asks for.
     const { favorite: _mirrored, ...aggregate } = recipe
+    const hearted = written(lineage, updated)
     const updatedRecipe: Recipe = {
       ...aggregate,
-      ...(favorited(written(lineage, updated)) ? { favorite: true as const } : {}),
+      ...(favorited(hearted) ? { favorite: true as const } : {}),
+      standing: standing(hearted),
     }
     return atomically(async (batch) => {
       await repository.saveVersion(updated, batch)
@@ -699,11 +707,22 @@ export namespace RecipeCommand {
   // carried. The restore writes before it deletes — see the repository: the
   // notebook is never emptied first, because a restore that dies halfway through
   // must not be what destroys the data it was recovering.
+  // Each recipe's `standing` is derived again from the versions restored with it: a
+  // backup written before the field existed carries none, and a recipe without it
+  // drops out of the library's ordered query.
   export const replaceAllForUser = async (
     userId: UserId,
     recipes: Recipe[],
     versions: RecipeVersion[],
-  ) => repository.replaceAllByUser(userId, recipes, versions)
+  ) =>
+    repository.replaceAllByUser(
+      userId,
+      recipes.map((recipe) => ({
+        ...recipe,
+        standing: standing(versions.filter(({ recipeId }) => recipeId === recipe.id)),
+      })),
+      versions,
+    )
 
   // Everything this domain holds on one cook, erased: the notebook and every
   // version in it. Called only when the account itself goes.
@@ -711,7 +730,7 @@ export namespace RecipeCommand {
 
   // The aggregate as its lineage makes it read: everything the recipe document holds
   // about its versions is derived, never decided here. One place to do it, so a
-  // command can never restamp one of the two and forget the other.
+  // command can never restamp one of them and forget the others.
   // `favorite` is dropped rather than set to false — the full-document write erases
   // it, and absence is the single spelling the library's lens queries on.
   const restamped = (recipe: Recipe, versions: RecipeVersion[]): Recipe => {
@@ -720,6 +739,7 @@ export namespace RecipeCommand {
       ...rest,
       updatedAt: lastWorkedOn(versions),
       ...(favorited(versions) ? { favorite: true as const } : {}),
+      standing: standing(versions),
     }
   }
 

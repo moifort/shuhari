@@ -1634,7 +1634,7 @@ type Query {
     after: RecipeId
 
     """
-    Facet: keep only this dish category, e.g. `DESSERT`. When set, the page is coerced to updatedAt desc — the sort/order args are ignored (ranking within one category is meaningless, and it keeps the composite-index surface bounded)
+    Facet: keep only this dish category, e.g. `DESSERT`. The page then reads like that section of the library: hearted first, then by best rating, under the `CATEGORY` sort; newest first under `UPDATED_AT`, whatever `order` asks
     """
     category: DishCategory
 
@@ -1647,7 +1647,7 @@ type Query {
     limit: Int = 20
 
     """
-    Facet: keep only coffees brewed this way, e.g. `V60`. Like `category`, it coerces the page to updatedAt desc
+    Facet: keep only coffees brewed this way, e.g. `V60`. Orders the page like `category` does
     """
     method: BrewMethod
 
@@ -1790,12 +1790,12 @@ scalar RecipeId
 """Field the paginated recipe library is ordered by, e.g. `UPDATED_AT`"""
 enum RecipeSort {
   """
-  Dish course order (`STARTER → MAIN → DESSERT → SOUP → SAUCE → BAKING → DRINK`), most recently modified first within a course
+  Dish course order (`STARTER → MAIN → DESSERT → SOUP → SAUCE → BAKING → DRINK`); within a course, the hearted recipes first, then by best rating, the ones never cooked last — most recently modified first among equals
   """
   CATEGORY
 
   """
-  Brewing order (`ESPRESSO → … → COLD_BREW → OTHER`), most recently modified first within a method — the coffee tab’s own order
+  Brewing order (`ESPRESSO → … → COLD_BREW → OTHER`) — the coffee tab’s own order; within a method, the hearted recipes first, then by best rating, the ones never brewed last — most recently modified first among equals
   """
   METHOD
 

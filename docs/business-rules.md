@@ -245,15 +245,30 @@ Everything is derived (`recipe/business-rules.ts`), nothing is promoted:
 - `lastWorkedOn` = the date of that version — **what dates a recipe**. `Recipe.updatedAt` carries
   it, denormalized so Firestore can order and page the library on it (like `categoryRank`), and
   every command that rewrites the lineage restamps it (through `restamped`, which derives it and
-  the favourites mirror in one place). Consequences, all deliberate: renaming a recipe, refiling it
-  or hearting one of its versions **never** moves it — filing is not cooking, and the notebook must
-  not reshuffle when you tap a heart; and a fresh attempt rated below the reference leaves the
-  recipe where it was, because the version that answers for it has not changed. Editing the plate
+  the favourites mirror and the standing in one place). Consequences, all deliberate: renaming a
+  recipe, refiling it or hearting one of its versions **never** moves it — filing is not cooking,
+  and a heart must not pass a recipe off as freshly cooked; and a fresh attempt rated below the
+  reference leaves the recipe where it was, because the version that answers for it has not changed. Editing the plate
   itself — its tips, its cautions, its coffee dials — does move it: that is the cook at work. A better attempt, a corrected note, or deleting the reference hands it over, date
   included.
 - `favorited` = whether **any** version is hearted — **what puts a recipe in the favourites lens**.
   `Recipe.favorite` carries it, denormalized for the same reason as the date, and restamped by the
   same helper. See [The heart is worn by a version](#the-heart-is-worn-by-a-version).
+- `standing` = **where a recipe sits within its course** (or its brew method), highest first: a
+  hearted recipe (`HEARTED_STANDING`, 10) above everything, then the best rating (5 → 1), and a
+  recipe never cooked last (0). `Recipe.standing` carries it, denormalized and restamped like the
+  other two, and the `category` / `method` sorts order on `rank asc → standing desc → updatedAt
+  desc`. A heart **flattens the rating under it**: the library row of a favourite shows the heart
+  and no stars, so ranking favourites on a number the cook cannot see would be an order nothing on
+  screen explains — the date orders them instead. It is what lets one list do the work of two:
+  the favourites open every course, so no separate lens is needed to reach them. A page narrowed
+  to one course (`category`) or one method reads the same way — `standing desc → updatedAt desc`,
+  the rank left out since every row shares it — and only the date sort still pins a narrowed page
+  to newest first. **Required on
+  every document** — Firestore drops from an ordered query the ones missing the field, which is why
+  `create` and `copyVersion` stamp it, a restore derives it again from the versions it brings
+  (`replaceAllForUser`: an older backup carries none), and the fake Firestore drops such documents
+  too so a forgotten stamp fails a test rather than emptying the notebook.
 
 ## Improvement and `toTest`
 
@@ -349,11 +364,12 @@ that was hearted.
   (`where('favorite', '==', true)`), and Firestore cannot filter a parent on its satellites. Same
   mechanism as `updatedAt` carrying `lastWorkedOn`, and `categoryRank`/`methodRank`.
 - **Every command that rewrites the lineage restamps it** through the single `restamped(recipe,
-  versions)` helper, which derives the recipe's date and its mirror together — one place, so a
-  command cannot restamp one and forget the other.
+  versions)` helper, which derives the recipe's date, its mirror and its standing together — one
+  place, so a command cannot restamp one and forget the others.
 - **Hearting is filing, not cooking**: neither the version's `updatedAt` nor the recipe's moves, so
-  the notebook is not reshuffled by a heart. This is what separates it from a caution or a tip,
-  which are edits to the plate itself.
+  a heart never redates anything. This is what separates it from a caution or a tip, which are
+  edits to the plate itself. What a heart does move is the recipe's `standing` — to the top of its
+  course, which is exactly what hearting asks for — written by `updateFavorite` beside the mirror.
 - **A copied version keeps its heart**, like its cautions and its verdict: the copy is the same
   attempt under another name, and its `v1` is the only version its mirror can read.
 - **Deleting the hearted version takes the recipe out of the lens** unless another one carries a

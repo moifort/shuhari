@@ -32,6 +32,7 @@ const seedRecipe = (
     updatedAt: number
     owner?: UserId
     favorite?: true
+    standing?: number
   },
 ) => {
   fake.seed('recipes', id, {
@@ -44,6 +45,8 @@ const seedRecipe = (
     ...(fields.method ? { method: fields.method, methodRank: methodRank(fields.method) } : {}),
     // Absent unless marked, exactly as the aggregate stores it.
     ...(fields.favorite ? { favorite: true } : {}),
+    // Required on every stored recipe: never cooked unless the test says otherwise.
+    standing: fields.standing ?? 0,
     updatedAt: new Date(fields.updatedAt),
   })
 }
@@ -125,6 +128,21 @@ describe('RecipeQuery.library — category business order', () => {
     const page = await RecipeQuery.library(userId, { sort: 'category', order: 'desc', limit: 10 })
     expect(ids(page)).toEqual(['new', 'mid', 'old'])
   })
+
+  test('within a course: hearted first, then the best rating, never cooked last', async () => {
+    // Every date runs against the expected order, so nothing but `standing` can
+    // explain it — except between the two hearts, where the date is all that is left.
+    seedRecipe('untried', { category: 'main', standing: 0, updatedAt: 9000 })
+    seedRecipe('three', { category: 'main', standing: 3, updatedAt: 8000 })
+    seedRecipe('five', { category: 'main', standing: 5, updatedAt: 7000 })
+    seedRecipe('heart-old', { category: 'main', favorite: true, standing: 10, updatedAt: 1000 })
+    seedRecipe('heart-new', { category: 'main', favorite: true, standing: 10, updatedAt: 2000 })
+    // A starter never cooked still comes before a hearted main: the course leads.
+    seedRecipe('starter', { category: 'starter', standing: 0, updatedAt: 500 })
+
+    const page = await RecipeQuery.library(userId, { sort: 'category', order: 'desc', limit: 10 })
+    expect(ids(page)).toEqual(['starter', 'heart-new', 'heart-old', 'five', 'three', 'untried'])
+  })
 })
 
 describe('RecipeQuery.library — type filter', () => {
@@ -199,7 +217,15 @@ describe('RecipeQuery.library — the coffee tab', () => {
     expect(ids(page)).toEqual(['espresso', 'v60', 'chemex'])
   })
 
-  test('the method facet pins the order to updatedAt desc, like the category one', async () => {
+  test('narrowed to one method, the page reads by standing like the category one', async () => {
+    seedRecipe('v60-hearted', {
+      type: 'coffee',
+      category: 'drink',
+      method: 'v60',
+      favorite: true,
+      standing: 10,
+      updatedAt: 500,
+    })
     const page = await RecipeQuery.library(userId, {
       types: ['coffee'],
       method: 'v60',
@@ -207,7 +233,7 @@ describe('RecipeQuery.library — the coffee tab', () => {
       order: 'asc',
       limit: 10,
     })
-    expect(ids(page)).toEqual(['v60'])
+    expect(ids(page)).toEqual(['v60-hearted', 'v60'])
   })
 })
 
@@ -271,8 +297,8 @@ describe('RecipeQuery.library — category filter', () => {
   })
 
   test('pins the order to updatedAt desc even when an ascending sort is requested', async () => {
-    // The category filter coerces the page to updatedAt desc. Requesting the
-    // opposite (updatedAt ASC) proves the coercion actually fires: without it the
+    // Under the date sort the category filter coerces the page to desc. Requesting
+    // the opposite (updatedAt ASC) proves the coercion actually fires: without it the
     // page would come back ascending (['dessert-a', 'dessert-b']).
     const page = await RecipeQuery.library(userId, {
       category: 'dessert',
@@ -281,6 +307,23 @@ describe('RecipeQuery.library — category filter', () => {
       limit: 10,
     })
     expect(ids(page)).toEqual(['dessert-b', 'dessert-a'])
+  })
+
+  test('under the category sort, one course reads hearted first, then by rating', async () => {
+    seedRecipe('dessert-five', { category: 'dessert', standing: 5, updatedAt: 1500 })
+    seedRecipe('dessert-heart', {
+      category: 'dessert',
+      favorite: true,
+      standing: 10,
+      updatedAt: 1000,
+    })
+    const page = await RecipeQuery.library(userId, {
+      category: 'dessert',
+      sort: 'category',
+      order: 'desc',
+      limit: 10,
+    })
+    expect(ids(page)).toEqual(['dessert-heart', 'dessert-five', 'dessert-b', 'dessert-a'])
   })
 
   test('paginates within a category via the cursor', async () => {

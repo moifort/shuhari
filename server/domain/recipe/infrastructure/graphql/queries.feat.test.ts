@@ -40,6 +40,8 @@ const seedRecipe = (id: string, fields: { category: DishCategory; updatedAt: num
     type: 'dish',
     category: fields.category,
     categoryRank: categoryRank(fields.category),
+    // Required on every stored recipe — the course sort orders on it.
+    standing: 0,
     title: `Recette ${id}`,
     lastVersionNumber: 1,
     createdAt: new Date(fields.updatedAt),

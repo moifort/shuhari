@@ -144,11 +144,20 @@ export const findPage = async (userId: UserId, args: RecipePageArgs): Promise<Re
   // Favourites are marked by the field's presence, so equality on `true` is also
   // what excludes every recipe that never carried it.
   if (args.favorite) query = query.where('favorite', '==', true)
+  // Filed by course or by brew method, a section reads the same way: the hearted
+  // recipes first, then the best rating (`standing`), the freshest among equals.
+  // Narrowed to one course or one method, every row holds the same rank: ordering on
+  // it would only demand one more index.
+  const narrowed = args.category !== undefined || args.method !== undefined
+  const filedBy = (rank: 'categoryRank' | 'methodRank') =>
+    (narrowed ? query : query.orderBy(rank, 'asc'))
+      .orderBy('standing', 'desc')
+      .orderBy('updatedAt', 'desc')
   query =
     args.sort === 'category'
-      ? query.orderBy('categoryRank', 'asc').orderBy('updatedAt', 'desc')
+      ? filedBy('categoryRank')
       : args.sort === 'method'
-        ? query.orderBy('methodRank', 'asc').orderBy('updatedAt', 'desc')
+        ? filedBy('methodRank')
         : query.orderBy('updatedAt', args.order)
   if (args.after) {
     const cursor = await recipes().doc(args.after).get()

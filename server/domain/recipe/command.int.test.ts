@@ -18,6 +18,7 @@ import type {
   Recipe,
   RecipeId,
   RecipeTitle,
+  RecipeVersion,
   Remarks,
   StepText,
   ThermomixSpeed,
@@ -1423,6 +1424,114 @@ describe('a version’s updatedAt', () => {
     const v1 = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)
     expect(v1?.rating).toBe(4 as Rating)
     expect(v1?.updatedAt).toEqual(new Date('2026-03-13T10:00:00.000Z'))
+  })
+})
+
+describe('a recipe’s standing — where it sits within its course', () => {
+  const V1 = 1 as VersionNumber
+  const V2 = 2 as VersionNumber
+  const storedStanding = (recipeId: RecipeId) => fake.snapshot('recipes').get(recipeId)?.standing
+
+  const freshRecipe = async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    return recipe
+  }
+
+  test('a fresh recipe stands last — but carries the field, or the library drops it', async () => {
+    const recipe = await freshRecipe()
+
+    expect(storedStanding(recipe.id)).toBe(0)
+  })
+
+  test('a cook lifts it to the rating it earned, and a better one lifts it again', async () => {
+    const recipe = await freshRecipe()
+
+    await RecipeCommand.recordAttempt(userId, {
+      recipeId: recipe.id,
+      versionNumber: V1,
+      rating: 3 as Rating,
+    })
+    expect(storedStanding(recipe.id)).toBe(3)
+
+    await RecipeCommand.addVersion(userId, recipe.id, {
+      change: 'Moins de sel',
+      basedOn: V1,
+      content: dishContent(),
+      tips: [],
+      cooked: true,
+      attempt: { rating: 5 as Rating },
+    })
+    expect(storedStanding(recipe.id)).toBe(5)
+  })
+
+  test('a heart puts it above every rating, and taking it off hands the rating back', async () => {
+    const recipe = await freshRecipe()
+    await RecipeCommand.recordAttempt(userId, {
+      recipeId: recipe.id,
+      versionNumber: V1,
+      rating: 4 as Rating,
+    })
+
+    await RecipeCommand.updateFavorite(userId, recipe.id, V1, true)
+    expect(storedStanding(recipe.id)).toBe(10)
+
+    await RecipeCommand.updateFavorite(userId, recipe.id, V1, false)
+    expect(storedStanding(recipe.id)).toBe(4)
+  })
+
+  test('deleting the best-rated version hands the standing to what is left', async () => {
+    const recipe = await freshRecipe()
+    await RecipeCommand.recordAttempt(userId, {
+      recipeId: recipe.id,
+      versionNumber: V1,
+      rating: 2 as Rating,
+    })
+    await RecipeCommand.addVersion(userId, recipe.id, {
+      change: 'Moins de sel',
+      basedOn: V1,
+      content: dishContent(),
+      tips: [],
+      cooked: true,
+      attempt: { rating: 5 as Rating },
+    })
+
+    await RecipeCommand.removeVersion(userId, recipe.id, V2)
+
+    expect(storedStanding(recipe.id)).toBe(2)
+  })
+
+  test('a copied version stands where its plate puts it', async () => {
+    const recipe = await freshRecipe()
+    await RecipeCommand.recordAttempt(userId, {
+      recipeId: recipe.id,
+      versionNumber: V1,
+      rating: 4 as Rating,
+    })
+
+    const copy = await RecipeCommand.copyVersion(userId, {
+      recipeId: recipe.id,
+      number: V1,
+      title: 'Blanquette du dimanche' as RecipeTitle,
+    })
+    if (typeof copy === 'string') throw new Error('expected a recipe')
+
+    expect(storedStanding(copy.id)).toBe(4)
+  })
+
+  test('a backup written before the field existed is restored with it', async () => {
+    const recipe = await freshRecipe()
+    await RecipeCommand.recordAttempt(userId, {
+      recipeId: recipe.id,
+      versionNumber: V1,
+      rating: 4 as Rating,
+    })
+    const { standing: _unknownBack, ...older } = fake.snapshot('recipes').get(recipe.id) as Recipe
+    const versions = [...fake.snapshot('recipe-versions').values()] as RecipeVersion[]
+
+    await RecipeCommand.replaceAllForUser(userId, [older as Recipe], versions)
+
+    expect(storedStanding(recipe.id)).toBe(4)
   })
 })
 

@@ -55,6 +55,10 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "standing",
+          "order": "DESCENDING"
+        },
+        {
           "fieldPath": "updatedAt",
           "order": "DESCENDING"
         }
@@ -95,6 +99,10 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "standing",
+          "order": "DESCENDING"
+        },
+        {
           "fieldPath": "updatedAt",
           "order": "DESCENDING"
         }
@@ -127,12 +135,38 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "category",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "standing",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "recipes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "type",
           "order": "ASCENDING"
         },
         {
           "fieldPath": "methodRank",
           "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "standing",
+          "order": "DESCENDING"
         },
         {
           "fieldPath": "updatedAt",
@@ -175,8 +209,60 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "method",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "standing",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "recipes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "type",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "category",
           "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "recipes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "type",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "category",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "standing",
+          "order": "DESCENDING"
         },
         {
           "fieldPath": "updatedAt",
@@ -219,6 +305,10 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "standing",
+          "order": "DESCENDING"
+        },
+        {
           "fieldPath": "updatedAt",
           "order": "DESCENDING"
         }
@@ -239,6 +329,32 @@
         {
           "fieldPath": "category",
           "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "recipes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "favorite",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "category",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "standing",
+          "order": "DESCENDING"
         },
         {
           "fieldPath": "updatedAt",

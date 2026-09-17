@@ -37,15 +37,15 @@ builder.queryField('recipes', (t) =>
       method: t.arg({
         type: BrewMethodEnum,
         description:
-          'Facet: keep only coffees brewed this way, e.g. `V60`. Like `category`, it coerces the ' +
-          'page to updatedAt desc',
+          'Facet: keep only coffees brewed this way, e.g. `V60`. Orders the page like ' +
+          '`category` does',
       }),
       category: t.arg({
         type: DishCategoryEnum,
         description:
-          'Facet: keep only this dish category, e.g. `DESSERT`. When set, the page is coerced to ' +
-          'updatedAt desc — the sort/order args are ignored (ranking within one ' +
-          'category is meaningless, and it keeps the composite-index surface bounded)',
+          'Facet: keep only this dish category, e.g. `DESSERT`. The page then reads like that ' +
+          'section of the library: hearted first, then by best rating, under the `CATEGORY` ' +
+          'sort; newest first under `UPDATED_AT`, whatever `order` asks',
       }),
       favorite: t.arg.boolean({
         description:
