@@ -27,10 +27,8 @@ struct DebugGallery: View {
             ContentView()
         case "cuisine":
             CuisineGalleryScreen()
-        case "cuisine-course":
-            CuisineGalleryScreen(sort: .dishCategory)
-        case "cuisine-favorites":
-            CuisineGalleryScreen(lens: .favorites)
+        case "cuisine-recent":
+            CuisineGalleryScreen(sort: .lastModified)
         case "coffee":
             CoffeeGalleryScreen()
         case "coffee-recent":
@@ -44,7 +42,6 @@ struct DebugGallery: View {
                     libraryHasMore: false,
                     libraryLoadMoreFailed: false,
                     title: "Cuisine",
-                    lensPicker: nil,
                     sort: .constant(.lastModified),
                     facet: .course(selection: .constant(nil)),
                     onSettings: {}
@@ -299,7 +296,7 @@ struct DebugGallery: View {
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : cuisine, cuisine-course, cuisine-favorites, cuisine-thermomix, cuisine-loading, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, to-test, to-test-empty, recipe-edit, recipe-edit-thermomix, recipe-edit-oven, recipe-edit-oven-copy, recipe-edit-coffee, recipe-edit-fresh, improve, viewfinder, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found, login, settings-data, quota, quota-premium, premium, premium-live, import-quota-exhausted, import-premium-required, import-resumed")
+                description: Text("Écrans : cuisine, cuisine-recent, cuisine-thermomix, cuisine-loading, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, to-test, to-test-empty, recipe-edit, recipe-edit-thermomix, recipe-edit-oven, recipe-edit-oven-copy, recipe-edit-coffee, recipe-edit-fresh, improve, viewfinder, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found, login, settings-data, quota, quota-premium, premium, premium-live, import-quota-exhausted, import-premium-required, import-resumed")
             )
         }
     }
@@ -444,40 +441,34 @@ private struct RecipeDetailGalleryScreen: View {
     }
 }
 
-/// The notebook tab with its round lens CTAs and sectioned library — needs local
-/// state for the selected lens and sort, so it lives in its own view. Defaults
-/// to the whole library, as the app does; the sort picker is live, so both section
-/// axes (month, course) are reachable.
+/// The notebook tab with its sectioned library — needs local state for the sort, so
+/// it lives in its own view. Opens filed by course, as the app does, the rows in the
+/// order the server hands them (favourites first, then by best rating); the sort
+/// picker is live, so both section axes (course, month) are reachable.
 private struct CuisineGalleryScreen: View {
-    @State private var lens: LibraryLens
     @State private var sort: RecipeSortOption
 
-    init(lens: LibraryLens = .all, sort: RecipeSortOption? = nil) {
-        self._lens = State(initialValue: lens)
-        self._sort = State(initialValue: sort ?? lens.defaultSort)
+    init(sort: RecipeSortOption = .dishCategory) {
+        self._sort = State(initialValue: sort)
     }
 
     private let library = [
         LibraryRecipe(id: "boeuf", title: "Bœuf bourguignon", type: .dish, category: .main, favorite: true, versionCount: 4, toTestCount: 1, bestRating: 5, updatedAt: Date()),
         LibraryRecipe(id: "risotto", title: "Risotto au parmesan", type: .thermomix, category: .main, favorite: false, versionCount: 3, toTestCount: 1, bestRating: 4, updatedAt: Date()),
+        LibraryRecipe(id: "gratin", title: "Gratin dauphinois", type: .dish, category: .main, favorite: false, versionCount: 2, toTestCount: 0, bestRating: 3, updatedAt: Date().addingTimeInterval(-12 * 86_400)),
+        LibraryRecipe(id: "curry", title: "Curry de pois chiches", type: .dish, category: .main, favorite: false, versionCount: 1, toTestCount: 0, bestRating: nil, updatedAt: Date().addingTimeInterval(-3 * 86_400)),
         LibraryRecipe(id: "veloute", title: "Velouté de courge", type: .thermomix, category: .soup, favorite: true, versionCount: 1, toTestCount: 0, bestRating: nil, updatedAt: Date().addingTimeInterval(-40 * 86_400)),
     ]
 
     var body: some View {
         NavigationStack {
             HomePage(
-                library: library.filter { recipe in
-                    switch lens {
-                    case .all: true
-                    case .favorites: recipe.favorite
-                    }
-                },
+                library: library,
                 libraryGrouping: sort == .lastModified ? .month : .course,
                 libraryLoading: false,
                 libraryHasMore: false,
                 libraryLoadMoreFailed: false,
-                title: lens.label,
-                lensPicker: .init(options: [.all, .favorites], selection: $lens),
+                title: "Cuisine",
                 sortOptions: RecipeSortOption.cooking,
                 sort: $sort,
                 facet: .course(selection: .constant(nil)),
@@ -564,7 +555,6 @@ private struct CoffeeGalleryScreen: View {
                 libraryHasMore: false,
                 libraryLoadMoreFailed: false,
                 title: "Café",
-                lensPicker: nil,
                 sortOptions: RecipeSortOption.coffee,
                 sort: $sort,
                 facet: .method(selection: .constant(nil)),

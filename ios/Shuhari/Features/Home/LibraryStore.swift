@@ -13,8 +13,11 @@ final class LibraryStore {
     /// store's life: a tab never changes what it is about.
     private let types: [RecipeType]
 
-    init(types: [RecipeType] = RecipeType.cooking) {
+    /// A library opens filed the way it is searched — by dish course, or by brew
+    /// method for the coffee tab — with the favourites leading every section.
+    init(types: [RecipeType] = RecipeType.cooking, sort: RecipeSortOption = .dishCategory) {
         self.types = types
+        self.sort = sort
     }
 
     /// Pages accumulated from the server, in the current sort order.
@@ -28,26 +31,21 @@ final class LibraryStore {
     private(set) var loadMoreFailed = false
     var error: String?
 
-    /// The dish-course vs. last-modified ordering. Any change reloads page 0.
-    var sort: RecipeSortOption = .lastModified {
+    /// Filed (by course or by method) vs. last-modified ordering. Any change reloads
+    /// page 0.
+    var sort: RecipeSortOption {
         didSet { if oldValue != sort { scheduleReload() } }
     }
 
-    /// Server-side favourites facet: `true` keeps only the recipes marked as
-    /// favourites, every type mixed. Any change reloads.
-    var favorite = false {
-        didSet { if oldValue != favorite { scheduleReload() } }
-    }
-
     /// Server-side dish-category facet. `nil` = every category. Any change reloads.
-    /// When set, the server coerces the ordering to updatedAt desc (ranking within a
-    /// single course is meaningless) regardless of `sort`.
+    /// The page keeps the order `sort` asks for — one course reads like that section
+    /// of the whole library.
     var category: DishCategory? {
         didSet { if oldValue != category { scheduleReload() } }
     }
 
     /// Server-side brew-method facet, the coffee tab's counterpart of `category`.
-    /// `nil` = every method. Coerces the ordering the same way when set.
+    /// `nil` = every method. Keeps the order `sort` asks for, like `category`.
     var method: BrewMethod? {
         didSet { if oldValue != method { scheduleReload() } }
     }
@@ -166,7 +164,6 @@ final class LibraryStore {
             types: types,
             category: category,
             method: method,
-            favorite: favorite,
             sort: sort,
             limit: pageSize,
             after: after

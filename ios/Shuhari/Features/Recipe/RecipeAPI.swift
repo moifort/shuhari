@@ -95,8 +95,8 @@ enum RecipeAPI {
         )
     }
 
-    /// Heart one version, or take the heart off it. The recipe lands in the
-    /// favourites lens as soon as any of its versions is hearted.
+    /// Heart one version, or take the heart off it. The recipe leads its course in
+    /// the library as soon as any of its versions is hearted.
     static func updateFavorite(id: String, versionNumber: Int, favorite: Bool) async throws {
         _ = try await GraphQLHelpers.perform(
             GraphQLClient.shared.apollo,

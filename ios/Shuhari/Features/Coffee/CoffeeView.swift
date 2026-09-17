@@ -5,13 +5,10 @@ import SwiftUI
 /// instead of the cooking types. It opens grouped by brewing method, which is what
 /// a coffee is filed by; the recipe flow underneath is type-agnostic and is reused
 /// as is.
-///
-/// No lens picker: the favourites lens deliberately mixes every type and lives in
-/// the notebook, so narrowing it to coffee would say something different there.
 struct CoffeeView: View {
     @Binding var importedRecipe: ImportedRecipe?
 
-    @State private var library = LibraryStore(types: [.coffee])
+    @State private var library = LibraryStore(types: [.coffee], sort: .brewMethod)
     /// The recipe flow's one state, for every screen the stack pushes.
     @State private var recipes = RecipeStore()
     @State private var path = NavigationPath()
@@ -29,18 +26,13 @@ struct CoffeeView: View {
                 } else {
                     HomePage(
                         library: library.items,
-                        // Month sections apply whenever the effective order is
-                        // chronological — that includes an active method filter,
-                        // which the server coerces to updatedAt desc regardless of
-                        // `sort` (and leaves a single method to section anyway).
-                        libraryGrouping: library.sort == .lastModified || library.method != nil
-                            ? .month
-                            : .method,
+                        // The sections follow the order: months under the date sort,
+                        // methods otherwise — a single one when a method is picked.
+                        libraryGrouping: library.sort == .lastModified ? .month : .method,
                         libraryLoading: library.isLoading,
                         libraryHasMore: library.hasMore,
                         libraryLoadMoreFailed: library.loadMoreFailed,
                         title: "Café",
-                        lensPicker: nil,
                         sortOptions: RecipeSortOption.coffee,
                         sort: $library.sort,
                         facet: .method(selection: $library.method),
@@ -68,12 +60,10 @@ struct CoffeeView: View {
         .onAppear { navigateToImportedIfNeeded() }
     }
 
-    /// The tab opens on the brewing order — the whole point of grouping coffees by
-    /// method. Loads the first page unless the sort change already triggered one.
+    /// Kick off the first library page — the store already opens on the brewing
+    /// order, the whole point of grouping coffees by method.
     private func loadLibraryIfNeeded() async {
-        let before = library.sort
-        library.sort = .brewMethod
-        if library.sort == before, library.items.isEmpty {
+        if library.items.isEmpty {
             await library.load()
         }
     }

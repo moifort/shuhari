@@ -62,6 +62,16 @@ filed by — a dish course vs. a brew method — which is why `HomePage`'s filte
 rather than typed on `DishCategory`: the page filters on *something* without knowing what. The
 domain-to-primitive bridges are `HomePage.Facet.course(selection:)` / `.method(selection:)`.
 
+**A library opens filed, not dated.** `LibraryStore(types:sort:)` opens on `.dishCategory`
+(`.brewMethod` for Café): sections per course, and inside each the order the server hands over —
+favourites first, then by best rating, the recipes never cooked last
+([business-rules](business-rules.md#derivation--no-promotion), `standing`). That order is the
+finding aid, which is why there is **no favourites lens**: the hearts already lead every section.
+"Dernière modification" stays in the sort menu as the second option, sectioned by month, for the
+one question the filed order does not answer. On a `LibraryRow` the **heart replaces the stars** —
+one trailing mark per row: a favourite is ranked on its heart, so its rating beside it would be a
+number the order ignores.
+
 **The tab decides the import flow.** The entry is shared, what it runs is not: launched from Café
 it reads the source as a coffee, from Cuisine as something cooked. `ContentView` derives an
 `ImportFlow` from the tab it came from (`lastContentTab`) and threads it through `ImportJob` to

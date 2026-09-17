@@ -564,8 +564,9 @@ struct RecipeDetailView: View {
     }
 
     /// Flip the heart on the displayed version and reload — the sheet redraws it, and
-    /// the library behind refreshes so the favourites lens gains or loses the recipe.
-    /// The recipe stays in the lens as long as another version keeps its own heart.
+    /// the library behind refreshes so the recipe moves to the head of its course, or
+    /// back among the rated ones. It stays a favourite as long as another version
+    /// keeps its own heart.
     private func toggleFavorite(_ recipe: Recipe) async {
         let version = displayedVersion(recipe)
         await favoriteError.run {

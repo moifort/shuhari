@@ -2,7 +2,6 @@ query RecipeList(
   $types: [RecipeType!]
   $category: DishCategory
   $method: BrewMethod
-  $favorite: Boolean
   $sort: RecipeSort
   $order: SortOrder
   $limit: Int
@@ -12,7 +11,6 @@ query RecipeList(
     types: $types
     category: $category
     method: $method
-    favorite: $favorite
     sort: $sort
     order: $order
     limit: $limit

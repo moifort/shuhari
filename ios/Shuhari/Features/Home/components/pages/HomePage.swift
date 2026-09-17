@@ -5,14 +5,6 @@ import SwiftUI
 /// `CoffeeView`. The library is a server-sorted, infinitely scrolling page
 /// (`library` + the `library*` flags and callbacks).
 struct HomePage: View {
-    /// The lens picker of the notebook toolbar, rendered as round glass buttons —
-    /// the whole library, then the favourites. `nil` hides the selector (loading
-    /// gallery screens).
-    struct LensPicker {
-        let options: [LibraryLens]
-        let selection: Binding<LibraryLens>
-    }
-
     /// The server-side facet of the filter+sort menu, in primitives: the page knows
     /// it is filtering on *something* with a label and an icon, not whether that
     /// something is a dish course or a brew method. Each tab passes its own.
@@ -39,7 +31,6 @@ struct HomePage: View {
     let libraryHasMore: Bool
     let libraryLoadMoreFailed: Bool
     let title: String
-    let lensPicker: LensPicker?
     /// The orders this tab offers — `RecipeSortOption.cooking` or `.coffee`.
     var sortOptions: [RecipeSortOption] = RecipeSortOption.cooking
     let sort: Binding<RecipeSortOption>
@@ -61,25 +52,7 @@ struct HomePage: View {
                     .accessibilityIdentifier("home-settings-button")
                     .accessibilityLabel("Réglages")
                 }
-                if let picker = lensPicker {
-                    ToolbarItemGroup(placement: .topBarTrailing) {
-                        ForEach(picker.options) { lens in
-                            let isSelected = picker.selection.wrappedValue == lens
-                            Button {
-                                picker.selection.wrappedValue = lens
-                            } label: {
-                                lens.iconImage(filled: isSelected)
-                            }
-                            .tint(isSelected ? lens.selectedTint : .primary)
-                            .accessibilityLabel(lens.label)
-                            .accessibilityIdentifier("home-lens-\(lens.id)")
-                        }
-                    }
-                    // Break out of the lens capsule so the filter+sort menu reads as
-                    // its own control on Liquid Glass (otherwise they merge).
-                    ToolbarSpacer(.fixed, placement: .topBarTrailing)
-                }
-                // The combined filter + sort menu, detached from the type filter.
+                // The combined filter + sort menu.
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Picker("Trier", selection: sort) {
@@ -108,17 +81,13 @@ struct HomePage: View {
             }
     }
 
-    /// Empty-library copy. A facet that yields nothing (favourites, a dish course, a
-    /// brew method) isn't a first-run state — the library may well hold other
+    /// Empty-library copy. A facet that yields nothing (a dish course, a brew
+    /// method) isn't a first-run state — the library may well hold other
     /// recipes — so only the genuinely empty, unfiltered one nudges the user to import.
     private var emptyStateMessage: String {
         if facet.selection.wrappedValue != nil {
             return "Aucune recette dans cette catégorie pour l’instant."
         }
-        if lensPicker?.selection.wrappedValue == .favorites {
-            return "Aucun favori pour l’instant — ajoute-les depuis la fiche d’une recette."
-        }
-        // The `.all` lens narrows nothing: an empty library there IS the first-run state.
         return emptyFirstRunMessage
     }
 
@@ -193,26 +162,18 @@ extension HomePage.Facet {
 
 #if DEBUG
 private struct HomePagePreview: View {
-    @State private var lens: LibraryLens = .all
-    @State private var sort: RecipeSortOption = .lastModified
+    @State private var sort: RecipeSortOption = .dishCategory
     @State private var category: DishCategory?
 
     var body: some View {
-        let library = Fixtures.libraryRecipes.filter { recipe in
-            switch lens {
-            case .all: true
-            case .favorites: recipe.favorite
-            }
-        }
         NavigationStack {
             HomePage(
-                library: library,
+                library: Fixtures.libraryRecipes,
                 libraryGrouping: sort == .lastModified ? .month : .course,
                 libraryLoading: false,
                 libraryHasMore: false,
                 libraryLoadMoreFailed: false,
                 title: "Cuisine",
-                lensPicker: .init(options: [.all, .favorites], selection: $lens),
                 sort: $sort,
                 facet: .course(selection: $category),
                 onSettings: {}
@@ -234,7 +195,6 @@ private struct CoffeePagePreview: View {
                 libraryHasMore: false,
                 libraryLoadMoreFailed: false,
                 title: "Café",
-                lensPicker: nil,
                 sortOptions: RecipeSortOption.coffee,
                 sort: $sort,
                 facet: .method(selection: $method),
@@ -261,7 +221,6 @@ private struct CoffeePagePreview: View {
             libraryHasMore: false,
             libraryLoadMoreFailed: false,
             title: "Cuisine",
-            lensPicker: nil,
             sort: .constant(.lastModified),
             facet: .course(selection: .constant(nil)),
             onSettings: {}
@@ -278,7 +237,6 @@ private struct CoffeePagePreview: View {
             libraryHasMore: true,
             libraryLoadMoreFailed: false,
             title: "Cuisine",
-            lensPicker: nil,
             sort: .constant(.lastModified),
             facet: .course(selection: .constant(nil)),
             onSettings: {}

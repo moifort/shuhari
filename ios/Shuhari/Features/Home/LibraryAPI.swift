@@ -18,7 +18,6 @@ enum LibraryAPI {
         types: [RecipeType],
         category: DishCategory? = nil,
         method: BrewMethod? = nil,
-        favorite: Bool,
         sort: RecipeSortOption,
         limit: Int,
         after: String?
@@ -27,7 +26,6 @@ enum LibraryAPI {
             types: .some(types.map(\.graphQLValue)),
             category: category.map { .some($0.graphQLValue) } ?? .none,
             method: method.map { .some($0.graphQLValue) } ?? .none,
-            favorite: favorite ? .some(true) : .none,
             sort: .some(.case(gqlSort(sort))),
             order: .some(.case(gqlOrder(sort))),
             limit: .some(limit),

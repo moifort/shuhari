@@ -1,10 +1,11 @@
 import SwiftUI
 
 /// A library row: the filing icon, the title, a subtitle with the version count
-/// closed by the recipe type as an icon-only chip, the recipe's best rating ("the
-/// highest star" across every version it ever cooked) as trailing stars, and the
-/// favourite heart closing the line. The icon, the stars and the heart sit on the
-/// title's line. Designed as a List row — the List provides insets and separators.
+/// closed by the recipe type as an icon-only chip, and ONE trailing mark on the
+/// title's line: the favourite heart, or else the recipe's best rating ("the
+/// highest star" across every version it ever cooked) as stars. The heart replaces
+/// the stars rather than joining them — "I would make this again" already says what
+/// a rating would, and it is what the library ranks a favourite on. Designed as a List row — the List provides insets and separators.
 ///
 /// The leading icon is what the recipe is filed by: its course for a dish, its
 /// brew method for a coffee — every coffee is a `drink`, so the course icon would
@@ -52,17 +53,15 @@ struct LibraryRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            if let bestRating {
-                RatingStars(rating: Double(bestRating), font: .caption2)
-                    .frame(maxHeight: .infinity, alignment: .top)
-                    .accessibilityLabel("Meilleure note \(bestRating) sur 5")
-            }
-
             if favorite {
                 Image(systemName: "heart.fill")
                     .foregroundStyle(Theme.Status.favorite)
                     .frame(maxHeight: .infinity, alignment: .top)
                     .accessibilityLabel("Favori")
+            } else if let bestRating {
+                RatingStars(rating: Double(bestRating), font: .caption2)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .accessibilityLabel("Meilleure note \(bestRating) sur 5")
             }
         }
         .accessibilityElement(children: .combine)

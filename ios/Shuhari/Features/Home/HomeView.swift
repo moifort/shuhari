@@ -12,8 +12,6 @@ struct HomeView: View {
     @State private var recipes = RecipeStore()
     @State private var path = NavigationPath()
     @State private var showSettings = false
-    /// The notebook opens on the whole library — every type, no facet.
-    @State private var lens: LibraryLens = .all
 
     var body: some View {
         @Bindable var library = library
@@ -27,18 +25,13 @@ struct HomeView: View {
                 } else {
                     HomePage(
                         library: library.items,
-                        // Month sections apply whenever the effective order is
-                        // chronological — that includes an active category filter,
-                        // which the server coerces to updatedAt desc regardless of
-                        // `sort` (and leaves a single course to section anyway).
-                        libraryGrouping: library.sort == .lastModified || library.category != nil
-                            ? .month
-                            : .course,
+                        // The sections follow the order: months under the date sort,
+                        // courses otherwise — a single one when a category is picked.
+                        libraryGrouping: library.sort == .lastModified ? .month : .course,
                         libraryLoading: library.isLoading,
                         libraryHasMore: library.hasMore,
                         libraryLoadMoreFailed: library.loadMoreFailed,
-                        title: lens.label,
-                        lensPicker: .init(options: [.all, .favorites], selection: $lens),
+                        title: "Cuisine",
                         sortOptions: RecipeSortOption.cooking,
                         sort: $library.sort,
                         facet: .course(selection: $library.category),
@@ -60,9 +53,6 @@ struct HomeView: View {
             await loadLibraryIfNeeded()
         }
         .refreshable { await reloadAll() }
-        .onChange(of: lens) { _, newValue in
-            apply(newValue)
-        }
         .sheet(isPresented: $showSettings) {
             SettingsHomeView(onDataReplaced: { await reloadAll() })
         }
@@ -70,18 +60,10 @@ struct HomeView: View {
         .onAppear { navigateToImportedIfNeeded() }
     }
 
-    /// Point the library at a lens: its facet, and the order it opens on.
-    private func apply(_ lens: LibraryLens) {
-        library.favorite = lens == .favorites
-        library.sort = lens.defaultSort
-    }
-
-    /// Kick off the first library page. The facets reload via their `didSet` when they
-    /// change; on an unchanged lens, load explicitly.
+    /// Kick off the first library page. The sort and the facet reload on their own
+    /// (`didSet`) when they change.
     private func loadLibraryIfNeeded() async {
-        let before = (library.favorite, library.sort)
-        apply(lens)
-        if (library.favorite, library.sort) == before, library.items.isEmpty {
+        if library.items.isEmpty {
             await library.load()
         }
     }
@@ -91,13 +73,11 @@ struct HomeView: View {
         await library.load()
     }
 
-    /// Push the freshly imported recipe's recipe sheet, back on the whole library —
-    /// a favourites lens would hide the newcomer behind the sheet. Handles both the
+    /// Push the freshly imported recipe's recipe sheet. Handles both the
     /// already-mounted tab (`onChange`) and the tab that mounts on selection right
     /// after the import (`onAppear`).
     private func navigateToImportedIfNeeded() {
         guard let recipe = importedRecipe else { return }
-        lens = .all
         path.append(RecipeRoute.recipe(id: recipe.id))
         importedRecipe = nil
         Task { await reloadAll() }
