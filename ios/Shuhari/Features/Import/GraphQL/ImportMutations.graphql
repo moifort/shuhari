@@ -49,6 +49,7 @@ mutation AnalyzeCookingImport($photos: [String!]!, $url: String, $text: String) 
       name
       quantity
     }
+    miseEnPlace
     steps {
       text
       thermomix {

@@ -39,6 +39,7 @@ fragment VersionContentFields on VersionContent {
       name
       quantity
     }
+    miseEnPlace
     dishSteps: steps
     oven {
       ...OvenProfileFields
@@ -49,6 +50,7 @@ fragment VersionContentFields on VersionContent {
       name
       quantity
     }
+    miseEnPlace
     thermomixSteps: steps {
       text
       settings {

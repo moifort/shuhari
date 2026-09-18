@@ -46,18 +46,20 @@ const carriedProfile = (content: VersionContent & { kind: 'coffee' }) =>
 const brandCookingProposal = (
   type: CookingRecipeType,
   current: VersionContent,
-  proposal: Pick<CookingProposal, 'ingredients' | 'steps'>,
+  proposal: Pick<CookingProposal, 'ingredients' | 'miseEnPlace' | 'steps'>,
 ): VersionContent =>
   type === 'thermomix'
     ? brandVersionContent({
         kind: 'thermomix',
         ingredients: proposal.ingredients,
+        miseEnPlace: proposal.miseEnPlace,
         steps: proposal.steps.map(({ text, thermomix }) => ({ text, settings: thermomix })),
         ...carriedOven(current),
       })
     : brandVersionContent({
         kind: 'dish',
         ingredients: proposal.ingredients,
+        miseEnPlace: proposal.miseEnPlace,
         steps: proposal.steps.map(({ text }) => text),
         ...carriedOven(current),
       })
@@ -102,6 +104,11 @@ const contextParameters = (
     gear,
   }
 }
+
+// The mise en place the iteration starts from — `[]` on a version written before the
+// section existed, which is what tells the model to write it in full.
+const contextMiseEnPlace = (content: VersionContent & { kind: CookingRecipeType }) =>
+  content.miseEnPlace.map((line) => line as string)
 
 // Rebuild the AI context steps from a stored version's content: a dish exposes steps
 // that set nothing, a Thermomix recipe its own per-step settings, always present
@@ -161,6 +168,7 @@ const cookingAnswer = async (
     type: content.kind,
     category,
     currentIngredients: contextIngredients(content),
+    currentMiseEnPlace: contextMiseEnPlace(content),
     currentSteps: contextSteps(content),
   })
   return {
@@ -199,6 +207,7 @@ const cookingChangeAnswer = async (
     type: content.kind,
     category,
     currentIngredients: contextIngredients(content),
+    currentMiseEnPlace: contextMiseEnPlace(content),
     currentSteps: contextSteps(content),
   })
   return {

@@ -194,17 +194,38 @@ struct OvenProfile: Sendable, Hashable {
 /// steps, a Thermomix recipe carries steps that each embed their machine
 /// settings, a coffee steps that each embed their extraction settings. Adding a
 /// recipe type later is one more case here.
+///
+/// The two cooked bodies open on their mise en place — what is readied before the
+/// first step, as a professional kitchen does it. Plain lines on a Thermomix recipe
+/// too, since it is done by hand. Empty on a version written before the section
+/// existed: the AI writes it the next time the cook asks for an iteration.
 enum VersionContent: Sendable, Hashable {
-    case dish(ingredients: [Ingredient], steps: [String], oven: OvenProfile? = nil)
-    case thermomix(ingredients: [Ingredient], steps: [ThermomixStep], oven: OvenProfile? = nil)
+    case dish(
+        ingredients: [Ingredient], miseEnPlace: [String] = [], steps: [String],
+        oven: OvenProfile? = nil
+    )
+    case thermomix(
+        ingredients: [Ingredient], miseEnPlace: [String] = [], steps: [ThermomixStep],
+        oven: OvenProfile? = nil
+    )
     case coffee(parameters: CoffeeParameters)
 
     /// The ingredient list, whichever variant this is. A coffee has none: its dose,
     /// its water and its milk are parameters.
     var ingredients: [Ingredient] {
         switch self {
-        case .dish(let ingredients, _, _): ingredients
-        case .thermomix(let ingredients, _, _): ingredients
+        case .dish(let ingredients, _, _, _): ingredients
+        case .thermomix(let ingredients, _, _, _): ingredients
+        case .coffee: []
+        }
+    }
+
+    /// What is readied before the first step, whichever cooked variant this is. A
+    /// coffee readies nothing: it is wholly described by its parameters.
+    var miseEnPlace: [String] {
+        switch self {
+        case .dish(_, let miseEnPlace, _, _): miseEnPlace
+        case .thermomix(_, let miseEnPlace, _, _): miseEnPlace
         case .coffee: []
         }
     }
@@ -213,8 +234,8 @@ enum VersionContent: Sendable, Hashable {
     /// oven — a coffee never does.
     var oven: OvenProfile? {
         switch self {
-        case .dish(_, _, let oven): oven
-        case .thermomix(_, _, let oven): oven
+        case .dish(_, _, _, let oven): oven
+        case .thermomix(_, _, _, let oven): oven
         case .coffee: nil
         }
     }
@@ -228,8 +249,8 @@ enum VersionContent: Sendable, Hashable {
     /// extraction settings are dropped — this is the text-only view of the method).
     var stepTexts: [String] {
         switch self {
-        case .dish(_, let steps, _): steps
-        case .thermomix(_, let steps, _): steps.map(\.text)
+        case .dish(_, _, let steps, _): steps
+        case .thermomix(_, _, let steps, _): steps.map(\.text)
         // A coffee has no gestures: it is wholly described by its parameters.
         case .coffee: []
         }
@@ -240,8 +261,8 @@ enum VersionContent: Sendable, Hashable {
     /// Thermomix step can change through its settings alone, its text untouched.
     var stepsWithSettings: [ThermomixStep] {
         switch self {
-        case .dish(_, let steps, _): steps.map { ThermomixStep(text: $0, settings: .plain) }
-        case .thermomix(_, let steps, _): steps
+        case .dish(_, _, let steps, _): steps.map { ThermomixStep(text: $0, settings: .plain) }
+        case .thermomix(_, _, let steps, _): steps
         case .coffee: []
         }
     }
@@ -316,6 +337,10 @@ struct RecipeVersion: Identifiable, Sendable {
 
     /// The version's ingredients, whichever content variant it carries.
     var ingredients: [Ingredient] { content.ingredients }
+    /// What the version readies before its first step, whichever content variant it
+    /// carries — empty on a coffee, and on a version the AI has not iterated on since
+    /// the section existed.
+    var miseEnPlace: [String] { content.miseEnPlace }
     /// The version's plain step texts, whichever content variant it carries.
     var steps: [String] { content.stepTexts }
 
@@ -323,8 +348,8 @@ struct RecipeVersion: Identifiable, Sendable {
     /// carrying `.plain` settings — which is exactly what the server ignores on one.
     var editableSteps: [ThermomixStep] {
         switch content {
-        case .dish(_, let steps, _): steps.map { ThermomixStep(text: $0, settings: .plain) }
-        case .thermomix(_, let steps, _): steps
+        case .dish(_, _, let steps, _): steps.map { ThermomixStep(text: $0, settings: .plain) }
+        case .thermomix(_, _, let steps, _): steps
         case .coffee: []
         }
     }
@@ -470,6 +495,8 @@ struct CookingImportAnalysis: Sendable, Hashable {
     var category: DishCategory
     /// The recipe's ingredients with quantities (empty when none).
     var ingredients: [Ingredient] = []
+    /// What the AI read as readied before the first step (empty when nothing is).
+    var miseEnPlace: [String] = []
     /// The extracted steps, each carrying its own Thermomix settings.
     var steps: [ImportStep]
     /// The cooking tips found in the source (empty when it carries none).

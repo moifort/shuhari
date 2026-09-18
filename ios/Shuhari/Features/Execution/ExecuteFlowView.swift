@@ -162,6 +162,7 @@ struct ExecuteFlowView: View {
                         proposal: proposal,
                         nextVersionNumber: recipe.nextVersionNumber,
                         baseIngredients: base?.ingredients ?? [],
+                        baseMiseEnPlace: base?.miseEnPlace ?? [],
                         baseSteps: base?.content.stepsWithSettings ?? [],
                         baseTips: base?.tips ?? [],
                         isWorking: isAcceptingProposal,

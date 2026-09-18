@@ -125,15 +125,17 @@ enum GraphQLHelpers {
     /// steps carrying their machine settings, `coffee` for its parameters alone.
     static func versionContentInput(_ content: VersionContent) -> ShuhariGraphQL.VersionContentInput {
         switch content {
-        case .dish(let ingredients, let steps, let oven):
+        case .dish(let ingredients, let miseEnPlace, let steps, let oven):
             return .dish(ShuhariGraphQL.DishContentInput(
                 ingredients: ingredients.map { ShuhariGraphQL.IngredientInput(name: $0.name, quantity: $0.quantity) },
+                miseEnPlace: miseEnPlace,
                 oven: ovenProfileInput(oven),
                 steps: steps
             ))
-        case .thermomix(let ingredients, let steps, let oven):
+        case .thermomix(let ingredients, let miseEnPlace, let steps, let oven):
             return .thermomix(ShuhariGraphQL.ThermomixContentInput(
                 ingredients: ingredients.map { ShuhariGraphQL.IngredientInput(name: $0.name, quantity: $0.quantity) },
+                miseEnPlace: miseEnPlace,
                 oven: ovenProfileInput(oven),
                 steps: steps.map {
                     ShuhariGraphQL.ThermomixStepInput(settings: thermomixSettingsInput($0.settings), text: $0.text)

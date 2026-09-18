@@ -245,9 +245,15 @@ const looseOvenSchema = z.object({
   core: z.unknown().nullish(),
 })
 
+// The mise en place is total in the domain (`[]` = none), but a client built before
+// the section existed sends no key at all — read as the empty list rather than
+// refused, like a `tips` list left out of an import.
+const looseMiseEnPlaceSchema = z.array(z.unknown()).nullish()
+
 const dishContentSchema = z.object({
   kind: z.literal('dish'),
   ingredients: z.array(looseIngredientSchema),
+  miseEnPlace: looseMiseEnPlaceSchema,
   steps: z.array(z.unknown()),
   oven: looseOvenSchema.nullish(),
 })
@@ -255,6 +261,7 @@ const dishContentSchema = z.object({
 const thermomixContentSchema = z.object({
   kind: z.literal('thermomix'),
   ingredients: z.array(looseIngredientSchema),
+  miseEnPlace: looseMiseEnPlaceSchema,
   steps: z.array(z.object({ text: z.unknown(), settings: looseSettingsSchema.nullish() })),
   oven: looseOvenSchema.nullish(),
 })
@@ -412,14 +419,17 @@ const versionContentSchema = z
   .transform((raw): VersionContentType => {
     if (raw.kind === 'coffee') return { kind: 'coffee', ...brandCoffeeParameters(raw) }
     const ingredients = raw.ingredients.map(brandIngredient)
-    // The oven profile is the one thing the two cooking bodies share.
+    // The mise en place and the oven profile are what the two cooking bodies share.
+    const miseEnPlace = (raw.miseEnPlace ?? []).map((line) => StepText(line))
     const oven = raw.oven ? { oven: brandOvenProfile(raw.oven) } : {}
     if (raw.kind === 'dish') {
-      return { kind: 'dish', ingredients, steps: raw.steps.map((s) => StepText(s)), ...oven }
+      const steps = raw.steps.map((s) => StepText(s))
+      return { kind: 'dish', ingredients, miseEnPlace, steps, ...oven }
     }
     const texts = raw.steps.map(({ text }) => StepText(text))
     const settings = raw.steps.map(({ settings }) => brandLooseSettings(settings ?? {}))
-    return { kind: 'thermomix', ingredients, steps: thermomixSteps(texts, settings), ...oven }
+    const steps = thermomixSteps(texts, settings)
+    return { kind: 'thermomix', ingredients, miseEnPlace, steps, ...oven }
   })
 
 export const VersionContent = (value: unknown): VersionContentType =>

@@ -9,6 +9,7 @@ import { migration0008 } from '~/system/migration/migrations/0008-components-ont
 import { migration0009 } from '~/system/migration/migrations/0009-profile-onto-the-gear'
 import { migration0010 } from '~/system/migration/migrations/0010-standing-onto-the-recipe'
 import { migration0011 } from '~/system/migration/migrations/0011-thermomix-tag-onto-the-recipe'
+import { migration0012 } from '~/system/migration/migrations/0012-mise-en-place-onto-the-version'
 import type { Migration } from '~/system/migration/types'
 
 // Forward-only migrations, applied in order by the runner. Register new
@@ -25,4 +26,5 @@ export const migrations: Migration[] = [
   migration0009,
   migration0010,
   migration0011,
+  migration0012,
 ]

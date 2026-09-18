@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The editable import preview of something cooked: title, detected type and dish
-/// category, ingredients, steps and the tips the AI found. Everything is adjustable
+/// category, ingredients, mise en place, steps and the tips the AI found. Everything is adjustable
 /// before creating the recipe (v1). Presented inside the import review sheet — its
 /// actions live in the sheet toolbar (Fermer / Valider), not a bottom button.
 /// A coffee has its own preview: it is a set of dials, not a method.
@@ -22,6 +22,7 @@ struct ImportPreviewPage: View {
     @State private var type: RecipeType
     @State private var category: DishCategory
     @State private var ingredients: [EditableIngredient]
+    @State private var miseEnPlaceTexts: [String]
     @State private var stepTexts: [String]
     @State private var tipTexts: [String]
 
@@ -41,6 +42,7 @@ struct ImportPreviewPage: View {
         self._ingredients = State(initialValue: analysis.ingredients.map {
             EditableIngredient(name: $0.name, quantity: $0.quantity)
         })
+        self._miseEnPlaceTexts = State(initialValue: analysis.miseEnPlace)
         self._stepTexts = State(initialValue: analysis.steps.map(\.text))
         self._tipTexts = State(initialValue: analysis.tips)
     }
@@ -92,6 +94,18 @@ struct ImportPreviewPage: View {
                         }
                     }
                     .onDelete { ingredients.remove(atOffsets: $0) }
+                }
+            }
+
+            // What the AI read as readied before the first step — editable lines,
+            // no section at all when it read none.
+            if !miseEnPlaceTexts.isEmpty {
+                Section("Mise en place") {
+                    ForEach(miseEnPlaceTexts.indices, id: \.self) { index in
+                        TextField("Préparation", text: $miseEnPlaceTexts[index], axis: .vertical)
+                            .lineLimit(1...6)
+                            .accessibilityIdentifier("import-mise-en-place-field")
+                    }
                 }
             }
 
@@ -204,6 +218,11 @@ struct ImportPreviewPage: View {
                 let quantity = row.quantity.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !name.isEmpty, !quantity.isEmpty else { return nil }
                 return Ingredient(name: name, quantity: quantity)
+            },
+            // Blank lines are dropped, like blank steps.
+            miseEnPlace: miseEnPlaceTexts.compactMap {
+                let text = $0.trimmingCharacters(in: .whitespacesAndNewlines)
+                return text.isEmpty ? nil : text
             },
             steps: steps,
             // Blank tips are dropped, like blank steps.

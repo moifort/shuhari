@@ -187,6 +187,14 @@ export const DishContentInput = builder.inputType('DishContentInput', {
         'The ingredient list, in order, e.g. `"Flour — 250 g"` then `"Eggs — 3"` (send `[]` ' +
         'when the recipe has nothing measurable)',
     }),
+    miseEnPlace: t.field({
+      type: ['StepText'],
+      required: true,
+      defaultValue: [],
+      description:
+        'What is readied before the first step, e.g. `"Préchauffer le four à 180 °C"` (send ' +
+        '`[]` when the recipe states none)',
+    }),
     steps: t.field({
       type: ['StepText'],
       required: true,
@@ -211,6 +219,14 @@ export const ThermomixContentInput = builder.inputType('ThermomixContentInput', 
       type: [IngredientInput],
       required: true,
       description: 'The ingredient list, in order (send `[]` when the recipe has none)',
+    }),
+    miseEnPlace: t.field({
+      type: ['StepText'],
+      required: true,
+      defaultValue: [],
+      description:
+        'What is readied by hand before the machine runs, e.g. `"Peser 320 g de riz"` (send ' +
+        '`[]` when the recipe states none)',
     }),
     steps: t.field({
       type: [ThermomixStepInput],
@@ -252,7 +268,12 @@ export const VersionContentInput = builder.inputType('VersionContentInput', {
 // The GraphQL layer guarantees exactly one arm is set; the fallback guards the type.
 // The raw arms (branded scalars plus the client's `null`s on absent settings) are
 // re-validated and paired by the `VersionContent` constructor.
-type ContentArm = { ingredients: unknown[]; steps: unknown[]; oven?: unknown }
+type ContentArm = {
+  ingredients: unknown[]
+  miseEnPlace: unknown[]
+  steps: unknown[]
+  oven?: unknown
+}
 // The coffee arm carries parameter blocks and nothing else — no ingredient list,
 // no steps.
 type CoffeeArm = Record<string, unknown>

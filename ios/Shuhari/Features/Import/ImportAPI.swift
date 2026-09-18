@@ -64,6 +64,7 @@ enum ImportAPI {
             ingredients: analysis.ingredients.map {
                 Ingredient(name: $0.name, quantity: $0.quantity)
             },
+            miseEnPlace: analysis.miseEnPlace,
             steps: analysis.steps.map { step in
                 ImportStep(
                     text: step.text,
@@ -101,9 +102,14 @@ enum ImportAPI {
             analysis.type == .thermomix
                 ? .thermomix(
                     ingredients: analysis.ingredients,
+                    miseEnPlace: analysis.miseEnPlace,
                     steps: analysis.steps.map(\.asThermomixStep)
                 )
-                : .dish(ingredients: analysis.ingredients, steps: analysis.steps.map(\.text))
+                : .dish(
+                    ingredients: analysis.ingredients,
+                    miseEnPlace: analysis.miseEnPlace,
+                    steps: analysis.steps.map(\.text)
+                )
         return try await RecipeAPI.createRecipe(
             title: analysis.title,
             type: analysis.type,

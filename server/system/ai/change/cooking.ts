@@ -1,7 +1,11 @@
 import { callGemini, promptBody } from '~/system/ai/gemini'
 import { parseCookingChangeResponse } from '~/system/ai/primitives'
 import { formatThermomix } from '~/system/ai/proposal/cooking'
-import { ingredientsSchemaProperty, stepsSchemaProperty } from '~/system/ai/schema'
+import {
+  ingredientsSchemaProperty,
+  miseEnPlaceSchemaProperty,
+  stepsSchemaProperty,
+} from '~/system/ai/schema'
 import type { CookingChange, CookingChangeContext } from '~/system/ai/types'
 
 const responseSchema = {
@@ -13,10 +17,11 @@ const responseSchema = {
         'Short summary of what the cook changed, written in French. One change = "label old → new unit", where → is the arrow character U+2192 — ALWAYS that character between the old and the new value, never a comma, a dash, a slash or quotes (e.g. "Sucre 20 → 10 g"). Several changes are joined by ", " (e.g. "Sucre 20 → 10 g, cuisson 3 h 30 → 4 h"). ≤200 characters',
     },
     ingredients: ingredientsSchemaProperty,
+    miseEnPlace: miseEnPlaceSchemaProperty,
     steps: stepsSchemaProperty,
   },
-  required: ['changeSummary', 'ingredients', 'steps'],
-  propertyOrdering: ['changeSummary', 'ingredients', 'steps'],
+  required: ['changeSummary', 'ingredients', 'miseEnPlace', 'steps'],
+  propertyOrdering: ['changeSummary', 'ingredients', 'miseEnPlace', 'steps'],
 }
 
 // The whole difference with the proposal prompt, which exists to have an opinion:
@@ -24,7 +29,7 @@ const responseSchema = {
 // is the entire job — anything invented would be attributed to a plate that was
 // actually made.
 const APPLY_RULE =
-  'Apply EXACTLY what the cook describes, and NOTHING else. This is a transcription, not an iteration: the cook already made this version and already ate it, so you are writing down what they did, never improving on it. Everything the change does not mention stays strictly identical — the same ingredients in the same order with the same quantities, the same steps with the same wording and the same settings. Never add, remove, reorder or reword anything the change does not touch, never round a value, never "fix" a recipe you find odd. Return the COMPLETE ingredient and step list with the change applied, plus changeSummary, which records every change as "old → new" with the arrow character U+2192 between the two, whether the change is a new value or one ingredient replacing another. Put each change in its right structured field — a Thermomix time/temperature/speed in the step settings, a duration in the dish step text, a quantity on the ingredient. When the sentence is ambiguous, take the most literal reading and change the least. When it describes something no ingredient and no step can carry (a remark about the result, a comment on the taste), return the lists untouched and say so in changeSummary. NEVER touch the oven: its programme, temperature, duration and probe are set by hand, on the appliance or in the app.'
+  'Apply EXACTLY what the cook describes, and NOTHING else. This is a transcription, not an iteration: the cook already made this version and already ate it, so you are writing down what they did, never improving on it. Everything the change does not mention stays strictly identical — the same ingredients in the same order with the same quantities, the same steps with the same wording and the same settings. Never add, remove, reorder or reword anything the change does not touch, never round a value, never "fix" a recipe you find odd. Return the COMPLETE ingredient list, mise en place and step list with the change applied, plus changeSummary, which records every change as "old → new" with the arrow character U+2192 between the two, whether the change is a new value or one ingredient replacing another. Put each change in its right structured field — a Thermomix time/temperature/speed in the step settings, a duration in the dish step text, a quantity on the ingredient. When the sentence is ambiguous, take the most literal reading and change the least. When it describes something no ingredient and no step can carry (a remark about the result, a comment on the taste), return the lists untouched and say so in changeSummary. NEVER touch the oven: its programme, temperature, duration and probe are set by hand, on the appliance or in the app. The one thing you write beyond the change is the mise en place — EVERYTHING readied before the first step, one short line per preparation, derived from the ingredients and the steps: it restates the recipe as it is, so writing it in full when the current version has none alters nothing on the plate and is never recorded in changeSummary. A preparation listed there is not repeated as a step.'
 
 const prompt = (context: CookingChangeContext): string => {
   const ingredients =
@@ -35,14 +40,19 @@ const prompt = (context: CookingChangeContext): string => {
       .map((s, i) => `${i + 1}. ${s.text}${formatThermomix(s.thermomix)}`)
       .join('\n') || '—'
 
+  const miseEnPlace = context.currentMiseEnPlace.map((line) => `- ${line}`).join('\n') || '—'
+
   return `You are the assistant of a culinary experimentation notebook. The cook has ALREADY changed this recipe, ALREADY cooked it and ALREADY eaten the result. Write that version down.
 
-MANDATORY: write every generated value — change summary, ingredient names and quantities, step text — in French. The reader is a French speaker; never answer in English.
+MANDATORY: write every generated value — change summary, ingredient names and quantities, mise en place, step text — in French. The reader is a French speaker; never answer in English.
 
 ${APPLY_RULE}
 
 Current ingredients:
 ${ingredients}
+
+Current mise en place:
+${miseEnPlace}
 
 Current steps:
 ${steps}
@@ -50,7 +60,7 @@ ${steps}
 Change made by the cook:
 ${context.change}
 
-Fill changeSummary (a short summary of what they changed), ingredients and steps (the COMPLETE lists of the version they cooked).
+Fill changeSummary (a short summary of what they changed), ingredients, miseEnPlace and steps (the COMPLETE lists of the version they cooked).
 
 Reminder: all text values you produce must be written in French.`
 }

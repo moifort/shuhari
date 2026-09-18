@@ -183,6 +183,13 @@ export const DishContentType = builder.objectRef<DishContent>('DishContent').imp
         'list when it has none)',
       resolve: ({ ingredients }) => ingredients,
     }),
+    miseEnPlace: t.expose('miseEnPlace', {
+      type: ['StepText'],
+      description:
+        'What is readied before the first step — taken out, weighed, cut, preheated — e.g. ' +
+        '`"Préchauffer le four à 180 °C"`. Empty list on a version written before the section ' +
+        'existed; it gains one the next time the AI iterates on it.',
+    }),
     steps: t.expose('steps', {
       type: ['StepText'],
       description:
@@ -229,6 +236,12 @@ export const ThermomixContentType = builder
         type: [IngredientType],
         description: 'The full ingredient list, in order (empty list when it has none)',
         resolve: ({ ingredients }) => ingredients,
+      }),
+      miseEnPlace: t.expose('miseEnPlace', {
+        type: ['StepText'],
+        description:
+          'What is readied by hand before the machine runs, e.g. `"Peser 320 g de riz"`. Plain ' +
+          'text, no machine setting. Empty list on a version written before the section existed.',
       }),
       steps: t.field({
         type: [ThermomixStepType],

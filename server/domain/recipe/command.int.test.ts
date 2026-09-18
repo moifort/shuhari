@@ -46,6 +46,7 @@ const steps = (...s: string[]) => s.map((x) => x as StepText)
 const dishContent = (opts: { ingredients?: Ingredient[] } = {}): DishContent => ({
   kind: 'dish',
   ingredients: opts.ingredients ?? [],
+  miseEnPlace: [],
   steps: steps('Saisir', 'Mijoter'),
 })
 
@@ -95,7 +96,7 @@ describe('RecipeCommand.create', () => {
   test('a Thermomix recipe is born tagged so, a dish filed under nothing', async () => {
     const thermomix = await RecipeCommand.create(
       userId,
-      newInput({ kind: 'thermomix', ingredients: [], steps: [] }),
+      newInput({ kind: 'thermomix', ingredients: [], miseEnPlace: [], steps: [] }),
     )
     const dish = await RecipeCommand.create(userId, newInput())
     if (typeof thermomix === 'string' || typeof dish === 'string')
@@ -111,6 +112,7 @@ describe('RecipeCommand.create', () => {
     const content: ThermomixContent = {
       kind: 'thermomix',
       ingredients: [ingredient('Gin', '50 ml')],
+      miseEnPlace: [],
       steps: [
         {
           text: 'Mixer' as StepText,
@@ -355,6 +357,7 @@ describe('RecipeCommand.addVersion', () => {
     const content: DishContent = {
       kind: 'dish',
       ingredients: [],
+      miseEnPlace: [],
       steps: steps('Saisir', 'Mijoter'),
     }
     const withV2 = (await RecipeCommand.addVersion(userId, recipe.id, {
@@ -410,7 +413,7 @@ describe('RecipeCommand.addVersion', () => {
     await RecipeCommand.addVersion(userId, recipe.id, {
       change: 'Version végétarienne',
       basedOn: 1 as VersionNumber,
-      content: { kind: 'dish', ingredients: [], steps: steps('Saisir') },
+      content: { kind: 'dish', ingredients: [], miseEnPlace: [], steps: steps('Saisir') },
       tips: [],
     })
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_2`)?.toTest).toBe(true)
@@ -423,7 +426,7 @@ describe('RecipeCommand.addVersion', () => {
     await RecipeCommand.addVersion(userId, recipe.id, {
       change: 'Version végétarienne',
       basedOn: 1 as VersionNumber,
-      content: { kind: 'dish', ingredients: [], steps: steps('Saisir') },
+      content: { kind: 'dish', ingredients: [], miseEnPlace: [], steps: steps('Saisir') },
       tips: [],
     })
 
@@ -432,7 +435,7 @@ describe('RecipeCommand.addVersion', () => {
     await RecipeCommand.addVersion(userId, recipe.id, {
       change: 'Moins de sel',
       basedOn: 2 as VersionNumber,
-      content: { kind: 'dish', ingredients: [], steps: steps('Saisir') },
+      content: { kind: 'dish', ingredients: [], miseEnPlace: [], steps: steps('Saisir') },
       tips: [],
       attempt: { rating: 3 as Rating, remarks: 'Trop salé' as Remarks },
     })
@@ -448,7 +451,7 @@ describe('RecipeCommand.addVersion', () => {
     await RecipeCommand.addVersion(userId, recipe.id, {
       change: 'Bouillon 700 → 650 ml',
       basedOn: 1 as VersionNumber,
-      content: { kind: 'dish', ingredients: [], steps: steps('Saisir') },
+      content: { kind: 'dish', ingredients: [], miseEnPlace: [], steps: steps('Saisir') },
       tips: [],
       attempt: { rating: 3 as Rating, remarks: 'Trop liquide' as Remarks },
     })
@@ -471,7 +474,7 @@ describe('RecipeCommand.addVersion', () => {
     if (typeof recipe === 'string') throw new Error('expected a recipe')
     const result = await RecipeCommand.addVersion(userId, recipe.id, {
       change: 'x',
-      content: { kind: 'thermomix', ingredients: [], steps: [] },
+      content: { kind: 'thermomix', ingredients: [], miseEnPlace: [], steps: [] },
       tips: [],
     })
     expect(result).toBe('content-type-mismatch')
@@ -480,7 +483,7 @@ describe('RecipeCommand.addVersion', () => {
   test('returns not-found for an unknown recipe', async () => {
     const result = await RecipeCommand.addVersion(userId, 'nope' as RecipeId, {
       change: 'x',
-      content: { kind: 'dish', ingredients: [], steps: [] },
+      content: { kind: 'dish', ingredients: [], miseEnPlace: [], steps: [] },
       tips: [],
     })
     expect(result).toBe('not-found')
@@ -781,7 +784,7 @@ describe('RecipeCommand.recordAttempt', () => {
     await RecipeCommand.addVersion(userId, recipe.id, {
       change: 'Version végétarienne',
       basedOn: 1 as VersionNumber,
-      content: { kind: 'dish', ingredients: [], steps: steps('Saisir') },
+      content: { kind: 'dish', ingredients: [], miseEnPlace: [], steps: steps('Saisir') },
       tips: [],
     })
 
@@ -998,7 +1001,7 @@ describe('RecipeCommand.updateRating', () => {
     await RecipeCommand.addVersion(userId, recipe.id, {
       change: 'Version végétarienne',
       basedOn: 1 as VersionNumber,
-      content: { kind: 'dish', ingredients: [], steps: steps('Saisir') },
+      content: { kind: 'dish', ingredients: [], miseEnPlace: [], steps: steps('Saisir') },
       tips: [],
     })
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_2`)?.toTest).toBe(true)
@@ -1835,6 +1838,7 @@ describe('RecipeCommand.updateSteps', () => {
     newInput({
       kind: 'thermomix',
       ingredients: [],
+      miseEnPlace: [],
       steps: [{ text: 'Mixer' as StepText, settings: {} }],
     })
 

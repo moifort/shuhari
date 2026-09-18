@@ -435,6 +435,11 @@ type CookingImportAnalysis {
 
   """The extracted ingredients"""
   ingredients: [ImportIngredient!]!
+
+  """
+  What the AI read as readied before the first step — one line per preparation, empty list when the recipe readies nothing
+  """
+  miseEnPlace: [String!]!
   sourceLabel: String
 
   """The extracted steps, each carrying its own Thermomix settings"""
@@ -527,6 +532,11 @@ type DishContent {
   ingredients: [Ingredient!]!
 
   """
+  What is readied before the first step — taken out, weighed, cut, preheated — e.g. `"Préchauffer le four à 180 °C"`. Empty list on a version written before the section existed; it gains one the next time the AI iterates on it.
+  """
+  miseEnPlace: [StepText!]!
+
+  """
   The oven settings this version bakes at, e.g. `CONVECTION` at `180` for `25` min. `null` when the dish never goes in the oven.
   """
   oven: OvenProfile
@@ -545,6 +555,11 @@ input DishContentInput {
   The ingredient list, in order, e.g. `"Flour — 250 g"` then `"Eggs — 3"` (send `[]` when the recipe has nothing measurable)
   """
   ingredients: [IngredientInput!]!
+
+  """
+  What is readied before the first step, e.g. `"Préchauffer le four à 180 °C"` (send `[]` when the recipe states none)
+  """
+  miseEnPlace: [StepText!]! = []
 
   """
   The oven settings this version bakes at, e.g. `CONVECTION` at `180` for `25` min. Omit it when the dish never goes in the oven.
@@ -1991,6 +2006,11 @@ type ThermomixContent {
   ingredients: [Ingredient!]!
 
   """
+  What is readied by hand before the machine runs, e.g. `"Peser 320 g de riz"`. Plain text, no machine setting. Empty list on a version written before the section existed.
+  """
+  miseEnPlace: [StepText!]!
+
+  """
   The oven settings this version bakes at — a dough kneaded on the machine still finishes in the oven. `null` when it never does.
   """
   oven: OvenProfile
@@ -2005,6 +2025,11 @@ The body of a Thermomix version: its ingredient list and its steps, each carryin
 input ThermomixContentInput {
   """The ingredient list, in order (send `[]` when the recipe has none)"""
   ingredients: [IngredientInput!]!
+
+  """
+  What is readied by hand before the machine runs, e.g. `"Peser 320 g de riz"` (send `[]` when the recipe states none)
+  """
+  miseEnPlace: [StepText!]! = []
 
   """
   The oven settings this version bakes at — a dough kneaded on the machine still finishes in the oven. Omit it when it never does.

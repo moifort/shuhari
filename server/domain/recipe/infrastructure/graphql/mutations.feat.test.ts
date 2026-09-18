@@ -1006,3 +1006,72 @@ describe('updateSteps mutation', () => {
     })
   })
 })
+
+describe('the mise en place on the wire', () => {
+  test('keeps what the import readied before the first step, and reads none as the empty list', async () => {
+    const created = await execute(`
+      mutation {
+        createRecipe(input: {
+          type: DISH
+          category: BAKING
+          title: "Cookies"
+          content: { dish: {
+            ingredients: [{ name: "Beurre", quantity: "170 g" }]
+            miseEnPlace: ["Sortir le beurre 1 h avant", "Préchauffer le four à 180 °C"]
+            steps: ["Crémer le beurre", "Enfourner 12 min"]
+          } }
+        }) {
+          versionToOpen { content { ... on DishContent { miseEnPlace steps } } }
+        }
+      }
+    `)
+    expect(created.errors).toBeUndefined()
+    expect(created.data?.createRecipe).toEqual({
+      versionToOpen: {
+        content: {
+          miseEnPlace: ['Sortir le beurre 1 h avant', 'Préchauffer le four à 180 °C'],
+          steps: ['Crémer le beurre', 'Enfourner 12 min'],
+        },
+      },
+    })
+
+    // A client that sends no mise en place at all — the lasagna above — readied
+    // nothing: the field defaults on the wire, never refused, never null.
+    const id = await createdId()
+    const read = await execute(`
+      query { recipe(id: "${id}") { versionToOpen { content { ... on DishContent { miseEnPlace } } } } }
+    `)
+    expect(read.errors).toBeUndefined()
+    expect(read.data?.recipe).toEqual({ versionToOpen: { content: { miseEnPlace: [] } } })
+  })
+
+  test('the in-place step correction leaves it untouched', async () => {
+    const created = await execute(`
+      mutation {
+        createRecipe(input: {
+          type: THERMOMIX
+          category: MAIN
+          title: "Risotto"
+          content: { thermomix: {
+            ingredients: []
+            miseEnPlace: ["Peser 320 g de riz"]
+            steps: [{ text: "Mixer", settings: {} }]
+          } }
+        }) { id }
+      }
+    `)
+    const id = (created.data as { createRecipe: { id: string } }).createRecipe.id
+
+    const result = await execute(`
+      mutation {
+        updateSteps(recipeId: "${id}", versionNumber: 1, steps: [{ text: "Mixer les oignons" }]) {
+          content { ... on ThermomixContent { miseEnPlace steps { text } } }
+        }
+      }
+    `)
+    expect(result.errors).toBeUndefined()
+    expect(result.data?.updateSteps).toEqual({
+      content: { miseEnPlace: ['Peser 320 g de riz'], steps: [{ text: 'Mixer les oignons' }] },
+    })
+  })
+})

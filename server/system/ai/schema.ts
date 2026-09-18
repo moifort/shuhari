@@ -54,6 +54,23 @@ const thermomixSettingsSchemaProperty = {
   propertyOrdering: ['time', 'temperature', 'speed', 'reverse'],
 }
 
+// What the cook readies before the first step — the professional kitchen's mise en
+// place. Its own list, before the steps: read once, all of it, before anything
+// cooks. Plain text, never a machine setting — it is done by hand, on a Thermomix
+// recipe too.
+export const miseEnPlaceSchemaProperty = {
+  type: 'array',
+  description:
+    'The mise en place: EVERYTHING to ready before the first step, written in French, one short ' +
+    'line per preparation, imperative mood, ≤300 characters each. What is taken out (butter ' +
+    'softening, meat at room temperature), weighed or measured, washed, peeled, cut (with the ' +
+    'cut: "Émincer 2 oignons"), soaked, preheated (oven, pan, water), lined or greased. Derived ' +
+    'from the ingredients and the steps — read every step and pull out what it assumes ready. ' +
+    'The steps then carry the cooking itself; a preparation listed here is not repeated there. ' +
+    'Empty array only when the recipe truly readies nothing.',
+  items: { type: 'string' },
+}
+
 export const stepsSchemaProperty = {
   type: 'array',
   description: 'Short, actionable steps in order, written in French',

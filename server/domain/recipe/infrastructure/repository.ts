@@ -36,14 +36,19 @@ const versionDocId = (recipeId: RecipeId, number: VersionNumber) => `${recipeId}
 // Storage boundary, read side. Firestore (and any document written before the
 // attempt outcome moved onto the version) spells an absent envelope field `null`,
 // while the domain spells it "absent" — so the top-level `null`s are erased on the
-// way in. The nested `content` needs no defaulting: it is built total, a plain
-// Thermomix step being the empty settings object `{}` Firestore stores verbatim.
-// `tips` and `warnings` are total in the domain, so a document written before the
-// field existed (or restored from such an export) reads as the empty list.
-// `updatedAt` is total too: a version never rewritten since the field landed — or
-// restored from an older export — was last modified when it was created.
+// way in. The nested `content` is built total, a plain Thermomix step being the
+// empty settings object `{}` Firestore stores verbatim; its one defaulted field is
+// the cooking `miseEnPlace`, total in the domain like `tips` and `warnings`, so a
+// document written before the field existed (or restored from such an export)
+// reads as the empty list. `updatedAt` is total too: a version never rewritten
+// since the field landed — or restored from an older export — was last modified
+// when it was created.
 const normalizeVersion = (stored: RecipeVersion): RecipeVersion => ({
   ...withoutStoredNulls(stored),
+  content:
+    stored.content.kind === 'coffee'
+      ? stored.content
+      : { ...stored.content, miseEnPlace: stored.content.miseEnPlace ?? [] },
   tips: stored.tips ?? [],
   warnings: stored.warnings ?? [],
   updatedAt: stored.updatedAt ?? stored.createdAt,

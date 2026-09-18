@@ -63,6 +63,14 @@ enum Fixtures {
     /// highlights that last step as changed against v3.
     static let bourguignonStepsV4 = Array(bourguignonSteps.dropLast()) + ["Cuire à couvert 3 h 30."]
 
+    /// What v3 and v4 ready before the first step — the earlier versions have none,
+    /// as every version written before the section existed.
+    static let bourguignonMiseEnPlace = [
+        "Sortir le bœuf 1 h avant, le couper en cubes de 4 cm.",
+        "Émincer 2 oignons, tailler 3 carottes en rondelles.",
+        "Préparer le bouquet garni et mesurer le vin et le bouillon.",
+    ]
+
     static let risottoIngredients = [
         Ingredient(name: "Oignon", quantity: "1"),
         Ingredient(name: "Ail", quantity: "1 gousse"),
@@ -129,7 +137,11 @@ enum Fixtures {
         why: "La sauce manquait de corps.",
         originKind: .aiProposal,
         originDetail: nil,
-        content: .dish(ingredients: bourguignonIngredients, steps: bourguignonSteps),
+        content: .dish(
+            ingredients: bourguignonIngredients,
+            miseEnPlace: bourguignonMiseEnPlace,
+            steps: bourguignonSteps
+        ),
         tips: [
             "Servir avec des tagliatelles fraîches ou une purée maison.",
             "Meilleur réchauffé le lendemain.",
@@ -150,7 +162,11 @@ enum Fixtures {
         why: "Viande encore un peu ferme.",
         originKind: .aiProposal,
         originDetail: nil,
-        content: .dish(ingredients: bourguignonIngredients, steps: bourguignonStepsV4),
+        content: .dish(
+            ingredients: bourguignonIngredients,
+            miseEnPlace: bourguignonMiseEnPlace,
+            steps: bourguignonStepsV4
+        ),
         tips: ["Servir avec des tagliatelles fraîches ou une purée maison."],
         recipeId: "bourguignon",
         toTest: true,
@@ -589,6 +605,13 @@ enum Fixtures {
                 Ingredient(name: "Farine", quantity: "30 g"),
                 Ingredient(name: "Bouquet garni", quantity: "1"),
             ],
+            // The base lines kept, the bouillon line moved with the quantity — the
+            // third row reads as changed.
+            miseEnPlace: [
+                "Sortir le bœuf 1 h avant, le couper en cubes de 4 cm.",
+                "Émincer 2 oignons, tailler 3 carottes en rondelles.",
+                "Préparer le bouquet garni, mesurer 75 cl de vin et 40 cl de bouillon.",
+            ],
             steps: [
                 "Saisir le bœuf sur toutes les faces, réserver.",
                 "Faire revenir lardons, oignons et carottes.",
@@ -661,6 +684,11 @@ enum Fixtures {
             Ingredient(name: "Farine", quantity: "280 g"),
             Ingredient(name: "Œuf", quantity: "1"),
             Ingredient(name: "Noix de pécan", quantity: "100 g"),
+        ],
+        miseEnPlace: [
+            "Sortir le beurre 1 h avant.",
+            "Torréfier les noix de pécan 8 min à 160 °C, les concasser.",
+            "Préchauffer le four à 180 °C, chemiser une plaque.",
         ],
         steps: [
             "Crémer le beurre et la cassonade.",

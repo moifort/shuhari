@@ -3,6 +3,7 @@ import { callGemini, importBody } from '~/system/ai/gemini'
 import { parseCookingImportResponse } from '~/system/ai/primitives'
 import {
   ingredientsSchemaProperty,
+  miseEnPlaceSchemaProperty,
   stepsSchemaProperty,
   tipsSchemaProperty,
 } from '~/system/ai/schema'
@@ -35,6 +36,7 @@ const responseSchema = {
       description: 'Recipe source (author, website, book) if identifiable',
     },
     ingredients: ingredientsSchemaProperty,
+    miseEnPlace: miseEnPlaceSchemaProperty,
     steps: stepsSchemaProperty,
     tips: { ...tipsSchemaProperty, nullable: true },
   },
@@ -46,6 +48,7 @@ const responseSchema = {
     'title',
     'sourceLabel',
     'ingredients',
+    'miseEnPlace',
     'steps',
     'tips',
   ],
@@ -58,7 +61,8 @@ Rules:
 - Determine the type: dish (cooked recipe) or thermomix (recipe made on a Thermomix). Those two are all there is here: a brewed coffee is imported by another flow entirely, so never answer one — read a coffee source as the drink recipe it is, or as no recipe at all.
 - Determine the dish category: starter, main, dessert, soup, sauce, baking (pastry, bread, viennoiserie) or drink (cocktail, smoothie, hot or cold beverage). When in doubt, pick main.
 - ingredients: the ORDERED list of the recipe's components with their quantity (e.g. Gin → 50 ml, Beurre → 170 g, Fraise → 3 pièces). Include EVERY ingredient visible in the source, each with its quantity and unit. This is the recipe's "shopping list". The NAME stays short: the ingredient alone, never its transient preparation ("Pommes de terre", not "Pommes de terre épluchées et coupées en rondelles" — the preparation belongs in the steps). An intrinsic variety, type or grade stays in the name, in parentheses ("Pommes de terre (Marbella)", "Farine (T45)"). Every QUANTITY starts with a NUMBER, without exception: a source that says "à goût", "un peu" or "quelques" is estimated into a figure that fits this recipe's volume ("Sel" → "8 g", "Thym" → "2 brins (1 g)"), because the cook resizes the recipe by stepping its quantities and an unmeasured line cannot follow. A QUANTITY in an imprecise kitchen unit (spoon, pinch, glass, cup…) carries its estimated gram equivalent in parentheses, specific to that ingredient ("1 c. à café (6 g)" for salt) — quantities already in metric weight/volume and countable pieces stay as-is.
-- steps: short steps, imperative mood, in order. Precise settings (oven temperature, duration, ratio…) stay in the step text.
+- miseEnPlace: the mise en place, as a professional kitchen does it — EVERYTHING readied before the first step, one short line per preparation, imperative mood. Read every step and pull out what it assumes ready: what is taken out ahead (butter softening, meat at room temperature), weighed or measured, washed, peeled, cut — with the cut ("Émincer 2 oignons", "Couper le bœuf en cubes de 4 cm") —, soaked, toasted, preheated (oven with its temperature, pan, water), lined or greased. The source rarely states it as a list: derive it. Empty array only when the recipe truly readies nothing.
+- steps: short steps, imperative mood, in order, carrying the cooking itself — a preparation listed in miseEnPlace is not repeated as a step. Precise settings (oven temperature, duration, ratio…) stay in the step text.
 - tips: the cooking tips found in the source — serving suggestions, storage/freezing advice, technique pointers ("Servir avec du riz", "Se congèle bien"). One short sentence per tip. A tip is neither an ingredient nor a step: never duplicate the method here. Empty array when the source carries none.
 - For a Thermomix recipe (type thermomix): for every step performed on the Thermomix, fill the nested thermomix object (time, temperature, speed, reverse) exactly as stated in the recipe (time "3 min" / "30 s" / "1 h 10 min"; temperature "100°C" or "Varoma"; speed "0,5" to "10", "pétrin", "mijotage" or "turbo"). ALWAYS return every step as an object: use null for every missing setting, and set thermomix to null (or leave its fields null) when the step is not done on the Thermomix or when the recipe is not of type thermomix — never omit or merge a step because it carries no setting.
 - Be concise: every value stays short (ingredient name ≤120, quantity ≤60, step ≤300, title ≤200, Thermomix setting ≤20 characters).

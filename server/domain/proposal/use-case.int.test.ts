@@ -110,6 +110,7 @@ const PROPOSAL_INGREDIENTS = [ing('Veau', '800 g'), ing('Bouillon', '650 ml')]
 const dishContent = (): DishContent => ({
   kind: 'dish',
   ingredients: [],
+  miseEnPlace: [],
   steps: stepList('Saisir', 'Mijoter'),
 })
 
@@ -142,6 +143,7 @@ const recipeInput = (
       ? ({
           kind: 'thermomix',
           ingredients: [],
+          miseEnPlace: [],
           steps: stepList('Saisir', 'Mijoter').map((text) => ({ text, settings: {} })),
         } as ThermomixContent)
       : type === 'coffee'
@@ -173,6 +175,7 @@ const baseProposal = (): CookingProposal => ({
     { name: 'Veau', quantity: '800 g' },
     { name: 'Bouillon', quantity: '650 ml' },
   ],
+  miseEnPlace: [],
   steps: [
     { text: 'Saisir', thermomix: {} },
     { text: 'Mijoter', thermomix: {} },
@@ -201,6 +204,7 @@ const baseChange = (): CookingChange => ({
     { name: 'Veau', quantity: '800 g' },
     { name: 'Bouillon', quantity: '650 ml' },
   ],
+  miseEnPlace: [],
   steps: [
     { text: 'Saisir', thermomix: {} },
     { text: 'Mijoter', thermomix: {} },
@@ -223,6 +227,7 @@ const baseAnalysis = (): CookingImportAnalysis => ({
   title: 'Blanquette',
   sourceLabel: 'Grand-mère',
   ingredients: [{ name: 'Veau', quantity: '800 g' }],
+  miseEnPlace: [],
   steps: [
     { text: 'Saisir', thermomix: {} },
     { text: 'Mijoter', thermomix: {} },
@@ -276,6 +281,7 @@ describe('ProposalUseCase.fromAttempt', () => {
     expect(result.content).toEqual({
       kind: 'dish',
       ingredients: PROPOSAL_INGREDIENTS,
+      miseEnPlace: [],
       steps: stepList('Saisir', 'Mijoter'),
     })
     // The proposal carries the complete tips list of the version it would create.
@@ -295,6 +301,25 @@ describe('ProposalUseCase.fromAttempt', () => {
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.rating).toBeUndefined()
   })
 
+  test('hands the model the mise en place the version starts from, and writes the one it answers', async () => {
+    const recipe = await RecipeCommand.create(userId, {
+      ...recipeInput(),
+      content: { ...dishContent(), miseEnPlace: stepList('Préchauffer le four à 180 °C') },
+    })
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    proposal = { ...baseProposal(), miseEnPlace: ['Sortir le veau 1 h avant', 'Émincer 2 oignons'] }
+
+    const result = await ProposalUseCase.fromAttempt(userId, recipe.id, V1, ATTEMPT)
+    if (typeof result === 'string') throw new Error('expected a proposal')
+
+    // What the version readies is read by the model — an empty list on a version
+    // written before the section is what tells it to write one in full.
+    expect(lastCookingContext?.currentMiseEnPlace).toEqual(['Préchauffer le four à 180 °C'])
+    expect(result.content).toMatchObject({
+      miseEnPlace: stepList('Sortir le veau 1 h avant', 'Émincer 2 oignons'),
+    })
+  })
+
   test('pairs the steps with settings for a thermomix recipe, plain steps for a dish', async () => {
     proposal = {
       ...baseProposal(),
@@ -310,6 +335,7 @@ describe('ProposalUseCase.fromAttempt', () => {
     expect(thermomixProposal.content).toEqual({
       kind: 'thermomix',
       ingredients: PROPOSAL_INGREDIENTS,
+      miseEnPlace: [],
       steps: [
         {
           text: 'Saisir' as StepText,
@@ -331,6 +357,7 @@ describe('ProposalUseCase.fromAttempt', () => {
     expect(dishProposal.content).toEqual({
       kind: 'dish',
       ingredients: PROPOSAL_INGREDIENTS,
+      miseEnPlace: [],
       steps: stepList('Saisir', 'Mijoter'),
     })
   })
@@ -418,6 +445,7 @@ describe('ProposalUseCase.fromImprovement', () => {
     expect(result.content).toEqual({
       kind: 'dish',
       ingredients: PROPOSAL_INGREDIENTS,
+      miseEnPlace: [],
       steps: stepList('Saisir', 'Mijoter'),
     })
 
@@ -458,6 +486,7 @@ describe('ProposalUseCase.fromChange', () => {
     expect(result.content).toEqual({
       kind: 'dish',
       ingredients: PROPOSAL_INGREDIENTS,
+      miseEnPlace: [],
       steps: stepList('Saisir', 'Mijoter'),
     })
     // The cook did not ask why, and a change never touches the advice around the
@@ -629,6 +658,7 @@ describe('ProposalUseCase.accept', () => {
       content: {
         kind: 'dish',
         ingredients: PROPOSAL_INGREDIENTS,
+        miseEnPlace: [],
         steps: stepList('Saisir', 'Mijoter'),
       },
       tips: ['Servir avec du riz' as Tip],
@@ -643,6 +673,7 @@ describe('ProposalUseCase.accept', () => {
     expect(v2?.content).toEqual({
       kind: 'dish',
       ingredients: PROPOSAL_INGREDIENTS,
+      miseEnPlace: [],
       steps: stepList('Saisir', 'Mijoter'),
     })
     expect(v2?.origin).toEqual({ kind: 'ai-proposal' })
@@ -666,6 +697,7 @@ describe('ProposalUseCase.accept', () => {
       content: {
         kind: 'dish',
         ingredients: PROPOSAL_INGREDIENTS,
+        miseEnPlace: [],
         steps: stepList('Saisir'),
       },
       tips: [],
@@ -690,6 +722,7 @@ describe('ProposalUseCase.accept', () => {
       content: {
         kind: 'dish',
         ingredients: PROPOSAL_INGREDIENTS,
+        miseEnPlace: [],
         steps: stepList('Saisir', 'Mijoter'),
       },
       tips: [],
@@ -721,6 +754,7 @@ describe('ProposalUseCase.accept', () => {
       content: {
         kind: 'dish',
         ingredients: PROPOSAL_INGREDIENTS,
+        miseEnPlace: [],
         steps: stepList('Saisir'),
       },
       tips: [],
@@ -739,7 +773,12 @@ describe('ProposalUseCase.accept', () => {
         changeSummary: 'x',
         rationale: 'y',
         attempt: ATTEMPT,
-        content: { kind: 'dish', ingredients: PROPOSAL_INGREDIENTS, steps: stepList('Saisir') },
+        content: {
+          kind: 'dish',
+          ingredients: PROPOSAL_INGREDIENTS,
+          miseEnPlace: [],
+          steps: stepList('Saisir'),
+        },
         tips: [],
       }),
     ).toBe('not-found')
@@ -752,6 +791,7 @@ describe('the oven across an iteration', () => {
   const bakedDish = (): DishContent => ({
     kind: 'dish',
     ingredients: [],
+    miseEnPlace: [],
     steps: stepList('Enfourner'),
     oven: {
       program: 'convection',

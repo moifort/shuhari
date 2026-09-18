@@ -244,6 +244,11 @@ export const CookingImportAnalysisType = builder
         description: 'The extracted ingredients',
         resolve: ({ ingredients }) => ingredients,
       }),
+      miseEnPlace: t.exposeStringList('miseEnPlace', {
+        description:
+          'What the AI read as readied before the first step — one line per preparation, ' +
+          'empty list when the recipe readies nothing',
+      }),
       steps: t.field({
         type: [ImportStepType],
         description: 'The extracted steps, each carrying its own Thermomix settings',

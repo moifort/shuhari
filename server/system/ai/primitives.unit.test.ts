@@ -10,6 +10,7 @@ import {
 import {
   parseCoffeeImportResponse,
   parseCoffeeProposalResponse,
+  parseCookingChangeResponse,
   parseCookingImportResponse,
   parseCookingProposalResponse,
   parseTipsResponse,
@@ -496,5 +497,47 @@ describe('the oven is never the model’s business', () => {
     )
 
     expect('oven' in result).toBe(false)
+  })
+})
+
+describe('mise en place — what the three cooking flows ready before the first step', () => {
+  test('an import keeps the lines, blanks dropped, and reads a nulled field as none', () => {
+    const readied = parsedCooking({
+      ...base,
+      ingredients: [{ name: 'Riz', quantity: '320 g' }],
+      miseEnPlace: ['Peser 320 g de riz', '   ', 'Émincer 1 oignon'],
+    })
+    expect(readied.miseEnPlace).toEqual(['Peser 320 g de riz', 'Émincer 1 oignon'])
+
+    const nulled = parsedCooking({
+      ...base,
+      ingredients: [{ name: 'Riz', quantity: '320 g' }],
+      miseEnPlace: null,
+    })
+    expect(nulled.miseEnPlace).toEqual([])
+  })
+
+  test('a proposal and a change carry it like their steps, clamped to a step’s length', () => {
+    const long = 'x'.repeat(RECIPE_MAX.stepText + 50)
+    const proposal = parseCookingProposalResponse(
+      JSON.stringify({
+        changeSummary: 'Bouillon 700 → 650 ml',
+        rationale: 'Trop liquide',
+        ingredients: [],
+        miseEnPlace: [long],
+        steps: [],
+      }),
+    )
+    expect(proposal.miseEnPlace).toEqual([long.slice(0, RECIPE_MAX.stepText)])
+
+    const change = parseCookingChangeResponse(
+      JSON.stringify({
+        changeSummary: 'Sucre 20 → 10 g',
+        ingredients: [],
+        miseEnPlace: ['Sortir le beurre'],
+        steps: [],
+      }),
+    )
+    expect(change.miseEnPlace).toEqual(['Sortir le beurre'])
   })
 })

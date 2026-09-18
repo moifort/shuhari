@@ -451,6 +451,7 @@ func mapVersionContent(_ c: ShuhariGraphQL.VersionContentFields) -> VersionConte
     if let dish = c.asDishContent {
         return .dish(
             ingredients: dish.ingredients.map { Ingredient(name: $0.name, quantity: $0.quantity) },
+            miseEnPlace: dish.miseEnPlace,
             steps: dish.dishSteps,
             oven: mapOvenProfile(dish.oven?.fragments.ovenProfileFields)
         )
@@ -460,6 +461,7 @@ func mapVersionContent(_ c: ShuhariGraphQL.VersionContentFields) -> VersionConte
             ingredients: thermomix.ingredients.map {
                 Ingredient(name: $0.name, quantity: $0.quantity)
             },
+            miseEnPlace: thermomix.miseEnPlace,
             steps: thermomix.thermomixSteps.map { step in
                 ThermomixStep(
                     text: step.text,

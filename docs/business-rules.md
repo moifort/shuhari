@@ -27,6 +27,19 @@ the digest; this doc is the spec. The mechanics of building a domain live in
   `RecipeCommand.create`/`addVersion`, returning `'content-type-mismatch' as const` on a mismatch.
   GraphQL mirrors it: a `VersionContent` union (Pothos `unionType`, `resolveType` on `kind`) and a
   `VersionContentInput @oneOf { dish, thermomix, coffee }` (`isOneOf: true`).
+- **The mise en place comes before the steps** (`DishContent.miseEnPlace`,
+  `ThermomixContent.miseEnPlace`: `StepText[]`, `[]` = none): what is readied before the first
+  step, as a professional kitchen does it — taken out, weighed, cut with the cut named, soaked,
+  preheated, lined. Its own list, above the method, so it is read whole before anything cooks;
+  plain text on a Thermomix recipe too, since it is done by hand. **The AI writes it, on every
+  version it produces** — an import, a proposal, a change (`miseEnPlaceSchemaProperty`, the one
+  schema fragment the three cooking prompts share) — deriving it from the ingredients and the
+  steps; a preparation listed there is not repeated as a step. **Nothing fills it in behind the
+  cook's back**: a version stored before the section existed carries `[]` (migration 12), and
+  gains a mise en place the next time the cook asks the AI for an iteration on it, whichever flow
+  — the prompt reads the empty current list as "write it in full", and a change transcription
+  writes it without counting it as a change, since it restates the recipe rather than altering
+  it. The in-place step correction (`updateSteps`) leaves it untouched. A coffee has none.
 - **Dish category** (`DISH_CATEGORY_VALUES`): `starter`, `main`, `dessert`, `soup`, `sauce`,
   `baking`, `drink`. Detected by the AI at import and held on the aggregate (never versioned —
   the recipe sheet's edit CTA can refile it via `updateRecipe`); the array order IS the library's

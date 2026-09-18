@@ -13,6 +13,7 @@ const proposal: CookingProposal = {
   changeSummary: 'Bouillon 700 → 650 ml',
   rationale: 'Trop liquide au dernier essai',
   ingredients: [{ name: 'Bouillon', quantity: '650 ml' }],
+  miseEnPlace: [],
   steps: [{ text: 'Mijoter 40 min', thermomix: {} }],
   tips: [],
 }
@@ -30,6 +31,7 @@ mock.module('~/system/ai', () => ({
     applyCookingChange: async () => ({
       changeSummary: 'Bouillon 700 → 650 ml',
       ingredients: proposal.ingredients,
+      miseEnPlace: [],
       steps: proposal.steps,
     }),
     applyCoffeeChange: async () => ({

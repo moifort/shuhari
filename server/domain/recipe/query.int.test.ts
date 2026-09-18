@@ -446,3 +446,24 @@ describe('RecipeQuery — warnings storage boundary', () => {
     expect(lineage[0]?.warnings).toEqual([])
   })
 })
+
+describe('RecipeQuery — mise en place storage boundary', () => {
+  test('a cooked version written before the section existed reads as the empty list', async () => {
+    // Seeded raw, without `content.miseEnPlace` — the shape every pre-feature
+    // document has (and what an older export restores).
+    fake.seed('recipe-versions', 'legacy_1', {
+      userId,
+      recipeId: 'legacy',
+      number: 1,
+      createdAt: new Date(1000),
+      origin: { kind: 'import' },
+      content: { kind: 'dish', ingredients: [], steps: [] },
+      tips: [],
+      warnings: [],
+    })
+
+    const version = await RecipeQuery.versionBy('legacy' as RecipeId, 1 as VersionNumber)
+    if (version === 'not-found') throw new Error('expected a version')
+    expect(version.content).toEqual({ kind: 'dish', ingredients: [], miseEnPlace: [], steps: [] })
+  })
+})

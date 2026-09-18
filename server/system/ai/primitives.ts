@@ -173,6 +173,14 @@ const foldIngredients = (raw: { name: string; quantity: string }[]) =>
 const foldSteps = (raw: ImportStep[]): ImportStep[] =>
   raw.filter(({ text }) => text.length > 0).slice(0, MAX_ITEMS)
 
+// The mise en place: plain lines clamped like a step, blanks dropped, count capped.
+// A model that nulled or omitted the field readied nothing. Shared by the three
+// cooking flows.
+const miseEnPlaceSchema = z
+  .array(clampedField(RECIPE_MAX.stepText))
+  .nullish()
+  .transform((raw) => (raw ?? []).filter((line) => line.length > 0).slice(0, MAX_ITEMS))
+
 // Drop blank tips and cap the count. Shared by import, proposal and the
 // tips-formatting call.
 const tipsSchema = z
@@ -196,6 +204,7 @@ const CookingImportSchema = z
     title: clampedField(RECIPE_MAX.title),
     sourceLabel: optionalClamped(SOURCE_LABEL_MAX),
     ingredients: z.array(ingredientSchema).default([]),
+    miseEnPlace: miseEnPlaceSchema,
     steps: z.array(stepSchema).default([]),
     tips: tipsSchema.nullish().transform((v) => v ?? []),
   })
@@ -207,6 +216,7 @@ const CookingImportSchema = z
       title: raw.title || 'Recette importée',
       ...(raw.sourceLabel ? { sourceLabel: raw.sourceLabel } : {}),
       ingredients: foldIngredients(raw.ingredients),
+      miseEnPlace: raw.miseEnPlace,
       steps: foldSteps(raw.steps),
       tips: raw.tips,
     }),
@@ -239,6 +249,7 @@ const CookingProposalSchema = z
     changeSummary: clampedField(RECIPE_MAX.changeSummary),
     rationale: clampedField(RATIONALE_MAX),
     ingredients: z.array(ingredientSchema).default([]),
+    miseEnPlace: miseEnPlaceSchema,
     steps: z.array(stepSchema).default([]),
     tips: tipsSchema,
   })
@@ -247,6 +258,7 @@ const CookingProposalSchema = z
       changeSummary: raw.changeSummary,
       rationale: raw.rationale,
       ingredients: foldIngredients(raw.ingredients),
+      miseEnPlace: raw.miseEnPlace,
       steps: foldSteps(raw.steps),
       tips: raw.tips,
     }),
@@ -275,12 +287,14 @@ const CookingChangeSchema = z
   .object({
     changeSummary: clampedField(RECIPE_MAX.changeSummary),
     ingredients: z.array(ingredientSchema).default([]),
+    miseEnPlace: miseEnPlaceSchema,
     steps: z.array(stepSchema).default([]),
   })
   .transform(
     (raw): CookingChange => ({
       changeSummary: raw.changeSummary,
       ingredients: foldIngredients(raw.ingredients),
+      miseEnPlace: raw.miseEnPlace,
       steps: foldSteps(raw.steps),
     }),
   )

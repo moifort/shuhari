@@ -1,8 +1,9 @@
 import SwiftUI
 
 /// The AI proposal screen for something cooked: a short summary of what changes and
-/// why, then the FULL proposed next version — ingredients, steps and tips, each row
-/// editable inline and marked with a dot when it differs from the base version.
+/// why, then the FULL proposed next version — ingredients, mise en place, steps and
+/// tips, each row editable inline and marked with a dot when it differs from the
+/// base version.
 /// Finally Valider/Fermer. A coffee is proposed as dials, on its own page.
 ///
 /// Diff marking: rows are always editable `TextField`s, so a from→to
@@ -24,6 +25,9 @@ struct ProposalPage: View {
     let nextVersionNumber: Int
     /// The base version's content, to mark what the proposal changes.
     let baseIngredients: [Ingredient]
+    /// The base version's mise en place — empty on one written before the section
+    /// existed, so every line the AI wrote then reads as new.
+    let baseMiseEnPlace: [String]
     /// The base steps with their machine settings, so a Thermomix step that only
     /// changed a time, a temperature or a speed still reads as changed.
     let baseSteps: [ThermomixStep]
@@ -57,7 +61,13 @@ struct ProposalPage: View {
         var text: String
     }
 
+    private struct EditableLine: Identifiable {
+        let id = UUID()
+        var text: String
+    }
+
     @State private var ingredients: [EditableIngredient]
+    @State private var miseEnPlace: [EditableLine]
     @State private var steps: [EditableStep]
     @State private var tips: [EditableTip]
     /// The new-recipe title being typed, seeded from `suggestedRecipeTitle` each time
@@ -71,6 +81,7 @@ struct ProposalPage: View {
         proposal: Proposal,
         nextVersionNumber: Int,
         baseIngredients: [Ingredient],
+        baseMiseEnPlace: [String] = [],
         baseSteps: [ThermomixStep],
         baseTips: [String] = [],
         isWorking: Bool,
@@ -83,6 +94,7 @@ struct ProposalPage: View {
         self.proposal = proposal
         self.nextVersionNumber = nextVersionNumber
         self.baseIngredients = baseIngredients
+        self.baseMiseEnPlace = baseMiseEnPlace
         self.baseSteps = baseSteps
         self.baseTips = baseTips
         self.isWorking = isWorking
@@ -93,6 +105,9 @@ struct ProposalPage: View {
         self.onCreateRecipe = onCreateRecipe
         self._ingredients = State(initialValue: proposal.content.ingredients.map {
             EditableIngredient(name: $0.name, quantity: $0.quantity)
+        })
+        self._miseEnPlace = State(initialValue: proposal.content.miseEnPlace.map {
+            EditableLine(text: $0)
         })
         self._steps = State(initialValue: Self.editableSteps(from: proposal.content))
         self._tips = State(initialValue: proposal.tips.map { EditableTip(text: $0) })
@@ -109,6 +124,9 @@ struct ProposalPage: View {
             ChangeSummaryCard(summary: proposal.changeSummary, rationale: proposal.rationale)
             if !ingredients.isEmpty {
                 ingredientsSection
+            }
+            if !miseEnPlace.isEmpty {
+                miseEnPlaceSection
             }
             // Same rule as the recipe sheet: no empty steps section on a drink
             // whose parameters say everything.
@@ -191,6 +209,24 @@ struct ProposalPage: View {
                         .multilineTextAlignment(.trailing)
                         .foregroundStyle(.secondary)
                         .accessibilityIdentifier("edit-ingredient-quantity")
+                }
+            }
+        }
+    }
+
+    // MARK: - Mise en place
+
+    /// What the proposed version readies before its first step, editable like every
+    /// other row. On a base version written before the section existed every line
+    /// is new, and reads as such — the AI wrote the whole list, not a change.
+    private var miseEnPlaceSection: some View {
+        Section("Mise en place") {
+            ForEach($miseEnPlace) { $line in
+                HStack(alignment: .top, spacing: 12) {
+                    changeDot(!baseMiseEnPlace.contains(line.text))
+                    TextField("Préparation", text: $line.text, axis: .vertical)
+                        .lineLimit(1...6)
+                        .accessibilityIdentifier("edit-mise-en-place")
                 }
             }
         }
@@ -295,13 +331,23 @@ struct ProposalPage: View {
             guard !text.isEmpty else { return nil }
             return EditableStep(text: text, settings: row.settings)
         }
+        // Emptied lines are dropped, like emptied steps.
+        let survivingMiseEnPlace = miseEnPlace.compactMap { row -> String? in
+            let text = row.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            return text.isEmpty ? nil : text
+        }
         let content: VersionContent
         switch proposal.content {
         case .dish:
-            content = .dish(ingredients: currentIngredients, steps: survivingSteps.map(\.text))
+            content = .dish(
+                ingredients: currentIngredients,
+                miseEnPlace: survivingMiseEnPlace,
+                steps: survivingSteps.map(\.text)
+            )
         case .thermomix:
             content = .thermomix(
                 ingredients: currentIngredients,
+                miseEnPlace: survivingMiseEnPlace,
                 steps: survivingSteps.map { ThermomixStep(text: $0.text, settings: $0.settings) }
             )
         case .coffee(let parameters):

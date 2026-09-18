@@ -18,6 +18,9 @@ export type ThermomixStep = { text: StepText; settings: ThermomixSettings }
 export type ThermomixContent = {
   kind: 'thermomix'
   ingredients: Ingredient[]
+  // Readied by hand before the machine runs — see `DishContent.miseEnPlace`. Plain
+  // text on purpose: no step of it carries a machine setting.
+  miseEnPlace: StepText[]
   steps: ThermomixStep[]
   // The oven settings this version bakes at — a dough kneaded on the machine still
   // finishes in the oven. Absent when it never does.

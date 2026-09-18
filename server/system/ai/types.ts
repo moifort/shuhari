@@ -54,6 +54,8 @@ export type CookingImportAnalysis = {
   title: string
   sourceLabel?: string
   ingredients: { name: string; quantity: string }[]
+  // What is readied before the first step — plain lines, `[]` when nothing is.
+  miseEnPlace: string[]
   steps: ImportStep[]
   // Cooking tips found in the source (serving, storage, technique) — `[]` when
   // the source carries none.
@@ -103,6 +105,9 @@ type CookingVersion = {
   type: CookingRecipeType
   category: DishCategory
   currentIngredients: { name: string; quantity: string }[]
+  // The mise en place of the version iterated on — `[]` on one written before the
+  // section existed, which is exactly what the next version fills in.
+  currentMiseEnPlace: string[]
   // Each step carries its own settings (an empty object is a step that sets nothing).
   currentSteps: ImportStep[]
 }
@@ -134,6 +139,7 @@ export type CookingProposal = {
   changeSummary: string
   rationale: string
   ingredients: { name: string; quantity: string }[]
+  miseEnPlace: string[]
   steps: ImportStep[]
   // The complete tips list of the next version (current tips carried over,
   // advice found in the remarks folded in).
@@ -156,6 +162,9 @@ export type CoffeeProposal = {
 export type CookingChange = {
   changeSummary: string
   ingredients: { name: string; quantity: string }[]
+  // Filled in even though a change transcribes: the mise en place restates the
+  // recipe rather than altering it, so writing it down changes nothing on the plate.
+  miseEnPlace: string[]
   steps: ImportStep[]
 }
 

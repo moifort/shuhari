@@ -3,6 +3,7 @@ import { parseCookingProposalResponse } from '~/system/ai/primitives'
 import { formatRequest } from '~/system/ai/prompt'
 import {
   ingredientsSchemaProperty,
+  miseEnPlaceSchemaProperty,
   stepsSchemaProperty,
   tipsSchemaProperty,
 } from '~/system/ai/schema'
@@ -18,18 +19,19 @@ const responseSchema = {
     },
     rationale: { type: 'string', description: 'Explanation of the reasoning, written in French' },
     ingredients: ingredientsSchemaProperty,
+    miseEnPlace: miseEnPlaceSchemaProperty,
     steps: stepsSchemaProperty,
     tips: tipsSchemaProperty,
   },
-  required: ['changeSummary', 'rationale', 'ingredients', 'steps', 'tips'],
-  propertyOrdering: ['changeSummary', 'rationale', 'ingredients', 'steps', 'tips'],
+  required: ['changeSummary', 'rationale', 'ingredients', 'miseEnPlace', 'steps', 'tips'],
+  propertyOrdering: ['changeSummary', 'rationale', 'ingredients', 'miseEnPlace', 'steps', 'tips'],
 }
 
 // How far one iteration may go here: cooking converges faster when several coherent
 // elements move together (a coffee, whose single-variable rule is the opposite,
 // lives in its own module).
 const ITERATION_RULE =
-  'For a dish or a Thermomix recipe, you may adjust several coherent elements at once. Return the COMPLETE ingredient and step list of the next version (not only what changes), plus a short summary of the changes. When the remarks ask for a precise adjustment (a new cooking time, temperature, speed or quantity), apply that exact value in the right structured field — a Thermomix time/temperature/speed in the step settings, a duration in the dish step text, a quantity on the ingredient — and record every change in changeSummary as "old → new", with the arrow character U+2192 between the two, whether the change is a new value or one ingredient replacing another. Also return tips: the COMPLETE tips list of the next version — keep the current tips, and when a remark carries advice that changes nothing in the method (a serving suggestion, storage advice, a technique pointer like "la prochaine fois, servir avec du riz"), fold it in as a short reworded tip instead of forcing it into an ingredient or a step. NEVER touch the oven: its programme, temperature, duration and probe are set by hand, on the appliance or in the app, and are carried over to the next version untouched. A model that has never seen the dish brown cannot judge a heating function. Iterating on what is inside it happens on its own page, not here.'
+  'For a dish or a Thermomix recipe, you may adjust several coherent elements at once. Return the COMPLETE ingredient list, mise en place and step list of the next version (not only what changes), plus a short summary of the changes. The mise en place is EVERYTHING readied before the first step, one short line per preparation, derived from the ingredients and the steps (what is taken out, weighed, cut — with the cut —, soaked, preheated, lined); when the current version has none, write it in full from the recipe — it restates the recipe and is never a change worth the summary. A preparation listed there is not repeated as a step. When the remarks ask for a precise adjustment (a new cooking time, temperature, speed or quantity), apply that exact value in the right structured field — a Thermomix time/temperature/speed in the step settings, a duration in the dish step text, a quantity on the ingredient — and record every change in changeSummary as "old → new", with the arrow character U+2192 between the two, whether the change is a new value or one ingredient replacing another. Also return tips: the COMPLETE tips list of the next version — keep the current tips, and when a remark carries advice that changes nothing in the method (a serving suggestion, storage advice, a technique pointer like "la prochaine fois, servir avec du riz"), fold it in as a short reworded tip instead of forcing it into an ingredient or a step. NEVER touch the oven: its programme, temperature, duration and probe are set by hand, on the appliance or in the app, and are carried over to the next version untouched. A model that has never seen the dish brown cannot judge a heating function. Iterating on what is inside it happens on its own page, not here.'
 
 // A step's Thermomix settings, spelled out for the prompt. A step that sets nothing
 // adds nothing.
@@ -51,16 +53,20 @@ const prompt = (context: CookingProposalContext): string => {
     context.currentSteps
       .map((s, i) => `${i + 1}. ${s.text}${formatThermomix(s.thermomix)}`)
       .join('\n') || '—'
+  const miseEnPlace = context.currentMiseEnPlace.map((line) => `- ${line}`).join('\n') || '—'
   const tips = context.currentTips.map((t) => `- ${t}`).join('\n') || '—'
 
   return `You are the assistant of a culinary experimentation notebook. Analyse what is asked below and propose the NEXT version of the recipe.
 
-MANDATORY: write every generated value — change summary, rationale, ingredient names and quantities, step text — in French. The reader is a French speaker; never answer in English.
+MANDATORY: write every generated value — change summary, rationale, ingredient names and quantities, mise en place, step text — in French. The reader is a French speaker; never answer in English.
 
 ${ITERATION_RULE}
 
 Current ingredients:
 ${ingredients}
+
+Current mise en place:
+${miseEnPlace}
 
 Current steps:
 ${steps}
@@ -70,7 +76,7 @@ ${tips}
 
 ${formatRequest(context)}
 
-Propose an iteration: an improvement of this recipe. Fill changeSummary (a short summary of what changes), rationale (why), ingredients, steps and tips (the COMPLETE lists of the next version).
+Propose an iteration: an improvement of this recipe. Fill changeSummary (a short summary of what changes), rationale (why), ingredients, miseEnPlace, steps and tips (the COMPLETE lists of the next version).
 
 Reminder: all text values you produce must be written in French.`
 }

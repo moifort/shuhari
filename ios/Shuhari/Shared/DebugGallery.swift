@@ -118,6 +118,7 @@ struct DebugGallery: View {
                     proposal: Fixtures.proposal,
                     nextVersionNumber: 5,
                     baseIngredients: Fixtures.bourguignonV4.ingredients,
+                    baseMiseEnPlace: Fixtures.bourguignonV4.miseEnPlace,
                     baseSteps: Fixtures.bourguignonV4.content.stepsWithSettings,
                     baseTips: Fixtures.bourguignonV4.tips,
                     isWorking: false,

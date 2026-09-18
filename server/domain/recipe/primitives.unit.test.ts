@@ -57,11 +57,13 @@ describe('VersionContent — a coffee is its parameters, nothing else', () => {
       VersionContent({
         kind: 'dish',
         ingredients: [{ name: 'Beurre', quantity: '170 g' }],
+        miseEnPlace: [],
         steps: ['Fondre le beurre'],
       }),
     ).toEqual({
       kind: 'dish',
       ingredients: [{ name: 'Beurre' as IngredientName, quantity: '170 g' as IngredientQuantity }],
+      miseEnPlace: [],
       steps: ['Fondre le beurre' as StepText],
     })
 
@@ -69,11 +71,13 @@ describe('VersionContent — a coffee is its parameters, nothing else', () => {
       VersionContent({
         kind: 'thermomix',
         ingredients: [],
+        miseEnPlace: [],
         steps: [{ text: 'Mixer', settings: { time: '3 min', speed: '5' } }],
       }),
     ).toEqual({
       kind: 'thermomix',
       ingredients: [],
+      miseEnPlace: [],
       steps: [
         {
           text: 'Mixer' as StepText,
@@ -89,6 +93,7 @@ describe('VersionContent — the oven profile', () => {
     const content = VersionContent({
       kind: 'dish',
       ingredients: [{ name: 'Pâte brisée', quantity: '1 rouleau' }],
+      miseEnPlace: [],
       steps: ['Enfourner'],
       oven: { program: 'convection', temperature: '180', duration: 25, core: null },
     })
@@ -98,6 +103,7 @@ describe('VersionContent — the oven profile', () => {
       ingredients: [
         { name: 'Pâte brisée' as IngredientName, quantity: '1 rouleau' as IngredientQuantity },
       ],
+      miseEnPlace: [],
       steps: ['Enfourner' as StepText],
       oven: {
         program: 'convection',
@@ -118,6 +124,7 @@ describe('VersionContent — the oven profile', () => {
       VersionContent({
         kind: 'dish',
         ingredients: [],
+        miseEnPlace: [],
         steps: ['Enfourner'],
         oven: { program: 'convection', temperature: 900 },
       }),
@@ -128,6 +135,7 @@ describe('VersionContent — the oven profile', () => {
     const content = VersionContent({
       kind: 'thermomix',
       ingredients: [],
+      miseEnPlace: [],
       steps: [{ text: 'Pétrir', settings: { speed: 'pétrin' } }],
       oven: { program: 'conventional', temperature: 200, duration: 30 },
     })
@@ -145,6 +153,7 @@ describe('VersionContent — the oven’s own programmes', () => {
     const content = VersionContent({
       kind: 'dish',
       ingredients: [],
+      miseEnPlace: [],
       steps: ['Enfourner'],
       oven: {
         program: 'assisted',
@@ -165,6 +174,7 @@ describe('VersionContent — the oven’s own programmes', () => {
       VersionContent({
         kind: 'dish',
         ingredients: [],
+        miseEnPlace: [],
         steps: ['Enfourner'],
         oven: { program: 'assisted', temperature: 170 },
       }),
@@ -209,5 +219,40 @@ describe('VersionSteps — the method on its own', () => {
 
   test('refuses an empty step text', () => {
     expect(() => VersionSteps([{ text: '   ' }])).toThrow()
+  })
+})
+
+describe('VersionContent — the mise en place', () => {
+  test('brands the lines readied before the first step, on a dish and on a Thermomix recipe', () => {
+    expect(
+      VersionContent({
+        kind: 'dish',
+        ingredients: [],
+        miseEnPlace: ['Préchauffer le four à 180 °C', 'Émincer 2 oignons'],
+        steps: ['Enfourner'],
+      }),
+    ).toMatchObject({
+      miseEnPlace: ['Préchauffer le four à 180 °C' as StepText, 'Émincer 2 oignons' as StepText],
+    })
+    expect(
+      VersionContent({
+        kind: 'thermomix',
+        ingredients: [],
+        miseEnPlace: ['Peser 320 g de riz'],
+        steps: [{ text: 'Mixer', settings: {} }],
+      }),
+    ).toMatchObject({ miseEnPlace: ['Peser 320 g de riz' as StepText] })
+  })
+
+  test('a client built before the section existed sends no key — read as none', () => {
+    expect(VersionContent({ kind: 'dish', ingredients: [], steps: ['Enfourner'] })).toMatchObject({
+      miseEnPlace: [],
+    })
+  })
+
+  test('refuses a blank line — a preparation that says nothing readies nothing', () => {
+    expect(() =>
+      VersionContent({ kind: 'dish', ingredients: [], miseEnPlace: ['   '], steps: [] }),
+    ).toThrow()
   })
 })
