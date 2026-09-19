@@ -43,7 +43,7 @@ already on the listing, so a release that does not change the interface needs no
    the store, and nowhere else.
 
    `--cleanup=verbatim` is what keeps the markdown: git's default tag cleanup strips every
-   line starting with `#`, so `### New` and `### Fixes` silently vanish and the two sections
+   line starting with `#`, so the `###` section headings silently vanish and the two sections
    arrive as one flat list separated by a blank line — as they did on `ios-v1.1`, which was
    already pushed when it was noticed. The tag is documentation, not an input: the workflow
    regenerates the notes from the changelogs, so a stripped message is never worth

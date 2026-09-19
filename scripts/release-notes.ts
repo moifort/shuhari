@@ -22,7 +22,7 @@ const sectionOf = (markdown: string, version: string) => {
 }
 
 /// The bullets of one released version, as plain text for the App Store's "What's New" field.
-/// Section headings (`### New`, `### Fixes`) are dropped: the store shows one flat list, and a
+/// Section headings (`### New`, `### Fixed`) are dropped: the store shows one flat list, and a
 /// stray `###` would be printed literally. So would `**bold**`, hence the emphasis stripping.
 export const releaseNotes = (markdown: string, version: string) => {
   const section = sectionOf(markdown, version)
