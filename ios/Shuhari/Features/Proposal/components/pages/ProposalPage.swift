@@ -125,9 +125,9 @@ struct ProposalPage: View {
             if !ingredients.isEmpty {
                 ingredientsSection
             }
-            if !miseEnPlace.isEmpty {
-                miseEnPlaceSection
-            }
+            // Always there on a cooked proposal, so the cook can add the preparation
+            // the AI missed before accepting.
+            miseEnPlaceSection
             // Same rule as the recipe sheet: no empty steps section on a drink
             // whose parameters say everything.
             if !steps.isEmpty || !baseSteps.isEmpty {
@@ -229,6 +229,11 @@ struct ProposalPage: View {
                         .accessibilityIdentifier("edit-mise-en-place")
                 }
             }
+            .onDelete { miseEnPlace.remove(atOffsets: $0) }
+            Button("Ajouter une préparation", systemImage: "plus") {
+                miseEnPlace.append(EditableLine(text: ""))
+            }
+            .accessibilityIdentifier("proposal-mise-en-place-add")
         }
     }
 

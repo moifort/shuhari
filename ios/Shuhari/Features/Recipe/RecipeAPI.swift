@@ -171,6 +171,23 @@ enum RecipeAPI {
         )
     }
 
+    /// Correct one version's mise en place — in place, no version created. The AI
+    /// writes it, the cook has the last word on it.
+    static func updateMiseEnPlace(
+        recipeId: String,
+        versionNumber: Int,
+        miseEnPlace: [String]
+    ) async throws {
+        _ = try await GraphQLHelpers.perform(
+            GraphQLClient.shared.apollo,
+            mutation: ShuhariGraphQL.UpdateMiseEnPlaceMutation(
+                recipeId: recipeId,
+                versionNumber: versionNumber,
+                miseEnPlace: miseEnPlace
+            )
+        )
+    }
+
     /// Correct one version's method — in place, no version created. The machine
     /// settings ride along and the server keeps them only on a Thermomix version; a
     /// plain step sends none at all rather than an empty object.
@@ -312,6 +329,13 @@ enum RecipeAPI {
                 recipeId: recipeId,
                 versionNumber: versionNumber,
                 ingredients: to.ingredients.ingredients
+            )
+        }
+        if to.miseEnPlace.lines != from.miseEnPlace.lines {
+            try await updateMiseEnPlace(
+                recipeId: recipeId,
+                versionNumber: versionNumber,
+                miseEnPlace: to.miseEnPlace.lines
             )
         }
         if to.steps.steps != from.steps.steps {

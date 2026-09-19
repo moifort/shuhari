@@ -1828,6 +1828,109 @@ describe('RecipeCommand.updateIngredients', () => {
   })
 })
 
+describe('RecipeCommand.updateMiseEnPlace', () => {
+  const V1 = 1 as VersionNumber
+  const lines = (...texts: string[]) => texts.map((text) => text as StepText)
+
+  test('replaces a dish’s mise en place in place, leaving its steps alone', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
+    const before = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.content as DishContent
+
+    const updated = await RecipeCommand.updateMiseEnPlace(
+      userId,
+      recipe.id,
+      V1,
+      lines('Ramollir le beurre', 'Préchauffer le four à 180 °C'),
+    )
+    if (typeof updated === 'string') throw new Error(`expected a version, got ${updated}`)
+
+    expect(updated.content).toMatchObject({
+      kind: 'dish',
+      miseEnPlace: ['Ramollir le beurre', 'Préchauffer le four à 180 °C'],
+      steps: before.steps,
+    })
+    expect(fake.snapshot('recipes').get(recipe.id as string)?.lastVersionNumber).toBe(1)
+  })
+
+  test('writes a Thermomix version’s mise en place as plain text', async () => {
+    const recipe = await RecipeCommand.create(
+      userId,
+      newInput({
+        kind: 'thermomix',
+        ingredients: [],
+        miseEnPlace: [],
+        steps: [{ text: 'Mixer' as StepText, settings: {} }],
+      }),
+    )
+    if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
+
+    const updated = await RecipeCommand.updateMiseEnPlace(
+      userId,
+      recipe.id,
+      V1,
+      lines('Peser 320 g de riz'),
+    )
+    if (typeof updated === 'string') throw new Error(`expected a version, got ${updated}`)
+
+    expect(updated.content).toMatchObject({
+      kind: 'thermomix',
+      miseEnPlace: ['Peser 320 g de riz'],
+      steps: [{ text: 'Mixer', settings: {} }],
+    })
+  })
+
+  test('keeps a rated outcome and restamps in one batch', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
+    await RecipeCommand.recordAttempt(userId, {
+      recipeId: recipe.id,
+      versionNumber: V1,
+      rating: 4 as Rating,
+    })
+    const batchesBefore = fake.batches.length
+
+    const updated = await RecipeCommand.updateMiseEnPlace(userId, recipe.id, V1, [])
+    if (typeof updated === 'string') throw new Error(`expected a version, got ${updated}`)
+
+    expect(updated.rating).toBe(4 as Rating)
+    expect((updated.content as DishContent).miseEnPlace).toEqual([])
+    expect(fake.snapshot('recipes').get(recipe.id as string)?.updatedAt).toEqual(updated.updatedAt)
+    expect(fake.batches.length).toBe(batchesBefore + 1)
+    expect(fake.directWrites).toEqual([])
+  })
+
+  test('refuses a coffee, which readies nothing by hand', async () => {
+    const recipe = await RecipeCommand.create(userId, {
+      type: 'coffee' as const,
+      category: 'drink' as const,
+      method: 'espresso' as const,
+      title: 'Espresso du matin' as RecipeTitle,
+      content: coffeeContent(),
+      tips: [],
+    })
+    if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
+
+    expect(await RecipeCommand.updateMiseEnPlace(userId, recipe.id, V1, [])).toBe(
+      'not-a-cooked-recipe',
+    )
+  })
+
+  test('returns not-found for an unknown recipe, version, or another cook’s recipe', async () => {
+    expect(await RecipeCommand.updateMiseEnPlace(userId, 'nope' as RecipeId, V1, [])).toBe(
+      'not-found',
+    )
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
+    expect(await RecipeCommand.updateMiseEnPlace(userId, recipe.id, 9 as VersionNumber, [])).toBe(
+      'not-found',
+    )
+    expect(await RecipeCommand.updateMiseEnPlace('user-2' as UserId, recipe.id, V1, [])).toBe(
+      'not-found',
+    )
+  })
+})
+
 describe('RecipeCommand.updateSteps', () => {
   const V1 = 1 as VersionNumber
   const step = (text: string, settings: LooseThermomixSettings = {}) => ({

@@ -39,7 +39,11 @@ the digest; this doc is the spec. The mechanics of building a domain live in
   gains a mise en place the next time the cook asks the AI for an iteration on it, whichever flow
   — the prompt reads the empty current list as "write it in full", and a change transcription
   writes it without counting it as a change, since it restates the recipe rather than altering
-  it. The in-place step correction (`updateSteps`) leaves it untouched. A coffee has none. The
+  it. **The cook has the last word on it**: it is corrected by hand like the steps, through
+  `RecipeCommand.updateMiseEnPlace` — full replacement in place, no version created, the steps
+  and the outcome untouched, `'not-a-cooked-recipe'` on a coffee — and the import preview and
+  the proposal let a line be retyped, swiped away or added before anything is saved. The
+  in-place step correction (`updateSteps`) leaves it untouched. A coffee has none. The
   one shortcut is the cook's own to take: `bun scripts/backfill-mise-en-place.ts` writes the
   section, in place and version by version, onto every cooked version still carrying `[]` —
   run by hand, against production, and only because the cook asked to see every old recipe
@@ -166,9 +170,10 @@ launched it from — never guessed from the source.
   restores the transcription or changes the plate, and when it changes the plate they iterate —
   `addVersion` is what that is for. The notebook belongs to the cook, not to the model. Same border
   `updateCoffeeParameters` and `updateOvenProfile` already draw, now drawn around the ingredients
-  (`RecipeCommand.updateIngredients`) and the steps (`RecipeCommand.updateSteps`) too. Both are
-  full replacements of their own list — adding, deleting and reordering all come through them —
-  and both answer `'not-a-cooked-recipe'` on a coffee, which has neither.
+  (`RecipeCommand.updateIngredients`), the mise en place (`RecipeCommand.updateMiseEnPlace`) and
+  the steps (`RecipeCommand.updateSteps`) too. All three are full replacements of their own list —
+  adding, deleting and reordering all come through them — and all three answer
+  `'not-a-cooked-recipe'` on a coffee, which has none of them.
 - **An attempt lands on the version cooked**, always — a rating is a verdict on the plate that was
   made. Which version that is depends on what was asked: the one on screen when an iteration is
   asked for (it has not been made yet), the one *created* when it transcribes a change already
@@ -191,7 +196,8 @@ launched it from — never guessed from the source.
 - **A version is dated by its last edit** (`RecipeVersion.updatedAt`, equal to `createdAt` until
   something is changed on it): the app shows it on the recipe sheet and files the version under
   its month in the history and the to-cook list. Only the cook's own rewrites move it —
-  `recordAttempt`, `updateRating`, `updateTips`, `updateIngredients`, `updateSteps`,
+  `recordAttempt`, `updateRating`, `updateTips`, `updateIngredients`, `updateMiseEnPlace`,
+  `updateSteps`,
   `updateCoffeeParameters`, `updateOvenProfile`, and the cook `addVersion` writes on the version it
   iterates on. The bookkeeping writes (a child re-based by a deletion)
   leave it alone: they change nothing the cook wrote, and moving a version to another month

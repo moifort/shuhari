@@ -461,6 +461,54 @@ builder.mutationField('updateSteps', (t) =>
   }),
 )
 
+builder.mutationField('updateMiseEnPlace', (t) =>
+  t.field({
+    type: VersionType,
+    description: [
+      'Correct one cooked version’s mise en place — a preparation the AI forgot, one it got ' +
+        'wrong, one you do differently. Full replacement, in place: no version is created, the ' +
+        'ingredients, the steps, the oven and the outcome are untouched. Returns the updated ' +
+        'version.',
+      '',
+      'Answers `NOT_A_COOKED_RECIPE` on a coffee, which readies nothing by hand.',
+      '',
+      '```graphql',
+      'updateMiseEnPlace(recipeId: "9f1c-a3b2", versionNumber: 1, miseEnPlace: [',
+      '  "Soften the butter"',
+      '  "Preheat the oven to 180 °C"',
+      ']) { number }',
+      '```',
+    ].join('\n'),
+    args: {
+      recipeId: t.arg({
+        type: 'RecipeId',
+        required: true,
+        description: 'Which recipe the version belongs to',
+      }),
+      versionNumber: t.arg({
+        type: 'VersionNumber',
+        required: true,
+        description: 'Which version to correct, e.g. `1`',
+      }),
+      miseEnPlace: t.arg({
+        type: ['StepText'],
+        required: true,
+        description: 'The complete new mise en place, in order (send `[]` to clear it)',
+      }),
+    },
+    resolve: async (_root, { recipeId, versionNumber, miseEnPlace }, { userId }) => {
+      const result = await RecipeCommand.updateMiseEnPlace(userId, recipeId, versionNumber, [
+        ...miseEnPlace,
+      ])
+      return match(result)
+        .with('not-found', domainError)
+        .with('not-a-cooked-recipe', domainError)
+        .with(P.not(P.string), (version) => version)
+        .exhaustive()
+    },
+  }),
+)
+
 builder.mutationField('updateOvenProfile', (t) =>
   t.field({
     type: VersionType,

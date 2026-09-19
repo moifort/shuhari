@@ -1150,6 +1150,29 @@ type Mutation {
   ): Version!
 
   """
+  Correct one cooked version’s mise en place — a preparation the AI forgot, one it got wrong, one you do differently. Full replacement, in place: no version is created, the ingredients, the steps, the oven and the outcome are untouched. Returns the updated version.
+  
+  Answers `NOT_A_COOKED_RECIPE` on a coffee, which readies nothing by hand.
+  
+  ```graphql
+  updateMiseEnPlace(recipeId: "9f1c-a3b2", versionNumber: 1, miseEnPlace: [
+    "Soften the butter"
+    "Preheat the oven to 180 °C"
+  ]) { number }
+  ```
+  """
+  updateMiseEnPlace(
+    """The complete new mise en place, in order (send `[]` to clear it)"""
+    miseEnPlace: [StepText!]!
+
+    """Which recipe the version belongs to"""
+    recipeId: RecipeId!
+
+    """Which version to correct, e.g. `1`"""
+    versionNumber: VersionNumber!
+  ): Version!
+
+  """
   Correct one cooked version’s oven settings — the temperature you read wrong, the duration the source never stated. Full replacement, in place: no version is created, and the ingredients, steps and outcome are untouched (correcting what the recipe always said is not iterating on it). **Send `oven: null` to say the dish never bakes**, which clears the profile outright rather than leaving a hollow one. Returns the updated version.
   
   Answers `NOT_A_COOKED_RECIPE` on a coffee, which has no oven — it has dials.

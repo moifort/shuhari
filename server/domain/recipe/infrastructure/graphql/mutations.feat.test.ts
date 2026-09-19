@@ -1007,6 +1007,45 @@ describe('updateSteps mutation', () => {
   })
 })
 
+describe('updateMiseEnPlace mutation', () => {
+  test('replaces a dish’s mise en place, leaving its steps alone', async () => {
+    const created = await execute(createLasagna)
+    const id = (created.data as { createRecipe: { id: string } }).createRecipe.id
+
+    const result = await execute(`
+      mutation {
+        updateMiseEnPlace(recipeId: "${id}", versionNumber: 1, miseEnPlace: [
+          "Ramollir le beurre"
+          "Préchauffer le four à 180 °C"
+        ]) {
+          number
+          content { ... on DishContent { miseEnPlace ingredients { name } } }
+        }
+      }
+    `)
+
+    expect(result.errors).toBeUndefined()
+    expect(result.data?.updateMiseEnPlace).toMatchObject({
+      number: 1,
+      content: {
+        miseEnPlace: ['Ramollir le beurre', 'Préchauffer le four à 180 °C'],
+        ingredients: [{ name: 'Farine' }],
+      },
+    })
+  })
+
+  test('answers NOT_FOUND on a version that is not there', async () => {
+    const created = await execute(createLasagna)
+    const id = (created.data as { createRecipe: { id: string } }).createRecipe.id
+
+    const result = await execute(`
+      mutation { updateMiseEnPlace(recipeId: "${id}", versionNumber: 9, miseEnPlace: []) { number } }
+    `)
+
+    expect(result.errors?.[0]?.extensions?.code).toBe('NOT_FOUND')
+  })
+})
+
 describe('the mise en place on the wire', () => {
   test('keeps what the import readied before the first step, and reads none as the empty list', async () => {
     const created = await execute(`

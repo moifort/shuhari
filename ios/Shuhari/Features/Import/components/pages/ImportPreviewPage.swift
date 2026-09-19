@@ -97,16 +97,20 @@ struct ImportPreviewPage: View {
                 }
             }
 
-            // What the AI read as readied before the first step — editable lines,
-            // no section at all when it read none.
-            if !miseEnPlaceTexts.isEmpty {
-                Section("Mise en place") {
-                    ForEach(miseEnPlaceTexts.indices, id: \.self) { index in
-                        TextField("Préparation", text: $miseEnPlaceTexts[index], axis: .vertical)
-                            .lineLimit(1...6)
-                            .accessibilityIdentifier("import-mise-en-place-field")
-                    }
+            // What the AI read as readied before the first step — the cook's to
+            // correct before saving: retype a line, swipe one away, add the one it
+            // missed. Shown even empty, so a forgotten preparation can be written.
+            Section("Mise en place") {
+                ForEach(miseEnPlaceTexts.indices, id: \.self) { index in
+                    TextField("Préparation", text: $miseEnPlaceTexts[index], axis: .vertical)
+                        .lineLimit(1...6)
+                        .accessibilityIdentifier("import-mise-en-place-field")
                 }
+                .onDelete { miseEnPlaceTexts.remove(atOffsets: $0) }
+                Button("Ajouter une préparation", systemImage: "plus") {
+                    miseEnPlaceTexts.append("")
+                }
+                .accessibilityIdentifier("import-mise-en-place-add")
             }
 
             Section {

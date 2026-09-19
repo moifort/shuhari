@@ -3,8 +3,8 @@ import SwiftUI
 /// The one place a recipe is corrected. It carries the whole sheet: its title, the
 /// axis it is filed on — its dish course, or its brew method when it is a coffee —
 /// the tags it wears, the note of the version on screen, then that version's content
-/// (its shopping list and its method, or a coffee's parameters), its oven settings,
-/// its cautions and its tips. The recipe sheet behind it reads and never writes.
+/// (its shopping list, its mise en place and its method, or a coffee's parameters),
+/// its oven settings, its cautions and its tips. The recipe sheet behind it reads and never writes.
 ///
 /// Every list edits in place: type on a line, swipe it away, add one at the end. The
 /// type itself stays fixed — a dish never becomes a Thermomix recipe, its versions
@@ -153,13 +153,21 @@ struct RecipeEditSheet: View {
     }
 
     // What the version IS: a coffee is wholly described by its parameters, everything
-    // else by a shopping list, a method and the oven it bakes in.
+    // else by a shopping list, a mise en place, a method and the oven it bakes in.
     @ViewBuilder
     private var content: some View {
         if draft.isCoffee {
             CoffeeParametersForm(draft: coffee, vocabulary: vocabulary)
         } else {
             IngredientsEditSection(draft: $draft.ingredients)
+            TextLinesEditSection(
+                title: "Mise en place",
+                placeholder: "Préparation",
+                addLabel: "Ajouter une préparation",
+                footer: "Ce qui est prêt avant la première étape : sorti, pesé, taillé, préchauffé.",
+                addIdentifier: "mise-en-place-add",
+                draft: $draft.miseEnPlace
+            )
             StepsEditSection(draft: $draft.steps)
             OvenProfileForm(draft: $draft.oven, applianceSettings: applianceSettings)
         }

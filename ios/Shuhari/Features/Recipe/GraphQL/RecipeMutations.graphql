@@ -88,6 +88,16 @@ mutation UpdateIngredients(
   }
 }
 
+mutation UpdateMiseEnPlace(
+  $recipeId: RecipeId!
+  $versionNumber: VersionNumber!
+  $miseEnPlace: [StepText!]!
+) {
+  updateMiseEnPlace(recipeId: $recipeId, versionNumber: $versionNumber, miseEnPlace: $miseEnPlace) {
+    number
+  }
+}
+
 mutation UpdateSteps(
   $recipeId: RecipeId!
   $versionNumber: VersionNumber!

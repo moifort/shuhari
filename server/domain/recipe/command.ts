@@ -28,6 +28,7 @@ import type {
   RecipeType,
   RecipeVersion,
   Remarks,
+  StepText,
   Tag,
   Tip,
   VersionNumber as VersionNumberT,
@@ -482,6 +483,34 @@ export namespace RecipeCommand {
               steps.map(({ settings }) => settings),
             ),
           }
+    const updated: RecipeVersion = { ...version, content, updatedAt: new Date() }
+    const updatedRecipe = restamped(recipe, written(lineage, updated))
+    return atomically(async (batch) => {
+      await repository.saveVersion(updated, batch)
+      await repository.save(updatedRecipe, batch)
+      return updated
+    })
+  }
+
+  // Correct one cooked version's mise en place in place — a preparation the AI
+  // forgot, one it got wrong, one the cook does differently. The AI writes it on
+  // every version it produces, but the cook has the last word: full replacement, no
+  // version created, the steps and the outcome untouched — like `updateSteps`.
+  export const updateMiseEnPlace = async (
+    userId: UserId,
+    recipeId: RecipeId,
+    versionNumber: VersionNumberT,
+    miseEnPlace: StepText[],
+  ): Promise<RecipeVersion | 'not-found' | 'not-a-cooked-recipe'> => {
+    const recipe = await repository.findBy(userId, recipeId)
+    if (!recipe) return 'not-found' as const
+    const lineage = await repository.findVersionsOf(recipeId)
+    const version = lineage.find(({ number }) => number === versionNumber)
+    if (!version) return 'not-found' as const
+    // A coffee readies nothing by hand — its dials say everything.
+    if (version.content.kind === 'coffee') return 'not-a-cooked-recipe' as const
+
+    const content: VersionContent = { ...version.content, miseEnPlace }
     const updated: RecipeVersion = { ...version, content, updatedAt: new Date() }
     const updatedRecipe = restamped(recipe, written(lineage, updated))
     return atomically(async (batch) => {

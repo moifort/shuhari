@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// A list of free-text lines being corrected — the cautions, and the tips. One field
-/// per line, swipe to delete, a row to add one that opens focused. Primitive-first:
-/// it is told what it is writing, it does not know which of the two it serves.
+/// A list of free-text lines being corrected — the mise en place, the cautions, the
+/// tips. One field per line, swipe to delete, a row to add one that opens focused.
+/// Primitive-first: it is told what it is writing, it does not know which it serves.
 /// Composes as a `Section` inside a `Form`.
 struct TextLinesEditSection: View {
     let title: String

@@ -8,7 +8,7 @@ struct IngredientRow: Identifiable, Equatable {
     var quantity: String
 }
 
-/// One editable line of free text — a caution or a tip.
+/// One editable line of free text — a preparation, a caution or a tip.
 struct TextRow: Identifiable, Equatable {
     let id = UUID()
     var text: String
@@ -214,6 +214,8 @@ struct RecipeDraft {
     /// The note of the version on screen — nil while it has never been rated.
     var rating: Int?
     var ingredients: IngredientListDraft
+    /// What is readied before the first step — the AI writes it, the cook corrects it.
+    var miseEnPlace: TextListDraft
     var steps: StepListDraft
     var oven: OvenProfileDraft
     /// Set on a coffee and on nothing else: it is wholly described by its parameters,
@@ -232,6 +234,7 @@ struct RecipeDraft {
         tags = TagListDraft(recipe.tags)
         rating = version.rating
         ingredients = IngredientListDraft(version.ingredients)
+        miseEnPlace = TextListDraft(version.miseEnPlace)
         steps = StepListDraft(version.editableSteps, showsSettings: version.isThermomix)
         oven = OvenProfileDraft(version.content.oven)
         coffee = version.content.coffeeParameters.map {
