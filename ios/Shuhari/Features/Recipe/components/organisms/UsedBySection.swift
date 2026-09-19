@@ -42,6 +42,9 @@ struct UsedBySection: View {
                                 .font(.caption2)
                                 .foregroundStyle(.tertiary)
                         }
+                        // The whole row is the target, the gap the spacer leaves
+                        // included: a plain button only answers where something is drawn.
+                        .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("used-by-\(item.id)")

@@ -125,6 +125,39 @@ further in, and the eye reads the shift as a defect. Two ways out, and only thes
 
 Wrap the rows in one helper that owns the decision, so a row added later cannot forget it.
 
+## A tappable row is tappable across its whole width
+
+A row that opens something answers a tap **anywhere on it**, not only on its text. The user aims
+at the row, not at the words — a tap in the blank middle that does nothing reads as a frozen app,
+and the next tap, landing on the title, then looks like a delayed response.
+
+`.buttonStyle(.plain)` is what breaks it: a plain button only hit-tests what is drawn, so the gap a
+`Spacer` leaves between the title and the chevron is dead. Give the label a shape:
+
+```swift
+Button { onOpen(item.id) } label: {
+    HStack {
+        Text(item.title)
+        Spacer()
+        Image(systemName: "chevron.right")
+    }
+    .contentShape(.rect)
+}
+.buttonStyle(.plain)
+```
+
+- **Put it on the label, not on the button** — the shape has to wrap what the button renders.
+- **Put it in the row view itself** when the row is a reusable component, so every caller gets it
+  without having to remember.
+- A row with a filled background (a card) is already hit-testable everywhere; a row made of text
+  and a spacer never is.
+
+### Anti-patterns
+
+- A `.plain` button over an `HStack` with a `Spacer` and no `contentShape`: only the words open it.
+- `.onTapGesture` on the row instead of a `Button` to "fix" the zone: it loses the button's
+  accessibility trait and its pressed state.
+
 ## `Stepper` — its label is not a tap target
 
 `Stepper { label } onIncrement:onDecrement:` swallows the taps landing on its label. A `TextField`

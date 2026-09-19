@@ -314,6 +314,11 @@ struct HomePage: View {                         // pure presentation
 | **Organisms** | `Features/{F}/components/organisms/` | Primitives or a domain struct (mapping boundary) | `LibrarySection`, `IngredientsSection` |
 | **Pages** | `Features/{F}/components/pages/` | Data + closures | `HomePage`, `RecipeDetailPage` |
 
+A row that opens something is a `.plain` `Button` whose label ends in `.contentShape(.rect)`,
+set in the row view itself (`VersionRow`, `LinkedRecipesSection`, `UsedBySection`): the whole
+width answers the tap, never only the title —
+[a tappable row is tappable across its whole width](swiftui-best-practices.md#a-tappable-row-is-tappable-across-its-whole-width).
+
 Atoms in `Shared/Components/` are cross-feature. Promote a molecule used in 2+ features up to
 `Shared/Components/`.
 
