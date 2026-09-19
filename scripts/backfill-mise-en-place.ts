@@ -17,13 +17,16 @@
 // NITRO_GOOGLE_API_KEY when .env carries it, and from Secret Manager otherwise —
 // the same secret the deployed function reads, so nothing has to be copied around.
 //
-// What it writes, and nothing else: `content.miseEnPlace` of each version whose
-// list is empty and whose steps are not. The mise en place restates the recipe, so
-// it is written IN PLACE — no version is created, `updatedAt` is left alone (the
-// cook wrote nothing), and a version already carrying one is never touched, which
-// makes a re-run cost only the versions the last one did not reach. A coffee
-// readies nothing and is skipped. The prompt is the same instruction the three
-// cooking prompts share (`miseEnPlaceSchemaProperty`), asked on its own.
+// What it writes, and nothing else: `content.miseEnPlace` of each recipe's LATEST
+// cooked version — the highest number in its lineage — when that list is empty and
+// the steps are not. The latest alone: an older attempt is history, read for what
+// changed since, and the next iteration is asked from the latest anyway. The mise
+// en place restates the recipe, so it is written IN PLACE — no version is created,
+// `updatedAt` is left alone (the cook wrote nothing), and a version already
+// carrying one is never touched, which makes a re-run cost only the versions the
+// last one did not reach. A coffee readies nothing and is skipped. The prompt is
+// the same instruction the three cooking prompts share
+// (`miseEnPlaceSchemaProperty`), asked on its own.
 //
 // Not used by the server, which reaches Gemini through Nitro (`~/system/ai`): this
 // one runs outside it, where `$fetch` and `useRuntimeConfig()` do not exist.
@@ -65,8 +68,11 @@ const geminiApiKey = async (): Promise<string> => {
   if (process.env.NITRO_GOOGLE_API_KEY) return process.env.NITRO_GOOGLE_API_KEY
   const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] })
   const client = await auth.getClient()
+  // User credentials carry no quota project of their own; Secret Manager wants one
+  // named on the call, or answers 403 whatever the caller's roles.
   const response = await client.request<{ payload: { data: string } }>({
     url: `https://secretmanager.googleapis.com/v1/projects/${PROJECT_ID}/secrets/google-api-key/versions/latest:access`,
+    headers: { 'x-goog-user-project': PROJECT_ID },
   })
   return Buffer.from(response.data.payload.data, 'base64').toString('utf8')
 }
@@ -156,7 +162,8 @@ type Candidate = {
 }
 
 // Filtered in memory rather than queried: Firestore cannot ask for an empty array
-// inside a map, and the notebook is one cook's — reading it whole is one query.
+// inside a map nor for the highest number per recipe, and the notebook is one
+// cook's — reading it whole is one query.
 const candidates = async (): Promise<Candidate[]> => {
   const [recipes, versions] = await Promise.all([
     db.collection('recipes').get(),
@@ -166,9 +173,18 @@ const candidates = async (): Promise<Candidate[]> => {
   ])
   const titles = new Map(recipes.docs.map((doc) => [doc.id, doc.data().title as string]))
 
+  // The latest version of each lineage, whatever it carries — a recipe whose latest
+  // already has its mise en place is done, older versions or not.
+  const latest = new Map<string, number>()
+  for (const doc of versions.docs) {
+    const { recipeId, number } = doc.data()
+    latest.set(recipeId, Math.max(latest.get(recipeId) ?? 0, number))
+  }
+
   return versions.docs
     .filter((doc) => {
-      const { content } = doc.data()
+      const { recipeId, number, content } = doc.data()
+      if (number !== latest.get(recipeId)) return false
       if (content.kind !== 'dish' && content.kind !== 'thermomix') return false
       if ((content.miseEnPlace ?? []).length > 0) return false
       return content.steps.length > 0
