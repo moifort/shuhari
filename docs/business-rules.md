@@ -39,7 +39,11 @@ the digest; this doc is the spec. The mechanics of building a domain live in
   gains a mise en place the next time the cook asks the AI for an iteration on it, whichever flow
   — the prompt reads the empty current list as "write it in full", and a change transcription
   writes it without counting it as a change, since it restates the recipe rather than altering
-  it. The in-place step correction (`updateSteps`) leaves it untouched. A coffee has none.
+  it. The in-place step correction (`updateSteps`) leaves it untouched. A coffee has none. The
+  one shortcut is the cook's own to take: `bun scripts/backfill-mise-en-place.ts` writes the
+  section, in place and version by version, onto every cooked version still carrying `[]` —
+  run by hand, against production, and only because the cook asked to see every old recipe
+  read like a new one at once.
 - **Dish category** (`DISH_CATEGORY_VALUES`): `starter`, `main`, `dessert`, `soup`, `sauce`,
   `baking`, `drink`. Detected by the AI at import and held on the aggregate (never versioned —
   the recipe sheet's edit CTA can refile it via `updateRecipe`); the array order IS the library's
