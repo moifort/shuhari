@@ -63,6 +63,16 @@ struct DebugGallery: View {
                 .sheet(isPresented: .constant(true)) {
                     LinkRecipeSheet(excludedId: Fixtures.ravioli.id) { _, _ in }
                 }
+        case "link-candidates":
+            NavigationStack {
+                LinkCandidateList(
+                    candidates: LinkCandidateList.Item.samples,
+                    linkedIds: ["poolish"],
+                    onPick: { _ in }
+                )
+                .navigationTitle("Lier une recette")
+                .navigationBarTitleDisplayMode(.inline)
+            }
         case "link-weight":
             NavigationStack {
                 LinkWeightForm(

@@ -5,6 +5,9 @@ import SwiftUI
 /// the quantity wanted on one line ("my flour is 100 g" where it writes 500 g) or walk
 /// it with the −/+; either way the whole list follows the proportion.
 ///
+/// The notebook is read from its index — every recipe at once, unpaginated — so the
+/// alphabet down the side reaches all of it, not just the first page of the library.
+///
 /// Linking is not cooking: no version is created and the recipe is not redated. The
 /// sheet opens straight on the weight step when a link is being corrected.
 struct LinkRecipeSheet: View {
@@ -25,17 +28,15 @@ struct LinkRecipeSheet: View {
     }
 
     @Environment(\.dismiss) private var dismiss
-    @State private var store = LibraryStore()
+    @State private var index: [LibraryIndexEntry]?
     @State private var error = ErrorPresenter()
     @State private var picked: Editing?
-
-    private var candidates: [LibraryRecipe] {
-        store.items.filter { $0.id != excludedId }
-    }
+    /// The index could not be read: the list gives way to a retry.
+    @State private var loadFailed = false
 
     var body: some View {
         NavigationStack {
-            list
+            content
                 .navigationTitle("Lier une recette")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -44,7 +45,7 @@ struct LinkRecipeSheet: View {
                     }
                 }
                 .errorAlert(error)
-                .task { await store.loadIfNeeded() }
+                .task { await loadIndex() }
                 .navigationDestination(item: $picked) { link in
                     WeightStep(recipeId: link.recipeId, scale: link.scale) { scale in
                         try await onLink(link.recipeId, scale)
@@ -57,57 +58,137 @@ struct LinkRecipeSheet: View {
     }
 
     @ViewBuilder
-    private var list: some View {
-        List {
-            Section {
-                // The picker reads the same cached library as the tab it was opened
-                // from: when the disk already holds it, the candidates are pickable
-                // right away and the refresh spins above them.
-                if store.isRefreshing || store.refreshFailed {
-                    RefreshRow(failed: store.refreshFailed, onRetry: { await store.refresh() })
-                }
-                if store.isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                } else if candidates.isEmpty {
-                    ContentUnavailableView(
-                        "Aucune autre recette",
-                        systemImage: "book",
-                        description: Text("Importe la recette du poolish d’abord.")
-                    )
-                } else {
-                    ForEach(candidates) { recipe in
-                        Button {
-                            picked = Editing(recipeId: recipe.id, scale: 1)
-                        } label: {
-                            row(recipe)
-                        }
-                        .accessibilityIdentifier("link-candidate-\(recipe.id)")
-                    }
-                }
-            } header: {
-                Text("Cette recette est faite de…")
+    private var content: some View {
+        if let index {
+            LinkCandidateList(
+                candidates: index
+                    .filter { $0.id != excludedId }
+                    .map { LinkCandidateList.Item(id: $0.id, title: $0.title) },
+                linkedIds: linkedIds,
+                onPick: { picked = Editing(recipeId: $0, scale: 1) }
+            )
+        } else if loadFailed {
+            ContentUnavailableView {
+                Label("Carnet indisponible", systemImage: "wifi.exclamationmark")
+            } actions: {
+                Button("Réessayer") { Task { await loadIndex() } }
             }
+        } else {
+            ProgressView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
-    private func row(_ recipe: LibraryRecipe) -> some View {
-        HStack(spacing: Theme.Spacing.s) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(recipe.title)
-                    .foregroundStyle(.primary)
-                if let rating = recipe.bestRating {
-                    Text("Meilleure version : \(rating)/5")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
+    private func loadIndex() async {
+        loadFailed = false
+        await error.run { index = try await LibraryAPI.index(types: RecipeType.cooking) }
+        loadFailed = index == nil
+    }
+}
+
+/// Every recipe the notebook could link, read like a book's index: alphabetical, one
+/// section per initial letter with the alphabet down the side, and a search on top.
+/// Accents and case are ignored both ways — "creme" finds "Crème", "Éclair" files
+/// under E. Primitive-first: ids and titles, no network.
+struct LinkCandidateList: View {
+    struct Item: Identifiable, Sendable {
+        let id: String
+        let title: String
+    }
+
+    let candidates: [Item]
+    var linkedIds: Set<String> = []
+    let onPick: (_ recipeId: String) -> Void
+
+    @State private var query = ""
+
+    /// The candidates the search keeps, cut by initial letter; a title that opens on
+    /// a digit or a sign files under "#", after Z.
+    private var letters: [(letter: String, items: [Item])] {
+        let needle = Self.folded(query.trimmingCharacters(in: .whitespaces))
+        let kept: [(item: Item, title: String)] = candidates
+            .map { (item: $0, title: Self.folded($0.title)) }
+            .filter { needle.isEmpty || $0.title.contains(needle) }
+            // French collation, so "Bœuf" reads as "Boeuf" and lands before "Brioche".
+            .sorted {
+                $0.item.title.compare(
+                    $1.item.title,
+                    options: [.caseInsensitive, .diacriticInsensitive],
+                    locale: Self.french
+                ) == .orderedAscending
             }
+        let grouped: [String: [Item]] = Dictionary(
+            grouping: kept.map(\.item)
+        ) { Self.initial(of: Self.folded($0.title)) }
+        let keys = grouped.keys.sorted { lhs, rhs in
+            lhs == "#" || rhs == "#" ? rhs == "#" && lhs != "#" : lhs < rhs
+        }
+        return keys.map { letter in (letter: letter, items: grouped[letter] ?? []) }
+    }
+
+    private static func folded(_ text: String) -> String {
+        text.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: nil)
+    }
+
+    private static let french = Locale(identifier: "fr_FR")
+
+    /// The ligatures are filed under their first letter, as a dictionary does.
+    private static func initial(of foldedTitle: String) -> String {
+        guard let first = foldedTitle.first, first.isLetter else { return "#" }
+        switch first {
+        case "œ": return "O"
+        case "æ": return "A"
+        default: return String(first).uppercased()
+        }
+    }
+
+    var body: some View {
+        let letters = letters
+        List {
+            if candidates.isEmpty {
+                ContentUnavailableView(
+                    "Aucune autre recette",
+                    systemImage: "book",
+                    description: Text("Importe la recette du poolish d’abord.")
+                )
+            } else if letters.isEmpty {
+                ContentUnavailableView.search(text: query)
+            }
+            ForEach(letters, id: \.letter) { group in
+                Section(group.letter) {
+                    ForEach(group.items) { item in
+                        Button {
+                            onPick(item.id)
+                        } label: {
+                            row(item)
+                        }
+                        .accessibilityIdentifier("link-candidate-\(item.id)")
+                    }
+                }
+                .sectionIndexLabel(group.letter)
+            }
+        }
+        .listSectionIndexVisibility(.visible)
+        .searchable(
+            text: $query,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: "Rechercher une recette"
+        )
+    }
+
+    private func row(_ item: Item) -> some View {
+        HStack(spacing: Theme.Spacing.s) {
+            // A button tints its label; a title to pick is still read as text.
+            Text(item.title)
+                .foregroundStyle(Color.primary)
             Spacer(minLength: Theme.Spacing.s)
-            if linkedIds.contains(recipe.id) {
+            if linkedIds.contains(item.id) {
                 Image(systemName: "checkmark")
                     .foregroundStyle(.tint)
             }
         }
+        // The whole width answers the tap, not just the title.
+        .contentShape(Rectangle())
     }
 }
 
@@ -310,7 +391,25 @@ struct LinkWeightForm: View {
 
 #if DEBUG
 #Preview("Choisir la recette") {
-    LinkRecipeSheet(excludedId: "recipe-1", onLink: { _, _ in })
+    NavigationStack {
+        LinkCandidateList(
+            candidates: LinkCandidateList.Item.samples,
+            linkedIds: ["poolish"],
+            onPick: { _ in }
+        )
+        .navigationTitle("Lier une recette")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+extension LinkCandidateList.Item {
+    static let samples: [Self] = [
+        "Poolish", "Pâte brisée", "Crème pâtissière", "Éclair au café", "Bœuf bourguignon",
+        "Ravioli ricotta", "Sauce tomate", "Levain", "Fond brun", "Ganache", "Beurre noisette",
+        "Crème anglaise", "Pâte à choux", "Mayonnaise", "Vinaigrette", "Tarte au citron",
+        "Brioche", "Gnocchi", "Aïoli", "Jus de veau", "Nage de légumes", "Oignons confits",
+        "Quiche lorraine", "Risotto", "Ubriaco", "Zeste confit", "7 épices",
+    ].map { Self(id: $0 == "Poolish" ? "poolish" : $0, title: $0) }
 }
 
 #Preview("Le poids — telle qu’elle est écrite") {

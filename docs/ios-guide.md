@@ -172,8 +172,6 @@ network — the rows are on screen in the first frame. See
   `items.isEmpty` test would read a warm cache as "already loaded" and never refresh.
 - **`AuthSession` clears every file** on sign-out and on account deletion: the next cook must not
   read the previous one's rows.
-- **`LinkRecipeSheet` rides the same cache**, since it builds a `LibraryStore` of its own: the
-  component picker opens on pickable candidates instead of a spinner, with the same leading row.
 
 Gallery: `-gallery cuisine-refreshing` (the cached library with the spinner leading it) and
 `-gallery cuisine-refresh-failed` (the same rows, with the retry).
@@ -508,9 +506,15 @@ Four things worth knowing before touching those files:
   quantities would drop what the cook asked for. A row of "Utilisée par" pushes at `1`: the weight
   belongs to the recipe that posted the link.
 - **Linking is a menu entry, then two steps.** "Lier une recette" opens `LinkRecipeSheet`: the
-  notebook (`LibraryStore`, current recipe excluded), then `LinkWeightForm` on the picked recipe's
-  own shopping list. The form is primitive-first and previews offline — `WeightStep` is what loads
-  the recipe, the form knows nothing of the network.
+  notebook, then `LinkWeightForm` on the picked recipe's own shopping list. Both are
+  primitive-first and preview offline — the sheet loads, `WeightStep` loads the recipe, the forms
+  know nothing of the network.
+- **The picker reads the index, not the library.** `LibraryStore` is paginated: an alphabet built
+  on it would only reach the first page. The sheet fetches `recipeIndex` (every cooking recipe at
+  once, current one excluded) and hands ids and titles to `LinkCandidateList`: alphabetical in
+  French collation ("Bœuf" before "Brioche"), one section per initial letter with the native
+  section index down the side (`sectionIndexLabel`), "#" after Z, and a `.searchable` that ignores
+  accents and case. The index carries no `bestRating`, so a candidate row is its title alone.
 - **A weight is typed OR walked.** `QuantityScaling.factor(from:to:)` reads the quantity wanted on
   a line ("Farine 100 g"), `factorAfterStep` walks it with the −/+; both go through the same
   `rescale`, which rewrites every line from the single factor. The text field and the stepper are
@@ -520,7 +524,8 @@ Four things worth knowing before touching those files:
   step (`LinkRecipeSheet(editing:)`, which skips the list), "Délier" calls `unlinkComponent`.
 
 Gallery: `-gallery recipe-component` (a sheet with both sections), `-gallery link-recipe` (the
-picker) and `-gallery link-weight` (the weight step).
+picker, which needs the network), `-gallery link-candidates` (its list, offline) and
+`-gallery link-weight` (the weight step).
 
 ## The coffee sheet — parameters, not ingredients
 
