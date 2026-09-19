@@ -72,9 +72,10 @@ A normal `main` push carries **no** changelog change. Do **not** touch `CHANGELO
 `CHANGELOG.fr.md` when pushing, and do not add `## Unreleased` entries per commit. The changelog
 is written only at the moment of an iOS App Store release:
 
-1. Write the notes in English under `## Unreleased` in `CHANGELOG.md` (grouped `### New` /
-   `### Fixes`), then the French translation under `## Unreleased` in `CHANGELOG.fr.md`. What
-   earns a line and what does not: [changelog-best-practices.md](./changelog-best-practices.md).
+1. Write the notes in English under `## Unreleased` in `CHANGELOG.md` (sections `### New` /
+   `### Improved` / `### Fixed`), then the French translation under `## Unreleased` in
+   `CHANGELOG.fr.md` (`### Nouveau` / `### Amélioré` / `### Corrigé`). How a line is written:
+   [changelog-best-practices.md](./changelog-best-practices.md).
 2. Rename the `## Unreleased` heading in **both** files to `## <version> (<YYYY.MM.DD>)` — there
    is no CI date-stamp, versioning is manual.
 3. Push `main`: the Deploy workflow runs `bun run generate:assets`, which regenerates the served

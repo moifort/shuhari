@@ -12,11 +12,9 @@ already on the listing, so a release that does not change the interface needs no
 ## Releasing
 
 1. Write the release notes in English under `## Unreleased` in `CHANGELOG.md`, then the French
-   translation under `## Unreleased` in `CHANGELOG.fr.md`. These notes are what the store shows
-   under "What's New", so they are written for whoever taps it, not for the team: what earns a
-   line and what stays in the git history is
-   [changelog-best-practices.md](./changelog-best-practices.md). The French file is the one the
-   pipeline reads.
+   translation under `## Unreleased` in `CHANGELOG.fr.md`, following
+   [changelog-best-practices.md](./changelog-best-practices.md). These notes are what the store
+   shows under "What's New". The French file is the one the pipeline reads.
 2. **Paste the French section into the reply, and wait for its corrections.** The notes are
    the only user-facing copy a release ships, they are read by every cook who taps "What's New",
    and once Apple approves the version they can no longer be edited for it. The whole
