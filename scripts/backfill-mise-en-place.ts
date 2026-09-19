@@ -65,7 +65,11 @@ const db = getFirestore()
 // developer put it there, from Secret Manager otherwise — through the same
 // application-default credentials Firestore is reached with.
 const geminiApiKey = async (): Promise<string> => {
-  if (process.env.NITRO_GOOGLE_API_KEY) return process.env.NITRO_GOOGLE_API_KEY
+  // The server's own name first, then the names a developer's shell usually
+  // exports it under — one key, whichever spelling the machine already has.
+  const fromEnv =
+    process.env.NITRO_GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY
+  if (fromEnv) return fromEnv
   const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] })
   const client = await auth.getClient()
   // User credentials carry no quota project of their own; Secret Manager wants one
