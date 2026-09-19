@@ -130,7 +130,9 @@ const responseSchema = {
 }
 
 // Ask, then read the answer the way the AI parse layer reads a list: strings only,
-// trimmed, clamped to a step's length, blanks dropped, count capped.
+// trimmed, clamped to a step's length, blanks dropped, count capped — and every run
+// of whitespace folded to one space, since the model has been seen breaking a line
+// in the middle of a word.
 const askMiseEnPlace = async (apiKey: string, text: string): Promise<string[]> => {
   const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
     method: 'POST',
@@ -151,7 +153,7 @@ const askMiseEnPlace = async (apiKey: string, text: string): Promise<string[]> =
   const lines = Array.isArray(parsed.miseEnPlace) ? parsed.miseEnPlace : []
   return lines
     .filter((line): line is string => typeof line === 'string')
-    .map((line) => line.trim().slice(0, RECIPE_MAX.stepText))
+    .map((line) => line.replace(/\s+/g, ' ').trim().slice(0, RECIPE_MAX.stepText))
     .filter((line) => line.length > 0)
     .slice(0, MAX_LINES)
 }
