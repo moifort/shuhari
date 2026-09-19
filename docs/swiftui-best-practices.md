@@ -71,6 +71,45 @@ and reload the list, which puts the row back.
   control.
 - A spinner with no `.disabled`: it says "working" while still accepting a second tap.
 
+## A list that reopens never opens empty
+
+A screen the user leaves and comes back to is not a first visit. If the rows it showed last time
+were on disk, they are what it opens on — the fetch runs underneath, and the screen is readable in
+the meantime. A launch that draws a loader over data the device already holds trades a readable
+screen for nothing: the fetch takes just as long either way.
+
+The rule holds wherever the data changes slowly and the user recognises it: a library, a feed, a
+settings list. It does not hold for data that is worthless when stale — a balance, a live score, a
+one-time code — where a stale row read as current is worse than a wait.
+
+Three things make it work, and the third is the one that gets forgotten:
+
+1. **Read the cache before the network, synchronously, in the store's `init`.** An `await` here
+   costs a frame of empty screen, which is the whole thing you set out to avoid.
+2. **Cache only the view the screen opens on.** A sorted, filtered or paginated-past-the-first-page
+   state is a question the user asked, not what to draw on the next launch. Writing page 0 in the
+   default order keeps the file small and the restored screen honest.
+3. **A refresh with something already on screen must not take it away.** It leads the list with a
+   spinner row — the circle a pull-to-refresh draws — and leaves the rows readable and tappable
+   underneath. Reuse the loading flag the cold path uses and you re-create the blank screen you
+   removed, which is why this state is its own flag.
+
+The cache expires by being overwritten, not by a timer: whatever the server answers replaces it.
+Two things must still clear it by hand — the end of a session, since the next user must not read
+the previous one's rows, and a shape change to the cached model, which a version stamp in the file
+turns into a deliberate miss instead of a wrong decode.
+
+### Anti-patterns
+
+- A **loading flag shared** by the cold start and the refresh: the cached rows appear, then vanish
+  behind a loader for the length of the fetch.
+- Caching **every sort and facet**: the file grows without bound and the app reopens on a filtered
+  view the user left days ago.
+- A **silent failed refresh**: the rows stay, nothing says they are last week's. The leading row
+  becomes a retry, exactly like the one that closes a paginated list.
+- A cache **written to the documents directory**: this is disposable data, and the system must be
+  free to reclaim it.
+
 ## Every row of a form shares one leading edge
 
 A marker column — a status dot, a drag handle, a checkmark — belongs to **all** the rows of a form

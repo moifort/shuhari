@@ -45,6 +45,11 @@ struct HomePage: View {
     /// The library section axis: month of last update, dish course, or brew method.
     let libraryGrouping: LibraryGrouping
     let libraryLoading: Bool
+    /// The library is on screen from the cache and a fresher one is on its way: a
+    /// spinner row leads the list rather than a loader replacing it.
+    var libraryRefreshing = false
+    /// That refresh failed — the leading row becomes a retry.
+    var libraryRefreshFailed = false
     let libraryHasMore: Bool
     let libraryLoadMoreFailed: Bool
     let title: String
@@ -58,6 +63,8 @@ struct HomePage: View {
     let onSettings: () -> Void
     var onPrefetch: (String) -> Void = { _ in }
     var onLoadMore: () async -> Void = {}
+    /// Retry a refresh that failed, from the leading row.
+    var onRefresh: () async -> Void = {}
 
     var body: some View {
         content
@@ -152,6 +159,10 @@ struct HomePage: View {
             }
         } else {
             List {
+                // Leads the rows it is refreshing, never replaces them.
+                if libraryRefreshing || libraryRefreshFailed {
+                    RefreshRow(failed: libraryRefreshFailed, onRetry: onRefresh)
+                }
                 LibrarySection(
                     recipes: library,
                     grouping: libraryGrouping,

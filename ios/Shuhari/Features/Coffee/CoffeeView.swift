@@ -30,6 +30,8 @@ struct CoffeeView: View {
                         // methods otherwise — a single one when a method is picked.
                         libraryGrouping: library.sort == .lastModified ? .month : .method,
                         libraryLoading: library.isLoading,
+                        libraryRefreshing: library.isRefreshing,
+                        libraryRefreshFailed: library.refreshFailed,
                         libraryHasMore: library.hasMore,
                         libraryLoadMoreFailed: library.loadMoreFailed,
                         title: "Café",
@@ -44,7 +46,8 @@ struct CoffeeView: View {
                         emptyFirstRunMessage: "Photographie une recette de café depuis l’onglet Importer — ou saisis-la.",
                         onSettings: { showSettings = true },
                         onPrefetch: { library.prefetchIfNeeded(for: $0) },
-                        onLoadMore: { await library.loadMore() }
+                        onLoadMore: { await library.loadMore() },
+                        onRefresh: { await library.refresh() }
                     )
                 }
             }
@@ -56,21 +59,13 @@ struct CoffeeView: View {
                 onDeleteVersion: { library.deleteVersion(recipeId: $0, number: $1) }
             )
         }
-        .task { await loadLibraryIfNeeded() }
+        .task { await library.loadIfNeeded() }
         .refreshable { await reloadAll() }
         .sheet(isPresented: $showSettings) {
             SettingsHomeView(onDataReplaced: { await reloadAll() })
         }
         .onChange(of: importedRecipe) { _, _ in navigateToImportedIfNeeded() }
         .onAppear { navigateToImportedIfNeeded() }
-    }
-
-    /// Kick off the first library page — the store already opens on the brewing
-    /// order, the whole point of grouping coffees by method.
-    private func loadLibraryIfNeeded() async {
-        if library.items.isEmpty {
-            await library.load()
-        }
     }
 
     private func reloadAll() async {

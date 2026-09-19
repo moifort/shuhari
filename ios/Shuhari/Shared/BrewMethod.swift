@@ -4,7 +4,7 @@ import SwiftUI
 /// (shared across every version), and the axis the coffee tab sorts on. What
 /// `DishCategory` is to cooking: changing the method makes it another coffee, not
 /// another version of this one. The case order IS the display order.
-enum BrewMethod: String, CaseIterable, Sendable, Identifiable {
+enum BrewMethod: String, CaseIterable, Sendable, Codable, Identifiable {
     case espresso
     case americano
     case flatWhite = "flat-white"

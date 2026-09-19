@@ -29,6 +29,8 @@ struct HomeView: View {
                         // courses otherwise — a single one when a category is picked.
                         libraryGrouping: library.sort == .lastModified ? .month : .course,
                         libraryLoading: library.isLoading,
+                        libraryRefreshing: library.isRefreshing,
+                        libraryRefreshFailed: library.refreshFailed,
                         libraryHasMore: library.hasMore,
                         libraryLoadMoreFailed: library.loadMoreFailed,
                         title: "Cuisine",
@@ -42,7 +44,8 @@ struct HomeView: View {
                         ),
                         onSettings: { showSettings = true },
                         onPrefetch: { library.prefetchIfNeeded(for: $0) },
-                        onLoadMore: { await library.loadMore() }
+                        onLoadMore: { await library.loadMore() },
+                        onRefresh: { await library.refresh() }
                     )
                 }
             }
@@ -54,23 +57,13 @@ struct HomeView: View {
                 onDeleteVersion: { library.deleteVersion(recipeId: $0, number: $1) }
             )
         }
-        .task {
-            await loadLibraryIfNeeded()
-        }
+        .task { await library.loadIfNeeded() }
         .refreshable { await reloadAll() }
         .sheet(isPresented: $showSettings) {
             SettingsHomeView(onDataReplaced: { await reloadAll() })
         }
         .onChange(of: importedRecipe) { _, _ in navigateToImportedIfNeeded() }
         .onAppear { navigateToImportedIfNeeded() }
-    }
-
-    /// Kick off the first library page. The sort and the facet reload on their own
-    /// (`didSet`) when they change.
-    private func loadLibraryIfNeeded() async {
-        if library.items.isEmpty {
-            await library.load()
-        }
     }
 
     /// Reload the library after a mutation, pull-to-refresh, or a new import.

@@ -6,6 +6,11 @@ import Foundation
 /// `WineListViewModel` pattern: generation token against stale responses, prefetch
 /// threshold for infinite scroll, a `LoadMoreRow` sentinel that flips to a retry
 /// button on failure.
+///
+/// It opens on the page it closed on: `LibraryCache` hands back the last visit's rows
+/// from disk before a single byte is asked of the network, so a relaunch shows the
+/// library straight away and refreshes it underneath — `isRefreshing`, the spinner row
+/// leading the list, instead of a loader taking the screen.
 @MainActor @Observable
 final class LibraryStore {
     /// Which recipe types this store reads — the one thing that tells the notebook
@@ -13,22 +18,51 @@ final class LibraryStore {
     /// store's life: a tab never changes what it is about.
     private let types: [RecipeType]
 
+    /// The order the tab opens on, and so the only one whose page 0 is worth keeping
+    /// on disk: a library the cook re-sorted is a question they asked, not what the
+    /// next launch should draw.
+    private let openingSort: RecipeSortOption
+
+    /// The tab's opening page on disk.
+    private let cache: LibraryCache
+
     /// A library opens filed the way it is searched — by dish course, or by brew
-    /// method for the coffee tab — with the favourites leading every section.
+    /// method for the coffee tab — with the favourites leading every section, and on
+    /// the rows of the last visit when the disk still has them.
     init(types: [RecipeType] = RecipeType.cooking, sort: RecipeSortOption = .dishCategory) {
         self.types = types
         self.sort = sort
+        openingSort = sort
+        cache = LibraryCache(types: types)
+        items = cache.read() ?? []
+        // A cached library has nothing to wait for: it is already readable.
+        isLoading = items.isEmpty
     }
 
     /// Pages accumulated from the server, in the current sort order.
     private(set) var items: [LibraryRecipe] = []
-    /// Starts true to avoid a "Aucune recette" flash before the first load().
+    /// Starts true to avoid a "Aucune recette" flash before the first load() — unless
+    /// the cache opened the library, in which case there is nothing to wait for.
     var isLoading = true
     var isLoadingMore = false
     var hasMore = false
     /// Last loadMore failed: the sentinel becomes a "Réessayer" button instead of a
     /// spinner that would spin forever without retrying.
     private(set) var loadMoreFailed = false
+
+    /// A library already on screen is being brought up to date: the rows stay put and
+    /// a spinner row leads the list. Set only on the cached library's refresh — a
+    /// pull-to-refresh is left alone, the system's own control already spins for it.
+    private(set) var isRefreshing = false
+
+    /// That refresh failed: the rows on screen are the ones from last time, and the
+    /// leading row offers to try again — otherwise nothing would say they are stale.
+    private(set) var refreshFailed = false
+
+    /// Page 0 has come back from the server at least once, so appearing again is not a
+    /// reason to fetch it anew.
+    private var loaded = false
+
     var error: String?
 
     /// Filed (by course or by method) vs. last-modified ordering. Any change reloads
@@ -91,6 +125,8 @@ final class LibraryStore {
         hasMore = false
         isLoadingMore = false // stale loadMores bail out without touching this
         loadMoreFailed = false
+        isRefreshing = false
+        refreshFailed = false
         isLoading = true
         reloadTask = Task { await load() }
     }
@@ -113,6 +149,9 @@ final class LibraryStore {
             guard requested == generation else { return } // response from a stale view
             items = page.items
             hasMore = page.hasMore
+            loaded = true
+            refreshFailed = false
+            saveCache()
         } catch is CancellationError {
             return
         } catch {
@@ -120,6 +159,32 @@ final class LibraryStore {
             self.error = reportError(error)
         }
         isLoading = false
+    }
+
+    /// The tab appeared: fetch page 0, once. With the cached library already on screen
+    /// the rows stay and the spinner row leads the list; with nothing to show, the
+    /// flask owns the wait. Replaces the `items.isEmpty` test the tabs used to make,
+    /// which a warm cache would have read as "already loaded".
+    func loadIfNeeded() async {
+        guard !loaded else { return }
+        if items.isEmpty {
+            await load()
+        } else {
+            await refresh()
+        }
+    }
+
+    /// Bring the rows already on screen up to date without taking them away — the
+    /// cached library's refresh, and the retry when that refresh failed.
+    func refresh() async {
+        isRefreshing = true
+        refreshFailed = false
+        await load()
+        // A sort or a facet change took the library over meanwhile: it emptied the
+        // rows and reset both flags, and this refresh no longer has anything to say.
+        guard isRefreshing else { return }
+        isRefreshing = false
+        refreshFailed = !loaded
     }
 
     /// Load the next page and append it to the recipes already loaded.
@@ -149,6 +214,9 @@ final class LibraryStore {
     func delete(recipeId: String) {
         items.removeAll { $0.id == recipeId }
         index?.removeAll { $0.id == recipeId }
+        // The row is gone for good and no reload follows a successful delete: the disk
+        // must not bring it back on the next launch.
+        saveCache()
         Task {
             do {
                 try await RecipeAPI.deleteRecipe(id: recipeId)
@@ -205,6 +273,17 @@ final class LibraryStore {
         indexTask = nil
         index = nil
         if !searchText.isEmpty { loadIndex() }
+    }
+
+    /// Keep the tab's opening page on disk — only when the library is showing exactly
+    /// that: the opening order, no facet. A sorted or filtered page is not what the
+    /// next launch opens on, and the file stays one page long however far the cook
+    /// scrolled. Written off the main actor: the library is on screen already and has
+    /// nothing to gain from waiting on a file.
+    private func saveCache() {
+        guard category == nil, method == nil, sort == openingSort else { return }
+        let (cache, page) = (cache, Array(items.prefix(pageSize)))
+        Task.detached { cache.write(page) }
     }
 
     private func fetchPage(after: String?) async throws -> RecipePage {

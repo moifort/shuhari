@@ -3,7 +3,7 @@ import SwiftUI
 /// The pictograms a tag can wear — what stands for it on a library row, where there
 /// is no room for its words. A closed set the server names and this enum draws; the
 /// case order IS the order the icon picker offers them in.
-enum TagIcon: String, CaseIterable, Sendable, Identifiable {
+enum TagIcon: String, CaseIterable, Sendable, Codable, Identifiable {
     case thermomix
     case oven
     case microwave
@@ -64,7 +64,7 @@ enum TagIcon: String, CaseIterable, Sendable, Identifiable {
 /// A word the cook files a recipe under, in their own words ("Thermomix", "Batch
 /// cooking"), with the pictogram that stands for it where there is no room for the
 /// word. Worn by the recipe, so it holds for every version of it.
-struct Tag: Sendable, Hashable {
+struct Tag: Sendable, Hashable, Codable {
     let label: String
     /// Nil on a tag that is read on the recipe sheet only — a library row shows the
     /// icons and nothing else, so a tag without one does not appear there.

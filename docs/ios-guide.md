@@ -148,6 +148,36 @@ _    = try await GraphQLHelpers.perform(GraphQLClient.shared.apollo, mutation: S
 It also provides `graphQLNullable(_:)` (wrap `T?` into `GraphQLNullable`, blank strings → `.none`)
 and `parseISO8601(_:)` for the `DateTime` scalar.
 
+### The library's opening page, on disk
+
+The normalized cache being off means a relaunch used to hit an empty screen and a cold function:
+several seconds of loader over a library that had barely changed. `LibraryCache`
+(`Features/Home/LibraryCache.swift`) keeps that first page as JSON in the caches directory, one
+file per tab, and `LibraryStore.init` reads it **synchronously** before anything is asked of the
+network — the rows are on screen in the first frame. See
+[a list that reopens never opens empty](swiftui-best-practices.md#a-list-that-reopens-never-opens-empty).
+
+- **What is written**: page 0 of the tab's opening order, and only that — `saveCache()` bails out
+  as soon as a facet or another sort is on. Written off the main actor, after each successful
+  `load()` and after an optimistic delete, which no reload follows.
+- **What is read**: nothing, unless the file decodes *and* carries the current `version` *and*
+  holds at least one row — an empty library must show its first-run nudge, not a list that happens
+  to be empty. Bump `LibraryCache.version` whenever `LibraryRecipe` changes shape.
+- **The refresh that follows** is `isRefreshing`, never `isLoading`: `RefreshRow`
+  (`Shared/Components/RefreshRow.swift`) leads the list with the circle a pull-to-refresh draws,
+  on the list's own background, and the rows stay readable underneath. It flips to "Réessayer" on
+  `refreshFailed` — the mirror of the `LoadMoreRow` that closes the list, minus the `.task`, since
+  the fetch is already in flight when the row appears.
+- **`loadIfNeeded()` owns the once-only decision** (`loaded`), not the tabs: their old
+  `items.isEmpty` test would read a warm cache as "already loaded" and never refresh.
+- **`AuthSession` clears every file** on sign-out and on account deletion: the next cook must not
+  read the previous one's rows.
+- **`LinkRecipeSheet` rides the same cache**, since it builds a `LibraryStore` of its own: the
+  component picker opens on pickable candidates instead of a spinner, with the same leading row.
+
+Gallery: `-gallery cuisine-refreshing` (the cached library with the spinner leading it) and
+`-gallery cuisine-refresh-failed` (the same rows, with the retry).
+
 ### The feature API enum — the mapping boundary
 
 Each feature exposes a caseless `enum {Feature}API` of static async functions that call the

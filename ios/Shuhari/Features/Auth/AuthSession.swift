@@ -23,8 +23,11 @@ final class AuthSession {
         }
     }
 
+    /// Leave the session, taking the cached library along: the rows on disk belong to
+    /// the cook who just left, and whoever signs in next must read their own.
     func signOut() throws {
         try Auth.auth().signOut()
+        LibraryCache.clear()
     }
 
     /// Erase the account for good. Three steps, in an order that cannot be swapped:
@@ -39,5 +42,6 @@ final class AuthSession {
         try await Auth.auth().revokeToken(withAuthorizationCode: code)
         try await SettingsAPI.deleteAccount()
         try Auth.auth().signOut()
+        LibraryCache.clear()
     }
 }

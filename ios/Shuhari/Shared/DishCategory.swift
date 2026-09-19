@@ -4,7 +4,7 @@ import SwiftUI
 /// (shared across every version), and the axis the library sorts on. Distinct
 /// from `RecipeType` (dish vs Thermomix): a Thermomix soup and a plated soup are
 /// both `.soup`.
-enum DishCategory: String, CaseIterable, Sendable, Identifiable {
+enum DishCategory: String, CaseIterable, Sendable, Codable, Identifiable {
     case starter
     case main
     case dessert

@@ -44,7 +44,7 @@ struct LinkRecipeSheet: View {
                     }
                 }
                 .errorAlert(error)
-                .task { await store.load() }
+                .task { await store.loadIfNeeded() }
                 .navigationDestination(item: $picked) { link in
                     WeightStep(recipeId: link.recipeId, scale: link.scale) { scale in
                         try await onLink(link.recipeId, scale)
@@ -60,6 +60,12 @@ struct LinkRecipeSheet: View {
     private var list: some View {
         List {
             Section {
+                // The picker reads the same cached library as the tab it was opened
+                // from: when the disk already holds it, the candidates are pickable
+                // right away and the refresh spins above them.
+                if store.isRefreshing || store.refreshFailed {
+                    RefreshRow(failed: store.refreshFailed, onRetry: { await store.refresh() })
+                }
                 if store.isLoading {
                     ProgressView()
                         .frame(maxWidth: .infinity)

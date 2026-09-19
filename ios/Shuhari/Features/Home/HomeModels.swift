@@ -1,8 +1,9 @@
 import Foundation
 
 /// A library row: how many versions the recipe has and its best attempt rating
-/// ("the highest star" across every version it ever cooked).
-struct LibraryRecipe: Identifiable, Sendable {
+/// ("the highest star" across every version it ever cooked). `Codable` because a
+/// tab's opening page is kept on disk from one launch to the next — `LibraryCache`.
+struct LibraryRecipe: Identifiable, Sendable, Codable {
     let id: String
     let title: String
     let category: DishCategory
