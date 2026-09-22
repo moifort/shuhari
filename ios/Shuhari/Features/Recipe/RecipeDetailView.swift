@@ -119,7 +119,7 @@ struct RecipeDetailView: View {
                 // The one flow the play CTA opens, as a sheet: the capture form at
                 // 70%, growing to .large for whichever AI proposal it asked for.
                 .sheet(item: $recordRequest) { request in
-                    ExecuteFlowView(request: request) {
+                    ExecuteFlowView(request: request, recipe: recipe) {
                         onReload()
                         Task { await store.load(recipeId) }
                     }

@@ -262,8 +262,14 @@ history sheet and the to-cook sheet. They share **one**
 - `RecipeStore(previewRecipe:)` seeds a fixture and **never** calls the server: it is what makes
   the whole flow — sheets included — reviewable offline in `DebugGallery`.
 
-The one screen still holding a copy of its own is `ExecuteFlowView`, which fetches the recipe when
-the play CTA opens it.
+The one screen still holding a copy of its own is `ExecuteFlowView`: the recipe sheet hands it the
+recipe it already read, so the play CTA opens the flow with no request, and the flow reads the
+recipe again only after it wrote a version the next proposal has to iterate on.
+
+**One read per screen.** A screen asks for what it draws and nothing more: the `Recipe` query
+names its `versionToOpen` by number and picks it out of `versions` (never the same version twice
+on the wire), and a screen that needs a sliver of a recipe — the link sheet's weight step, a
+name and a shopping list — has its own light query (`LinkedRecipe`) instead of the whole sheet's.
 
 ### Coordinator (`*View.swift`) vs. Page (`*Page.swift`)
 

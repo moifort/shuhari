@@ -193,14 +193,14 @@ struct LinkCandidateList: View {
 }
 
 /// The weight step: the linked recipe's own shopping list, shown at the weight being
-/// set. Loads that recipe (its best version is what answers for it) and hands the
+/// set. Loads that list alone (its best version is what answers for it) and hands the
 /// factor to `LinkWeightForm`, which knows nothing of the network.
 private struct WeightStep: View {
     let recipeId: String
     let scale: Double
     let onConfirm: (_ scale: Double) async throws -> Void
 
-    @State private var recipe: Recipe?
+    @State private var recipe: LinkedRecipe?
     @State private var error = ErrorPresenter()
 
     var body: some View {
@@ -208,7 +208,7 @@ private struct WeightStep: View {
             if let recipe {
                 LinkWeightForm(
                     title: recipe.title,
-                    ingredients: recipe.versionToOpen.ingredients.map { ($0.name, $0.quantity) },
+                    ingredients: recipe.ingredients.map { ($0.name, $0.quantity) },
                     initialScale: scale,
                     isLinking: error.isRunning,
                     onConfirm: { chosen in
@@ -222,7 +222,7 @@ private struct WeightStep: View {
         }
         .errorAlert(error)
         .task {
-            await error.run { recipe = try await RecipeAPI.getRecipe(id: recipeId) }
+            await error.run { recipe = try await RecipeAPI.linkedRecipe(id: recipeId) }
         }
     }
 }

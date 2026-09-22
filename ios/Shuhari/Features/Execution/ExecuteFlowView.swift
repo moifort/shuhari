@@ -28,16 +28,24 @@ import SwiftUI
 /// that a tips proposal wrote first is not written twice.
 ///
 /// Presented as a `.sheet` from the recipe sheet — the sheet already shows the recipe,
-/// so the flow opens straight on the capture. On completion it dismisses and asks the
-/// caller to refresh.
+/// and hands it over, so the flow opens straight on the capture without reading it
+/// again. On completion it dismisses and asks the caller to refresh.
 struct ExecuteFlowView: View {
     let request: ExecutionRequest
     let onFinished: () -> Void
 
     @Environment(\.dismiss) private var dismiss
 
+    /// Seeded with what the recipe sheet already read; replaced only when this flow
+    /// writes a version the next request has to iterate on.
     @State private var recipe: Recipe?
     @State private var loadError: String?
+
+    init(request: ExecutionRequest, recipe: Recipe?, onFinished: @escaping () -> Void) {
+        self.request = request
+        self.onFinished = onFinished
+        self._recipe = State(initialValue: recipe)
+    }
 
     @State private var path: [Step] = []
     @State private var isSaving = false

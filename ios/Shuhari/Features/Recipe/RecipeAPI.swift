@@ -9,8 +9,23 @@ enum RecipeAPI {
             GraphQLClient.shared.apollo,
             query: ShuhariGraphQL.RecipeQuery(id: id)
         )
-        guard let recipe = data.recipe else { throw APIError.invalidResponse }
-        return mapRecipe(recipe)
+        guard let recipe = data.recipe, let mapped = mapRecipe(recipe) else {
+            throw APIError.invalidResponse
+        }
+        return mapped
+    }
+
+    /// A recipe as a link shows it — its name and the shopping list of its best
+    /// version, at its own weight. What the link sheet's weight step reads, instead of
+    /// the whole recipe sheet.
+    static func linkedRecipe(id: String) async throws -> LinkedRecipe {
+        let data = try await GraphQLHelpers.fetch(
+            GraphQLClient.shared.apollo,
+            query: ShuhariGraphQL.LinkedRecipeQuery(id: id)
+        )
+        guard let linked = mapLinkedRecipe(data.recipe?.fragments.linkedRecipeFields, scale: 1)
+        else { throw APIError.invalidResponse }
+        return linked
     }
 
     // MARK: - Mutations
@@ -380,8 +395,14 @@ enum RecipeAPI {
 
 // MARK: - Mapping
 
-func mapRecipe(_ r: ShuhariGraphQL.RecipeQuery.Data.Recipe) -> Recipe {
-    Recipe(
+/// Nil when the version to open is missing from the lineage — a response the server
+/// never sends, since it picks that version out of the very same list.
+func mapRecipe(_ r: ShuhariGraphQL.RecipeQuery.Data.Recipe) -> Recipe? {
+    let versions = r.versions.map { mapVersion($0.fragments.versionFields) }
+    guard let versionToOpen = versions.first(where: { $0.number == r.versionToOpen.number }) else {
+        return nil
+    }
+    return Recipe(
         id: r.id,
         title: r.title,
         type: RecipeType(graphql: r.type),
@@ -389,9 +410,9 @@ func mapRecipe(_ r: ShuhariGraphQL.RecipeQuery.Data.Recipe) -> Recipe {
         method: BrewMethod(graphql: r.method),
         tags: r.tags.map { Tag(label: $0.label, icon: TagIcon(graphql: $0.icon)) },
         favorite: r.favorite,
-        versions: r.versions.map { mapVersion($0.fragments.versionFields) },
+        versions: versions,
         bestRating: r.bestRating,
-        versionToOpen: mapVersion(r.versionToOpen.fragments.versionFields),
+        versionToOpen: versionToOpen,
         components: r.components.compactMap {
             mapLinkedRecipe($0.recipe?.fragments.linkedRecipeFields, scale: $0.scale)
         },

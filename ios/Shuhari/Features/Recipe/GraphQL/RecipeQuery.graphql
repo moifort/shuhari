@@ -144,11 +144,21 @@ query Recipe($id: RecipeId!) {
       title
       bestRating
     }
+    # Only which one: the version itself is already in `versions`, and selecting it
+    # twice sent the heaviest object of the sheet twice.
     versionToOpen {
-      ...VersionFields
+      number
     }
     versions {
       ...VersionFields
     }
+  }
+}
+
+# The weight step of the link sheet: the linked recipe's name and shopping list, and
+# nothing else — never its lineage, its links or who uses it.
+query LinkedRecipe($id: RecipeId!) {
+  recipe(id: $id) {
+    ...LinkedRecipeFields
   }
 }
