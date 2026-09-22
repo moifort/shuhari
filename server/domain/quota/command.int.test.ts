@@ -18,18 +18,18 @@ beforeEach(() => {
   fake = resetFakeFirestore()
 })
 
-describe('QuotaCommand.record', () => {
+describe('QuotaCommand.spend', () => {
   test('creates the month document on the first AI call', async () => {
-    await QuotaCommand.record(userId, 'import')
+    await QuotaCommand.spend(userId, 'free', 'import')
 
     const stored = fake.snapshot('ai-quotas').get(docId)
     expect(stored).toEqual({ userId, month, imports: 1, iterations: 0 })
   })
 
   test('increments only the meter of the action', async () => {
-    await QuotaCommand.record(userId, 'import')
-    await QuotaCommand.record(userId, 'iteration')
-    await QuotaCommand.record(userId, 'iteration')
+    await QuotaCommand.spend(userId, 'free', 'import')
+    await QuotaCommand.spend(userId, 'free', 'iteration')
+    await QuotaCommand.spend(userId, 'free', 'iteration')
 
     expect(fake.snapshot('ai-quotas').get(docId)).toEqual({
       userId,
@@ -43,7 +43,7 @@ describe('QuotaCommand.record', () => {
     const docReadsBefore = fake.docReads
     const batchesBefore = fake.batches.length
 
-    await QuotaCommand.record(userId, 'import')
+    await QuotaCommand.spend(userId, 'free', 'import')
 
     expect(fake.docReads - docReadsBefore).toBe(1)
     expect(fake.queryReads).toBe(0)
@@ -63,13 +63,13 @@ describe('QuotaCommand.record', () => {
   })
 
   test('counts every concurrent call — the meter guards the AI bill', async () => {
-    // Two AI calls answering at the same moment. Read-then-set had them both read
-    // zero and both write one, so the cook spent two iterations and was billed for
-    // one — the freemium limit leaking by exactly the amount of concurrency.
+    // Three AI calls asked at the same moment. Read-then-set had them all read zero
+    // and all write one — the freemium limit leaking by exactly the amount of
+    // concurrency.
     await Promise.all([
-      QuotaCommand.record(userId, 'iteration'),
-      QuotaCommand.record(userId, 'iteration'),
-      QuotaCommand.record(userId, 'iteration'),
+      QuotaCommand.spend(userId, 'free', 'iteration'),
+      QuotaCommand.spend(userId, 'free', 'iteration'),
+      QuotaCommand.spend(userId, 'free', 'iteration'),
     ])
 
     expect(fake.snapshot('ai-quotas').get(docId)?.iterations).toBe(3)
@@ -77,11 +77,64 @@ describe('QuotaCommand.record', () => {
 
   test('keeps each cook on their own document', async () => {
     const other = 'user-2' as UserId
-    await QuotaCommand.record(userId, 'import')
-    await QuotaCommand.record(other, 'import')
+    await QuotaCommand.spend(userId, 'free', 'import')
+    await QuotaCommand.spend(other, 'free', 'import')
 
     expect(fake.snapshot('ai-quotas').get(docId)?.imports).toBe(1)
     expect(fake.snapshot('ai-quotas').get(`${other}_${month}`)?.imports).toBe(1)
+  })
+})
+
+describe('the limit', () => {
+  test('refuses the call past the free limit, and writes nothing for it', async () => {
+    for (const _ of Array(FREE_LIMITS.import).keys())
+      await QuotaCommand.spend(userId, 'free', 'import')
+    const transactions = fake.transactions.length
+
+    expect(await QuotaCommand.spend(userId, 'free', 'import')).toBe('quota-exhausted')
+    expect(fake.transactions.length).toBe(transactions)
+    // The other meter is untouched.
+    expect(await QuotaCommand.spend(userId, 'free', 'iteration')).not.toBe('quota-exhausted')
+  })
+
+  test('lets exactly the limit through when every call lands together', async () => {
+    // Checked before the call and recorded after it, all of these passed the check
+    // on the same count: the limit was a suggestion under concurrency.
+    const answers = await Promise.all(
+      Array.from({ length: FREE_LIMITS.iteration + 2 }, () =>
+        QuotaCommand.spend(userId, 'free', 'iteration'),
+      ),
+    )
+
+    expect(answers.filter((answer) => answer === 'quota-exhausted')).toHaveLength(2)
+    expect(fake.snapshot('ai-quotas').get(docId)?.iterations).toBe(FREE_LIMITS.iteration)
+  })
+
+  test('a Premium cook is never exhausted, and is still counted', async () => {
+    for (const _ of Array(FREE_LIMITS.import + 1).keys())
+      expect(await QuotaCommand.spend(userId, 'premium', 'import')).not.toBe('quota-exhausted')
+    expect(fake.snapshot('ai-quotas').get(docId)?.imports).toBe(FREE_LIMITS.import + 1)
+  })
+})
+
+describe('QuotaCommand.refund', () => {
+  test('gives the spent call back to the month it was spent in', async () => {
+    const spent = await QuotaCommand.spend(userId, 'free', 'iteration')
+    if (spent === 'quota-exhausted') throw new Error('expected a spend')
+
+    await QuotaCommand.refund(spent, 'iteration')
+
+    expect(fake.snapshot('ai-quotas').get(docId)?.iterations).toBe(0)
+  })
+
+  test('never turns into credit', async () => {
+    const spent = await QuotaCommand.spend(userId, 'free', 'import')
+    if (spent === 'quota-exhausted') throw new Error('expected a spend')
+
+    await QuotaCommand.refund(spent, 'import')
+    await QuotaCommand.refund(spent, 'import')
+
+    expect(fake.snapshot('ai-quotas').get(docId)?.imports).toBe(0)
   })
 })
 
@@ -95,25 +148,9 @@ describe('QuotaQuery', () => {
     })
   })
 
-  test('reads back what was recorded, past the memoized pre-write value', async () => {
-    await QuotaCommand.record(userId, 'iteration')
+  test('reads back what was spent, past the memoized pre-write value', async () => {
+    await QuotaQuery.current(userId)
+    await QuotaCommand.spend(userId, 'free', 'iteration')
     expect((await QuotaQuery.current(userId)).iterations).toBe(Count(1))
-  })
-
-  test('exhaustedFor turns true exactly at the free limit', async () => {
-    for (const _ of Array(FREE_LIMITS.import - 1).keys())
-      await QuotaCommand.record(userId, 'import')
-    expect(await QuotaQuery.exhaustedFor(userId, 'free', 'import')).toBe(false)
-
-    await QuotaCommand.record(userId, 'import')
-    expect(await QuotaQuery.exhaustedFor(userId, 'free', 'import')).toBe(true)
-    // The other meter is untouched.
-    expect(await QuotaQuery.exhaustedFor(userId, 'free', 'iteration')).toBe(false)
-  })
-
-  test('a Premium cook is never exhausted', async () => {
-    for (const _ of Array(FREE_LIMITS.import + 1).keys())
-      await QuotaCommand.record(userId, 'import')
-    expect(await QuotaQuery.exhaustedFor(userId, 'premium', 'import')).toBe(false)
   })
 })

@@ -30,25 +30,26 @@ export const save = async (quota: Quota): Promise<Quota> => {
   return quota
 }
 
-// Spend against the month's counter, atomically. The read has to happen inside the
-// transaction — the memoized one is the pre-call value the caller already checked
-// the limit against, and reusing it is exactly how two AI calls landing together
-// would both write "one spent" and record only one.
-export const consume = async (
+// Rewrite the month's counter from its current value, in one transaction: the read
+// happens inside it — the memoized one is a value from earlier in the request — so
+// two calls landing together are serialized, and never both slip under the limit on
+// the same stale count. `next` answers the new quota, or the reason it refuses one,
+// in which case nothing is written.
+export const rewrite = async <Next extends Quota | string>(
   userId: UserId,
   month: QuotaMonth,
-  spend: (quota: Quota) => Quota,
-): Promise<Quota> => {
+  next: (quota: Quota) => Next,
+): Promise<Next> => {
   const ref = quotas().doc(quotaDocId(userId, month))
-  const spent = await transactionally(async (tx) => {
+  const rewritten = await transactionally(async (tx) => {
     const doc = await tx.get(ref)
     // Same storage boundary as `findBy`: an absent document is a fresh month.
-    const spent = spend(doc.data() ?? freshQuota(userId, month))
-    tx.set(ref, spent)
-    return spent
+    const quota = next(doc.data() ?? freshQuota(userId, month))
+    if (typeof quota !== 'string') tx.set(ref, quota)
+    return quota
   })
   evictFromRequestCache(`quota:${userId}:${month}`)
-  return spent
+  return rewritten
 }
 
 // Every month this cook has ever spent anything in. Queried rather than derived:

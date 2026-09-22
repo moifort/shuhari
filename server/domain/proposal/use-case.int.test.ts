@@ -52,6 +52,8 @@ let mergedTips: string[]
 // The context the use-case handed the model on the last call — what a coffee
 // iteration is asserted to start from.
 let lastCoffeeContext: CoffeeProposalContext | undefined
+// Set to make the model fail — a Gemini outage, a timeout.
+let aiFailure: Error | undefined
 let lastCookingContext: CookingProposalContext | undefined
 // The transcription of a change the cook already made, and the context it was
 // asked to apply it to.
@@ -63,6 +65,7 @@ mock.module('~/system/ai', () => ({
   Ai: {
     proposeNextCooking: async (context: CookingProposalContext) => {
       lastCookingContext = context
+      if (aiFailure) throw aiFailure
       return proposal
     },
     proposeNextCoffee: async (context: CoffeeProposalContext) => {
@@ -91,7 +94,7 @@ mock.module('~/system/config', () => ({ config: () => ({ premiumUserIds }) }))
 
 const { RecipeCommand } = await import('~/domain/recipe/command')
 const { ProposalUseCase } = await import('~/domain/proposal/use-case')
-const { FREE_LIMITS } = await import('~/domain/quota/business-rules')
+const { FREE_LIMITS, monthOf } = await import('~/domain/quota/business-rules')
 
 const userId = 'user-1' as UserId
 const V1 = 1 as VersionNumber
@@ -241,6 +244,10 @@ let fake = resetFakeFirestore()
 // writes the quota it spent and nothing else: no version, no recipe.
 const writtenCollections = (since: number) =>
   fake.transactions.slice(since).flatMap((writes) => writes.map(({ ref }) => ref.collection))
+
+// This month's spent iterations, as stored.
+const iterationsSpent = () =>
+  fake.snapshot('ai-quotas').get(`${userId}_${monthOf(new Date())}`)?.iterations ?? 0
 beforeEach(() => {
   fake = resetFakeFirestore()
   lastCoffeeContext = undefined
@@ -248,6 +255,7 @@ beforeEach(() => {
   lastCookingChangeContext = undefined
   lastCoffeeChangeContext = undefined
   premiumUserIds = []
+  aiFailure = undefined
   proposal = baseProposal()
   coffeeProposal = baseCoffeeProposal()
   change = baseChange()
@@ -269,6 +277,33 @@ describe('ProposalUseCase.fromAttempt', () => {
     expect(await ProposalUseCase.fromAttempt(userId, recipe.id, 9 as VersionNumber, ATTEMPT)).toBe(
       'not-found',
     )
+    // Spent before looking, given back once nothing was found to iterate on.
+    expect(iterationsSpent()).toBe(0)
+  })
+
+  test('gives the iteration back when the model fails', async () => {
+    const recipe = await RecipeCommand.create(userId, recipeInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    aiFailure = new Error('Gemini unavailable')
+
+    await expect(ProposalUseCase.fromAttempt(userId, recipe.id, V1, ATTEMPT)).rejects.toThrow(
+      'Gemini unavailable',
+    )
+    expect(iterationsSpent()).toBe(0)
+  })
+
+  test('refuses past the free limit before the model is asked', async () => {
+    const recipe = await RecipeCommand.create(userId, recipeInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    for (const _ of Array(FREE_LIMITS.iteration).keys())
+      await ProposalUseCase.fromAttempt(userId, recipe.id, V1, ATTEMPT)
+    lastCookingContext = undefined
+
+    expect(await ProposalUseCase.fromAttempt(userId, recipe.id, V1, ATTEMPT)).toBe(
+      'quota-exhausted',
+    )
+    expect(lastCookingContext).toBeUndefined()
+    expect(iterationsSpent()).toBe(FREE_LIMITS.iteration)
   })
 
   test('returns the branded proposal based on the tried version, persisting no version', async () => {
@@ -292,15 +327,13 @@ describe('ProposalUseCase.fromAttempt', () => {
     // The proposal carries the complete tips list of the version it would create.
     expect(result.tips).toEqual(['Servir avec du riz' as Tip])
 
-    // Five keyed doc reads: the entitlement (what plan the cook is on), the
-    // recipe pointer, the cooked version — the attempt itself comes from the
-    // caller, so there is no collection scan and no N+1 — and the quota twice.
-    // Twice on purpose: the memoized read is what the limit is checked against
-    // before the call, and the record after it re-reads inside its transaction,
-    // which is what stops two calls landing together from counting one. The only
-    // write is that quota: no version and no recipe is touched until the proposal
-    // is accepted.
-    expect(fake.docReads - docReadsBefore).toBe(5)
+    // Four keyed doc reads: the entitlement (what plan the cook is on), the quota —
+    // read once, inside the transaction that checks the limit and spends it, which
+    // is what stops two calls landing together from both slipping under it — the
+    // recipe pointer and the cooked version. The attempt itself comes from the
+    // caller, so there is no collection scan and no N+1. The only write is that
+    // quota: no version and no recipe is touched until the proposal is accepted.
+    expect(fake.docReads - docReadsBefore).toBe(4)
     expect(fake.queryReads - queryReadsBefore).toBe(0)
     expect(writtenCollections(transactionsBefore)).toEqual(['ai-quotas'])
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.rating).toBeUndefined()
@@ -454,10 +487,9 @@ describe('ProposalUseCase.fromImprovement', () => {
       steps: stepList('Saisir', 'Mijoter'),
     })
 
-    // Same budget as fromAttempt: entitlement, recipe pointer, version, and the
-    // quota read twice — once to check the limit, once inside the recording
-    // transaction.
-    expect(fake.docReads - docReadsBefore).toBe(5)
+    // Same budget as fromAttempt: entitlement, the quota spent in its transaction,
+    // recipe pointer, version.
+    expect(fake.docReads - docReadsBefore).toBe(4)
     expect(writtenCollections(transactionsBefore)).toEqual(['ai-quotas'])
   })
 
@@ -502,9 +534,9 @@ describe('ProposalUseCase.fromChange', () => {
     expect(lastCookingChangeContext?.change).toBe('j’ai mis 650 ml de bouillon au lieu de 700')
     expect(lastCookingChangeContext?.type).toBe('dish')
 
-    // Same budget as any other iteration — entitlement, recipe pointer, version,
-    // and the quota twice — and nothing written until the proposal is accepted.
-    expect(fake.docReads - docReadsBefore).toBe(5)
+    // Same budget as any other iteration — entitlement, quota, recipe pointer,
+    // version — and nothing written until the proposal is accepted.
+    expect(fake.docReads - docReadsBefore).toBe(4)
     expect(writtenCollections(transactionsBefore)).toEqual(['ai-quotas'])
   })
 
@@ -556,10 +588,10 @@ describe('ProposalUseCase.fromTips', () => {
     if (typeof result === 'string') throw new Error('expected tips')
     expect(result).toEqual(['Servir avec du riz' as Tip, 'Se congèle bien' as Tip])
 
-    // Same budget as a version proposal — entitlement, recipe pointer, version,
-    // and the quota twice (the limit check, then the recording transaction) — and
+    // Same budget as a version proposal — entitlement, quota, recipe pointer,
+    // version — and
     // the version's own tips are left exactly as they were until updateTips.
-    expect(fake.docReads - docReadsBefore).toBe(5)
+    expect(fake.docReads - docReadsBefore).toBe(4)
     expect(writtenCollections(transactionsBefore)).toEqual(['ai-quotas'])
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.tips).toEqual([])
   })
@@ -592,8 +624,9 @@ describe('ProposalUseCase.importCooking', () => {
     expect(await ProposalUseCase.importCooking(userId, { kind: 'text', text: 'nope' })).toBe(
       'no-recipe-found',
     )
-    // A source with no recipe in it is a miss, not an import: nothing is spent.
-    expect(fake.snapshot('ai-quotas').size).toBe(0)
+    // A source with no recipe in it is a miss, not an import: what was spent before
+    // asking is given back.
+    expect(fake.snapshot('ai-quotas').get(`${userId}_${monthOf(new Date())}`)?.imports).toBe(0)
   })
 
   test('reserves the URL import for Premium', async () => {

@@ -521,9 +521,12 @@ app's only variable cost, so it is the only thing metered (`quota` domain, dimen
   `renewsOn` is the 1st of the next month, UTC.
 - **Importing from a URL is Premium.** It is the one call billed per request (Google Search
   grounding), and a free cook is refused before Gemini is ever called (`PREMIUM_REQUIRED`).
-- **Check before, record after.** `ProposalUseCase` asks `QuotaQuery.exhaustedFor` before calling
-  the AI (a refusal costs nothing, `QUOTA_EXHAUSTED`) and `QuotaCommand.record` only once the AI
-  has answered: a Gemini failure never costs a cook a quota, and a source with no recipe in it
+- **Spend before, refund on a miss.** `ProposalUseCase` spends the call (`QuotaCommand.spend`)
+  before asking the AI, the limit checked in the same transaction as the spend — checked first and
+  recorded after, two calls landing together both passed the check on the same count. A refusal
+  costs nothing (`QUOTA_EXHAUSTED`, the model is never asked). The call is given back
+  (`QuotaCommand.refund`) when it produced nothing: a Gemini failure never costs a cook a quota, a
+  recipe that no longer exists is not an iteration, and a source with no recipe in it
   (`no-recipe-found`) is a miss, not an import. A cache hit *does* count — the quota is a product
   promise, not a meter on our bill.
 - **Premium is bought from Apple, and proved to us.** `EntitlementQuery.planOf` is the single

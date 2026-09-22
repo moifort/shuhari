@@ -1,7 +1,7 @@
 import { EntitlementQuery } from '~/domain/entitlement/query'
 import { allowsUrlImport } from '~/domain/quota/business-rules'
 import { QuotaCommand } from '~/domain/quota/command'
-import { QuotaQuery } from '~/domain/quota/query'
+import type { AiAction } from '~/domain/quota/types'
 import { RecipeCommand } from '~/domain/recipe/command'
 import type { VersionContent } from '~/domain/recipe/content/types'
 import { VersionContent as brandVersionContent, Tip } from '~/domain/recipe/primitives'
@@ -10,11 +10,13 @@ import type {
   BrewMethod,
   DishCategory,
   Rating,
+  Recipe,
   RecipeId,
+  RecipeVersion,
   Remarks,
   VersionNumber,
 } from '~/domain/recipe/types'
-import type { UserId } from '~/domain/shared/types'
+import type { Plan, UserId } from '~/domain/shared/types'
 import { Ai } from '~/system/ai'
 import type {
   CoffeeProposal,
@@ -216,18 +218,53 @@ const cookingChangeAnswer = async (
   }
 }
 
-// Everything an iteration on an existing version starts with: the plan, the quota
-// it is gated on, and the recipe/version pair it works from — two keyed doc reads,
-// no lineage scan. Written once so the three flows can never gate differently.
-const iterationOn = async (userId: UserId, recipeId: RecipeId, versionNumber: VersionNumber) => {
-  const plan = await EntitlementQuery.planOf(userId)
-  if (await QuotaQuery.exhaustedFor(userId, plan, 'iteration')) return 'quota-exhausted' as const
-  const recipe = await RecipeQuery.byId(userId, recipeId)
-  if (recipe === 'not-found') return 'not-found' as const
-  const version = await RecipeQuery.versionBy(recipeId, versionNumber)
-  if (version === 'not-found') return 'not-found' as const
-  return { recipe, version }
+// An AI call, paid for before it is made and given back if it produced nothing. The
+// allowance is spent in the same transaction that checks it — checked first and
+// recorded after the answer, two calls landing together both passed the check on the
+// same count — and refunded when the call throws (a Gemini failure must not cost the
+// cook a quota) or when `miss` says the answer is not one (a recipe gone, a source
+// with no recipe in it).
+const billed = async <T>(
+  userId: UserId,
+  plan: Plan,
+  action: AiAction,
+  call: () => Promise<T>,
+  miss: (answer: T) => boolean,
+): Promise<T | 'quota-exhausted'> => {
+  const spent = await QuotaCommand.spend(userId, plan, action)
+  if (spent === 'quota-exhausted') return spent
+  try {
+    const answer = await call()
+    if (miss(answer)) await QuotaCommand.refund(spent, action)
+    return answer
+  } catch (error) {
+    await QuotaCommand.refund(spent, action)
+    throw error
+  }
 }
+
+// One iteration on an existing version: the recipe/version pair it works from —
+// two keyed doc reads, no lineage scan — handed to `ask`, the whole of it billed as
+// one iteration. Written once so the three flows can never gate differently.
+const iteration = async <T>(
+  userId: UserId,
+  recipeId: RecipeId,
+  versionNumber: VersionNumber,
+  ask: (recipe: Recipe, version: RecipeVersion) => Promise<T>,
+) =>
+  billed(
+    userId,
+    await EntitlementQuery.planOf(userId),
+    'iteration',
+    async () => {
+      const recipe = await RecipeQuery.byId(userId, recipeId)
+      if (recipe === 'not-found') return 'not-found' as const
+      const version = await RecipeQuery.versionBy(recipeId, versionNumber)
+      if (version === 'not-found') return 'not-found' as const
+      return ask(recipe, version)
+    },
+    (answer) => answer === 'not-found',
+  )
 
 export namespace ProposalUseCase {
   // Ask the AI for the next version. What motivates it comes from the caller, not
@@ -240,29 +277,24 @@ export namespace ProposalUseCase {
     recipeId: RecipeId,
     versionNumber: VersionNumber,
     request: ProposalRequest,
-  ) => {
-    const loaded = await iterationOn(userId, recipeId, versionNumber)
-    if (typeof loaded === 'string') return loaded
-    const { recipe, version } = loaded
-
-    // The question is the same in both worlds — what was cooked, what was asked —
-    // but the answer is not, so each flow builds its own context and reads its own
-    // prompt. Recorded only after the call went through: it is billed, so it counts.
-    const asked = {
-      currentTips: version.tips.map((tip) => tip as string),
-      attempts: 'attempts' in request ? request.attempts : [],
-      ...('improvement' in request ? { improvement: request.improvement } : {}),
-    }
-    const { content } = version
-    const answered =
-      content.kind === 'coffee'
-        ? await coffeeAnswer(asked, recipe.method ?? 'other', content)
-        : await cookingAnswer(asked, recipe.category, content)
-    await QuotaCommand.record(userId, 'iteration')
-
-    const branded: Proposal = { basedOn: version.number, ...answered }
-    return branded
-  }
+  ) =>
+    iteration(userId, recipeId, versionNumber, async (recipe, version) => {
+      // The question is the same in both worlds — what was cooked, what was asked —
+      // but the answer is not, so each flow builds its own context and reads its own
+      // prompt.
+      const asked = {
+        currentTips: version.tips.map((tip) => tip as string),
+        attempts: 'attempts' in request ? request.attempts : [],
+        ...('improvement' in request ? { improvement: request.improvement } : {}),
+      }
+      const { content } = version
+      const answered =
+        content.kind === 'coffee'
+          ? await coffeeAnswer(asked, recipe.method ?? 'other', content)
+          : await cookingAnswer(asked, recipe.category, content)
+      const branded: Proposal = { basedOn: version.number, ...answered }
+      return branded
+    })
 
   // The next version answering the cook that was just run.
   export const fromAttempt = async (
@@ -292,26 +324,21 @@ export namespace ProposalUseCase {
     recipeId: RecipeId,
     versionNumber: VersionNumber,
     change: Remarks,
-  ) => {
-    const loaded = await iterationOn(userId, recipeId, versionNumber)
-    if (typeof loaded === 'string') return loaded
-    const { recipe, version } = loaded
-
-    const { content } = version
-    const answered =
-      content.kind === 'coffee'
-        ? await coffeeChangeAnswer(change, recipe.method ?? 'other', content)
-        : await cookingChangeAnswer(change, recipe.category, content)
-    await QuotaCommand.record(userId, 'iteration')
-
-    const branded: Proposal = {
-      basedOn: version.number,
-      rationale: '',
-      tips: version.tips,
-      ...answered,
-    }
-    return branded
-  }
+  ) =>
+    iteration(userId, recipeId, versionNumber, async (recipe, version) => {
+      const { content } = version
+      const answered =
+        content.kind === 'coffee'
+          ? await coffeeChangeAnswer(change, recipe.method ?? 'other', content)
+          : await cookingChangeAnswer(change, recipe.category, content)
+      const branded: Proposal = {
+        basedOn: version.number,
+        rationale: '',
+        tips: version.tips,
+        ...answered,
+      }
+      return branded
+    })
 
   // The complete tips list merging what the cook just typed into the version's
   // current tips — reworded and deduplicated by the AI. Ephemeral like the version
@@ -323,24 +350,20 @@ export namespace ProposalUseCase {
     recipeId: RecipeId,
     versionNumber: VersionNumber,
     requested: Remarks,
-  ) => {
-    const loaded = await iterationOn(userId, recipeId, versionNumber)
-    if (typeof loaded === 'string') return loaded
-    const { version } = loaded
-
-    const tips = await Ai.formatTips({
-      currentIngredients: contextIngredients(version.content),
-      currentSteps: contextSteps(version.content),
-      // A coffee grounds the rewording on its dials — it has nothing else.
-      ...(version.content.kind === 'coffee'
-        ? { currentParameters: contextParameters(version.content) }
-        : {}),
-      currentTips: version.tips.map((tip) => tip as string),
-      requested,
+  ) =>
+    iteration(userId, recipeId, versionNumber, async (_recipe, version) => {
+      const tips = await Ai.formatTips({
+        currentIngredients: contextIngredients(version.content),
+        currentSteps: contextSteps(version.content),
+        // A coffee grounds the rewording on its dials — it has nothing else.
+        ...(version.content.kind === 'coffee'
+          ? { currentParameters: contextParameters(version.content) }
+          : {}),
+        currentTips: version.tips.map((tip) => tip as string),
+        requested,
+      })
+      return tips.map(Tip)
     })
-    await QuotaCommand.record(userId, 'iteration')
-    return tips.map(Tip)
-  }
 
   // Analyze an import source (photos, a URL or raw text) into a structured preview.
   // The proposal domain is the sole caller of the import AI; confirming this preview
@@ -366,13 +389,16 @@ export namespace ProposalUseCase {
   ) => {
     const plan = await EntitlementQuery.planOf(userId)
     if (source.kind === 'url' && !allowsUrlImport(plan)) return 'premium-required' as const
-    if (await QuotaQuery.exhaustedFor(userId, plan, 'import')) return 'quota-exhausted' as const
-    const analysis = await analyze(source)
     // A source the AI found nothing in costs the cook nothing: it is a miss, not an
     // import. A cache hit does count — the quota is a product promise, not a meter
     // on our Gemini bill.
-    if (analysis !== 'no-recipe-found') await QuotaCommand.record(userId, 'import')
-    return analysis
+    return billed(
+      userId,
+      plan,
+      'import',
+      () => analyze(source),
+      (analysis) => analysis === 'no-recipe-found',
+    )
   }
 
   // Accept a proposal as an iteration: append version n+1 from the client-supplied

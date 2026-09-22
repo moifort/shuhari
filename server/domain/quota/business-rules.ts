@@ -56,6 +56,13 @@ export const exhausted = (plan: Plan, quota: Quota, action: AiAction): boolean =
 // Search grounding), so it is the feature the subscription pays for.
 export const allowsUrlImport = (plan: Plan): boolean => plan === 'premium'
 
+// The quota once a spent action has been given back — an AI call that produced
+// nothing. Never below zero: a refund cannot turn into credit.
+export const refunded = (quota: Quota, action: AiAction): Quota =>
+  action === 'import'
+    ? { ...quota, imports: Count(Math.max(0, quota.imports - 1)) }
+    : { ...quota, iterations: Count(Math.max(0, quota.iterations - 1)) }
+
 // The quota once the action has been spent.
 export const consumed = (quota: Quota, action: AiAction): Quota =>
   action === 'import'
