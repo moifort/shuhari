@@ -42,8 +42,12 @@ final class OvenViewModel {
     /// pushes: the oven answers a cloud API, so a cooking started here reads as
     /// RUNNING only seconds later — and one dialled in on the oven's own panel
     /// never reaches the sheet at all otherwise. Cancelled with the view's task,
-    /// so nothing polls behind a screen nobody is looking at.
+    /// so nothing polls behind a screen nobody is looking at — and never started when
+    /// the load found no oven: an account without one would otherwise ask every 30
+    /// seconds, for as long as any recipe sheet stays open, for an answer that is
+    /// always the same nothing.
     func watch() async {
+        guard isAvailable else { return }
         while !Task.isCancelled {
             // Ticking every second and deciding here, rather than sleeping the whole
             // interval: pressing start shortens it, and a sleep already under way
