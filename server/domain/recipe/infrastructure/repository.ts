@@ -1,4 +1,4 @@
-import type { WriteBatch } from 'firebase-admin/firestore'
+import type { Transaction } from 'firebase-admin/firestore'
 import { chunk } from 'lodash-es'
 import { categoryRank, methodRank } from '~/domain/recipe/business-rules'
 import type {
@@ -71,8 +71,12 @@ export const findAllByUser = (userId: UserId) =>
     return snap.docs.map((doc) => doc.data())
   })
 
-export const findBy = async (userId: UserId, id: RecipeId) => {
-  const doc = await recipes().doc(id).get()
+// Every read below takes an optional transaction: a command reads through it, so
+// what it writes back is a function of the state it read and nothing else (see
+// `transactionally`). Without one, a plain read.
+export const findBy = async (userId: UserId, id: RecipeId, tx?: Transaction) => {
+  const ref = recipes().doc(id)
+  const doc = tx ? await tx.get(ref) : await ref.get()
   const data = doc.data()
   return data && data.userId === userId ? data : undefined
 }
@@ -104,7 +108,7 @@ export const findUsersOf = (userId: UserId, id: RecipeId) =>
     return snap.docs.map((doc) => doc.data())
   })
 
-export const save = async (recipe: Recipe, batch?: WriteBatch) => {
+export const save = async (recipe: Recipe, tx?: Transaction) => {
   const ref = recipes().doc(recipe.id)
   // `categoryRank` and `methodRank` are storage-only, derived sort keys (never on
   // the domain type nor exposed via GraphQL): the single write point stamps them so
@@ -115,7 +119,7 @@ export const save = async (recipe: Recipe, batch?: WriteBatch) => {
     categoryRank: categoryRank(recipe.category),
     ...(recipe.method ? { methodRank: methodRank(recipe.method) } : {}),
   }
-  if (batch) batch.set(ref, stored)
+  if (tx) tx.set(ref, stored)
   else await ref.set(stored)
   return recipe
 }
@@ -174,8 +178,9 @@ export const findPage = async (userId: UserId, args: RecipePageArgs): Promise<Re
   return { recipes: hasMore ? docs.slice(0, args.limit) : docs, hasMore }
 }
 
-export const findVersion = async (recipeId: RecipeId, number: VersionNumber) => {
-  const doc = await versions().doc(versionDocId(recipeId, number)).get()
+export const findVersion = async (recipeId: RecipeId, number: VersionNumber, tx?: Transaction) => {
+  const ref = versions().doc(versionDocId(recipeId, number))
+  const doc = tx ? await tx.get(ref) : await ref.get()
   const data = doc.data()
   return data ? normalizeVersion(data) : undefined
 }
@@ -183,8 +188,9 @@ export const findVersion = async (recipeId: RecipeId, number: VersionNumber) => 
 // One recipe's lineage, for the commands that rewrite it (deleting a version has to
 // rebase its children). Reads go through the batched loader instead — see
 // `findAllVersionsByUser`.
-export const findVersionsOf = async (recipeId: RecipeId) => {
-  const snap = await versions().where('recipeId', '==', recipeId).orderBy('number', 'asc').get()
+export const findVersionsOf = async (recipeId: RecipeId, tx?: Transaction) => {
+  const query = versions().where('recipeId', '==', recipeId).orderBy('number', 'asc')
+  const snap = tx ? await tx.get(query) : await query.get()
   return snap.docs.map((doc) => normalizeVersion(doc.data()))
 }
 
@@ -218,10 +224,10 @@ export const findAllVersionsByUser = (userId: UserId) =>
 // attempt outcome once it is executed. The whole document is rewritten, `set` not
 // `update`, so the outcome fields land alongside the content — and a field the
 // domain no longer carries is erased rather than left behind.
-export const saveVersion = async (version: RecipeVersion, batch?: WriteBatch) => {
+export const saveVersion = async (version: RecipeVersion, tx?: Transaction) => {
   const ref = versions().doc(versionDocId(version.recipeId, version.number))
   const stored = storedVersion(version)
-  if (batch) batch.set(ref, stored)
+  if (tx) tx.set(ref, stored)
   else await ref.set(stored)
   return version
 }
@@ -229,16 +235,20 @@ export const saveVersion = async (version: RecipeVersion, batch?: WriteBatch) =>
 export const removeVersion = async (
   recipeId: RecipeId,
   number: VersionNumber,
-  batch?: WriteBatch,
+  tx?: Transaction,
 ) => {
   const ref = versions().doc(versionDocId(recipeId, number))
-  if (batch) batch.delete(ref)
+  if (tx) tx.delete(ref)
   else await ref.delete()
 }
 
-export const remove = async (id: RecipeId) => {
-  const versionSnap = await versions().where('recipeId', '==', id).get()
-  await deleteInBatches([recipes().doc(id), ...versionSnap.docs.map(({ ref }) => ref)])
+// The recipe and its whole lineage, in the caller's transaction — which has read
+// that lineage already: a transaction reads everything before it writes anything,
+// so a version added concurrently replays the deletion instead of surviving it as
+// an orphan.
+export const remove = (id: RecipeId, lineage: RecipeVersion[], tx: Transaction) => {
+  tx.delete(recipes().doc(id))
+  for (const { number } of lineage) tx.delete(versions().doc(versionDocId(id, number)))
 }
 
 // Restore: the cook's notebook becomes exactly what the export carried. The
@@ -273,8 +283,10 @@ export const replaceAllByUser = async (
 }
 
 export const removeAllByUser = async (userId: UserId) => {
-  const recipeSnap = await recipes().where('userId', '==', userId).get()
-  const versionSnap = await versions().where('userId', '==', userId).get()
+  const [recipeSnap, versionSnap] = await Promise.all([
+    recipes().where('userId', '==', userId).get(),
+    versions().where('userId', '==', userId).get(),
+  ])
   await deleteInBatches([
     ...recipeSnap.docs.map(({ ref }) => ref),
     ...versionSnap.docs.map(({ ref }) => ref),
@@ -285,16 +297,20 @@ export const removeAllByUser = async (userId: UserId) => {
 
 // The cook's coffee vocabulary, or an empty one when they have never saved a coffee.
 // One keyed document, so it costs the same read whatever the size of the library.
-export const findVocabulary = async (userId: UserId): Promise<CoffeeVocabulary> => {
-  const doc = await vocabularies().doc(userId).get()
+export const findVocabulary = async (
+  userId: UserId,
+  tx?: Transaction,
+): Promise<CoffeeVocabulary> => {
+  const ref = vocabularies().doc(userId)
+  const doc = tx ? await tx.get(ref) : await ref.get()
   return doc.data() ?? emptyVocabulary(userId)
 }
 
-// Written in the same batch as the version that taught it: a version saved without
-// its vocabulary, or the reverse, must not exist.
-export const saveVocabulary = async (vocabulary: CoffeeVocabulary, batch?: WriteBatch) => {
+// Written in the same transaction as the version that taught it: a version saved
+// without its vocabulary, or the reverse, must not exist.
+export const saveVocabulary = async (vocabulary: CoffeeVocabulary, tx?: Transaction) => {
   const ref = vocabularies().doc(vocabulary.userId)
-  if (batch) batch.set(ref, vocabulary)
+  if (tx) tx.set(ref, vocabulary)
   else await ref.set(vocabulary)
   return vocabulary
 }

@@ -41,7 +41,10 @@ export type FakeBatch = {
 export type DirectWrite = { type: 'set' | 'delete'; collection: string; id: string }
 
 export type FakeTransaction = {
-  get: (ref: FakeRef) => Promise<FakeSnapshot>
+  get: {
+    (ref: FakeRef): Promise<FakeSnapshot>
+    (query: FakeQuery): ReturnType<FakeQuery['get']>
+  }
   set: (ref: FakeRef, data: Doc) => FakeTransaction
   delete: (ref: FakeRef) => FakeTransaction
 }
@@ -240,28 +243,41 @@ export const createFakeFirestore = () => {
   const runTransaction = <T>(run: (tx: FakeTransaction) => Promise<T>): Promise<T> => {
     const result = transactionQueue.then(async () => {
       const writes: BatchOp[] = []
-      const tx: FakeTransaction = {
-        get: async (ref) => {
-          docReads += 1
-          const doc = docsOf(ref.collection).get(ref.id)
-          return { exists: doc !== undefined, id: ref.id, data: () => doc }
-        },
-        set: (ref, data) => {
+      // Real Firestore refuses a read once the transaction has written: every read
+      // has to come first. Mirrored, so a command that interleaves them fails here
+      // rather than only in production.
+      const read = <T>(get: () => Promise<T>) => {
+        if (writes.length > 0)
+          throw new Error('Firestore transactions require all reads before all writes')
+        return get()
+      }
+      const tx = {
+        get: (target: FakeRef | FakeQuery) =>
+          'where' in target
+            ? read(() => target.get())
+            : read(async () => {
+                docReads += 1
+                const doc = docsOf(target.collection).get(target.id)
+                return { exists: doc !== undefined, id: target.id, data: () => doc }
+              }),
+        set: (ref: FakeRef, data: Doc) => {
           writes.push({ type: 'set', ref, data })
           return tx
         },
-        delete: (ref) => {
+        delete: (ref: FakeRef) => {
           writes.push({ type: 'delete', ref })
           return tx
         },
-      }
+      } as FakeTransaction
       const value = await run(tx)
+      if (commitError) throw commitError
       // Applied only once the body succeeded — a throw leaves the store untouched.
       for (const op of writes) {
         if (op.type === 'set') docsOf(op.ref.collection).set(op.ref.id, op.data)
         else docsOf(op.ref.collection).delete(op.ref.id)
       }
-      transactions.push(writes)
+      // A transaction that only read commits nothing: it is not a write to count.
+      if (writes.length > 0) transactions.push(writes)
       return value
     })
     // The queue must keep flowing even when a transaction throws, or every later

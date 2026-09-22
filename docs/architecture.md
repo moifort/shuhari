@@ -59,7 +59,7 @@ server/
 │   ├── firebase.ts              # firebase-admin init + db()
 │   └── request-cache.ts         # per-request memoization
 ├── utils/
-│   ├── firestore.ts             # genericDataConverter / atomically / transactionally / bulkSave / deleteInBatches
+│   ├── firestore.ts             # genericDataConverter / transactionally / bulkSave / deleteInBatches
 │   ├── apollo.ts                # setApollo / useApollo holder
 │   └── input.ts
 └── test/fake-firestore.ts       # in-memory Firestore fake with read/write accounting
@@ -143,12 +143,13 @@ cook, keyed by `userId`, overwritten in place on every renewal; it also carries 
 cook only through it). `coffee-vocabularies` (`recipe` domain) holds one document per cook, keyed
 by `userId`: the free-text values already typed on a coffee — waters, machines, machine profiles,
 grinders, beans — that each field suggests. It is **denormalized on purpose**, written in the same
-batch as the coffee version that taught it, so a suggestion list costs one keyed read instead of a
+transaction as the coffee version that taught it, so a suggestion list costs one keyed read instead of a
 scan that would grow with the library.
 
-Multi-document writes are made atomic with `atomically` (a single committed `WriteBatch`); a
-counter, whose new value is a function of the stored one, uses `transactionally` instead (the
-AI quota, where a batch would let two calls landing together count one); import/restore use
+A command writes through `transactionally`: everything it writes back is a function of what it
+read — the AI quota's counter, the recipe's `lastVersionNumber`, the date, heart and standing a
+recipe derives from its lineage — so the read and the write are one unit, all-or-nothing, and two
+commands landing together are serialized instead of one overwriting the other; import/restore use
 `bulkSave` (bounded-concurrency individual sets, above the 500-op batch cap); deletes use
 `deleteInBatches`. See the [domain guide](./domain-guide.md).
 

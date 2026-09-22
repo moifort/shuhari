@@ -236,6 +236,11 @@ const baseAnalysis = (): CookingImportAnalysis => ({
 })
 
 let fake = resetFakeFirestore()
+
+// The collections written by every transaction since `since`, in order. A proposal
+// writes the quota it spent and nothing else: no version, no recipe.
+const writtenCollections = (since: number) =>
+  fake.transactions.slice(since).flatMap((writes) => writes.map(({ ref }) => ref.collection))
 beforeEach(() => {
   fake = resetFakeFirestore()
   lastCoffeeContext = undefined
@@ -271,7 +276,7 @@ describe('ProposalUseCase.fromAttempt', () => {
     if (typeof recipe === 'string') throw new Error('expected a recipe')
     const docReadsBefore = fake.docReads
     const queryReadsBefore = fake.queryReads
-    const batchesBefore = fake.batches.length
+    const transactionsBefore = fake.transactions.length
     const result = await ProposalUseCase.fromAttempt(userId, recipe.id, V1, ATTEMPT)
     if (typeof result === 'string') throw new Error('expected a proposal')
 
@@ -297,7 +302,7 @@ describe('ProposalUseCase.fromAttempt', () => {
     // is accepted.
     expect(fake.docReads - docReadsBefore).toBe(5)
     expect(fake.queryReads - queryReadsBefore).toBe(0)
-    expect(fake.batches.length).toBe(batchesBefore)
+    expect(writtenCollections(transactionsBefore)).toEqual(['ai-quotas'])
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.rating).toBeUndefined()
   })
 
@@ -432,7 +437,7 @@ describe('ProposalUseCase.fromImprovement', () => {
     const recipe = await RecipeCommand.create(userId, recipeInput())
     if (typeof recipe === 'string') throw new Error('expected a recipe')
     const docReadsBefore = fake.docReads
-    const batchesBefore = fake.batches.length
+    const transactionsBefore = fake.transactions.length
 
     const result = await ProposalUseCase.fromImprovement(
       userId,
@@ -453,7 +458,7 @@ describe('ProposalUseCase.fromImprovement', () => {
     // quota read twice — once to check the limit, once inside the recording
     // transaction.
     expect(fake.docReads - docReadsBefore).toBe(5)
-    expect(fake.batches.length).toBe(batchesBefore)
+    expect(writtenCollections(transactionsBefore)).toEqual(['ai-quotas'])
   })
 
   test('returns not-found for an unknown recipe', async () => {
@@ -471,7 +476,7 @@ describe('ProposalUseCase.fromChange', () => {
     })
     if (typeof recipe === 'string') throw new Error('expected a recipe')
     const docReadsBefore = fake.docReads
-    const batchesBefore = fake.batches.length
+    const transactionsBefore = fake.transactions.length
 
     const result = await ProposalUseCase.fromChange(
       userId,
@@ -500,7 +505,7 @@ describe('ProposalUseCase.fromChange', () => {
     // Same budget as any other iteration — entitlement, recipe pointer, version,
     // and the quota twice — and nothing written until the proposal is accepted.
     expect(fake.docReads - docReadsBefore).toBe(5)
-    expect(fake.batches.length).toBe(batchesBefore)
+    expect(writtenCollections(transactionsBefore)).toEqual(['ai-quotas'])
   })
 
   test('applies a change to a coffee through the coffee prompt', async () => {
@@ -540,7 +545,7 @@ describe('ProposalUseCase.fromTips', () => {
     const recipe = await RecipeCommand.create(userId, recipeInput())
     if (typeof recipe === 'string') throw new Error('expected a recipe')
     const docReadsBefore = fake.docReads
-    const batchesBefore = fake.batches.length
+    const transactionsBefore = fake.transactions.length
 
     const result = await ProposalUseCase.fromTips(
       userId,
@@ -555,7 +560,7 @@ describe('ProposalUseCase.fromTips', () => {
     // and the quota twice (the limit check, then the recording transaction) — and
     // the version's own tips are left exactly as they were until updateTips.
     expect(fake.docReads - docReadsBefore).toBe(5)
-    expect(fake.batches.length).toBe(batchesBefore)
+    expect(writtenCollections(transactionsBefore)).toEqual(['ai-quotas'])
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.tips).toEqual([])
   })
 
@@ -574,11 +579,11 @@ describe('ProposalUseCase.fromTips', () => {
 
 describe('ProposalUseCase.importCooking', () => {
   test('returns the AI import analysis without persisting a recipe', async () => {
-    const batchesBefore = fake.batches.length
+    const transactionsBefore = fake.transactions.length
     const result = await ProposalUseCase.importCooking(userId, { kind: 'text', text: 'Blanquette' })
 
     expect(result).toEqual(baseAnalysis())
-    expect(fake.batches.length).toBe(batchesBefore)
+    expect(writtenCollections(transactionsBefore)).toEqual(['ai-quotas'])
     expect(fake.snapshot('recipes').size).toBe(0)
   })
 

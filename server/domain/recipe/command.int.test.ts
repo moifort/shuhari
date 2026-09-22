@@ -88,9 +88,9 @@ describe('RecipeCommand.create', () => {
     expect(v1).not.toHaveProperty('rating')
     expect(v1).not.toHaveProperty('remarks')
     expect(v1).not.toHaveProperty('photoPath')
-    // Both docs land in a single batch (all-or-nothing).
+    // Both docs land in a single transaction (all-or-nothing).
     expect(fake.directWrites).toEqual([])
-    expect(fake.batches.length).toBe(1)
+    expect(fake.transactions.length).toBe(1)
   })
 
   test('a Thermomix recipe is born tagged so, a dish filed under nothing', async () => {
@@ -139,7 +139,7 @@ describe('RecipeCommand.create', () => {
     })
     expect(mismatch).toBe('content-type-mismatch')
     // Nothing written on the rejected create.
-    expect(fake.batches.length).toBe(0)
+    expect(fake.transactions.length).toBe(0)
     expect(fake.directWrites).toEqual([])
   })
 
@@ -159,7 +159,7 @@ describe('RecipeCommand.create', () => {
     })
     expect(dishWithMethod).toBe('method-mismatch')
 
-    expect(fake.batches.length).toBe(0)
+    expect(fake.transactions.length).toBe(0)
     expect(fake.directWrites).toEqual([])
   })
 
@@ -220,7 +220,7 @@ describe('RecipeCommand.copyVersion', () => {
 
     // What the setup wrote (the cautions land as a direct save) is not what this
     // test is about: only the writes the copy itself adds are counted.
-    const batches = fake.batches.length
+    const transactions = fake.transactions.length
     const directWrites = fake.directWrites.length
 
     const copy = await RecipeCommand.copyVersion(userId, {
@@ -253,9 +253,9 @@ describe('RecipeCommand.copyVersion', () => {
     expect(v1).not.toHaveProperty('change')
     expect(v1).not.toHaveProperty('basedOn')
     expect(v1).not.toHaveProperty('toTest')
-    // Both docs land in a single batch (all-or-nothing).
+    // Both docs land in a single transaction (all-or-nothing).
     expect(fake.directWrites.length).toBe(directWrites)
-    expect(fake.batches.length).toBe(batches + 1)
+    expect(fake.transactions.length).toBe(transactions + 1)
   })
 
   test('leaves the recipe copied exactly as it was', async () => {
@@ -329,7 +329,7 @@ describe('RecipeCommand.copyVersion', () => {
   test('answers not-found for another cook’s recipe and for a version that does not exist', async () => {
     const source = await RecipeCommand.create(userId, newInput())
     if (typeof source === 'string') throw new Error('expected a recipe')
-    const writes = fake.batches.length
+    const writes = fake.transactions.length
 
     const stranger = await RecipeCommand.copyVersion('user-2' as UserId, {
       recipeId: source.id,
@@ -344,7 +344,7 @@ describe('RecipeCommand.copyVersion', () => {
 
     expect(stranger).toBe('not-found')
     expect(missing).toBe('not-found')
-    expect(fake.batches.length).toBe(writes)
+    expect(fake.transactions.length).toBe(writes)
     expect(fake.directWrites).toEqual([])
   })
 })
@@ -376,8 +376,29 @@ describe('RecipeCommand.addVersion', () => {
     expect(v2).not.toHaveProperty('executedAt')
     expect(v2).not.toHaveProperty('rating')
     expect(v2).not.toHaveProperty('remarks')
-    // The version + recipe bump land in a single batch (all-or-nothing).
+    // The version + recipe bump land in a single transaction (all-or-nothing).
     expect(fake.directWrites).toEqual([])
+  })
+
+  test('allocates a number of its own to each of two acceptances landing together', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    const accepted = (change: string) =>
+      RecipeCommand.addVersion(userId, recipe.id, {
+        change,
+        basedOn: 1 as VersionNumber,
+        content: dishContent(),
+        tips: [],
+      })
+
+    // Read outside a transaction, both would allocate v2 and the second would
+    // overwrite the first.
+    await Promise.all([accepted('Moins de sel'), accepted('Plus de poivre')])
+
+    const versions = fake.snapshot('recipe-versions')
+    expect(versions.get(`${recipe.id}_2`)?.change).toBe('Moins de sel')
+    expect(versions.get(`${recipe.id}_3`)?.change).toBe('Plus de poivre')
+    expect(fake.snapshot('recipes').get(recipe.id)?.lastVersionNumber).toBe(3)
   })
 
   test('needs no carrying for the linked recipes — they are held by the recipe', async () => {
@@ -675,7 +696,7 @@ describe('RecipeCommand.removeVersion', () => {
 
   test('deletes the version and re-threads its children onto its base, atomically', async () => {
     const recipe = await threeVersionRecipe()
-    const batchesBefore = fake.batches.length
+    const transactionsBefore = fake.transactions.length
 
     const result = await RecipeCommand.removeVersion(userId, recipe.id, 2 as VersionNumber)
     expect(result).toBeUndefined()
@@ -685,9 +706,9 @@ describe('RecipeCommand.removeVersion', () => {
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_3`)?.basedOn).toBe(1 as VersionNumber)
     // The allocator never rolls back: the next iteration must not reuse a number.
     expect(fake.snapshot('recipes').get(recipe.id)?.lastVersionNumber).toBe(3 as VersionNumber)
-    // Re-threading + delete + recipe bump land in a single batch (all-or-nothing).
+    // Re-threading + delete + recipe bump land in a single transaction (all-or-nothing).
     expect(fake.directWrites).toEqual([])
-    expect(fake.batches.length).toBe(batchesBefore + 1)
+    expect(fake.transactions.length).toBe(transactionsBefore + 1)
   })
 
   test('deleting a root leaves its children iterating on nothing', async () => {
@@ -754,7 +775,7 @@ describe('RecipeCommand.recordAttempt', () => {
   test('folds the outcome onto v1 and returns the executed version', async () => {
     const recipe = await RecipeCommand.create(userId, newInput())
     if (typeof recipe === 'string') throw new Error('expected a recipe')
-    const batchesBefore = fake.batches.length
+    const transactionsBefore = fake.transactions.length
 
     const result = await RecipeCommand.recordAttempt(userId, {
       recipeId: recipe.id,
@@ -773,9 +794,9 @@ describe('RecipeCommand.recordAttempt', () => {
     const stored = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)
     expect(stored?.rating).toBe(5 as Rating)
     expect(stored?.executedAt).toBeInstanceOf(Date)
-    // Outcome + recipe bump land in a single batch (all-or-nothing).
+    // Outcome + recipe bump land in a single transaction (all-or-nothing).
     expect(fake.directWrites).toEqual([])
-    expect(fake.batches.length).toBe(batchesBefore + 1)
+    expect(fake.transactions.length).toBe(transactionsBefore + 1)
   })
 
   test('cooking a version takes it off the to-cook list', async () => {
@@ -905,7 +926,7 @@ describe('RecipeCommand.updateTips', () => {
   test('replaces the tips in place — no new version, everything else untouched', async () => {
     const recipe = await RecipeCommand.create(userId, newInput())
     if (typeof recipe === 'string') throw new Error('expected a recipe')
-    const batchesBefore = fake.batches.length
+    const transactionsBefore = fake.transactions.length
 
     const result = await RecipeCommand.updateTips(
       userId,
@@ -921,9 +942,9 @@ describe('RecipeCommand.updateTips', () => {
     // Refining the advice never creates a version, and the content rides along.
     expect(fake.snapshot('recipes').get(recipe.id)?.lastVersionNumber).toBe(1 as VersionNumber)
     expect(stored?.content).toEqual(dishContent())
-    // Tips + recipe bump land in a single batch (all-or-nothing).
+    // Tips + recipe bump land in a single transaction (all-or-nothing).
     expect(fake.directWrites).toEqual([])
-    expect(fake.batches.length).toBe(batchesBefore + 1)
+    expect(fake.transactions.length).toBe(transactionsBefore + 1)
   })
 
   test('full-replacement: [] clears the section, the outcome stays', async () => {
@@ -970,7 +991,7 @@ describe('RecipeCommand.updateRating', () => {
       photoPath: 'photos/first-try.jpg',
     })
     const executedAt = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.executedAt as Date
-    const batchesBefore = fake.batches.length
+    const transactionsBefore = fake.transactions.length
 
     const result = await RecipeCommand.updateRating(
       userId,
@@ -989,10 +1010,10 @@ describe('RecipeCommand.updateRating', () => {
     const stored = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)
     expect(stored?.rating).toBe(4 as Rating)
     expect(stored?.photoPath).toBe('photos/first-try.jpg')
-    // No version created, and version + recipe bump land in one batch.
+    // No version created, and version + recipe bump land in one transaction.
     expect(fake.snapshot('recipes').get(recipe.id)?.lastVersionNumber).toBe(1 as VersionNumber)
     expect(fake.directWrites).toEqual([])
-    expect(fake.batches.length).toBe(batchesBefore + 1)
+    expect(fake.transactions.length).toBe(transactionsBefore + 1)
   })
 
   test('rating a version never cooked marks it cooked and off the to-cook list', async () => {
@@ -1120,7 +1141,7 @@ describe('updateCoffeeParameters', () => {
     tips: [],
   })
 
-  test('corrects the version in place and teaches the vocabulary, in one batch', async () => {
+  test('corrects the version in place and teaches the vocabulary, in one transaction', async () => {
     const recipe = await RecipeCommand.create(userId, coffeeInput())
     if (typeof recipe === 'string') throw new Error('expected a recipe')
 
@@ -1145,11 +1166,11 @@ describe('updateCoffeeParameters', () => {
   test('writes the version, the recipe and the vocabulary all-or-nothing', async () => {
     const recipe = await RecipeCommand.create(userId, coffeeInput())
     if (typeof recipe === 'string') throw new Error('expected a recipe')
-    const batchesBefore = fake.batches.length
+    const transactionsBefore = fake.transactions.length
 
     await RecipeCommand.updateCoffeeParameters(userId, recipe.id, V1, emptyCoffeeParameters)
 
-    expect(fake.batches.length).toBe(batchesBefore + 1)
+    expect(fake.transactions.length).toBe(transactionsBefore + 1)
     expect(fake.directWrites).toEqual([])
   })
 
@@ -1216,12 +1237,12 @@ describe('linkComponent / unlinkComponent', () => {
       tips: [],
     })
 
-  test('links a recipe at the weight it is used here, in a single batch', async () => {
+  test('links a recipe at the weight it is used here, in a single transaction', async () => {
     const parent = await bread()
     const linked = await poolish()
     if (typeof parent === 'string' || typeof linked === 'string')
       throw new Error('expected recipes')
-    const batchesBefore = fake.batches.length
+    const transactionsBefore = fake.transactions.length
 
     const updated = await RecipeCommand.linkComponent(userId, parent.id, linked.id, scale(0.2))
     if (typeof updated === 'string') throw new Error(`expected a recipe, got ${updated}`)
@@ -1230,7 +1251,7 @@ describe('linkComponent / unlinkComponent', () => {
     // The flat ids ride along, or `usedBy` would answer nothing.
     expect(updated.componentIds).toEqual([linked.id])
     expect(storedComponents(parent.id)).toEqual([{ recipe: linked.id, scale: scale(0.2) }])
-    expect(fake.batches.length).toBe(batchesBefore + 1)
+    expect(fake.transactions.length).toBe(transactionsBefore + 1)
     expect(fake.directWrites).toEqual([])
   })
 
@@ -1781,10 +1802,10 @@ describe('RecipeCommand.updateIngredients', () => {
     expect((updated.content as DishContent).steps).toEqual(steps('Saisir', 'Mijoter'))
   })
 
-  test('restamps the version and the recipe, in one batch', async () => {
+  test('restamps the version and the recipe, in one transaction', async () => {
     const recipe = await RecipeCommand.create(userId, withFlour())
     if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
-    const batchesBefore = fake.batches.length
+    const transactionsBefore = fake.transactions.length
 
     const updated = await RecipeCommand.updateIngredients(userId, recipe.id, V1, [
       ingredient('Farine', '200 g'),
@@ -1792,7 +1813,7 @@ describe('RecipeCommand.updateIngredients', () => {
     if (typeof updated === 'string') throw new Error(`expected a version, got ${updated}`)
 
     expect(fake.snapshot('recipes').get(recipe.id as string)?.updatedAt).toEqual(updated.updatedAt)
-    expect(fake.batches.length).toBe(batchesBefore + 1)
+    expect(fake.transactions.length).toBe(transactionsBefore + 1)
     expect(fake.directWrites).toEqual([])
   })
 
@@ -1880,7 +1901,7 @@ describe('RecipeCommand.updateMiseEnPlace', () => {
     })
   })
 
-  test('keeps a rated outcome and restamps in one batch', async () => {
+  test('keeps a rated outcome and restamps in one transaction', async () => {
     const recipe = await RecipeCommand.create(userId, newInput())
     if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
     await RecipeCommand.recordAttempt(userId, {
@@ -1888,7 +1909,7 @@ describe('RecipeCommand.updateMiseEnPlace', () => {
       versionNumber: V1,
       rating: 4 as Rating,
     })
-    const batchesBefore = fake.batches.length
+    const transactionsBefore = fake.transactions.length
 
     const updated = await RecipeCommand.updateMiseEnPlace(userId, recipe.id, V1, [])
     if (typeof updated === 'string') throw new Error(`expected a version, got ${updated}`)
@@ -1896,7 +1917,7 @@ describe('RecipeCommand.updateMiseEnPlace', () => {
     expect(updated.rating).toBe(4 as Rating)
     expect((updated.content as DishContent).miseEnPlace).toEqual([])
     expect(fake.snapshot('recipes').get(recipe.id as string)?.updatedAt).toEqual(updated.updatedAt)
-    expect(fake.batches.length).toBe(batchesBefore + 1)
+    expect(fake.transactions.length).toBe(transactionsBefore + 1)
     expect(fake.directWrites).toEqual([])
   })
 
@@ -2002,16 +2023,16 @@ describe('RecipeCommand.updateSteps', () => {
     expect((updated.content as DishContent).ingredients).toEqual([flour])
   })
 
-  test('restamps the version and the recipe, in one batch', async () => {
+  test('restamps the version and the recipe, in one transaction', async () => {
     const recipe = await RecipeCommand.create(userId, newInput())
     if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
-    const batchesBefore = fake.batches.length
+    const transactionsBefore = fake.transactions.length
 
     const updated = await RecipeCommand.updateSteps(userId, recipe.id, V1, [step('Enfourner')])
     if (typeof updated === 'string') throw new Error(`expected a version, got ${updated}`)
 
     expect(fake.snapshot('recipes').get(recipe.id as string)?.updatedAt).toEqual(updated.updatedAt)
-    expect(fake.batches.length).toBe(batchesBefore + 1)
+    expect(fake.transactions.length).toBe(transactionsBefore + 1)
     expect(fake.directWrites).toEqual([])
   })
 

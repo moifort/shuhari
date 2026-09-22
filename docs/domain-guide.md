@@ -108,11 +108,12 @@ See [branded-types.md](./branded-types.md) for the full pattern (string coercion
 > bounded context (no other domain may import it — enforced).
 
 This is the **only** file allowed to use `db()`. Wrap every collection with
-`genericDataConverter<T>()`. Scope every query by `userId`. Accept an optional `WriteBatch` so
-callers can enlist the write in an atomic commit. Memoize full scans with `memoizedPerRequest`.
+`genericDataConverter<T>()`. Scope every query by `userId`. Accept an optional `Transaction` —
+on the reads a command makes as well as on the writes — so a command reads and writes as one
+unit. Memoize full scans with `memoizedPerRequest`.
 
 ```ts
-import type { WriteBatch } from 'firebase-admin/firestore'
+import type { Transaction } from 'firebase-admin/firestore'
 import type { Bean, BeanId } from '~/domain/bean/types'
 import type { UserId } from '~/domain/shared/types'
 import { db } from '~/system/firebase'
@@ -127,15 +128,16 @@ export const findAllByUser = (userId: UserId): Promise<Bean[]> =>
     return snap.docs.map((doc) => doc.data())
   })
 
-export const findBy = async (userId: UserId, id: BeanId): Promise<Bean | undefined> => {
-  const doc = await beans().doc(id).get()
+export const findBy = async (userId: UserId, id: BeanId, tx?: Transaction) => {
+  const ref = beans().doc(id)
+  const doc = tx ? await tx.get(ref) : await ref.get()
   const data = doc.data()
   return data && data.userId === userId ? data : undefined
 }
 
-export const save = async (bean: Bean, batch?: WriteBatch): Promise<Bean> => {
+export const save = async (bean: Bean, tx?: Transaction): Promise<Bean> => {
   const ref = beans().doc(bean.id)
-  if (batch) batch.set(ref, bean)
+  if (tx) tx.set(ref, bean)
   else await ref.set(bean)
   return bean
 }
@@ -170,13 +172,15 @@ export const findManyByIds = async (userId: UserId, ids: RecipeId[]): Promise<Re
 Firestore helpers live in `server/utils/firestore.ts`:
 
 - `genericDataConverter<T>()` — typed reads; `Timestamp` → `Date`.
-- `atomically(batch => …)` — one committed `WriteBatch`, all-or-nothing. Reads inside see
-  pre-batch state, so it is for writes that depend on nothing read.
 - `transactionally(tx => …)` — read-modify-write that cannot lose an update: the reads see
-  current state and Firestore replays the body when a concurrent writer touched what it read.
-  Reserved for the writes whose new value is a function of the stored one — a counter. Costs one
-  extra document read (the transactional one cannot be the memoized one), which is why it is not
-  the default.
+  current state, every write lands or none does, and Firestore replays the body when a concurrent
+  writer touched what it read. **Every command whose writes are a function of what it read goes
+  through it**: a counter (the AI quota), an allocated number (`lastVersionNumber`), an aggregate
+  whose fields are derived from its satellites (a recipe's date, heart and standing, read off its
+  lineage). A batch would let two commands landing together each write a state that ignores the
+  other. Reads come first, writes after — Firestore refuses a read once the transaction has
+  written, and the fake does too. The transactional read cannot be the memoized one, so a command
+  that already read the same document through the request cache pays it twice.
 - `bulkSave(rows, save)` — bounded-concurrency individual sets (import/restore beyond the 500-op cap).
 - `deleteInBatches(refs)` — chunked batch deletes.
 
@@ -207,8 +211,8 @@ Name reads for the concept (`all`, `byId`, `versionsOf`) — never `getAll`/`fet
 > **Evans:** the public write interface. **Wlaschin:** Railway-Oriented Programming — the
 > return type enumerates every legitimate outcome (the entity, or a string sentinel).
 
-Return the entity on success, a bare string sentinel on an expected business miss. Multi-doc
-writes go through `atomically`. See [error-handling.md](./error-handling.md).
+Return the entity on success, a bare string sentinel on an expected business miss. A command
+that reads before it writes does both inside `transactionally`. See [error-handling.md](./error-handling.md).
 
 ```ts
 import * as repository from '~/domain/bean/infrastructure/repository'
@@ -237,13 +241,18 @@ export namespace BeanCommand {
 }
 ```
 
-Atomic multi-doc write (from `recipe`), enlisting both docs in one batch:
+Read-modify-write (from `recipe`): the recipe and its lineage are read through the
+transaction, and what is written back is derived from them:
 
 ```ts
-return atomically(async (batch) => {
-  await repository.save(recipe, batch)
-  await repository.saveVersion(firstVersion(recipe, origin, input), batch)
-  return recipe
+return transactionally(async (tx) => {
+  const recipe = await repository.findBy(userId, recipeId, tx)
+  if (!recipe) return 'not-found' as const
+  const lineage = await repository.findVersionsOf(recipeId, tx)
+  const version = nextVersion(recipe, lineage, input)
+  await repository.saveVersion(version, tx)
+  await repository.save(restamped(recipe, [...lineage, version]), tx)
+  return version
 })
 ```
 
@@ -317,7 +326,10 @@ test('add persists a bean', async () => {
 })
 ```
 
-- **Atomicity**: `expect(fake.directWrites).toEqual([]); expect(fake.batches.length).toBe(1)`.
+- **Atomicity**: `expect(fake.directWrites).toEqual([]); expect(fake.transactions.length).toBe(1)`
+  (`fake.transactions` records the transactions that wrote something, a read-only one commits
+  nothing). A race is tested by firing two commands with `Promise.all`: the fake runs
+  transactions one at a time, the guarantee Firestore reaches by replaying.
 - **Read budget**: `const before = fake.queryReads; …; expect(fake.queryReads - before).toBe(2)`.
 - **Cache**: a second read in the same request should add `0` to `fake.queryReads`.
 
@@ -522,7 +534,7 @@ needed for the new value alone (it is additive — no existing document carries 
 - [ ] `primitives.ts` with Zod constructors (imports `ts-brand` + `zod`)
 - [ ] `infrastructure/repository.ts` (the only `db()` site; converter on every collection; `userId`-scoped)
 - [ ] `query.ts` (public read namespace, `'not-found'` sentinel)
-- [ ] `command.ts` (public write namespace, sentinels, `atomically` for multi-doc writes)
+- [ ] `command.ts` (public write namespace, sentinels, `transactionally` for read-modify-write)
 - [ ] `infrastructure/graphql/{enums,types,inputs,queries,mutations}.ts`
 - [ ] New branded scalars registered in `shared/graphql/{builder,scalars}.ts`
 - [ ] Satellite fields (if any) resolved through a loader in `shared/graphql/loaders.ts`

@@ -133,9 +133,12 @@ Whatever the document store, three patterns carry most of the weight:
 - **Aggregate root + append-only satellite**: a small pointer document per aggregate, plus a heavy
   collection of immutable rows keyed deterministically (`${aggregateId}_${n}`). The aggregate's
   derived state is computed from the satellite, not written onto the root.
-- **Atomic multi-document writes**: a handful of writes enlist into one batch committed once
-  (all-or-nothing). Bulk import/restore, which exceeds a batch's operation cap, uses
-  bounded-concurrency individual writes instead.
+- **Read-modify-write in a transaction**: a command whose writes are derived from what it read —
+  a counter, an allocated sequence number, an aggregate's fields derived from its satellites —
+  reads and writes inside one transaction, all-or-nothing. A batch commits atomically but reads
+  outside it, so two commands landing together each write a state that ignores the other: a
+  sequence number allocated twice is a row silently overwritten. Bulk import/restore, which exceeds
+  a transaction's operation cap, uses bounded-concurrency individual writes instead.
 
 Every query is scoped by the owner's id — multi-tenancy is not a filter the caller can forget.
 
@@ -155,10 +158,11 @@ against production.
 
 ## Tests state the budget, not just the behaviour
 
-Integration tests run against an in-memory fake of the store that records reads, writes and
-batches. Assert three things:
+Integration tests run against an in-memory fake of the store that records reads, writes,
+batches and transactions. Assert three things:
 
 - **Behaviour** — what was persisted.
-- **Atomicity** — no direct writes escaped the batch (`directWrites` empty, one batch committed).
+- **Atomicity** — no direct writes escaped the transaction (`directWrites` empty, one committed).
+  The fake runs transactions one at a time, so two commands fired together test the race.
 - **Read budget** — the exact number of reads a call costs, and that a second identical read within
   the request costs zero. Without this assertion, an N+1 slips in the day someone adds a field.

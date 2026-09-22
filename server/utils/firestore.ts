@@ -4,7 +4,6 @@ import type {
   FirestoreDataConverter,
   QueryDocumentSnapshot,
   Transaction,
-  WriteBatch,
 } from 'firebase-admin/firestore'
 import { chunk } from 'lodash-es'
 import { db } from '~/system/firebase'
@@ -61,21 +60,11 @@ export const deleteInBatches = async (refs: DocumentReference[]): Promise<void> 
   }
 }
 
-// Runs `enlist` against a fresh WriteBatch and commits it once: either every
-// enlisted write lands or none does. Reads inside `enlist` see pre-batch state —
-// batched writes are invisible until commit. Firestore caps a batch at 500
-// writes; callers enlist a handful of documents, far below the cap.
-export const atomically = async <T>(enlist: (batch: WriteBatch) => Promise<T>): Promise<T> => {
-  const batch = db().batch()
-  const result = await enlist(batch)
-  await batch.commit()
-  return result
-}
-
-// Read-modify-write that cannot lose an update. Unlike `atomically`, the reads
-// inside DO see the current state, and Firestore replays the whole body when a
-// concurrent writer touched a document it read — so `run` must be free of side
-// effects outside the transaction, and every read must come before every write.
-// This is what a counter needs; a write that depends on nothing read stays a batch.
+// Read-modify-write that cannot lose an update: the reads inside see the current
+// state, and Firestore replays the whole body when a concurrent writer touched a
+// document it read — so `run` must be free of side effects outside the
+// transaction, and every read must come before every write. Any write whose value
+// is a function of what is stored goes through here: a counter, an allocated
+// number, an aggregate whose fields are derived from its satellites.
 export const transactionally = <T>(run: (tx: Transaction) => Promise<T>): Promise<T> =>
   db().runTransaction(run)
