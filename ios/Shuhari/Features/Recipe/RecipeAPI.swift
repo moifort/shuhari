@@ -90,36 +90,6 @@ enum RecipeAPI {
         )
     }
 
-    /// Retouch the aggregate: rename it, refile it under another course or another
-    /// brew method, retag it, or any combination. A field left nil is left alone —
-    /// `tags` is the complete list, so `[]` takes every tag off. The type itself is
-    /// fixed for good, and the heart is worn by a version.
-    static func updateRecipe(
-        id: String,
-        title: String? = nil,
-        category: DishCategory? = nil,
-        method: BrewMethod? = nil,
-        tags: [Tag]? = nil
-    ) async throws {
-        let input = ShuhariGraphQL.UpdateRecipeInput(
-            category: GraphQLHelpers.graphQLNullable(category?.graphQLValue),
-            method: GraphQLHelpers.graphQLNullable(method?.graphQLValue),
-            tags: GraphQLHelpers.graphQLNullable(
-                tags?.map {
-                    ShuhariGraphQL.TagInput(
-                        icon: GraphQLHelpers.graphQLNullable($0.icon?.graphQLValue),
-                        label: $0.label
-                    )
-                }
-            ),
-            title: GraphQLHelpers.graphQLNullable(title)
-        )
-        _ = try await GraphQLHelpers.perform(
-            GraphQLClient.shared.apollo,
-            mutation: ShuhariGraphQL.UpdateRecipeMutation(id: id, input: input)
-        )
-    }
-
     /// Heart one version, or take the heart off it. The recipe leads its course in
     /// the library as soon as any of its versions is hearted.
     static func updateFavorite(id: String, versionNumber: Int, favorite: Bool) async throws {
@@ -129,119 +99,6 @@ enum RecipeAPI {
                 recipeId: id,
                 versionNumber: versionNumber,
                 favorite: favorite
-            )
-        )
-    }
-
-    /// Correct one version's rating — the verdict mistyped, or never logged. In
-    /// place: no version created, and the photo and remarks of the attempt stay
-    /// (unlike recording an attempt, which replaces the whole outcome). A version
-    /// that had never been cooked counts as cooked from here on.
-    static func updateRating(recipeId: String, versionNumber: Int, rating: Int) async throws {
-        _ = try await GraphQLHelpers.perform(
-            GraphQLClient.shared.apollo,
-            mutation: ShuhariGraphQL.UpdateRatingMutation(
-                recipeId: recipeId,
-                versionNumber: versionNumber,
-                rating: rating
-            )
-        )
-    }
-
-    /// Correct one coffee version's parameters — the roast date read wrong, the
-    /// grinder left out. Full replacement, in place: no version is created and the
-    /// brewing steps are untouched.
-    static func updateCoffeeParameters(
-        recipeId: String,
-        versionNumber: Int,
-        parameters: CoffeeParameters
-    ) async throws {
-        _ = try await GraphQLHelpers.perform(
-            GraphQLClient.shared.apollo,
-            mutation: ShuhariGraphQL.UpdateCoffeeParametersMutation(
-                recipeId: recipeId,
-                versionNumber: versionNumber,
-                parameters: GraphQLHelpers.coffeeParametersInput(parameters)
-            )
-        )
-    }
-
-    /// Correct one version's shopping list — in place, no version created: the plate
-    /// cooked is the same one, so its rating stays valid. Full replacement, so this is
-    /// also how a line is added, deleted or moved.
-    static func updateIngredients(
-        recipeId: String,
-        versionNumber: Int,
-        ingredients: [Ingredient]
-    ) async throws {
-        _ = try await GraphQLHelpers.perform(
-            GraphQLClient.shared.apollo,
-            mutation: ShuhariGraphQL.UpdateIngredientsMutation(
-                recipeId: recipeId,
-                versionNumber: versionNumber,
-                ingredients: ingredients.map {
-                    ShuhariGraphQL.IngredientInput(name: $0.name, quantity: $0.quantity)
-                }
-            )
-        )
-    }
-
-    /// Correct one version's mise en place — in place, no version created. The AI
-    /// writes it, the cook has the last word on it.
-    static func updateMiseEnPlace(
-        recipeId: String,
-        versionNumber: Int,
-        miseEnPlace: [String]
-    ) async throws {
-        _ = try await GraphQLHelpers.perform(
-            GraphQLClient.shared.apollo,
-            mutation: ShuhariGraphQL.UpdateMiseEnPlaceMutation(
-                recipeId: recipeId,
-                versionNumber: versionNumber,
-                miseEnPlace: miseEnPlace
-            )
-        )
-    }
-
-    /// Correct one version's method — in place, no version created. The machine
-    /// settings ride along and the server keeps them only on a Thermomix version; a
-    /// plain step sends none at all rather than an empty object.
-    static func updateSteps(
-        recipeId: String,
-        versionNumber: Int,
-        steps: [ThermomixStep]
-    ) async throws {
-        _ = try await GraphQLHelpers.perform(
-            GraphQLClient.shared.apollo,
-            mutation: ShuhariGraphQL.UpdateStepsMutation(
-                recipeId: recipeId,
-                versionNumber: versionNumber,
-                steps: steps.map { step in
-                    ShuhariGraphQL.VersionStepInput(
-                        settings: step.settings.isEmpty
-                            ? .null
-                            : .some(GraphQLHelpers.thermomixSettingsInput(step.settings)),
-                        text: step.text
-                    )
-                }
-            )
-        )
-    }
-
-    /// Correct one cooked version's oven settings — in place, no version created,
-    /// the steps untouched. Passing nil says the dish never bakes and clears the
-    /// profile outright.
-    static func updateOvenProfile(
-        recipeId: String,
-        versionNumber: Int,
-        oven: OvenProfile?
-    ) async throws {
-        _ = try await GraphQLHelpers.perform(
-            GraphQLClient.shared.apollo,
-            mutation: ShuhariGraphQL.UpdateOvenProfileMutation(
-                recipeId: recipeId,
-                versionNumber: versionNumber,
-                oven: GraphQLHelpers.ovenProfileInput(oven)
             )
         )
     }
@@ -291,25 +148,12 @@ enum RecipeAPI {
         )
     }
 
-    /// Replace the version's cautions with the complete list — rewritten in place,
-    /// no version created. An empty list clears the banner.
-    static func updateWarnings(id: String, versionNumber: Int, warnings: [String]) async throws {
-        _ = try await GraphQLHelpers.perform(
-            GraphQLClient.shared.apollo,
-            mutation: ShuhariGraphQL.UpdateWarningsMutation(
-                recipeId: id,
-                versionNumber: versionNumber,
-                warnings: warnings
-            )
-        )
-    }
-
     /// Write back a corrected recipe sheet: what the cook moved in the edit sheet,
-    /// and nothing else. Each concern keeps the mutation it always had — the
-    /// aggregate's title, course and tags, the version's note, its content, its oven, its
-    /// cautions and its tips — so a sheet closed on one retouched quantity costs one
-    /// write, not eight. None of them creates a version: correcting what the recipe
-    /// always said is not iterating on it.
+    /// and nothing else — the aggregate's title, course, method and tags, and the
+    /// displayed version's note, content, oven, cautions and tips — in one
+    /// `correctVersion` call, saved whole or not at all. A field left untouched is
+    /// left out, and a sheet closed on nothing moved sends nothing. None of it
+    /// creates a version: correcting what the recipe always said is not iterating on it.
     static func correct(
         recipeId: String,
         versionNumber: Int,
@@ -317,79 +161,76 @@ enum RecipeAPI {
         to: RecipeDraft
     ) async throws {
         let retagged = to.tags.tags != from.tags.tags
-        if to.title != from.title || to.category != from.category || to.method != from.method
-            || retagged
-        {
-            try await updateRecipe(
-                id: recipeId,
-                title: to.title,
-                category: to.category,
-                method: to.method,
-                // The complete list or nothing: untouched tags are not rewritten.
-                tags: retagged ? to.tags.tags : nil
-            )
-        }
-        // The note lives on the version, not on the recipe, so it travels in its own
-        // call. Taking a note back is not a gesture the server has: an emptied rating
+        let retouched = to.title != from.title || to.category != from.category
+            || to.method != from.method || retagged
+        // Taking a note back is not a gesture the server has: an emptied rating
         // leaves the one already given.
-        if let rating = to.rating, rating != from.rating {
-            try await updateRating(
+        let rating = to.rating.flatMap { $0 != from.rating ? $0 : nil }
+        let ingredients = to.ingredients.ingredients != from.ingredients.ingredients
+        let miseEnPlace = to.miseEnPlace.lines != from.miseEnPlace.lines
+        let steps = to.steps.steps != from.steps.steps
+        let oven = to.oven.profile != from.oven.profile
+        let parameters = to.coffee.flatMap {
+            $0.parameters != from.coffee?.parameters ? $0.parameters : nil
+        }
+        let warnings = to.warnings.lines != from.warnings.lines
+        let tips = to.tips.lines != from.tips.lines
+        guard retouched || rating != nil || ingredients || miseEnPlace || steps || oven
+            || parameters != nil || warnings || tips
+        else { return }
+
+        let input = ShuhariGraphQL.CorrectionInput(
+            coffeeParameters: GraphQLHelpers.graphQLNullable(
+                parameters.map(GraphQLHelpers.coffeeParametersInput)
+            ),
+            ingredients: ingredients
+                ? .some(to.ingredients.ingredients.map {
+                    ShuhariGraphQL.IngredientInput(name: $0.name, quantity: $0.quantity)
+                })
+                : .none,
+            miseEnPlace: miseEnPlace ? .some(to.miseEnPlace.lines) : .none,
+            // `null` says the dish never bakes; left out, the oven stays as it was.
+            oven: oven ? GraphQLHelpers.ovenProfileInput(to.oven.profile) : .none,
+            rating: GraphQLHelpers.graphQLNullable(rating),
+            recipe: retouched
+                ? .some(ShuhariGraphQL.UpdateRecipeInput(
+                    category: GraphQLHelpers.graphQLNullable(to.category.graphQLValue),
+                    method: GraphQLHelpers.graphQLNullable(to.method?.graphQLValue),
+                    // The complete list or nothing: untouched tags are not rewritten.
+                    tags: retagged
+                        ? .some(to.tags.tags.map {
+                            ShuhariGraphQL.TagInput(
+                                icon: GraphQLHelpers.graphQLNullable($0.icon?.graphQLValue),
+                                label: $0.label
+                            )
+                        })
+                        : .none,
+                    title: .some(to.title)
+                ))
+                : .none,
+            // The machine settings ride along and the server keeps them only on a
+            // Thermomix version; a plain step sends none rather than an empty object.
+            steps: steps
+                ? .some(to.steps.steps.map { step in
+                    ShuhariGraphQL.VersionStepInput(
+                        settings: step.settings.isEmpty
+                            ? .null
+                            : .some(GraphQLHelpers.thermomixSettingsInput(step.settings)),
+                        text: step.text
+                    )
+                })
+                : .none,
+            tips: tips ? .some(to.tips.lines) : .none,
+            warnings: warnings ? .some(to.warnings.lines) : .none
+        )
+        _ = try await GraphQLHelpers.perform(
+            GraphQLClient.shared.apollo,
+            mutation: ShuhariGraphQL.CorrectVersionMutation(
                 recipeId: recipeId,
                 versionNumber: versionNumber,
-                rating: rating
+                input: input
             )
-        }
-        if to.ingredients.ingredients != from.ingredients.ingredients {
-            try await updateIngredients(
-                recipeId: recipeId,
-                versionNumber: versionNumber,
-                ingredients: to.ingredients.ingredients
-            )
-        }
-        if to.miseEnPlace.lines != from.miseEnPlace.lines {
-            try await updateMiseEnPlace(
-                recipeId: recipeId,
-                versionNumber: versionNumber,
-                miseEnPlace: to.miseEnPlace.lines
-            )
-        }
-        if to.steps.steps != from.steps.steps {
-            try await updateSteps(
-                recipeId: recipeId,
-                versionNumber: versionNumber,
-                steps: to.steps.steps
-            )
-        }
-        if to.oven.profile != from.oven.profile {
-            try await updateOvenProfile(
-                recipeId: recipeId,
-                versionNumber: versionNumber,
-                oven: to.oven.profile
-            )
-        }
-        if let parameters = to.coffee?.parameters, parameters != from.coffee?.parameters {
-            try await updateCoffeeParameters(
-                recipeId: recipeId,
-                versionNumber: versionNumber,
-                parameters: parameters
-            )
-        }
-        if to.warnings.lines != from.warnings.lines {
-            try await updateWarnings(
-                id: recipeId,
-                versionNumber: versionNumber,
-                warnings: to.warnings.lines
-            )
-        }
-        // The tips are written by the mutation the AI proposal ends on — the same
-        // in-place write, without the model.
-        if to.tips.lines != from.tips.lines {
-            try await ProposalAPI.updateTips(
-                recipeId: recipeId,
-                versionNumber: versionNumber,
-                tips: to.tips.lines
-            )
-        }
+        )
     }
 }
 

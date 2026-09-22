@@ -1114,3 +1114,88 @@ describe('the mise en place on the wire', () => {
     })
   })
 })
+
+describe('correctVersion mutation', () => {
+  test('saves a whole corrected sheet in one transaction, creating no version', async () => {
+    const id = await createdId()
+    const transactions = fake.transactions.length
+
+    const result = await execute(`
+      mutation {
+        correctVersion(recipeId: "${id}", versionNumber: 1, input: {
+          recipe: { title: "Lasagnes de Nonna" }
+          rating: 4
+          ingredients: [{ name: "Farine", quantity: "300 g" }]
+          warnings: ["Ne pas couvrir"]
+        }) {
+          number
+          rating
+          warnings
+          content { ... on DishContent { ingredients { quantity } steps } }
+        }
+      }
+    `)
+
+    expect(result.errors).toBeUndefined()
+    expect(result.data?.correctVersion).toMatchObject({
+      number: 1,
+      rating: 4,
+      warnings: ['Ne pas couvrir'],
+      content: {
+        ingredients: [{ quantity: '300 g' }],
+        steps: ['Monter les couches', 'Enfourner à 200°C'],
+      },
+    })
+    const recipe = fake.snapshot('recipes').get(id)
+    expect(recipe?.title).toBe('Lasagnes de Nonna')
+    expect(recipe?.lastVersionNumber).toBe(1)
+    expect(recipe?.bestRating).toBe(4)
+    // One sheet, one commit — not one round trip per field.
+    expect(fake.transactions.length).toBe(transactions + 1)
+  })
+
+  test('a null oven says the dish never bakes; an omitted one leaves it alone', async () => {
+    const created = await execute(`
+      mutation {
+        createRecipe(input: {
+          type: DISH
+          category: MAIN
+          title: "Quiche fine"
+          content: { dish: {
+            ingredients: []
+            steps: ["Enfourner"]
+            oven: { program: CONVECTION, temperature: 180, duration: 40 }
+          } }
+        }) { id }
+      }
+    `)
+    const id = (created.data as { createRecipe: { id: string } }).createRecipe.id
+
+    await execute(`
+      mutation { correctVersion(recipeId: "${id}", versionNumber: 1, input: { tips: [] }) { number } }
+    `)
+    expect(fake.snapshot('recipe-versions').get(`${id}_1`)?.content).toHaveProperty('oven')
+
+    const result = await execute(`
+      mutation { correctVersion(recipeId: "${id}", versionNumber: 1, input: { oven: null }) { number } }
+    `)
+    expect(result.errors).toBeUndefined()
+    expect(fake.snapshot('recipe-versions').get(`${id}_1`)?.content).not.toHaveProperty('oven')
+  })
+
+  test('refuses the whole sheet when one part cannot apply, writing nothing', async () => {
+    const id = await createdId()
+
+    const result = await execute(`
+      mutation {
+        correctVersion(recipeId: "${id}", versionNumber: 1, input: {
+          recipe: { title: "Renommée" }
+          coffeeParameters: { extraction: { grind: "Niveau 12" } }
+        }) { number }
+      }
+    `)
+
+    expect(result.errors?.[0]?.extensions?.code).toBe('NOT_A_COFFEE')
+    expect(fake.snapshot('recipes').get(id)?.title).toBe('Lasagnes de mamie')
+  })
+})

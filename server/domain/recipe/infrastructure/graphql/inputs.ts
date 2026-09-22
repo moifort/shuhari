@@ -409,6 +409,55 @@ export const UpdateRecipeInput = builder.inputType('UpdateRecipeInput', {
   }),
 })
 
+export const CorrectionInput = builder.inputType('CorrectionInput', {
+  description:
+    'Everything the recipe sheet lets you correct, sent in one go: the recipe itself (name, ' +
+    'course, brew method, tags) and one version’s rating, content, oven, cautions and tips. Send ' +
+    'only what you changed — anything left out stays as it was, and a list you send is the ' +
+    'complete new one (`[]` clears it). Nothing here creates a version.',
+  fields: (t) => ({
+    recipe: t.field({
+      type: UpdateRecipeInput,
+      description: 'What changes on the recipe itself, e.g. `{ title: "Nonna’s lasagna" }`',
+    }),
+    rating: t.field({
+      type: 'Rating',
+      description:
+        'The corrected rating, 1 to 5. A version never cooked counts as cooked from here on',
+    }),
+    ingredients: t.field({
+      type: [IngredientInput],
+      description: 'The complete shopping list, in order. Refused on a coffee',
+    }),
+    miseEnPlace: t.field({
+      type: ['StepText'],
+      description: 'The complete mise en place, in order. Refused on a coffee',
+    }),
+    steps: t.field({
+      type: [VersionStepInput],
+      description: 'The complete method, in order. Refused on a coffee',
+    }),
+    oven: t.field({
+      type: OvenProfileInput,
+      description:
+        'The complete oven settings — **`null` says the dish never bakes** and clears them. ' +
+        'Refused on a coffee',
+    }),
+    coffeeParameters: t.field({
+      type: CoffeeParametersInput,
+      description: 'The complete coffee parameters. Refused on anything but a coffee',
+    }),
+    warnings: t.field({
+      type: ['Warning'],
+      description: 'The complete list of cautions pinned on the version',
+    }),
+    tips: t.field({
+      type: ['Tip'],
+      description: 'The complete list of tips of the version',
+    }),
+  }),
+})
+
 export const RecordAttemptInput = builder.inputType('RecordAttemptInput', {
   description:
     'The result of cooking one version: which version you tried, how you rate it, and your ' +

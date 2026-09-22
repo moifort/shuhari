@@ -207,9 +207,9 @@ describe('RecipeCommand.copyVersion', () => {
       tips: ['Servir avec du riz' as Tip],
     })
     if (typeof source === 'string') throw new Error('expected a recipe')
-    await RecipeCommand.updateWarnings(userId, source.id, 1 as VersionNumber, [
-      'Fouet dès le début' as Warning,
-    ])
+    await RecipeCommand.correct(userId, source.id, 1 as VersionNumber, {
+      warnings: ['Fouet dès le début' as Warning],
+    })
     await RecipeCommand.update(userId, source.id, { tags: [{ label: 'Dimanche' as TagLabel }] })
     await RecipeCommand.recordAttempt(userId, {
       recipeId: source.id,
@@ -508,6 +508,40 @@ describe('RecipeCommand.addVersion', () => {
       tips: [],
     })
     expect(result).toBe('not-found')
+  })
+})
+
+describe('RecipeCommand.correct', () => {
+  const V1 = 1 as VersionNumber
+
+  test('a sheet that only renames the recipe moves no date and rewrites no version', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    const before = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)
+
+    const result = await RecipeCommand.correct(userId, recipe.id, V1, {
+      recipe: { title: 'Blanquette de Mamie' as RecipeTitle },
+    })
+
+    expect(typeof result).not.toBe('string')
+    expect(fake.snapshot('recipe-versions').get(`${recipe.id}_1`)).toEqual(before)
+    const stored = fake.snapshot('recipes').get(recipe.id)
+    expect(stored?.title).toBe('Blanquette de Mamie')
+    expect(stored?.updatedAt).toEqual(recipe.updatedAt)
+  })
+
+  test('refuses a coffee dial on a dish before writing anything', async () => {
+    const recipe = await RecipeCommand.create(userId, newInput())
+    if (typeof recipe === 'string') throw new Error('expected a recipe')
+    const transactions = fake.transactions.length
+
+    const result = await RecipeCommand.correct(userId, recipe.id, V1, {
+      rating: 5 as Rating,
+      coffeeParameters: { beans: {}, water: {}, extraction: {}, gear: {} },
+    })
+
+    expect(result).toBe('not-a-coffee')
+    expect(fake.transactions.length).toBe(transactions)
   })
 })
 
@@ -928,12 +962,9 @@ describe('RecipeCommand.updateTips', () => {
     if (typeof recipe === 'string') throw new Error('expected a recipe')
     const transactionsBefore = fake.transactions.length
 
-    const result = await RecipeCommand.updateTips(
-      userId,
-      recipe.id,
-      1 as VersionNumber,
-      tips('Servir avec du riz', 'Se congèle bien'),
-    )
+    const result = await RecipeCommand.correct(userId, recipe.id, 1 as VersionNumber, {
+      tips: tips('Servir avec du riz', 'Se congèle bien'),
+    })
     if (typeof result === 'string') throw new Error(`expected a version, got ${result}`)
 
     expect(result.tips).toEqual(tips('Servir avec du riz', 'Se congèle bien'))
@@ -955,9 +986,11 @@ describe('RecipeCommand.updateTips', () => {
       versionNumber: 1 as VersionNumber,
       rating: 4 as Rating,
     })
-    await RecipeCommand.updateTips(userId, recipe.id, 1 as VersionNumber, tips('Servir chaud'))
+    await RecipeCommand.correct(userId, recipe.id, 1 as VersionNumber, {
+      tips: tips('Servir chaud'),
+    })
 
-    const cleared = await RecipeCommand.updateTips(userId, recipe.id, 1 as VersionNumber, [])
+    const cleared = await RecipeCommand.correct(userId, recipe.id, 1 as VersionNumber, { tips: [] })
     if (typeof cleared === 'string') throw new Error(`expected a version, got ${cleared}`)
 
     expect(cleared.tips).toEqual([])
@@ -967,13 +1000,13 @@ describe('RecipeCommand.updateTips', () => {
   })
 
   test('returns not-found for an unknown recipe or version', async () => {
-    expect(await RecipeCommand.updateTips(userId, 'nope' as RecipeId, 1 as VersionNumber, [])).toBe(
-      'not-found',
-    )
+    expect(
+      await RecipeCommand.correct(userId, 'nope' as RecipeId, 1 as VersionNumber, { tips: [] }),
+    ).toBe('not-found')
 
     const recipe = await RecipeCommand.create(userId, newInput())
     if (typeof recipe === 'string') throw new Error('expected a recipe')
-    expect(await RecipeCommand.updateTips(userId, recipe.id, 9 as VersionNumber, [])).toBe(
+    expect(await RecipeCommand.correct(userId, recipe.id, 9 as VersionNumber, { tips: [] })).toBe(
       'not-found',
     )
   })
@@ -993,12 +1026,9 @@ describe('RecipeCommand.updateRating', () => {
     const executedAt = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.executedAt as Date
     const transactionsBefore = fake.transactions.length
 
-    const result = await RecipeCommand.updateRating(
-      userId,
-      recipe.id,
-      1 as VersionNumber,
-      4 as Rating,
-    )
+    const result = await RecipeCommand.correct(userId, recipe.id, 1 as VersionNumber, {
+      rating: 4 as Rating,
+    })
     if (typeof result === 'string') throw new Error(`expected a version, got ${result}`)
 
     expect(result.rating).toBe(4 as Rating)
@@ -1027,12 +1057,9 @@ describe('RecipeCommand.updateRating', () => {
     })
     expect(fake.snapshot('recipe-versions').get(`${recipe.id}_2`)?.toTest).toBe(true)
 
-    const result = await RecipeCommand.updateRating(
-      userId,
-      recipe.id,
-      2 as VersionNumber,
-      5 as Rating,
-    )
+    const result = await RecipeCommand.correct(userId, recipe.id, 2 as VersionNumber, {
+      rating: 5 as Rating,
+    })
     if (typeof result === 'string') throw new Error(`expected a version, got ${result}`)
 
     expect(result.rating).toBe(5 as Rating)
@@ -1043,13 +1070,15 @@ describe('RecipeCommand.updateRating', () => {
 
   test('returns not-found for an unknown recipe or version', async () => {
     expect(
-      await RecipeCommand.updateRating(userId, 'nope' as RecipeId, 1 as VersionNumber, 3 as Rating),
+      await RecipeCommand.correct(userId, 'nope' as RecipeId, 1 as VersionNumber, {
+        rating: 3 as Rating,
+      }),
     ).toBe('not-found')
 
     const recipe = await RecipeCommand.create(userId, newInput())
     if (typeof recipe === 'string') throw new Error('expected a recipe')
     expect(
-      await RecipeCommand.updateRating(userId, recipe.id, 9 as VersionNumber, 3 as Rating),
+      await RecipeCommand.correct(userId, recipe.id, 9 as VersionNumber, { rating: 3 as Rating }),
     ).toBe('not-found')
   })
 })
@@ -1062,12 +1091,9 @@ describe('RecipeCommand.updateWarnings', () => {
     const recipe = await RecipeCommand.create(userId, newInput())
     if (typeof recipe === 'string') throw new Error('expected a recipe')
 
-    const result = await RecipeCommand.updateWarnings(
-      userId,
-      recipe.id,
-      V1,
-      warnings('Mettre le fouet dès le début'),
-    )
+    const result = await RecipeCommand.correct(userId, recipe.id, V1, {
+      warnings: warnings('Mettre le fouet dès le début'),
+    })
     if (typeof result === 'string') throw new Error(`expected a version, got ${result}`)
 
     expect(result.warnings).toEqual(warnings('Mettre le fouet dès le début'))
@@ -1083,14 +1109,11 @@ describe('RecipeCommand.updateWarnings', () => {
   test('full-replacement: [] clears the banner', async () => {
     const recipe = await RecipeCommand.create(userId, newInput())
     if (typeof recipe === 'string') throw new Error('expected a recipe')
-    await RecipeCommand.updateWarnings(
-      userId,
-      recipe.id,
-      V1,
-      warnings('Sortir le beurre 1 h avant'),
-    )
+    await RecipeCommand.correct(userId, recipe.id, V1, {
+      warnings: warnings('Sortir le beurre 1 h avant'),
+    })
 
-    const cleared = await RecipeCommand.updateWarnings(userId, recipe.id, V1, [])
+    const cleared = await RecipeCommand.correct(userId, recipe.id, V1, { warnings: [] })
     if (typeof cleared === 'string') throw new Error(`expected a version, got ${cleared}`)
 
     expect(cleared.warnings).toEqual([])
@@ -1100,7 +1123,7 @@ describe('RecipeCommand.updateWarnings', () => {
   test('the next iteration carries the warnings over', async () => {
     const recipe = await RecipeCommand.create(userId, newInput())
     if (typeof recipe === 'string') throw new Error('expected a recipe')
-    await RecipeCommand.updateWarnings(userId, recipe.id, V1, warnings('Fouet dès le début'))
+    await RecipeCommand.correct(userId, recipe.id, V1, { warnings: warnings('Fouet dès le début') })
 
     await RecipeCommand.addVersion(userId, recipe.id, {
       change: 'Moins de sel',
@@ -1117,14 +1140,16 @@ describe('RecipeCommand.updateWarnings', () => {
   })
 
   test('returns not-found for an unknown recipe, version, or another cook’s recipe', async () => {
-    expect(await RecipeCommand.updateWarnings(userId, 'nope' as RecipeId, V1, [])).toBe('not-found')
+    expect(await RecipeCommand.correct(userId, 'nope' as RecipeId, V1, { warnings: [] })).toBe(
+      'not-found',
+    )
 
     const recipe = await RecipeCommand.create(userId, newInput())
     if (typeof recipe === 'string') throw new Error('expected a recipe')
-    expect(await RecipeCommand.updateWarnings(userId, recipe.id, 9 as VersionNumber, [])).toBe(
-      'not-found',
-    )
-    expect(await RecipeCommand.updateWarnings('user-2' as UserId, recipe.id, V1, [])).toBe(
+    expect(
+      await RecipeCommand.correct(userId, recipe.id, 9 as VersionNumber, { warnings: [] }),
+    ).toBe('not-found')
+    expect(await RecipeCommand.correct('user-2' as UserId, recipe.id, V1, { warnings: [] })).toBe(
       'not-found',
     )
   })
@@ -1145,10 +1170,12 @@ describe('updateCoffeeParameters', () => {
     const recipe = await RecipeCommand.create(userId, coffeeInput())
     if (typeof recipe === 'string') throw new Error('expected a recipe')
 
-    const updated = await RecipeCommand.updateCoffeeParameters(userId, recipe.id, V1, {
-      ...emptyCoffeeParameters,
-      beans: { name: 'Belleville — Sidamo' as CoffeeBeanName },
-      gear: { grinder: 'Niche Zero' as CoffeeGrinder },
+    const updated = await RecipeCommand.correct(userId, recipe.id, V1, {
+      coffeeParameters: {
+        ...emptyCoffeeParameters,
+        beans: { name: 'Belleville — Sidamo' as CoffeeBeanName },
+        gear: { grinder: 'Niche Zero' as CoffeeGrinder },
+      },
     })
     if (typeof updated === 'string') throw new Error(`expected a version, got ${updated}`)
 
@@ -1168,7 +1195,7 @@ describe('updateCoffeeParameters', () => {
     if (typeof recipe === 'string') throw new Error('expected a recipe')
     const transactionsBefore = fake.transactions.length
 
-    await RecipeCommand.updateCoffeeParameters(userId, recipe.id, V1, emptyCoffeeParameters)
+    await RecipeCommand.correct(userId, recipe.id, V1, { coffeeParameters: emptyCoffeeParameters })
 
     expect(fake.transactions.length).toBe(transactionsBefore + 1)
     expect(fake.directWrites).toEqual([])
@@ -1179,29 +1206,25 @@ describe('updateCoffeeParameters', () => {
     if (typeof recipe === 'string') throw new Error('expected a recipe')
 
     expect(
-      await RecipeCommand.updateCoffeeParameters(userId, recipe.id, V1, emptyCoffeeParameters),
+      await RecipeCommand.correct(userId, recipe.id, V1, {
+        coffeeParameters: emptyCoffeeParameters,
+      }),
     ).toBe('not-a-coffee')
   })
 
   test('returns not-found for an unknown recipe or another cook\u2019s recipe', async () => {
     expect(
-      await RecipeCommand.updateCoffeeParameters(
-        userId,
-        'nope' as RecipeId,
-        V1,
-        emptyCoffeeParameters,
-      ),
+      await RecipeCommand.correct(userId, 'nope' as RecipeId, V1, {
+        coffeeParameters: emptyCoffeeParameters,
+      }),
     ).toBe('not-found')
 
     const recipe = await RecipeCommand.create(userId, coffeeInput())
     if (typeof recipe === 'string') throw new Error('expected a recipe')
     expect(
-      await RecipeCommand.updateCoffeeParameters(
-        'user-2' as UserId,
-        recipe.id,
-        V1,
-        emptyCoffeeParameters,
-      ),
+      await RecipeCommand.correct('user-2' as UserId, recipe.id, V1, {
+        coffeeParameters: emptyCoffeeParameters,
+      }),
     ).toBe('not-found')
   })
 
@@ -1434,30 +1457,32 @@ describe('a version’s updatedAt', () => {
     expect(executed.updatedAt).toEqual(new Date('2026-03-12T09:00:00.000Z'))
 
     at('2026-03-12T18:00:00.000Z')
-    const rerated = await RecipeCommand.updateRating(userId, recipe.id, V1, 5 as Rating)
+    const rerated = await RecipeCommand.correct(userId, recipe.id, V1, { rating: 5 as Rating })
     if (typeof rerated === 'string') throw new Error(`expected a version, got ${rerated}`)
     expect(rerated.updatedAt).toEqual(new Date('2026-03-12T18:00:00.000Z'))
     // The cook date is when the version was cooked, and a corrected note is not a cook.
     expect(rerated.executedAt).toEqual(new Date('2026-03-12T09:00:00.000Z'))
 
     at('2026-03-13T10:00:00.000Z')
-    const retipped = await RecipeCommand.updateTips(userId, recipe.id, V1, [
-      'Servir tout de suite' as Tip,
-    ])
+    const retipped = await RecipeCommand.correct(userId, recipe.id, V1, {
+      tips: ['Servir tout de suite' as Tip],
+    })
     if (typeof retipped === 'string') throw new Error(`expected a version, got ${retipped}`)
     expect(retipped.updatedAt).toEqual(new Date('2026-03-13T10:00:00.000Z'))
 
     at('2026-03-13T16:00:00.000Z')
-    const warned = await RecipeCommand.updateWarnings(userId, recipe.id, V1, [
-      'Sortir le beurre' as Warning,
-    ])
+    const warned = await RecipeCommand.correct(userId, recipe.id, V1, {
+      warnings: ['Sortir le beurre' as Warning],
+    })
     if (typeof warned === 'string') throw new Error(`expected a version, got ${warned}`)
     expect(warned.updatedAt).toEqual(new Date('2026-03-13T16:00:00.000Z'))
 
     at('2026-03-14T11:00:00.000Z')
-    const corrected = await RecipeCommand.updateCoffeeParameters(userId, recipe.id, V1, {
-      ...emptyCoffeeParameters,
-      water: { kind: 'Volvic' as CoffeeWaterKind },
+    const corrected = await RecipeCommand.correct(userId, recipe.id, V1, {
+      coffeeParameters: {
+        ...emptyCoffeeParameters,
+        water: { kind: 'Volvic' as CoffeeWaterKind },
+      },
     })
     if (typeof corrected === 'string') throw new Error(`expected a version, got ${corrected}`)
     expect(corrected.updatedAt).toEqual(new Date('2026-03-14T11:00:00.000Z'))
@@ -1715,7 +1740,7 @@ describe('a recipe’s date — the version it opens on', () => {
     if (typeof recipe === 'string') throw new Error('expected a recipe')
 
     at('2026-08-06T10:00:00.000Z')
-    await RecipeCommand.updateRating(userId, recipe.id, V1, 4 as Rating)
+    await RecipeCommand.correct(userId, recipe.id, V1, { rating: 4 as Rating })
 
     expect(storedDate(recipe.id)).toEqual(new Date('2026-08-06T10:00:00.000Z'))
   })
@@ -1763,10 +1788,9 @@ describe('RecipeCommand.updateIngredients', () => {
     const recipe = await RecipeCommand.create(userId, withFlour())
     if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
 
-    const updated = await RecipeCommand.updateIngredients(userId, recipe.id, V1, [
-      ingredient('Farine', '200 g'),
-      ingredient('Beurre', '80 g'),
-    ])
+    const updated = await RecipeCommand.correct(userId, recipe.id, V1, {
+      ingredients: [ingredient('Farine', '200 g'), ingredient('Beurre', '80 g')],
+    })
     if (typeof updated === 'string') throw new Error(`expected a version, got ${updated}`)
 
     expect(updated.content).toMatchObject({
@@ -1791,9 +1815,9 @@ describe('RecipeCommand.updateIngredients', () => {
       rating: 4 as Rating,
     })
 
-    const updated = await RecipeCommand.updateIngredients(userId, recipe.id, V1, [
-      ingredient('Farine', '200 g'),
-    ])
+    const updated = await RecipeCommand.correct(userId, recipe.id, V1, {
+      ingredients: [ingredient('Farine', '200 g')],
+    })
     if (typeof updated === 'string') throw new Error(`expected a version, got ${updated}`)
 
     // A rating is a verdict on the same plate: the correction does not clear it.
@@ -1807,9 +1831,9 @@ describe('RecipeCommand.updateIngredients', () => {
     if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
     const transactionsBefore = fake.transactions.length
 
-    const updated = await RecipeCommand.updateIngredients(userId, recipe.id, V1, [
-      ingredient('Farine', '200 g'),
-    ])
+    const updated = await RecipeCommand.correct(userId, recipe.id, V1, {
+      ingredients: [ingredient('Farine', '200 g')],
+    })
     if (typeof updated === 'string') throw new Error(`expected a version, got ${updated}`)
 
     expect(fake.snapshot('recipes').get(recipe.id as string)?.updatedAt).toEqual(updated.updatedAt)
@@ -1828,24 +1852,24 @@ describe('RecipeCommand.updateIngredients', () => {
     })
     if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
 
-    expect(await RecipeCommand.updateIngredients(userId, recipe.id, V1, [])).toBe(
+    expect(await RecipeCommand.correct(userId, recipe.id, V1, { ingredients: [] })).toBe(
       'not-a-cooked-recipe',
     )
   })
 
   test('returns not-found for an unknown recipe, another cook’s, or an unknown version', async () => {
-    expect(await RecipeCommand.updateIngredients(userId, 'nope' as RecipeId, V1, [])).toBe(
+    expect(await RecipeCommand.correct(userId, 'nope' as RecipeId, V1, { ingredients: [] })).toBe(
       'not-found',
     )
 
     const recipe = await RecipeCommand.create(userId, withFlour())
     if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
-    expect(await RecipeCommand.updateIngredients('user-2' as UserId, recipe.id, V1, [])).toBe(
-      'not-found',
-    )
-    expect(await RecipeCommand.updateIngredients(userId, recipe.id, 9 as VersionNumber, [])).toBe(
-      'not-found',
-    )
+    expect(
+      await RecipeCommand.correct('user-2' as UserId, recipe.id, V1, { ingredients: [] }),
+    ).toBe('not-found')
+    expect(
+      await RecipeCommand.correct(userId, recipe.id, 9 as VersionNumber, { ingredients: [] }),
+    ).toBe('not-found')
   })
 })
 
@@ -1858,12 +1882,9 @@ describe('RecipeCommand.updateMiseEnPlace', () => {
     if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
     const before = fake.snapshot('recipe-versions').get(`${recipe.id}_1`)?.content as DishContent
 
-    const updated = await RecipeCommand.updateMiseEnPlace(
-      userId,
-      recipe.id,
-      V1,
-      lines('Ramollir le beurre', 'Préchauffer le four à 180 °C'),
-    )
+    const updated = await RecipeCommand.correct(userId, recipe.id, V1, {
+      miseEnPlace: lines('Ramollir le beurre', 'Préchauffer le four à 180 °C'),
+    })
     if (typeof updated === 'string') throw new Error(`expected a version, got ${updated}`)
 
     expect(updated.content).toMatchObject({
@@ -1886,12 +1907,9 @@ describe('RecipeCommand.updateMiseEnPlace', () => {
     )
     if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
 
-    const updated = await RecipeCommand.updateMiseEnPlace(
-      userId,
-      recipe.id,
-      V1,
-      lines('Peser 320 g de riz'),
-    )
+    const updated = await RecipeCommand.correct(userId, recipe.id, V1, {
+      miseEnPlace: lines('Peser 320 g de riz'),
+    })
     if (typeof updated === 'string') throw new Error(`expected a version, got ${updated}`)
 
     expect(updated.content).toMatchObject({
@@ -1911,7 +1929,7 @@ describe('RecipeCommand.updateMiseEnPlace', () => {
     })
     const transactionsBefore = fake.transactions.length
 
-    const updated = await RecipeCommand.updateMiseEnPlace(userId, recipe.id, V1, [])
+    const updated = await RecipeCommand.correct(userId, recipe.id, V1, { miseEnPlace: [] })
     if (typeof updated === 'string') throw new Error(`expected a version, got ${updated}`)
 
     expect(updated.rating).toBe(4 as Rating)
@@ -1932,23 +1950,23 @@ describe('RecipeCommand.updateMiseEnPlace', () => {
     })
     if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
 
-    expect(await RecipeCommand.updateMiseEnPlace(userId, recipe.id, V1, [])).toBe(
+    expect(await RecipeCommand.correct(userId, recipe.id, V1, { miseEnPlace: [] })).toBe(
       'not-a-cooked-recipe',
     )
   })
 
   test('returns not-found for an unknown recipe, version, or another cook’s recipe', async () => {
-    expect(await RecipeCommand.updateMiseEnPlace(userId, 'nope' as RecipeId, V1, [])).toBe(
+    expect(await RecipeCommand.correct(userId, 'nope' as RecipeId, V1, { miseEnPlace: [] })).toBe(
       'not-found',
     )
     const recipe = await RecipeCommand.create(userId, newInput())
     if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
-    expect(await RecipeCommand.updateMiseEnPlace(userId, recipe.id, 9 as VersionNumber, [])).toBe(
-      'not-found',
-    )
-    expect(await RecipeCommand.updateMiseEnPlace('user-2' as UserId, recipe.id, V1, [])).toBe(
-      'not-found',
-    )
+    expect(
+      await RecipeCommand.correct(userId, recipe.id, 9 as VersionNumber, { miseEnPlace: [] }),
+    ).toBe('not-found')
+    expect(
+      await RecipeCommand.correct('user-2' as UserId, recipe.id, V1, { miseEnPlace: [] }),
+    ).toBe('not-found')
   })
 })
 
@@ -1970,10 +1988,12 @@ describe('RecipeCommand.updateSteps', () => {
     const recipe = await RecipeCommand.create(userId, newInput())
     if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
 
-    const updated = await RecipeCommand.updateSteps(userId, recipe.id, V1, [
-      step('Monter les couches'),
-      step('Enfourner à 180°C', { time: '40 min' as ThermomixTime }),
-    ])
+    const updated = await RecipeCommand.correct(userId, recipe.id, V1, {
+      steps: [
+        step('Monter les couches'),
+        step('Enfourner à 180°C', { time: '40 min' as ThermomixTime }),
+      ],
+    })
     if (typeof updated === 'string') throw new Error(`expected a version, got ${updated}`)
 
     // A dish has no machine: its steps are plain text, settings and all.
@@ -1988,10 +2008,12 @@ describe('RecipeCommand.updateSteps', () => {
     const recipe = await RecipeCommand.create(userId, thermomixInput())
     if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
 
-    const updated = await RecipeCommand.updateSteps(userId, recipe.id, V1, [
-      step('Mixer les oignons', { time: '5 s' as ThermomixTime, speed: '5' as ThermomixSpeed }),
-      step('Laisser reposer'),
-    ])
+    const updated = await RecipeCommand.correct(userId, recipe.id, V1, {
+      steps: [
+        step('Mixer les oignons', { time: '5 s' as ThermomixTime, speed: '5' as ThermomixSpeed }),
+        step('Laisser reposer'),
+      ],
+    })
     if (typeof updated === 'string') throw new Error(`expected a version, got ${updated}`)
 
     expect(updated.content).toMatchObject({
@@ -2016,7 +2038,9 @@ describe('RecipeCommand.updateSteps', () => {
       rating: 5 as Rating,
     })
 
-    const updated = await RecipeCommand.updateSteps(userId, recipe.id, V1, [step('Enfourner')])
+    const updated = await RecipeCommand.correct(userId, recipe.id, V1, {
+      steps: [step('Enfourner')],
+    })
     if (typeof updated === 'string') throw new Error(`expected a version, got ${updated}`)
 
     expect(updated.rating).toBe(5 as Rating)
@@ -2028,7 +2052,9 @@ describe('RecipeCommand.updateSteps', () => {
     if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
     const transactionsBefore = fake.transactions.length
 
-    const updated = await RecipeCommand.updateSteps(userId, recipe.id, V1, [step('Enfourner')])
+    const updated = await RecipeCommand.correct(userId, recipe.id, V1, {
+      steps: [step('Enfourner')],
+    })
     if (typeof updated === 'string') throw new Error(`expected a version, got ${updated}`)
 
     expect(fake.snapshot('recipes').get(recipe.id as string)?.updatedAt).toEqual(updated.updatedAt)
@@ -2047,14 +2073,20 @@ describe('RecipeCommand.updateSteps', () => {
     })
     if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
 
-    expect(await RecipeCommand.updateSteps(userId, recipe.id, V1, [])).toBe('not-a-cooked-recipe')
+    expect(await RecipeCommand.correct(userId, recipe.id, V1, { steps: [] })).toBe(
+      'not-a-cooked-recipe',
+    )
   })
 
   test('returns not-found for an unknown recipe or another cook’s recipe', async () => {
-    expect(await RecipeCommand.updateSteps(userId, 'nope' as RecipeId, V1, [])).toBe('not-found')
+    expect(await RecipeCommand.correct(userId, 'nope' as RecipeId, V1, { steps: [] })).toBe(
+      'not-found',
+    )
 
     const recipe = await RecipeCommand.create(userId, newInput())
     if (typeof recipe === 'string') throw new Error(`expected a recipe, got ${recipe}`)
-    expect(await RecipeCommand.updateSteps('user-2' as UserId, recipe.id, V1, [])).toBe('not-found')
+    expect(await RecipeCommand.correct('user-2' as UserId, recipe.id, V1, { steps: [] })).toBe(
+      'not-found',
+    )
   })
 })

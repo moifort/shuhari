@@ -481,11 +481,13 @@ Three consequences worth holding on to:
   (`IngredientRow`, `StepRow`, `TextRow`) because a name cannot identify a row while it is being
   typed. Each list draft exposes the domain value under its domain noun — `ingredients`, `steps`,
   `lines` — like `OvenProfileDraft.profile` and `CoffeeParametersDraft.parameters` already did.
-- **`RecipeAPI.correct(from:to:)` writes back only what moved.** Each concern keeps the mutation it
-  always had (`updateRecipe`, `updateRating`, `updateIngredients`, `updateSteps`,
-  `updateOvenProfile`, `updateCoffeeParameters`, `updateWarnings`, `updateTips`), and the diff is
-  what decides which ones run: a sheet closed on one retouched quantity costs one write, not eight.
-  None of them creates a version — correcting what the recipe always said is not iterating on it.
+- **`RecipeAPI.correct(from:to:)` writes back only what moved, in one call.** The diff decides
+  which fields of `correctVersion`'s `CorrectionInput` are sent — the recipe (title, course,
+  method, tags), the rating, each list, the oven (`null` = never bakes), the coffee dials — and the
+  server saves them in one transaction: the sheet lands whole or not at all, and a sheet closed on
+  nothing moved sends nothing. It used to be one mutation per concern, in sequence: eight round
+  trips for a full edit, and a failure halfway left half a sheet saved. Nothing creates a version —
+  correcting what the recipe always said is not iterating on it.
 - **Every list edits the same way**: type on a line, swipe it away, add one at the end
   («  Ajouter un ingrédient », « Ajouter une étape », « Ajouter un avertissement », « Ajouter un
   conseil »). Reordering and multi-deletion need the edit mode, behind a « Réorganiser » button —
@@ -586,7 +588,7 @@ never the domain `Tag`:
 `TagIcon` (`Shared/Tag.swift`) is the design-facing twin of the server's closed icon set — it
 owns the drawing (SF Symbol, or the `thermomix` asset) and the French name the picker shows.
 Tags are edited in `RecipeEditSheet` through `TagsEditSection` (icon menu + text field per row,
-eight rows at most) and travel with the title and the course in the single `updateRecipe` call.
+eight rows at most) and travel with the title and the course in the single `correctVersion` call.
 DebugGallery: `cuisine`, `recipe-thermomix`, `recipe-edit-thermomix`.
 
 ### Resizing a cup

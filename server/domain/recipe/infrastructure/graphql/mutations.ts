@@ -11,6 +11,7 @@ import { builder } from '~/domain/shared/graphql/builder'
 import { domainError } from '~/domain/shared/graphql/errors'
 import {
   CoffeeParametersInput,
+  CorrectionInput,
   CreateRecipeInput,
   IngredientInput,
   OvenProfileInput,
@@ -251,9 +252,88 @@ builder.mutationField('updateTips', (t) =>
       }),
     },
     resolve: async (_root, { recipeId, versionNumber, tips }, { userId }) => {
-      const result = await RecipeCommand.updateTips(userId, recipeId, versionNumber, [...tips])
+      const result = await RecipeCommand.correct(userId, recipeId, versionNumber, {
+        tips: [...tips],
+      })
       return match(result)
-        .with('not-found', domainError)
+        .with(P.string, domainError)
+        .with(P.not(P.string), (version) => version)
+        .exhaustive()
+    },
+  }),
+)
+
+builder.mutationField('correctVersion', (t) =>
+  t.field({
+    type: VersionType,
+    description: [
+      'Save a corrected recipe sheet in one go: whatever you changed on the recipe (name, course, ' +
+        'brew method, tags) and on the version shown (rating, ingredients, mise en place, steps, ' +
+        'oven, coffee parameters, cautions, tips). All of it is saved, or none of it. No version ' +
+        'is created — correcting what the recipe always said is not iterating on it. Returns the ' +
+        'version as corrected.',
+      '',
+      'Answers `NOT_A_COOKED_RECIPE` for ingredients, steps or oven on a coffee, `NOT_A_COFFEE` ' +
+        'for coffee parameters on anything else, and `METHOD_MISMATCH` / `TOO_MANY_TAGS` like ' +
+        'updateRecipe.',
+      '',
+      '```graphql',
+      'correctVersion(recipeId: "9f1c-a3b2", versionNumber: 2, input: {',
+      '  recipe: { title: "Nonna’s lasagna" }',
+      '  rating: 4',
+      '  ingredients: [{ name: "Flour", quantity: "200 g" }]',
+      '}) { number rating }',
+      '```',
+    ].join('\n'),
+    args: {
+      recipeId: t.arg({
+        type: 'RecipeId',
+        required: true,
+        description: 'Which recipe is corrected',
+      }),
+      versionNumber: t.arg({
+        type: 'VersionNumber',
+        required: true,
+        description: 'Which version the sheet shows, e.g. `2`',
+      }),
+      input: t.arg({
+        type: CorrectionInput,
+        required: true,
+        description: 'What changed (leave a field out to change nothing)',
+      }),
+    },
+    resolve: async (_root, { recipeId, versionNumber, input }, { userId }) => {
+      const { recipe } = input
+      const result = await RecipeCommand.correct(userId, recipeId, versionNumber, {
+        ...(recipe
+          ? {
+              recipe: {
+                ...(recipe.title ? { title: recipe.title } : {}),
+                ...(recipe.category ? { category: recipe.category } : {}),
+                ...(recipe.method ? { method: recipe.method } : {}),
+                ...(recipe.tags ? { tags: recipe.tags.map(tagInput) } : {}),
+              },
+            }
+          : {}),
+        ...(input.rating ? { rating: input.rating } : {}),
+        ...(input.ingredients ? { ingredients: brandIngredients(input.ingredients) } : {}),
+        ...(input.miseEnPlace ? { miseEnPlace: [...input.miseEnPlace] } : {}),
+        ...(input.steps ? { steps: brandVersionSteps(input.steps) } : {}),
+        // GraphQL tells an omitted field (`undefined`, unchanged) from an explicit
+        // `null` (the dish never bakes).
+        ...(input.oven === null
+          ? { oven: 'none' as const }
+          : input.oven
+            ? { oven: brandOvenProfile(input.oven) }
+            : {}),
+        ...(input.coffeeParameters
+          ? { coffeeParameters: brandCoffeeParameters(input.coffeeParameters) }
+          : {}),
+        ...(input.warnings ? { warnings: [...input.warnings] } : {}),
+        ...(input.tips ? { tips: [...input.tips] } : {}),
+      })
+      return match(result)
+        .with(P.string, domainError)
         .with(P.not(P.string), (version) => version)
         .exhaustive()
     },
@@ -295,9 +375,9 @@ builder.mutationField('updateRating', (t) =>
       }),
     },
     resolve: async (_root, { recipeId, versionNumber, rating }, { userId }) => {
-      const result = await RecipeCommand.updateRating(userId, recipeId, versionNumber, rating)
+      const result = await RecipeCommand.correct(userId, recipeId, versionNumber, { rating })
       return match(result)
-        .with('not-found', domainError)
+        .with(P.string, domainError)
         .with(P.not(P.string), (version) => version)
         .exhaustive()
     },
@@ -341,15 +421,11 @@ builder.mutationField('updateCoffeeParameters', (t) =>
       }),
     },
     resolve: async (_root, { recipeId, versionNumber, parameters }, { userId }) => {
-      const result = await RecipeCommand.updateCoffeeParameters(
-        userId,
-        recipeId,
-        versionNumber,
-        brandCoffeeParameters(parameters),
-      )
+      const result = await RecipeCommand.correct(userId, recipeId, versionNumber, {
+        coffeeParameters: brandCoffeeParameters(parameters),
+      })
       return match(result)
-        .with('not-found', domainError)
-        .with('not-a-coffee', domainError)
+        .with(P.string, domainError)
         .with(P.not(P.string), (version) => version)
         .exhaustive()
     },
@@ -394,15 +470,11 @@ builder.mutationField('updateIngredients', (t) =>
       }),
     },
     resolve: async (_root, { recipeId, versionNumber, ingredients }, { userId }) => {
-      const result = await RecipeCommand.updateIngredients(
-        userId,
-        recipeId,
-        versionNumber,
-        brandIngredients(ingredients),
-      )
+      const result = await RecipeCommand.correct(userId, recipeId, versionNumber, {
+        ingredients: brandIngredients(ingredients),
+      })
       return match(result)
-        .with('not-found', domainError)
-        .with('not-a-cooked-recipe', domainError)
+        .with(P.string, domainError)
         .with(P.not(P.string), (version) => version)
         .exhaustive()
     },
@@ -446,15 +518,11 @@ builder.mutationField('updateSteps', (t) =>
       }),
     },
     resolve: async (_root, { recipeId, versionNumber, steps }, { userId }) => {
-      const result = await RecipeCommand.updateSteps(
-        userId,
-        recipeId,
-        versionNumber,
-        brandVersionSteps(steps),
-      )
+      const result = await RecipeCommand.correct(userId, recipeId, versionNumber, {
+        steps: brandVersionSteps(steps),
+      })
       return match(result)
-        .with('not-found', domainError)
-        .with('not-a-cooked-recipe', domainError)
+        .with(P.string, domainError)
         .with(P.not(P.string), (version) => version)
         .exhaustive()
     },
@@ -497,12 +565,11 @@ builder.mutationField('updateMiseEnPlace', (t) =>
       }),
     },
     resolve: async (_root, { recipeId, versionNumber, miseEnPlace }, { userId }) => {
-      const result = await RecipeCommand.updateMiseEnPlace(userId, recipeId, versionNumber, [
-        ...miseEnPlace,
-      ])
+      const result = await RecipeCommand.correct(userId, recipeId, versionNumber, {
+        miseEnPlace: [...miseEnPlace],
+      })
       return match(result)
-        .with('not-found', domainError)
-        .with('not-a-cooked-recipe', domainError)
+        .with(P.string, domainError)
         .with(P.not(P.string), (version) => version)
         .exhaustive()
     },
@@ -545,15 +612,11 @@ builder.mutationField('updateOvenProfile', (t) =>
       }),
     },
     resolve: async (_root, { recipeId, versionNumber, oven }, { userId }) => {
-      const result = await RecipeCommand.updateOvenProfile(
-        userId,
-        recipeId,
-        versionNumber,
-        oven ? brandOvenProfile(oven) : undefined,
-      )
+      const result = await RecipeCommand.correct(userId, recipeId, versionNumber, {
+        oven: oven ? brandOvenProfile(oven) : 'none',
+      })
       return match(result)
-        .with('not-found', domainError)
-        .with('not-a-cooked-recipe', domainError)
+        .with(P.string, domainError)
         .with(P.not(P.string), (version) => version)
         .exhaustive()
     },
@@ -678,11 +741,11 @@ builder.mutationField('updateWarnings', (t) =>
       }),
     },
     resolve: async (_root, { recipeId, versionNumber, warnings }, { userId }) => {
-      const result = await RecipeCommand.updateWarnings(userId, recipeId, versionNumber, [
-        ...warnings,
-      ])
+      const result = await RecipeCommand.correct(userId, recipeId, versionNumber, {
+        warnings: [...warnings],
+      })
       return match(result)
-        .with('not-found', domainError)
+        .with(P.string, domainError)
         .with(P.not(P.string), (version) => version)
         .exhaustive()
     },

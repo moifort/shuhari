@@ -456,6 +456,42 @@ type CookingImportAnalysis {
 }
 
 """
+Everything the recipe sheet lets you correct, sent in one go: the recipe itself (name, course, brew method, tags) and one version’s rating, content, oven, cautions and tips. Send only what you changed — anything left out stays as it was, and a list you send is the complete new one (`[]` clears it). Nothing here creates a version.
+"""
+input CorrectionInput {
+  """The complete coffee parameters. Refused on anything but a coffee"""
+  coffeeParameters: CoffeeParametersInput
+
+  """The complete shopping list, in order. Refused on a coffee"""
+  ingredients: [IngredientInput!]
+
+  """The complete mise en place, in order. Refused on a coffee"""
+  miseEnPlace: [StepText!]
+
+  """
+  The complete oven settings — **`null` says the dish never bakes** and clears them. Refused on a coffee
+  """
+  oven: OvenProfileInput
+
+  """
+  The corrected rating, 1 to 5. A version never cooked counts as cooked from here on
+  """
+  rating: Rating
+
+  """What changes on the recipe itself, e.g. `{ title: "Nonna’s lasagna" }`"""
+  recipe: UpdateRecipeInput
+
+  """The complete method, in order. Refused on a coffee"""
+  steps: [VersionStepInput!]
+
+  """The complete list of tips of the version"""
+  tips: [Tip!]
+
+  """The complete list of cautions pinned on the version"""
+  warnings: [Warning!]
+}
+
+"""
 Everything needed to save a brand-new recipe (its `v1`), once you have reviewed the import preview and confirmed it, e.g. `"Grandma’s lasagna"` with its content
 """
 input CreateRecipeInput {
@@ -799,6 +835,30 @@ type Mutation {
     """The new recipe’s name, e.g. `"Nonna’s lasagna"`"""
     title: RecipeTitle!
   ): Recipe!
+
+  """
+  Save a corrected recipe sheet in one go: whatever you changed on the recipe (name, course, brew method, tags) and on the version shown (rating, ingredients, mise en place, steps, oven, coffee parameters, cautions, tips). All of it is saved, or none of it. No version is created — correcting what the recipe always said is not iterating on it. Returns the version as corrected.
+  
+  Answers `NOT_A_COOKED_RECIPE` for ingredients, steps or oven on a coffee, `NOT_A_COFFEE` for coffee parameters on anything else, and `METHOD_MISMATCH` / `TOO_MANY_TAGS` like updateRecipe.
+  
+  ```graphql
+  correctVersion(recipeId: "9f1c-a3b2", versionNumber: 2, input: {
+    recipe: { title: "Nonna’s lasagna" }
+    rating: 4
+    ingredients: [{ name: "Flour", quantity: "200 g" }]
+  }) { number rating }
+  ```
+  """
+  correctVersion(
+    """What changed (leave a field out to change nothing)"""
+    input: CorrectionInput!
+
+    """Which recipe is corrected"""
+    recipeId: RecipeId!
+
+    """Which version the sheet shows, e.g. `2`"""
+    versionNumber: VersionNumber!
+  ): Version!
 
   """
   Save a new recipe. Turns a confirmed import preview into a real recipe with its first version (`v1`). Returns the freshly created recipe.

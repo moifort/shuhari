@@ -40,7 +40,7 @@ the digest; this doc is the spec. The mechanics of building a domain live in
   — the prompt reads the empty current list as "write it in full", and a change transcription
   writes it without counting it as a change, since it restates the recipe rather than altering
   it. **The cook has the last word on it**: it is corrected by hand like the steps, through
-  `RecipeCommand.updateMiseEnPlace` — full replacement in place, no version created, the steps
+  `RecipeCommand.correct` (`miseEnPlace`) — full replacement in place, no version created, the steps
   and the outcome untouched, `'not-a-cooked-recipe'` on a coffee — and the import preview and
   the proposal let a line be retyped, swiped away or added before anything is saved. The
   in-place step correction (`updateSteps`) leaves it untouched. A coffee has none. The
@@ -169,11 +169,15 @@ launched it from — never guessed from the source.
   stays valid, because it is a verdict on the same plate. Only the cook knows whether an edit
   restores the transcription or changes the plate, and when it changes the plate they iterate —
   `addVersion` is what that is for. The notebook belongs to the cook, not to the model. Same border
-  `updateCoffeeParameters` and `updateOvenProfile` already draw, now drawn around the ingredients
-  (`RecipeCommand.updateIngredients`), the mise en place (`RecipeCommand.updateMiseEnPlace`) and
-  the steps (`RecipeCommand.updateSteps`) too. All three are full replacements of their own list —
-  adding, deleting and reordering all come through them — and all three answer
-  `'not-a-cooked-recipe'` on a coffee, which has none of them.
+  the coffee dials and the oven already draw, drawn around the ingredients, the mise en place and
+  the steps too. Every correction of the sheet goes through **one command, `RecipeCommand.correct`**
+  (the `correctVersion` mutation): the recipe's name, course, method and tags and the version's
+  rating, lists, oven, dials, cautions and tips, whichever moved, in one transaction — saved whole
+  or refused whole. Each list is a full replacement — adding, deleting and reordering all come
+  through it — and the ingredients, mise en place, steps and oven answer `'not-a-cooked-recipe'`
+  on a coffee, the dials `'not-a-coffee'` on anything else. The per-field mutations
+  (`updateIngredients`, `updateSteps`, …) remain for the builds already installed, each a
+  one-field `correct`.
 - **An attempt lands on the version cooked**, always — a rating is a verdict on the plate that was
   made. Which version that is depends on what was asked: the one on screen when an iteration is
   asked for (it has not been made yet), the one *created* when it transcribes a change already
@@ -188,7 +192,7 @@ launched it from — never guessed from the source.
     through one `cooked(version, attempt, now)`. **The version created carries no outcome**: it is
     one to test. Nothing at all is persisted until the proposal is accepted: refusing it loses the
     rating, by design.
-- **The note alone is correctable**, through `RecipeCommand.updateRating` — the verdict mistyped,
+- **The note alone is correctable**, through `RecipeCommand.correct` (`rating`) — the verdict mistyped,
   or the cook logged after the fact. It rewrites `rating` and nothing else: the photo and the
   remarks of the attempt stay (unlike `recordAttempt`, which replaces the whole outcome). Rating a
   version that had never been cooked makes it one that has — it gains its `executedAt` and drops
@@ -196,9 +200,8 @@ launched it from — never guessed from the source.
 - **A version is dated by its last edit** (`RecipeVersion.updatedAt`, equal to `createdAt` until
   something is changed on it): the app shows it on the recipe sheet and files the version under
   its month in the history and the to-cook list. Only the cook's own rewrites move it —
-  `recordAttempt`, `updateRating`, `updateTips`, `updateIngredients`, `updateMiseEnPlace`,
-  `updateSteps`,
-  `updateCoffeeParameters`, `updateOvenProfile`, and the cook `addVersion` writes on the version it
+  `recordAttempt`, `correct` (whenever it touches the version — a sheet that only renames the
+  recipe leaves every date alone), and the cook `addVersion` writes on the version it
   iterates on. The bookkeeping writes (a child re-based by a deletion)
   leave it alone: they change nothing the cook wrote, and moving a version to another month
   behind their back is a lie.
@@ -371,7 +374,7 @@ no section). Three ways in:
 2. a **proposal** always returns the complete tips list of the version it creates (the AI folds
    advice it reads in the remarks into it);
 3. the **tips field** of the recipe sheet's play CTA (`ProposalUseCase.fromTips` → `Ai.formatTips`,
-   merged/reworded/deduplicated, then `RecipeCommand.updateTips`) rewrites them **in place on the
+   merged/reworded/deduplicated, then `RecipeCommand.correct` with `tips`) rewrites them **in place on the
    displayed version — no new version, no `toTest`, nothing else touched**.
 
 That in-place rewrite is what keeps `tips` out of `content`: everything in `content` is frozen

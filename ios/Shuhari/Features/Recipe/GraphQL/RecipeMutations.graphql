@@ -12,57 +12,9 @@ mutation CopyVersion($recipeId: RecipeId!, $number: VersionNumber!, $title: Reci
   }
 }
 
-mutation UpdateRecipe($id: RecipeId!, $input: UpdateRecipeInput!) {
-  updateRecipe(id: $id, input: $input) {
-    id
-    title
-    category
-  }
-}
-
 mutation UpdateFavorite($recipeId: RecipeId!, $versionNumber: VersionNumber!, $favorite: Boolean!) {
   updateFavorite(recipeId: $recipeId, versionNumber: $versionNumber, favorite: $favorite) {
     ...VersionFields
-  }
-}
-
-mutation UpdateWarnings(
-  $recipeId: RecipeId!
-  $versionNumber: VersionNumber!
-  $warnings: [Warning!]!
-) {
-  updateWarnings(recipeId: $recipeId, versionNumber: $versionNumber, warnings: $warnings) {
-    ...VersionFields
-  }
-}
-
-mutation UpdateRating($recipeId: RecipeId!, $versionNumber: VersionNumber!, $rating: Rating!) {
-  updateRating(recipeId: $recipeId, versionNumber: $versionNumber, rating: $rating) {
-    ...VersionFields
-  }
-}
-
-mutation UpdateCoffeeParameters(
-  $recipeId: RecipeId!
-  $versionNumber: VersionNumber!
-  $parameters: CoffeeParametersInput!
-) {
-  updateCoffeeParameters(
-    recipeId: $recipeId
-    versionNumber: $versionNumber
-    parameters: $parameters
-  ) {
-    ...VersionFields
-  }
-}
-
-mutation UpdateOvenProfile(
-  $recipeId: RecipeId!
-  $versionNumber: VersionNumber!
-  $oven: OvenProfileInput
-) {
-  updateOvenProfile(recipeId: $recipeId, versionNumber: $versionNumber, oven: $oven) {
-    number
   }
 }
 
@@ -78,32 +30,14 @@ mutation UnlinkComponent($recipeId: RecipeId!, $component: RecipeId!) {
   }
 }
 
-mutation UpdateIngredients(
+# The edit sheet, saved whole: whatever the cook moved on the recipe and on the
+# version shown, in one transaction — never one round trip per field.
+mutation CorrectVersion(
   $recipeId: RecipeId!
   $versionNumber: VersionNumber!
-  $ingredients: [IngredientInput!]!
+  $input: CorrectionInput!
 ) {
-  updateIngredients(recipeId: $recipeId, versionNumber: $versionNumber, ingredients: $ingredients) {
-    number
-  }
-}
-
-mutation UpdateMiseEnPlace(
-  $recipeId: RecipeId!
-  $versionNumber: VersionNumber!
-  $miseEnPlace: [StepText!]!
-) {
-  updateMiseEnPlace(recipeId: $recipeId, versionNumber: $versionNumber, miseEnPlace: $miseEnPlace) {
-    number
-  }
-}
-
-mutation UpdateSteps(
-  $recipeId: RecipeId!
-  $versionNumber: VersionNumber!
-  $steps: [VersionStepInput!]!
-) {
-  updateSteps(recipeId: $recipeId, versionNumber: $versionNumber, steps: $steps) {
+  correctVersion(recipeId: $recipeId, versionNumber: $versionNumber, input: $input) {
     number
   }
 }

@@ -477,7 +477,7 @@ operate on the envelope only — they never read `content`.
 **What belongs on the envelope rather than in `content`** — `tips: Tip[]` is the worked example. Two
 tests, both of which it passes: it is *type-agnostic* (a dish and a Thermomix recipe carry the same
 list, so duplicating it in every arm of the union would buy nothing), and it is *rewritable in place*
-— `RecipeCommand.updateTips` replaces the whole list on the version shown, creating no version and
+— `RecipeCommand.correct` with `tips` replaces the whole list on the version shown, creating no version and
 touching nothing else, whereas everything inside `content` is frozen for the life of a version. It is
 also **total** (`[]` = none, never optional — see [code-style](./code-style.md#arrays-are-never-optional));
 the read boundary defaults it (`normalizeVersion` in `infrastructure/repository.ts`) so a document

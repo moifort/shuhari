@@ -117,6 +117,22 @@ export type UpdateRecipeInput = {
   tags?: Tag[]
 }
 
+// A correction of the recipe sheet: anything left out stays as it was, and a list
+// sent is the complete new one (`[]` clears it). `recipe` retouches the aggregate;
+// every other field rewrites the version in place. `oven: 'none'` says the dish
+// never bakes, which clears the profile rather than leaving a hollow one.
+export type Correction = {
+  recipe?: UpdateRecipeInput
+  rating?: Rating
+  ingredients?: Ingredient[]
+  miseEnPlace?: StepText[]
+  steps?: LooseVersionStep[]
+  oven?: OvenProfile | 'none'
+  coffeeParameters?: CoffeeParameters
+  warnings?: Warning[]
+  tips?: Tip[]
+}
+
 // Which version becomes a recipe of its own, and under what name. The name is
 // asked for rather than derived: two rows spelled the same in the library are two
 // rows the cook cannot tell apart.
@@ -349,150 +365,6 @@ export namespace RecipeCommand {
       cooked(version, input, new Date()),
     )
 
-  // Correct a version's rating in place — the cook is fixing the verdict they gave
-  // (or giving one to a version they cooked without logging it), not re-cooking it:
-  // the photo and the remarks of the attempt are left exactly as they were, unlike
-  // `recordAttempt`, which replaces the whole outcome. A version that had never been
-  // cooked becomes one that has: it gains its `executedAt` and stops owing a try, so
-  // a rating and "still to test" are never both true.
-  export const updateRating = async (
-    userId: UserId,
-    recipeId: RecipeId,
-    versionNumber: VersionNumberT,
-    rating: Rating,
-  ): Promise<RecipeVersion | 'not-found'> =>
-    // Correcting a note can hand the reference over, like `recordAttempt`.
-    rewritten(userId, recipeId, versionNumber, (version) => {
-      const now = new Date()
-      const { toTest: _cooked, ...rest } = version
-      return { ...rest, rating, executedAt: version.executedAt ?? now, updatedAt: now }
-    })
-
-  // Rewrite a version's tips in place — the second overwritable part of the
-  // envelope, beside the attempt outcome. No new version: the cook is refining the
-  // advice on the version they have, not iterating on it. Full-replacement (the
-  // accepted tips proposal is the complete list), plus the recipe's restamped date,
-  // in one transaction.
-  export const updateTips = async (
-    userId: UserId,
-    recipeId: RecipeId,
-    versionNumber: VersionNumberT,
-    tips: Tip[],
-  ): Promise<RecipeVersion | 'not-found'> =>
-    rewritten(userId, recipeId, versionNumber, (version) => ({
-      ...version,
-      tips,
-      updatedAt: new Date(),
-    }))
-
-  // Correct a coffee version's parameters in place — the cook is fixing what they
-  // logged (a roast date read wrong, the grinder they forgot), not iterating on the
-  // recipe: no version is created, and the brewing steps are left exactly as they
-  // were. Full replacement, like `updateTips`: the edited parameters ARE the
-  // complete set. Every free-text value typed also teaches the vocabulary, in the
-  // same transaction.
-  export const updateCoffeeParameters = async (
-    userId: UserId,
-    recipeId: RecipeId,
-    versionNumber: VersionNumberT,
-    parameters: CoffeeParameters,
-  ): Promise<RecipeVersion | 'not-found' | 'not-a-coffee'> =>
-    rewritten(
-      userId,
-      recipeId,
-      versionNumber,
-      (version) =>
-        // Parameters belong to a coffee and to nothing else — a dish has ingredients.
-        version.content.kind !== 'coffee'
-          ? ('not-a-coffee' as const)
-          : { ...version, content: { ...parameters, kind: 'coffee' }, updatedAt: new Date() },
-      { teaches: true },
-    )
-
-  // Correct one cooked version's shopping list in place — a quantity misread off a
-  // photo, a line the import split in two. The counterpart of `updateOvenProfile` on
-  // the ingredients: no version is created, because fixing what the recipe ALWAYS
-  // said is not iterating on it, and the rating stays a verdict on the same plate.
-  // Deliberately full-replacement, which is what makes adding, deleting and
-  // reordering one operation instead of three.
-  export const updateIngredients = async (
-    userId: UserId,
-    recipeId: RecipeId,
-    versionNumber: VersionNumberT,
-    ingredients: Ingredient[],
-  ): Promise<RecipeVersion | 'not-found' | 'not-a-cooked-recipe'> =>
-    rewritten(userId, recipeId, versionNumber, (version) =>
-      // A coffee has no shopping list — its dose, its water and its milk are parameters.
-      version.content.kind === 'coffee'
-        ? ('not-a-cooked-recipe' as const)
-        : { ...version, content: { ...version.content, ingredients }, updatedAt: new Date() },
-    )
-
-  // Correct one cooked version's method in place — a step the import split in two,
-  // an instruction read wrong. The steps arrive in one shape, text plus machine
-  // settings, and the VERSION's kind decides what is kept: a dish is plain text and
-  // has no machine, a Thermomix version pairs each text with its settings through
-  // `thermomixSteps`, which stays the single home of that alignment rule.
-  export const updateSteps = async (
-    userId: UserId,
-    recipeId: RecipeId,
-    versionNumber: VersionNumberT,
-    steps: LooseVersionStep[],
-  ): Promise<RecipeVersion | 'not-found' | 'not-a-cooked-recipe'> =>
-    rewritten(userId, recipeId, versionNumber, (version) => {
-      // A coffee has no method to write down — its dials say everything.
-      if (version.content.kind === 'coffee') return 'not-a-cooked-recipe' as const
-      const texts = steps.map(({ text }) => text)
-      const content: VersionContent =
-        version.content.kind === 'dish'
-          ? { ...version.content, steps: texts }
-          : {
-              ...version.content,
-              steps: thermomixSteps(
-                texts,
-                steps.map(({ settings }) => settings),
-              ),
-            }
-      return { ...version, content, updatedAt: new Date() }
-    })
-
-  // Correct one cooked version's mise en place in place — a preparation the AI
-  // forgot, one it got wrong, one the cook does differently. The AI writes it on
-  // every version it produces, but the cook has the last word: full replacement, no
-  // version created, the steps and the outcome untouched — like `updateSteps`.
-  export const updateMiseEnPlace = async (
-    userId: UserId,
-    recipeId: RecipeId,
-    versionNumber: VersionNumberT,
-    miseEnPlace: StepText[],
-  ): Promise<RecipeVersion | 'not-found' | 'not-a-cooked-recipe'> =>
-    rewritten(userId, recipeId, versionNumber, (version) =>
-      // A coffee readies nothing by hand — its dials say everything.
-      version.content.kind === 'coffee'
-        ? ('not-a-cooked-recipe' as const)
-        : { ...version, content: { ...version.content, miseEnPlace }, updatedAt: new Date() },
-    )
-
-  // Correct one cooked version's oven settings in place — a temperature read wrong,
-  // a duration the source never stated. The counterpart of
-  // `updateCoffeeParameters`: no version is created, because fixing what the recipe
-  // ALWAYS said is not an iteration. Deliberately full-replacement, and `undefined`
-  // clears the profile: a dish reclassified as never baking loses it outright rather
-  // than keeping a hollow one.
-  export const updateOvenProfile = async (
-    userId: UserId,
-    recipeId: RecipeId,
-    versionNumber: VersionNumberT,
-    oven: OvenProfile | undefined,
-  ): Promise<RecipeVersion | 'not-found' | 'not-a-cooked-recipe'> =>
-    rewritten(userId, recipeId, versionNumber, (version) => {
-      // A coffee has no oven — it is brewed, and its dials are its parameters.
-      if (version.content.kind === 'coffee') return 'not-a-cooked-recipe' as const
-      const { oven: _replaced, ...rest } = version.content
-      const content: VersionContent = { ...rest, ...(oven ? { oven } : {}) }
-      return { ...version, content, updatedAt: new Date() }
-    })
-
   // Say that this recipe is made of another one — the bread's poolish, the ravioli's
   // pasta dough — and how much of it it takes (`scale`: 0.2 is a fifth of what that
   // recipe writes). Held by the RECIPE, so it holds for every version of it and no
@@ -547,23 +419,6 @@ export namespace RecipeCommand {
       )
     })
 
-  // Rewrite a version's warnings in place — the third overwritable part of the
-  // envelope, next to `updateTips`: pinning a caution on the plate is not iterating
-  // on it, so no version is created. Full-replacement (the edited list is the
-  // complete one), `[]` clears the banner, and the recipe's date is restamped like
-  // any other touch the cook makes to a version.
-  export const updateWarnings = async (
-    userId: UserId,
-    recipeId: RecipeId,
-    versionNumber: VersionNumberT,
-    warnings: Warning[],
-  ): Promise<RecipeVersion | 'not-found'> =>
-    rewritten(userId, recipeId, versionNumber, (version) => ({
-      ...version,
-      warnings,
-      updatedAt: new Date(),
-    }))
-
   // The touches a cook can make to the aggregate itself: its name, its course, its
   // brew method or its tags. Each is optional — what is left out stays as it was. A
   // category or method change keeps the library's sort honest on its own:
@@ -574,18 +429,54 @@ export namespace RecipeCommand {
     transactionally(async (tx) => {
       const recipe = await repository.findBy(userId, recipeId, tx)
       if (!recipe) return 'not-found' as const
-      // A brew method belongs to a coffee: a dish never grows one, since the type
-      // itself is not editable.
-      if (input.method && recipe.type !== 'coffee') return 'method-mismatch' as const
-      if (input.tags && input.tags.length > TAG_LIMITS.perRecipe) return 'too-many-tags' as const
-      const retouched: Recipe = {
-        ...recipe,
-        ...(input.title ? { title: input.title } : {}),
-        // A coffee stays a drink — refiling it means changing its method.
-        ...(input.category && recipe.type !== 'coffee' ? { category: input.category } : {}),
-        ...(input.method ? { method: input.method } : {}),
+      const updated = retouched(recipe, input)
+      if (typeof updated === 'string') return updated
+      return repository.save(updated, tx)
+    })
+
+  // The whole recipe sheet corrected in one go — what the edit sheet sends when it
+  // closes: the aggregate (name, course, method, tags) and the displayed version's
+  // rating, content, oven, cautions and tips, whichever the cook moved. One
+  // transaction, so a sheet is saved whole or not at all, and one write per
+  // document instead of one round trip per field. Nothing here creates a version:
+  // correcting what the recipe always said is not iterating on it. The version is
+  // redated only when something about it changed, and the recipe restamped from
+  // the lineage then; a sheet that only renamed the recipe moves no date.
+  export const correct = async (
+    userId: UserId,
+    recipeId: RecipeId,
+    versionNumber: VersionNumberT,
+    correction: Correction,
+  ): Promise<
+    | RecipeVersion
+    | 'not-found'
+    | 'method-mismatch'
+    | 'too-many-tags'
+    | 'not-a-coffee'
+    | 'not-a-cooked-recipe'
+  > =>
+    transactionally(async (tx) => {
+      const read = await lineageOf(userId, recipeId, tx)
+      if (read === 'not-found') return read
+      const version = read.lineage.find(({ number }) => number === versionNumber)
+      if (!version) return 'not-found' as const
+      const { recipe: aggregate, ...onTheVersion } = correction
+      const recipe = aggregate ? retouched(read.recipe, aggregate) : read.recipe
+      if (typeof recipe === 'string') return recipe
+      const touchesVersion = Object.keys(onTheVersion).length > 0
+      const updated = touchesVersion ? corrected(version, onTheVersion, new Date()) : version
+      if (typeof updated === 'string') return updated
+      const teach = onTheVersion.coffeeParameters
+        ? await vocabularyLesson(userId, updated.content, tx)
+        : undefined
+      if (touchesVersion) {
+        await repository.saveVersion(updated, tx)
+        await repository.save(restamped(recipe, written(read.lineage, updated)), tx)
+      } else if (aggregate) {
+        await repository.save(recipe, tx)
       }
-      return repository.save(input.tags ? withTags(retouched, input.tags) : retouched, tx)
+      await teach?.()
+      return updated
     })
 
   // Heart one version, or take the heart off it — the attempt the cook would make
@@ -611,18 +502,16 @@ export namespace RecipeCommand {
         const { favorite: _unhearted, ...rest } = version
         return { ...rest, ...(favorite ? { favorite: true as const } : {}) }
       },
-      {
-        // The mirror and the standing it decides, written by hand rather than through
-        // `restamped`: the recipe's date must NOT move. The heart does move the recipe
-        // within its course — to the top of it, which is what hearting asks for.
-        restamp: (recipe, hearted) => {
-          const { favorite: _mirrored, ...aggregate } = recipe
-          return {
-            ...aggregate,
-            ...(favorited(hearted) ? { favorite: true as const } : {}),
-            standing: standing(hearted),
-          }
-        },
+      // The mirror and the standing it decides, written by hand rather than through
+      // `restamped`: the recipe's date must NOT move. The heart does move the recipe
+      // within its course — to the top of it, which is what hearting asks for.
+      (recipe, hearted) => {
+        const { favorite: _mirrored, ...aggregate } = recipe
+        return {
+          ...aggregate,
+          ...(favorited(hearted) ? { favorite: true as const } : {}),
+          standing: standing(hearted),
+        }
       },
     )
 
@@ -698,36 +587,25 @@ export namespace RecipeCommand {
   // version in it. Called only when the account itself goes.
   export const forget = (userId: UserId): Promise<void> => repository.removeAllByUser(userId)
 
-  // Rewrite one version in place — a verdict, a correction, a heart — and restamp the
-  // recipe from the lineage as it will read once the write lands. No version is
-  // created. `rewrite` answers the rewritten version, or the reason it refuses one
-  // (a dish has no coffee dials); `restamp` is how the recipe follows, `restamped`
-  // unless the rewrite must not move its date; `teaches` folds a coffee's free-text
-  // values into the vocabulary, in the same transaction.
-  const rewritten = <Rewritten extends RecipeVersion | string>(
+  // Rewrite one version in place — a cook, a heart — and restamp the recipe from the
+  // lineage as it will read once the write lands. No version is created. `restamp`
+  // is how the recipe follows: `restamped`, unless the rewrite must not move its
+  // date. The corrections of the sheet go through `correct` instead.
+  const rewritten = (
     userId: UserId,
     recipeId: RecipeId,
     versionNumber: VersionNumberT,
-    rewrite: (version: RecipeVersion) => Rewritten,
-    {
-      restamp = restamped,
-      teaches = false,
-    }: {
-      restamp?: (recipe: Recipe, lineage: RecipeVersion[]) => Recipe
-      teaches?: boolean
-    } = {},
-  ): Promise<Rewritten | 'not-found'> =>
+    rewrite: (version: RecipeVersion) => RecipeVersion,
+    restamp: (recipe: Recipe, lineage: RecipeVersion[]) => Recipe = restamped,
+  ): Promise<RecipeVersion | 'not-found'> =>
     transactionally(async (tx) => {
       const read = await lineageOf(userId, recipeId, tx)
       if (read === 'not-found') return read
       const version = read.lineage.find(({ number }) => number === versionNumber)
       if (!version) return 'not-found' as const
       const updated = rewrite(version)
-      if (typeof updated === 'string') return updated
-      const teach = teaches ? await vocabularyLesson(userId, updated.content, tx) : undefined
       await repository.saveVersion(updated, tx)
       await repository.save(restamp(read.recipe, written(read.lineage, updated)), tx)
-      await teach?.()
       return updated
     })
 
@@ -754,6 +632,81 @@ export namespace RecipeCommand {
     const byNumber = new Map(lineage.map((version) => [version.number, version]))
     for (const version of pending) if (version) byNumber.set(version.number, version)
     return [...byNumber.values()]
+  }
+
+  // The aggregate once the cook retouched it — name, course, brew method, tags — or
+  // the reason it cannot be. A category or method change keeps the library's sort
+  // honest on its own: `repository.save` re-derives `categoryRank` and `methodRank`.
+  const retouched = (
+    recipe: Recipe,
+    input: UpdateRecipeInput,
+  ): Recipe | 'method-mismatch' | 'too-many-tags' => {
+    // A brew method belongs to a coffee: a dish never grows one, since the type
+    // itself is not editable.
+    if (input.method && recipe.type !== 'coffee') return 'method-mismatch'
+    if (input.tags && input.tags.length > TAG_LIMITS.perRecipe) return 'too-many-tags'
+    const renamed: Recipe = {
+      ...recipe,
+      ...(input.title ? { title: input.title } : {}),
+      // A coffee stays a drink — refiling it means changing its method.
+      ...(input.category && recipe.type !== 'coffee' ? { category: input.category } : {}),
+      ...(input.method ? { method: input.method } : {}),
+    }
+    return input.tags ? withTags(renamed, input.tags) : renamed
+  }
+
+  // The version once corrected in place, or the reason it cannot be: a coffee has no
+  // shopping list, no method and no oven — its dials say everything — and a dish has
+  // no dials. A corrected rating makes the version one that has been cooked: it gains
+  // its `executedAt` and stops owing a try, so a rating and "still to test" are never
+  // both true; the photo and the remarks of the attempt are left as they were.
+  const corrected = (
+    version: RecipeVersion,
+    correction: Omit<Correction, 'recipe'>,
+    now: Date,
+  ): RecipeVersion | 'not-a-coffee' | 'not-a-cooked-recipe' => {
+    const { rating, ingredients, miseEnPlace, steps, oven, coffeeParameters, warnings, tips } =
+      correction
+    let content = version.content
+    if (ingredients || miseEnPlace || steps || oven) {
+      if (content.kind === 'coffee') return 'not-a-cooked-recipe'
+      let cooking = content
+      if (ingredients) cooking = { ...cooking, ingredients }
+      if (miseEnPlace) cooking = { ...cooking, miseEnPlace }
+      if (steps) {
+        // One shape in, and the version's kind decides what is kept: a dish is plain
+        // text, a Thermomix version pairs each text with its settings.
+        const texts = steps.map(({ text }) => text)
+        cooking =
+          cooking.kind === 'dish'
+            ? { ...cooking, steps: texts }
+            : {
+                ...cooking,
+                steps: thermomixSteps(
+                  texts,
+                  steps.map(({ settings }) => settings),
+                ),
+              }
+      }
+      if (oven) {
+        const { oven: _replaced, ...rest } = cooking
+        cooking = { ...rest, ...(oven !== 'none' ? { oven } : {}) }
+      }
+      content = cooking
+    }
+    if (coffeeParameters) {
+      if (content.kind !== 'coffee') return 'not-a-coffee'
+      content = { ...coffeeParameters, kind: 'coffee' }
+    }
+    const { toTest: _owed, ...uncooked } = version
+    return {
+      ...(rating !== undefined ? uncooked : version),
+      content,
+      ...(tips ? { tips } : {}),
+      ...(warnings ? { warnings } : {}),
+      ...(rating !== undefined ? { rating, executedAt: version.executedAt ?? now } : {}),
+      updatedAt: now,
+    }
   }
 
   // A version as it reads once it has been made: the outcome REPLACES whatever the
