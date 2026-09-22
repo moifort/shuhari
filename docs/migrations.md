@@ -161,6 +161,7 @@ The `/admin/*` routes are gated by the admin bearer token (`middleware/auth.ts`,
 | 10 | `standing-onto-the-recipe` | Writes `standing` on every recipe — 10 when any version is hearted, else its best rating, else 0 — the field the course and method sorts now order on. A recipe seen without its lineage gets 0 rather than nothing: a document missing the field drops out of the ordered query. |
 | 11 | `thermomix-tag-onto-the-recipe` | Tags `"Thermomix"` (icon `thermomix`) every Thermomix recipe stored before tags existed — the tag a new one is born with, now that a library row wears the recipe's tags and no longer its type. A recipe already carrying tags is left alone. |
 | 12 | `mise-en-place-onto-the-version` | Writes an empty `content.miseEnPlace` on every cooked version stored before the section existed. Nothing is derived from the steps: the AI writes the mise en place the next time the cook asks for an iteration. A coffee is left alone. |
+| 13 | `tally-onto-the-recipe` | Writes `bestRating` (absent when nothing was rated), `versionCount` and `toTestCount` on every recipe, from its lineage — what a library row shows, now read off the recipe document so a page of the library reads no version. |
 
 ## Rules
 

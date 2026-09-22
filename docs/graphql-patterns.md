@@ -126,9 +126,12 @@ export const IngredientType = builder.objectRef<Ingredient>('Ingredient').implem
 
 When a type is referenced before its full field set is known, or carries fields derived from a
 separate collection, declare the `objectRef` first and `.implement()` it separately (Pothos
-forward-reference pattern). `Recipe` holds no derived state of its own — its best rating and the
-version to open are computed from its versions, resolved through the batched `versionsByRecipe`
-loader (see below), so a page of recipes never triggers N+1 reads:
+forward-reference pattern). The version to open and the lineage itself are computed from the
+versions, resolved through the batched `versionsByRecipe` loader (see below), so a page of recipes
+never triggers N+1 reads. What a **library row** shows of the lineage — `bestRating`,
+`versionCount`, `toTestCount` — is not: it is denormalized onto the recipe document (`tally`,
+restamped by every command that writes a version) and exposed straight off it, so the page the app
+opens on costs one query and reads no version at all:
 
 ```ts
 export const RecipeType = builder.objectRef<Recipe>('Recipe')
@@ -146,10 +149,11 @@ RecipeType.implement({
       type: VersionType,
       resolve: async (r, _a, { loaders }) => versionToOpen((await loaders.versionsByRecipe.load(r.id)) ?? []),
     }),
+    // Denormalized (`tally`): read off the recipe document, no lineage.
     bestRating: t.field({
       type: 'Rating',
       nullable: true,
-      resolve: async (r, _a, { loaders }) => bestRating((await loaders.versionsByRecipe.load(r.id)) ?? [])?.rating ?? null,
+      resolve: ({ bestRating }) => bestRating ?? null,
     }),
   }),
 })
@@ -163,7 +167,7 @@ per-request loaders — the forward declaration is what makes that cross-domain 
 
 The read-budget rule is
 [here](./graphql-best-practices.md#derived-fields-have-a-read-budget--batch-them). Shuhari's
-satellite fields (`versions`, `versionToOpen`, `bestRating`) resolve through per-request loaders
+satellite fields (`versions`, `versionToOpen`) resolve through per-request loaders
 (`server/domain/shared/graphql/loaders.ts`), built once per request in `recipeSatelliteLoaders()`.
 
 `batchedBy` is the DataLoader-style batcher: it memoizes per key, collects every `load(...)` call
@@ -184,8 +188,9 @@ versionsByRecipe: batchedBy(
 ```
 
 So a page of recipes selecting `versionToOpen` costs **one** read; an unselected satellite costs
-**nothing**. `versionToOpen`, `bestRating`, the counts **and `versions` itself** all derive from the
-full lineage, so they reuse the same `versionsByRecipe` batch — still one read. That last one is the
+**nothing**. `versionToOpen` **and `versions` itself** both derive from the full lineage, so they
+reuse the same `versionsByRecipe` batch — still one read. The rating and the counts cost nothing on
+top: they ride on the recipe document. That last one is the
 rule earning its keep: `versions` used to resolve through a per-recipe query, which was one read per
 parent on a page and, on a single recipe sheet, a second query duplicating the read `versionToOpen`
 already paid for.
@@ -197,15 +202,15 @@ holds `{ recipe: RecipeId, scale }` entries (see
 `recipeSatelliteLoaders(userId)` takes one — so a recipe that is not the cook's resolves to `null`
 like a deleted one, never to someone else's page. Ten links cost one keyed read of exactly those ten
 documents (Firestore bills per document, so the batch buys the round trip, not the count), and the
-ratings they display go back through `versionsByRecipe`: **one lineage scan for every link on the
-sheet, never one per link.** The library asks for no link, so its budget is untouched — the feat
+version each link opens on goes back through `versionsByRecipe`: **one lineage scan for every link
+on the sheet, never one per link.** The library asks for no link, so its budget is untouched — the feat
 tests assert both.
 
 **`Recipe.usedBy` is the same link read backwards, and it is a query, not a loader.** One
 `array-contains` on the denormalized `componentIds` per sheet opened — never one per row, and never
 a collection scan. It is not batched because nothing batches it: a sheet reads one recipe, and the
-library never asks for it. The recipes it returns take their ratings from `versionsByRecipe` like
-everything else, so the backwards link costs exactly one query on top.
+library never asks for it. The recipes it returns carry their ratings on their own documents, so
+the backwards link costs exactly one query on top.
 
 **The batch is keyed on the page, never on the notebook.** `versionsOfMany` filters
 `recipeId in <the batch>` (Firestore caps `in` at 30 values, so a wider page fans out into

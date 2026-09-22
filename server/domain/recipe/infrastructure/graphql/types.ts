@@ -1,4 +1,4 @@
-import { bestRating, toTestCount, versionToOpen } from '~/domain/recipe/business-rules'
+import { versionToOpen } from '~/domain/recipe/business-rules'
 import {
   type CoffeeBeans,
   type CoffeeContent,
@@ -673,30 +673,22 @@ RecipeType.implement({
         'library’s favourites lens (see the `favorite` argument on `recipes`).',
       resolve: ({ favorite }) => favorite === true,
     }),
-    // Satellite: a real count of the remaining versions, not the highest number — a
-    // deleted version leaves a numbering hole the aggregate's allocator never refills.
-    // Resolved through the batched loader (shares the scan with bestRating — no extra
-    // reads).
+    // A real count of the remaining versions, not the highest number — a deleted
+    // version leaves a numbering hole the aggregate's allocator never refills. Read off
+    // the recipe document (`tally`), like `toTestCount` and `bestRating`: a library
+    // page reads recipes and no version at all.
     versionCount: t.field({
       type: 'VersionNumber',
       description:
         'How many versions this recipe holds, e.g. `3` after `v1 → v2 → v3`. Deleting a ' +
         'version lowers it, but never renumbers the survivors.',
-      resolve: async (r, _a, { loaders }) => {
-        const versions = (await loaders.versionsByRecipe.load(r.id)) ?? []
-        return versions.length as VersionNumber
-      },
+      resolve: ({ versionCount }) => versionCount as number as VersionNumber,
     }),
-    // Satellite: derived from the same batched loader as versionCount/bestRating —
-    // no extra reads.
     toTestCount: t.int({
       description:
         'How many of its versions are waiting to be cooked, e.g. `1` after accepting one ' +
         'proposal. `0` when the recipe owes no cook (see the `toTest` field on Version).',
-      resolve: async (r, _a, { loaders }) => {
-        const versions = (await loaders.versionsByRecipe.load(r.id)) ?? []
-        return toTestCount(versions)
-      },
+      resolve: ({ toTestCount }) => toTestCount,
     }),
     // Satellite: the lineage itself, through the same batched loader as everything
     // derived from it. A per-recipe query here would be one read per parent on a page
@@ -748,18 +740,15 @@ RecipeType.implement({
         'Empty when nothing does.',
       resolve: async ({ id }, _a, { userId }) => RecipeQuery.usedBy(userId, id),
     }),
-    // Satellite: the recipe's best attempt rating across its cooked versions, from
-    // the batched loader that groups the full lineage by recipe (no extra reads).
+    // The recipe's best attempt rating across its cooked versions, read off the
+    // recipe document (`tally`).
     bestRating: t.field({
       type: 'Rating',
       nullable: true,
       description:
         'The best rating this recipe ever got, across all the attempts you have cooked, e.g. ' +
         '`5` (`1`–`5`). `null` if you have never tried any version yet.',
-      resolve: async (r, _a, { loaders }) => {
-        const versions = (await loaders.versionsByRecipe.load(r.id)) ?? []
-        return bestRating(versions)?.rating ?? null
-      },
+      resolve: ({ bestRating }) => bestRating ?? null,
     }),
   }),
 })

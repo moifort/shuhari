@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test'
 import { graphql } from 'graphql'
-import type { DishCategory, RecipeId, VersionNumber } from '~/domain/recipe/types'
+import type { DishCategory, RecipeId, RecipeVersion, VersionNumber } from '~/domain/recipe/types'
 import type { UserId } from '~/domain/shared/types'
 import { fakeFirebase, resetFakeFirestore } from '~/test/fake-firestore'
 
@@ -8,7 +8,7 @@ mock.module('~/system/firebase', fakeFirebase)
 
 const { schema } = await import('~/domain/shared/graphql/schema')
 const { recipeSatelliteLoaders } = await import('~/domain/shared/graphql/loaders')
-const { categoryRank } = await import('~/domain/recipe/business-rules')
+const { categoryRank, tally } = await import('~/domain/recipe/business-rules')
 
 const userId = 'user-1' as UserId
 const unknownId = '11111111-1111-4111-8111-111111111111'
@@ -42,6 +42,8 @@ const seedRecipe = (id: string, fields: { category: DishCategory; updatedAt: num
     categoryRank: categoryRank(fields.category),
     // Required on every stored recipe — the course sort orders on it.
     standing: 0,
+    versionCount: 0,
+    toTestCount: 0,
     title: `Recette ${id}`,
     lastVersionNumber: 1,
     createdAt: new Date(fields.updatedAt),
@@ -60,6 +62,13 @@ const seedVersion = (recipeId: string, number: number, rating?: number) => {
     tips: [],
     ...(rating === undefined ? {} : { executedAt: new Date(number * 1000), rating }),
   })
+  // The recipe's tally follows, as it does behind every command that writes a version.
+  const recipe = fake.snapshot('recipes').get(recipeId)
+  if (!recipe) return
+  const lineage = [...fake.snapshot('recipe-versions').values()].filter(
+    (version) => version.recipeId === recipeId,
+  ) as RecipeVersion[]
+  fake.seed('recipes', recipeId, { ...recipe, ...tally(lineage) })
 }
 
 describe('recipe query', () => {
@@ -223,6 +232,27 @@ describe('recipes query', () => {
     // loader batches them all, so three recipes and five satellite fields — the lineage
     // itself included — never cost more than the single scan they share.
     expect(fake.queryReads - before).toBe(2)
+    expect(fake.docReads).toBe(0)
+  })
+
+  test('reads no version at all for the fields a library row shows', async () => {
+    const before = fake.queryReads
+    const result = await execute(`
+      query {
+        recipes(sort: UPDATED_AT, order: DESC, limit: 10) {
+          items { id bestRating versionCount toTestCount }
+        }
+      }
+    `)
+    expect(result.errors).toBeUndefined()
+    expect(
+      (result.data as { recipes: { items: { bestRating: number | null }[] } }).recipes.items.map(
+        ({ bestRating }) => bestRating,
+      ),
+    ).toEqual([4, 4, 4])
+    // The page, and nothing else: the tally rides on each recipe document, so the
+    // rows the app draws cost no lineage scan whatever the lineages hold.
+    expect(fake.queryReads - before).toBe(1)
     expect(fake.docReads).toBe(0)
   })
 
@@ -408,8 +438,8 @@ describe('a recipe made of other recipes', () => {
     expect(result.errors).toBeUndefined()
     const { usedBy } = (result.data as { recipe: { usedBy: { title: string }[] } }).recipe
     expect(usedBy.map(({ title }) => title).sort()).toEqual([`Recette ${r2}`, `Recette ${r3}`])
-    // One query for the two of them, plus the single lineage scan their ratings share.
-    expect(fake.queryReads - before).toBe(2)
+    // One query for the two of them — their ratings ride on their own documents.
+    expect(fake.queryReads - before).toBe(1)
   })
 
   test('leaves the library budget untouched — it asks for no link', async () => {
@@ -423,8 +453,8 @@ describe('a recipe made of other recipes', () => {
     `)
 
     expect(result.errors).toBeUndefined()
-    // The page and its lineages, exactly as before the feature existed.
-    expect(fake.queryReads - before).toBe(2)
+    // The page alone, exactly as before the feature existed.
+    expect(fake.queryReads - before).toBe(1)
     expect(fake.docReads).toBe(0)
   })
 })

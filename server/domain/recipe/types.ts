@@ -1,5 +1,5 @@
 import type { Brand } from 'ts-brand'
-import type { UserId } from '~/domain/shared/types'
+import type { Count, UserId } from '~/domain/shared/types'
 
 // The culinary experiment domains. Drives the shape of a version's content and the
 // tab the recipe lives in — never a badge: what the cook reads on a row is its tags.
@@ -219,6 +219,14 @@ export type Recipe = {
   // `favorite`, and restamped by the same commands; required on every document,
   // since Firestore silently drops from an ordered query the ones missing the field.
   standing: number
+  // What a library row says of the lineage — `tally(versions)`: its best rating
+  // (absent when nothing was ever cooked), how many versions it holds, and how many
+  // still owe a try. Denormalized so a page of the library reads recipes and nothing
+  // else: resolved from the versions, twenty rows cost the whole lineage of each.
+  // Restamped by the same commands as `standing`.
+  bestRating?: Rating
+  versionCount: Count
+  toTestCount: Count
   // What the cook files it under. Aggregate level like `category`: a tag says what
   // the recipe IS (made on the Thermomix, for guests), which no iteration changes.
   // Ordered as the cook wrote them, one entry per label (`withTags`). Absent rather

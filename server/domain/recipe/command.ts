@@ -6,6 +6,7 @@ import {
   nextVersionNumber,
   standing,
   tagsAtBirth,
+  tally,
   withComponents,
   withTags,
 } from '~/domain/recipe/business-rules'
@@ -36,6 +37,7 @@ import type {
   Warning,
 } from '~/domain/recipe/types'
 import { learnedVocabulary } from '~/domain/recipe/vocabulary'
+import { Count } from '~/domain/shared/primitives'
 import type { UserId } from '~/domain/shared/types'
 import { transactionally } from '~/utils/firestore'
 
@@ -161,6 +163,9 @@ export namespace RecipeCommand {
         updatedAt: now,
         // Never cooked, never hearted: it stands last in its course until it is.
         standing: standing([]),
+        // A lineage of one, never cooked and owing nothing: v1 is what was imported.
+        versionCount: Count(1),
+        toTestCount: Count(0),
       },
       // Filed from birth under what its type says of it — a Thermomix recipe says so.
       tagsAtBirth(input.type),
@@ -216,6 +221,11 @@ export namespace RecipeCommand {
         // the verdict with it, so the copy stands where that one plate puts it.
         ...(version.favorite ? { favorite: true as const } : {}),
         standing: standing([version]),
+        // A lineage of one, carrying the verdict of the plate copied — and never
+        // owing a try, like the copy below.
+        ...(version.rating !== undefined ? { bestRating: version.rating } : {}),
+        versionCount: Count(1),
+        toTestCount: Count(0),
         // What the recipe is filed under is part of that identity, and comes along.
         ...(source.tags ? { tags: source.tags } : {}),
       }
@@ -676,10 +686,11 @@ export namespace RecipeCommand {
   ) =>
     repository.replaceAllByUser(
       userId,
-      recipes.map((recipe) => ({
-        ...recipe,
-        standing: standing(versions.filter(({ recipeId }) => recipeId === recipe.id)),
-      })),
+      recipes.map((recipe) => {
+        const lineage = versions.filter(({ recipeId }) => recipeId === recipe.id)
+        const { bestRating: _stale, ...rest } = recipe
+        return { ...rest, standing: standing(lineage), ...tally(lineage) }
+      }),
       versions,
     )
 
@@ -723,15 +734,16 @@ export namespace RecipeCommand {
   // The aggregate as its lineage makes it read: everything the recipe document holds
   // about its versions is derived, never decided here. One place to do it, so a
   // command can never restamp one of them and forget the others.
-  // `favorite` is dropped rather than set to false — the full-document write erases
-  // it, and absence is the single spelling the library's lens queries on.
+  // `favorite` and `bestRating` are dropped rather than set to nothing — the
+  // full-document write erases them, and absence is the single spelling of both.
   const restamped = (recipe: Recipe, versions: RecipeVersion[]): Recipe => {
-    const { favorite: _derived, ...rest } = recipe
+    const { favorite: _derived, bestRating: _tallied, ...rest } = recipe
     return {
       ...rest,
       updatedAt: lastWorkedOn(versions),
       ...(favorited(versions) ? { favorite: true as const } : {}),
       standing: standing(versions),
+      ...tally(versions),
     }
   }
 

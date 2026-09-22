@@ -166,8 +166,8 @@ There is **no** `read-model/` directory. Composite reads are served two ways:
 
 1. **Read-only domains** — `changelog` (system-hosted under `server/system/`) exposes a
    `query.ts` that assembles data through other domains' public `Query` namespaces.
-2. **GraphQL satellite loaders** — derived fields on `Recipe` (`versions`, `versionToOpen`,
-   `bestRating`) resolve through the per-request, micro-batched `versionsByRecipe` loader in
+2. **GraphQL satellite loaders** — derived fields on `Recipe` (`versions`, `versionToOpen`)
+   resolve through the per-request, micro-batched `versionsByRecipe` loader in
    `server/domain/shared/graphql/loaders.ts`, so a page of recipes never triggers N+1 reads. See
    [graphql-patterns.md](./graphql-patterns.md).
 

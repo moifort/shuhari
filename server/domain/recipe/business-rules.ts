@@ -13,6 +13,7 @@ import {
   type Tag,
   type VersionNumber,
 } from '~/domain/recipe/types'
+import { Count } from '~/domain/shared/primitives'
 
 // A version that has been cooked and rated (a `rating` is present) — the subset
 // bestRating ranks over.
@@ -93,6 +94,21 @@ export const bestRating = (versions: RecipeVersion[]): RecipeVersion | undefined
 // through.
 export const toTestCount = (versions: RecipeVersion[]): number =>
   versions.filter(({ toTest }) => toTest === true).length
+
+// What a library row says of the lineage: its best rating, how many versions it
+// holds, how many still owe a try. Denormalized onto the recipe document
+// (`Recipe.bestRating`, `versionCount`, `toTestCount`) so a page of the library
+// never reads a version, like `standing` for the order.
+export const tally = (
+  versions: RecipeVersion[],
+): Pick<Recipe, 'bestRating' | 'versionCount' | 'toTestCount'> => {
+  const best = bestRating(versions)
+  return {
+    ...(best ? { bestRating: best.rating } : {}),
+    versionCount: Count(versions.length),
+    toTestCount: Count(toTestCount(versions)),
+  }
+}
 
 // Whether the recipe belongs in the favourites lens: any version hearted is enough.
 // Deliberately not `versionToOpen(versions).favorite` — the heart is a mark the cook
