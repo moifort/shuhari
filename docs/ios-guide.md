@@ -170,6 +170,11 @@ network — the rows are on screen in the first frame. See
   the fetch is already in flight when the row appears.
 - **`loadIfNeeded()` owns the once-only decision** (`loaded`), not the tabs: their old
   `items.isEmpty` test would read a warm cache as "already loaded" and never refresh.
+- **A write in the recipe flow invalidates, it does not reload.** The library sits behind the
+  recipe, out of sight: `onReload` calls `invalidate()`, and `loadIfNeeded()` — attached to the
+  stack's **root** view, so it runs again each time the cook pops back — reads page 0 once, in
+  place, however many writes happened in between. Reloading on every mutation paid one library
+  request per heart, rating or correction, for a screen nobody was looking at.
 - **`AuthSession` clears every file** on sign-out and on account deletion: the next cook must not
   read the previous one's rows.
 

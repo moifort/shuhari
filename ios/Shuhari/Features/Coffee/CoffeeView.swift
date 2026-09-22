@@ -51,15 +51,19 @@ struct CoffeeView: View {
                     )
                 }
             }
+            // On the stack's root, not on the stack: it runs again each time the cook
+            // comes back to the library, which is when a stale one is read anew.
+            .task { await library.loadIfNeeded() }
             .recipeFlow(
                 store: recipes,
                 path: $path,
-                onReload: { Task { await reloadAll() } },
+                // The library is behind the recipe, out of sight: it is marked stale
+                // and read once on the way back, not once per mutation.
+                onReload: { library.invalidate() },
                 onDelete: { library.delete(recipeId: $0) },
                 onDeleteVersion: { library.deleteVersion(recipeId: $0, number: $1) }
             )
         }
-        .task { await library.loadIfNeeded() }
         .refreshable { await reloadAll() }
         .sheet(isPresented: $showSettings) {
             SettingsHomeView(onDataReplaced: { await reloadAll() })
@@ -79,7 +83,7 @@ struct CoffeeView: View {
         guard let recipe = importedRecipe else { return }
         path.append(RecipeRoute.recipe(id: recipe.id))
         importedRecipe = nil
-        Task { await reloadAll() }
+        library.invalidate()
     }
 }
 

@@ -63,6 +63,10 @@ final class LibraryStore {
     /// reason to fetch it anew.
     private var loaded = false
 
+    /// Something changed while the library was out of sight — a recipe written, one
+    /// imported. The next appearance reads page 0 again; nothing is fetched before.
+    private var stale = false
+
     var error: String?
 
     /// Filed (by course or by method) vs. last-modified ordering. Any change reloads
@@ -137,6 +141,7 @@ final class LibraryStore {
     /// cursor points at the pre-refresh last row) fails its generation guard and can't
     /// append a stale page onto the fresh list.
     func load() async {
+        stale = false
         dropIndex()
         generation += 1
         let requested = generation
@@ -166,12 +171,23 @@ final class LibraryStore {
     /// flask owns the wait. Replaces the `items.isEmpty` test the tabs used to make,
     /// which a warm cache would have read as "already loaded".
     func loadIfNeeded() async {
-        guard !loaded else { return }
+        // A stale library is refreshed in place: the rows stay, and the few that moved
+        // simply redraw — the cook is coming back to it, not opening it.
+        if loaded {
+            if stale { await load() }
+            return
+        }
         if items.isEmpty {
             await load()
         } else {
             await refresh()
         }
+    }
+
+    /// The library changed behind the screen showing it: read it again on the next
+    /// appearance, once, however many writes happened in between.
+    func invalidate() {
+        stale = true
     }
 
     /// Bring the rows already on screen up to date without taking them away — the
