@@ -3,6 +3,10 @@ import { builder } from './builder'
 // Custom scalars must be registered before any type that references them.
 import './scalars'
 
+// Enums shared by several domains — the plan is read by the quota and written by
+// the entitlement, so it belongs to neither.
+import './enums'
+
 // Recipe domain (the aggregate root: Recipe + Version types, incl. the attempt
 // outcome folded onto each version and the recordAttempt mutation)
 import '~/domain/recipe/infrastructure/graphql/enums'
@@ -24,7 +28,6 @@ import '~/domain/oven/infrastructure/graphql/queries'
 import '~/domain/oven/infrastructure/graphql/mutations'
 
 // Quota domain (the freemium plan and the monthly AI allowance it comes with)
-import '~/domain/quota/infrastructure/graphql/enums'
 import '~/domain/quota/infrastructure/graphql/types'
 import '~/domain/quota/infrastructure/graphql/queries'
 

@@ -1,8 +1,8 @@
 import { limitOf, remaining, renewsOn, used } from '~/domain/quota/business-rules'
 import type { AiAction, Quota } from '~/domain/quota/types'
 import { builder } from '~/domain/shared/graphql/builder'
+import { PlanEnum } from '~/domain/shared/graphql/enums'
 import type { Plan } from '~/domain/shared/types'
-import { PlanEnum } from './enums'
 
 // One meter, read for the plan in force. `limit` and `remaining` are absent on an
 // unlimited plan — the domain says "no limit" by absence, GraphQL says it with

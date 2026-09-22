@@ -1,6 +1,6 @@
 import type { Entitlement } from '~/domain/entitlement/types'
-import { PlanEnum } from '~/domain/quota/infrastructure/graphql/enums'
 import { builder } from '~/domain/shared/graphql/builder'
+import { PlanEnum } from '~/domain/shared/graphql/enums'
 import type { Plan } from '~/domain/shared/types'
 
 // What the `entitlement` query answers. The plan is the decided answer; the rest

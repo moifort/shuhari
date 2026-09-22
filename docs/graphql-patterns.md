@@ -26,6 +26,9 @@ The shared plumbing lives in `server/domain/shared/graphql/`:
 
 - **builder.ts** — the single `SchemaBuilder`, the `GraphQLContext`, and the branded `Scalars` map.
 - **scalars.ts** — registers each branded scalar.
+- **enums.ts** — the enums of a value that lives in `shared/types.ts` (the `Plan`, read by `quota`
+  and written by `entitlement`). An enum two domains expose goes here, never in one of them: the
+  other would have to import that domain's GraphQL layer, which is a dependency cycle in waiting.
 - **schema.ts** — assembles everything by side-effect imports; exports `schema`.
 - **loaders.ts** — per-request satellite loaders.
 

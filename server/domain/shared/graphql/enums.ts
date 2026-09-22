@@ -1,4 +1,4 @@
-import { builder } from '~/domain/shared/graphql/builder'
+import { builder } from './builder'
 
 export const PlanEnum = builder.enumType('Plan', {
   description:
