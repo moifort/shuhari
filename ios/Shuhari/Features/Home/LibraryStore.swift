@@ -140,7 +140,11 @@ final class LibraryStore {
     /// so a pull-to-refresh doesn't flash — so any loadMore already in flight (its
     /// cursor points at the pre-refresh last row) fails its generation guard and can't
     /// append a stale page onto the fresh list.
-    func load() async {
+    ///
+    /// Says whether it failed. A load a newer one took over, or one called off (the
+    /// cook left the tab), did not: the rows are whatever the newer one brings.
+    @discardableResult
+    func load() async -> Bool {
         stale = false
         dropIndex()
         generation += 1
@@ -151,19 +155,22 @@ final class LibraryStore {
         error = nil
         do {
             let page = try await fetchPage(after: nil)
-            guard requested == generation else { return } // response from a stale view
+            guard requested == generation else { return false } // response from a stale view
             items = page.items
             hasMore = page.hasMore
             loaded = true
+            // Fresh rows: whatever an earlier refresh said is no longer true.
             refreshFailed = false
             saveCache()
-        } catch is CancellationError {
-            return
         } catch {
-            guard requested == generation else { return }
+            guard requested == generation else { return false }
+            isLoading = false
+            guard !isCancellation(error) else { return false }
             self.error = reportError(error)
+            return true
         }
         isLoading = false
+        return false
     }
 
     /// The tab appeared: fetch page 0, once. With the cached library already on screen
@@ -195,12 +202,12 @@ final class LibraryStore {
     func refresh() async {
         isRefreshing = true
         refreshFailed = false
-        await load()
+        let failed = await load()
         // A sort or a facet change took the library over meanwhile: it emptied the
         // rows and reset both flags, and this refresh no longer has anything to say.
         guard isRefreshing else { return }
         isRefreshing = false
-        refreshFailed = !loaded
+        refreshFailed = failed
     }
 
     /// Load the next page and append it to the recipes already loaded.
@@ -214,10 +221,12 @@ final class LibraryStore {
             guard requested == generation else { return }
             items.append(contentsOf: page.items)
             hasMore = page.hasMore
-        } catch is CancellationError {
-            return
         } catch {
             guard requested == generation else { return }
+            isLoadingMore = false
+            // Called off, not refused: the sentinel keeps spinning and retries when
+            // it next appears.
+            guard !isCancellation(error) else { return }
             loadMoreFailed = true
             self.error = reportError(error)
         }
