@@ -26,6 +26,8 @@ struct LoadMoreRow: View {
             Spacer()
         }
         .listRowSeparator(.hidden)
+        // No cell behind the spinner: it sits straight on the list background.
+        .listRowBackground(Color.clear)
     }
 }
 

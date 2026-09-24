@@ -35,6 +35,8 @@ struct DebugGallery: View {
             CuisineGalleryScreen(refreshing: true)
         case "cuisine-refresh-failed":
             CuisineGalleryScreen(refreshFailed: true)
+        case "cuisine-paginating":
+            CuisineGalleryScreen(hasMore: true)
         case "coffee":
             CoffeeGalleryScreen()
         case "coffee-recent":
@@ -465,22 +467,26 @@ private struct RecipeDetailGalleryScreen: View {
 /// picker is live, so both section axes (course, month) are reachable. `refreshing`
 /// and `refreshFailed` show what a relaunch looks like: the cached library readable
 /// with the spinner row leading it, and the same rows when the refresh never landed.
+/// `hasMore` closes the list with the pagination spinner.
 private struct CuisineGalleryScreen: View {
     @State private var sort: RecipeSortOption
     @State private var searchText: String
     private let refreshing: Bool
     private let refreshFailed: Bool
+    private let hasMore: Bool
 
     init(
         sort: RecipeSortOption = .dishCategory,
         searchText: String = "",
         refreshing: Bool = false,
-        refreshFailed: Bool = false
+        refreshFailed: Bool = false,
+        hasMore: Bool = false
     ) {
         self._sort = State(initialValue: sort)
         self._searchText = State(initialValue: searchText)
         self.refreshing = refreshing
         self.refreshFailed = refreshFailed
+        self.hasMore = hasMore
     }
 
     private let library = [
@@ -499,7 +505,7 @@ private struct CuisineGalleryScreen: View {
                 libraryLoading: false,
                 libraryRefreshing: refreshing,
                 libraryRefreshFailed: refreshFailed,
-                libraryHasMore: false,
+                libraryHasMore: hasMore,
                 libraryLoadMoreFailed: false,
                 title: "Cuisine",
                 sortOptions: RecipeSortOption.cooking,
