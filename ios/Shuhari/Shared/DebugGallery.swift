@@ -31,8 +31,6 @@ struct DebugGallery: View {
             CuisineGalleryScreen(sort: .lastModified)
         case "cuisine-search":
             CuisineGalleryScreen(searchText: "ri")
-        case "cuisine-refreshing":
-            CuisineGalleryScreen(refreshing: true)
         case "cuisine-refresh-failed":
             CuisineGalleryScreen(refreshFailed: true)
         case "cuisine-paginating":
@@ -464,27 +462,24 @@ private struct RecipeDetailGalleryScreen: View {
 /// The notebook tab with its sectioned library — needs local state for the sort, so
 /// it lives in its own view. Opens filed by course, as the app does, the rows in the
 /// order the server hands them (favourites first, then by best rating); the sort
-/// picker is live, so both section axes (course, month) are reachable. `refreshing`
-/// and `refreshFailed` show what a relaunch looks like: the cached library readable
-/// with the spinner row leading it, and the same rows when the refresh never landed.
+/// picker is live, so both section axes (course, month) are reachable.
+/// `refreshFailed` shows the cached library when the relaunch's refresh never landed,
+/// the retry row leading it.
 /// `hasMore` closes the list with the pagination spinner.
 private struct CuisineGalleryScreen: View {
     @State private var sort: RecipeSortOption
     @State private var searchText: String
-    private let refreshing: Bool
     private let refreshFailed: Bool
     private let hasMore: Bool
 
     init(
         sort: RecipeSortOption = .dishCategory,
         searchText: String = "",
-        refreshing: Bool = false,
         refreshFailed: Bool = false,
         hasMore: Bool = false
     ) {
         self._sort = State(initialValue: sort)
         self._searchText = State(initialValue: searchText)
-        self.refreshing = refreshing
         self.refreshFailed = refreshFailed
         self.hasMore = hasMore
     }
@@ -503,7 +498,6 @@ private struct CuisineGalleryScreen: View {
                 library: library,
                 libraryGrouping: sort == .lastModified ? .month : .course,
                 libraryLoading: false,
-                libraryRefreshing: refreshing,
                 libraryRefreshFailed: refreshFailed,
                 libraryHasMore: hasMore,
                 libraryLoadMoreFailed: false,

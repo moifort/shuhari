@@ -29,7 +29,6 @@ struct HomeView: View {
                         // courses otherwise — a single one when a category is picked.
                         libraryGrouping: library.sort == .lastModified ? .month : .course,
                         libraryLoading: library.isLoading,
-                        libraryRefreshing: library.isRefreshing,
                         libraryRefreshFailed: library.refreshFailed,
                         libraryHasMore: library.hasMore,
                         libraryLoadMoreFailed: library.loadMoreFailed,

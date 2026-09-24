@@ -30,7 +30,6 @@ struct CoffeeView: View {
                         // methods otherwise — a single one when a method is picked.
                         libraryGrouping: library.sort == .lastModified ? .month : .method,
                         libraryLoading: library.isLoading,
-                        libraryRefreshing: library.isRefreshing,
                         libraryRefreshFailed: library.refreshFailed,
                         libraryHasMore: library.hasMore,
                         libraryLoadMoreFailed: library.loadMoreFailed,

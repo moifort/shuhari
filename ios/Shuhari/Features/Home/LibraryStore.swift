@@ -9,8 +9,8 @@ import Foundation
 ///
 /// It opens on the page it closed on: `LibraryCache` hands back the last visit's rows
 /// from disk before a single byte is asked of the network, so a relaunch shows the
-/// library straight away and refreshes it underneath — `isRefreshing`, the spinner row
-/// leading the list, instead of a loader taking the screen.
+/// library straight away and refreshes it underneath, silently — only a failed refresh
+/// shows, as a retry row leading the list.
 @MainActor @Observable
 final class LibraryStore {
     /// Which recipe types this store reads — the one thing that tells the notebook
@@ -50,10 +50,10 @@ final class LibraryStore {
     /// spinner that would spin forever without retrying.
     private(set) var loadMoreFailed = false
 
-    /// A library already on screen is being brought up to date: the rows stay put and
-    /// a spinner row leads the list. Set only on the cached library's refresh — a
-    /// pull-to-refresh is left alone, the system's own control already spins for it.
-    private(set) var isRefreshing = false
+    /// A library already on screen is being brought up to date, silently: the rows stay
+    /// put and nothing spins. Only tells `refresh()` whether a sort or a facet change
+    /// took the library over meanwhile.
+    private var isRefreshing = false
 
     /// That refresh failed: the rows on screen are the ones from last time, and the
     /// leading row offers to try again — otherwise nothing would say they are stale.
@@ -167,7 +167,7 @@ final class LibraryStore {
     }
 
     /// The tab appeared: fetch page 0, once. With the cached library already on screen
-    /// the rows stay and the spinner row leads the list; with nothing to show, the
+    /// the rows stay and the refresh runs silently; with nothing to show, the
     /// flask owns the wait. Replaces the `items.isEmpty` test the tabs used to make,
     /// which a warm cache would have read as "already loaded".
     func loadIfNeeded() async {

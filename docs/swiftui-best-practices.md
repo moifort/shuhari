@@ -89,10 +89,11 @@ Three things make it work, and the third is the one that gets forgotten:
 2. **Cache only the view the screen opens on.** A sorted, filtered or paginated-past-the-first-page
    state is a question the user asked, not what to draw on the next launch. Writing page 0 in the
    default order keeps the file small and the restored screen honest.
-3. **A refresh with something already on screen must not take it away.** It leads the list with a
-   spinner row — the circle a pull-to-refresh draws — and leaves the rows readable and tappable
-   underneath. Reuse the loading flag the cold path uses and you re-create the blank screen you
-   removed, which is why this state is its own flag.
+3. **A refresh with something already on screen must not take it away — nor announce itself.** It
+   runs silently and leaves the rows readable and tappable; a spinner leading the list at every
+   launch or tab switch is noise over rows that are already there. Reuse the loading flag the cold
+   path uses and you re-create the blank screen you removed, which is why this state is its own
+   flag. Only its failure shows (see below).
 
 The cache expires by being overwritten, not by a timer: whatever the server answers replaces it.
 Two things must still clear it by hand — the end of a session, since the next user must not read

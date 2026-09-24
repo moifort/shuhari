@@ -45,10 +45,8 @@ struct HomePage: View {
     /// The library section axis: month of last update, dish course, or brew method.
     let libraryGrouping: LibraryGrouping
     let libraryLoading: Bool
-    /// The library is on screen from the cache and a fresher one is on its way: a
-    /// spinner row leads the list rather than a loader replacing it.
-    var libraryRefreshing = false
-    /// That refresh failed — the leading row becomes a retry.
+    /// The library is on screen from the cache and bringing it up to date failed: a
+    /// retry row leads the list. A refresh in flight draws nothing.
     var libraryRefreshFailed = false
     let libraryHasMore: Bool
     let libraryLoadMoreFailed: Bool
@@ -159,9 +157,9 @@ struct HomePage: View {
             }
         } else {
             List {
-                // Leads the rows it is refreshing, never replaces them.
-                if libraryRefreshing || libraryRefreshFailed {
-                    RefreshRow(failed: libraryRefreshFailed, onRetry: onRefresh)
+                // Leads the rows the failed refresh left in place, never replaces them.
+                if libraryRefreshFailed {
+                    RefreshRow(onRetry: onRefresh)
                 }
                 LibrarySection(
                     recipes: library,

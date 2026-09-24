@@ -163,11 +163,12 @@ network — the rows are on screen in the first frame. See
 - **What is read**: nothing, unless the file decodes *and* carries the current `version` *and*
   holds at least one row — an empty library must show its first-run nudge, not a list that happens
   to be empty. Bump `LibraryCache.version` whenever `LibraryRecipe` changes shape.
-- **The refresh that follows** is `isRefreshing`, never `isLoading`: `RefreshRow`
-  (`Shared/Components/RefreshRow.swift`) leads the list with the circle a pull-to-refresh draws,
-  on the list's own background, and the rows stay readable underneath. It flips to "Réessayer" on
-  `refreshFailed` — the mirror of the `LoadMoreRow` that closes the list, minus the `.task`, since
-  the fetch is already in flight when the row appears.
+- **The refresh that follows is silent**: its own `isRefreshing` flag, never `isLoading`, and
+  nothing on screen while it runs — no spinner leading the list at every launch or tab switch, the
+  cached rows are already readable. Only `refreshFailed` shows: `RefreshRow`
+  (`Shared/Components/RefreshRow.swift`) leads the list with a "Réessayer" button, on the list's
+  own background — the mirror of the failed `LoadMoreRow` that closes the list. Neither sits in a
+  card: both clear their row background.
 - **`loadIfNeeded()` owns the once-only decision** (`loaded`), not the tabs: their old
   `items.isEmpty` test would read a warm cache as "already loaded" and never refresh.
 - **A write in the recipe flow invalidates, it does not reload.** The library sits behind the
@@ -178,8 +179,8 @@ network — the rows are on screen in the first frame. See
 - **`AuthSession` clears every file** on sign-out and on account deletion: the next cook must not
   read the previous one's rows.
 
-Gallery: `-gallery cuisine-refreshing` (the cached library with the spinner leading it) and
-`-gallery cuisine-refresh-failed` (the same rows, with the retry).
+Gallery: `-gallery cuisine-refresh-failed` (the cached rows, with the retry leading them) and
+`-gallery cuisine-paginating` (the pagination spinner closing the list).
 
 ### The feature API enum — the mapping boundary
 
