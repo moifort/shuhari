@@ -31,6 +31,11 @@
       "description": "Pin firebase-admin to 13.x: the Nitro firebase preset injects firebase-functions@latest whose peer is firebase-admin ^11||^12||^13, so 14 breaks the Cloud Function build under npm",
       "matchPackageNames": ["firebase-admin"],
       "allowedVersions": "<14"
+    },
+    {
+      "description": "Pin h3 to 1.x: nitropack 2 runs on h3 ^1 while the server's auto-imports (getHeader, readBody…) resolve to the root h3, so h3 2 reads headers off an event shape Nitro never builds and every request answers 500. Typecheck and tests stay green, only the deployed server breaks. Revisit with Nitro 3.",
+      "matchPackageNames": ["h3"],
+      "allowedVersions": "<2"
     }
   ],
   "lockFileMaintenance": {

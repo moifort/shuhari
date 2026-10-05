@@ -257,4 +257,14 @@ describe('architecture', () => {
       })
     }
   })
+
+  // Nitro's auto-imports (getHeader, readBody…) resolve to the h3 installed at the
+  // root, while the events it hands them come from the h3 it was built for. A root h3
+  // of another major passes the typecheck and every other test, then answers 500 to
+  // every request once deployed.
+  test('the installed h3 is the one nitropack runs on', () => {
+    const { version } = JSON.parse(readFile('node_modules/h3/package.json'))
+    const { dependencies } = JSON.parse(readFile('node_modules/nitropack/package.json'))
+    expect(Bun.semver.satisfies(version, dependencies.h3)).toBe(true)
+  })
 })
