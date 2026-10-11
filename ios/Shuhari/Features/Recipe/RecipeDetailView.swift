@@ -331,7 +331,11 @@ struct RecipeDetailView: View {
             running: runningLabel,
             isStarting: oven.isStarting,
             onStart: {
-                Task { await oven.start(recipeId: recipeId, version: version.number) }
+                Task {
+                    await oven.start(
+                        recipeId: recipeId, version: version.number, title: recipe.title
+                    )
+                }
             }
         )
     }

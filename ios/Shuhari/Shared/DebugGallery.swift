@@ -310,11 +310,13 @@ struct DebugGallery: View {
             ImportReviewSheet(galleryPhase: .quotaExhausted)
         case "import-premium-required":
             ImportReviewSheet(galleryPhase: .premiumRequired)
+        case "oven-activity":
+            OvenActivityGalleryScreen()
         default:
             ContentUnavailableView(
                 "Écran inconnu : \(screen)",
                 systemImage: "questionmark.square.dashed",
-                description: Text("Écrans : cuisine, cuisine-recent, cuisine-search, cuisine-thermomix, cuisine-loading, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, to-test, to-test-empty, recipe-edit, recipe-edit-thermomix, recipe-edit-oven, recipe-edit-oven-copy, recipe-edit-coffee, recipe-edit-fresh, improve, viewfinder, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found, login, settings-data, quota, quota-premium, premium, premium-live, import-quota-exhausted, import-premium-required, import-resumed")
+                description: Text("Écrans : cuisine, cuisine-recent, cuisine-search, cuisine-thermomix, cuisine-loading, recipe, recipe-thermomix, recipe-fresh, history, attempt, attempt-pending, execute, execute-thermomix, capture, proposal, proposal-thermomix, to-test, to-test-empty, recipe-edit, recipe-edit-thermomix, recipe-edit-oven, recipe-edit-oven-copy, recipe-edit-coffee, recipe-edit-fresh, improve, viewfinder, import-preview, import-preview-thermomix, ai-thinking, import-nothing-found, login, settings-data, quota, quota-premium, premium, premium-live, import-quota-exhausted, import-premium-required, import-resumed, oven-activity")
             )
         }
     }
@@ -605,6 +607,54 @@ private struct CoffeeGalleryScreen: View {
                 facet: .method(selection: .constant(nil)),
                 search: .idle,
                 onSettings: {}
+            )
+        }
+    }
+}
+
+/// The lock-screen cooking, drawn in the app the way the widget draws it — and
+/// started for real, so locking the simulator shows the activity itself.
+private struct OvenActivityGalleryScreen: View {
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                OvenActivityView(
+                    title: "Pain de campagne",
+                    subtitle: "Sole et voûte · 230 °C",
+                    programIcon: "thermometer.medium",
+                    startedAt: .now.addingTimeInterval(-600),
+                    endsAt: .now.addingTimeInterval(1800),
+                    isOver: false
+                )
+                OvenActivityView(
+                    title: "Rôti de porc",
+                    subtitle: "Chaleur tournante · 180 °C · à cœur 65 °C",
+                    programIcon: "fan",
+                    startedAt: .now.addingTimeInterval(-1500),
+                    endsAt: nil,
+                    isOver: false
+                )
+                OvenActivityView(
+                    title: "Pain de campagne",
+                    subtitle: "Sole et voûte · 230 °C",
+                    programIcon: "thermometer.medium",
+                    startedAt: .now.addingTimeInterval(-2400),
+                    endsAt: .now,
+                    isOver: true
+                )
+            }
+            .background(.background.secondary, in: .rect(cornerRadius: 24))
+            .padding()
+        }
+        .task {
+            OvenActivityController.start(
+                title: "Pain de campagne",
+                oven: OvenState(
+                    reachable: true,
+                    remoteControlEnabled: true,
+                    settings: OvenSettings(program: .conventional, temperature: 230, duration: 35),
+                    running: OvenRun(remaining: 35)
+                )
             )
         }
     }

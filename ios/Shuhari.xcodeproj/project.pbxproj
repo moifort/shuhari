@@ -12,6 +12,7 @@
 		BF85BBEF2F990504004F8A34 /* ApolloAPI in Frameworks */ = {isa = PBXBuildFile; productRef = AA0E01242F5072C10074B393 /* ApolloAPI */; };
 		BF85BBF02F990504004F8A34 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = FB0E01222F5072C10074B393 /* FirebaseCore */; };
 		BF85BBF12F990504004F8A34 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = FB0E01242F5072C10074B393 /* FirebaseAuth */; };
+		E3000000B000000000000001 /* ShuhariWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E30000030000000000000001 /* ShuhariWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -22,12 +23,34 @@
 			remoteGlobalIDString = E10000060000000000000001;
 			remoteInfo = Shuhari;
 		};
+		E30000010000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E10000090000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E30000060000000000000001;
+			remoteInfo = ShuhariWidgets;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E3000000C000000000000001 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E3000000B000000000000001 /* ShuhariWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		BF9400C32F45AA6500EDF17A /* Shuhari.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = Shuhari.xctestplan; sourceTree = "<group>"; };
 		E10000030000000000000001 /* Shuhari.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Shuhari.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E20000030000000000000001 /* ShuhariUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShuhariUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E30000030000000000000001 /* ShuhariWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShuhariWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -38,11 +61,20 @@
 			);
 			target = E10000060000000000000001 /* Shuhari */;
 		};
+		E3000007000000000000000A /* Exceptions for "ShuhariWidgets" folder in "ShuhariWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E30000060000000000000001 /* ShuhariWidgets */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E10000050000000000000002 /* Shuhari */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (E1000007000000000000000A /* Exceptions for "Shuhari" folder in "Shuhari" target */, ); explicitFileTypes = {}; explicitFolders = (); path = Shuhari; sourceTree = "<group>"; };
 		E20000050000000000000001 /* ShuhariUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ShuhariUITests; sourceTree = "<group>"; };
+		E30000050000000000000001 /* ShuhariWidgets */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (E3000007000000000000000A /* Exceptions for "ShuhariWidgets" folder in "ShuhariWidgets" target */, ); explicitFileTypes = {}; explicitFolders = (); path = ShuhariWidgets; sourceTree = "<group>"; };
+		E40000050000000000000001 /* OvenActivity */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = OvenActivity; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,6 +97,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E30000040000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -73,6 +112,8 @@
 			children = (
 				BF9400C32F45AA6500EDF17A /* Shuhari.xctestplan */,
 				E10000050000000000000002 /* Shuhari */,
+				E40000050000000000000001 /* OvenActivity */,
+				E30000050000000000000001 /* ShuhariWidgets */,
 				E20000050000000000000001 /* ShuhariUITests */,
 				E10000050000000000000009 /* Products */,
 			);
@@ -83,6 +124,7 @@
 			children = (
 				E10000030000000000000001 /* Shuhari.app */,
 				E20000030000000000000001 /* ShuhariUITests.xctest */,
+				E30000030000000000000001 /* ShuhariWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -97,13 +139,16 @@
 				E10000070000000000000001 /* Sources */,
 				E10000040000000000000001 /* Frameworks */,
 				E10000070000000000000002 /* Resources */,
+				E3000000C000000000000001 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				E30000090000000000000001 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				E10000050000000000000002 /* Shuhari */,
+				E40000050000000000000001 /* OvenActivity */,
 			);
 			name = Shuhari;
 			packageProductDependencies = (
@@ -138,6 +183,27 @@
 			productReference = E20000030000000000000001 /* ShuhariUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		E30000060000000000000001 /* ShuhariWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E30000080000000000000001 /* Build configuration list for PBXNativeTarget "ShuhariWidgets" */;
+			buildPhases = (
+				E30000070000000000000001 /* Sources */,
+				E30000040000000000000001 /* Frameworks */,
+				E30000070000000000000002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E30000050000000000000001 /* ShuhariWidgets */,
+				E40000050000000000000001 /* OvenActivity */,
+			);
+			name = ShuhariWidgets;
+			productName = ShuhariWidgets;
+			productReference = E30000030000000000000001 /* ShuhariWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -154,6 +220,9 @@
 					E20000060000000000000001 = {
 						CreatedOnToolsVersion = 16.0;
 						TestTargetID = E10000060000000000000001;
+					};
+					E30000060000000000000001 = {
+						CreatedOnToolsVersion = 26.0;
 					};
 				};
 			};
@@ -178,6 +247,7 @@
 			targets = (
 				E10000060000000000000001 /* Shuhari */,
 				E20000060000000000000001 /* ShuhariUITests */,
+				E30000060000000000000001 /* ShuhariWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -191,6 +261,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E20000070000000000000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E30000070000000000000002 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -214,6 +291,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E30000070000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -221,6 +305,11 @@
 			isa = PBXTargetDependency;
 			target = E10000060000000000000001 /* Shuhari */;
 			targetProxy = E20000010000000000000001 /* PBXContainerItemProxy */;
+		};
+		E30000090000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E30000060000000000000001 /* ShuhariWidgets */;
+			targetProxy = E30000010000000000000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -358,6 +447,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.food-and-drink";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Shuhari utilise l'appareil photo pour importer une recette et photographier tes essais";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Shuhari peut utiliser votre position pour situer vos essais.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -396,6 +486,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.food-and-drink";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Shuhari utilise l'appareil photo pour importer une recette et photographier tes essais";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Shuhari peut utiliser votre position pour situer vos essais.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -460,6 +551,58 @@
 			};
 			name = Release;
 		};
+		E3000000A000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = 46C337T7YN;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShuhariWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Shuhari;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.polyforms.shuhari.app.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		E3000000A000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = 46C337T7YN;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShuhariWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Shuhari;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.polyforms.shuhari.app.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -486,6 +629,15 @@
 			buildConfigurations = (
 				E2000000A000000000000001 /* Debug */,
 				E2000000A000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E30000080000000000000001 /* Build configuration list for PBXNativeTarget "ShuhariWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E3000000A000000000000001 /* Debug */,
+				E3000000A000000000000002 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

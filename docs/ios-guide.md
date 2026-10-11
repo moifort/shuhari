@@ -18,6 +18,9 @@ without editing the pbxproj.
 ```
 ios/
 ├── apollo-codegen-config.json          # Apollo codegen config (schemaNamespace: ShuhariGraphQL)
+├── OvenActivity/                       # compiled into BOTH targets: the Live Activity's attributes,
+│                                       #   its lock-screen view, OvenProgram (the widget translates it)
+├── ShuhariWidgets/                     # widget extension: draws the oven Live Activity, nothing else
 └── Shuhari/
     ├── ShuhariApp.swift                # @main; FirebaseApp.configure() in init(); DEBUG gallery branch
     ├── Shuhari.entitlements            # Sign in with Apple
@@ -763,7 +766,7 @@ oven's screen) instead of what to change. `OVEN_ACCESS_EXPIRED` and `COMMAND_REF
 Shuhari's own access to the Electrolux account (a new token pair cures it), the second a refusal
 the platform gave for its own reasons, so the sentence offers the oven's screen instead.
 
-**The state is polled, because nothing pushes it.** The appliance answers a cloud API and takes a
+**The state is polled, because nothing pushes it to the app.** The appliance answers a cloud API and takes a
 few seconds to admit it is RUNNING, so the state the `startOven` mutation hands back still reads
 "idle" — and a cooking dialled in on the oven's own panel never reaches the sheet at all otherwise.
 `OvenViewModel.watch()` runs alongside the initial load, in the same `.task`, and dies with it: no
@@ -782,6 +785,37 @@ heating. `OvenViewModel.run` therefore answers the reported cooking, or, while t
 settling (`awaitingConfirmation`, the same 30 s window as the quick polls), a cooking with no
 remaining time yet. It is optimistic, not blind: if the oven has reported nothing by the end of the
 window, the flag drops and the button comes back.
+
+### The cooking on the lock screen — a Live Activity
+
+An accepted start puts the cooking on the lock screen and in the Dynamic Island: the recipe's
+name, the dials, and a timer. **The activity holds an end date, never minutes left**: the system
+counts down to it on its own (`Text(timerInterval:)`, `ProgressView(timerInterval:)`), so the
+phone can stay locked in a pocket through the whole cooking without the app running once. A
+cooking without a timer counts up from its start instead.
+
+The pieces sit where each process can reach them. `ShuhariWidgets/` is a widget extension that
+only *draws*; `OvenActivity/` is a synchronized folder compiled into both targets — the
+`OvenActivityAttributes` the two processes agree through, the primitive-first `OvenActivityView`
+(which the `oven-activity` gallery screen also draws, and starts for real), and `OvenProgram`,
+because the state carries the program's **technical symbol** and the widget translates it — the
+day the server pushes the updates, it speaks the schema's English symbols, never French.
+
+`OvenActivityController` (in `Features/Oven/`) starts, corrects and ends it. `OvenViewModel.start`
+opens it on an accepted start, with the version's own timer standing in until the oven reports the
+cooking; every read of the oven then **re-anchors** the end date, but only past a 90 s drift — the
+remaining time arrives in whole minutes, and re-anchoring on each read would make the countdown
+jump. A read that finds the oven idle, outside the settling window, ends it as "Prêt", left on the
+lock screen for 30 minutes. The activity goes stale at its end date, which redraws it as "Prêt" when
+no read came to say so. A new start replaces whatever cooking is still showing: one oven, one
+cooking.
+
+**Local, and by choice**: a cooking dialled in on the oven's own panel opens no activity (the app
+does not know the recipe), and a stop on the oven while the app sleeps only shows when the timer
+runs out. The Electrolux livestream (SSE) does carry `timeToEnd`, the cavity state, the door and
+the probe, but following it means a listener that never sleeps (an always-on Cloud Run service)
+plus an APNs key and push tokens — judged too much machinery for those two gaps (2026-10-11). The
+polling stays; the state keeps its English symbols anyway, so the decision stays reversible.
 
 ## Error reporting — Sentry
 

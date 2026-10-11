@@ -56,6 +56,7 @@ final class OvenViewModel {
     func load() async {
         lastRead = .now
         state = try? await OvenAPI.state()
+        if let state { OvenActivityController.follow(state, settling: false) }
     }
 
     /// Keep asking the appliance for as long as the sheet is on screen. Nothing
@@ -99,11 +100,13 @@ final class OvenViewModel {
         guard let fresh = try? await OvenAPI.state() else { return }
         state = fresh
         if fresh.running != nil { awaitingConfirmation = false }
+        OvenActivityController.follow(fresh, settling: awaitingConfirmation)
     }
 
     /// Start the version's cooking. Reports the oven's refusal as a sentence rather
-    /// than a code — `APIError` is what turns one into the other.
-    func start(recipeId: String, version: Int) async {
+    /// than a code — `APIError` is what turns one into the other. An accepted start
+    /// goes on the lock screen under the recipe's `title`.
+    func start(recipeId: String, version: Int, title: String) async {
         await error.run {
             self.state = try await OvenAPI.start(recipeId: recipeId, version: version)
         } onSuccess: {
@@ -112,6 +115,7 @@ final class OvenViewModel {
             // refusal has no gap to close, and keeps the slow pace.
             self.startedAt = .now
             self.awaitingConfirmation = self.state?.running == nil
+            OvenActivityController.start(title: title, oven: self.state)
         }
     }
 }
