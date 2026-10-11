@@ -8,3 +8,4 @@
 // on assertions about calls it never made. It imports `./appliance` instead, which
 // nobody fakes. Callers keep importing `~/system/electrolux`.
 export { applianceState, findOven, startCooking } from '~/system/electrolux/appliance'
+export { keepSessionAlive } from '~/system/electrolux/token'

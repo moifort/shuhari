@@ -231,7 +231,14 @@ without a named owner would let any account drive the oven.
 It persists exactly one document, `system/electrolux`, through its own `repository.ts` (the
 same licence `ai/repository.ts` holds). **Rotation is consume-then-persist, so it can lose the
 chain**: a failed write, or two instances spending the same token, burns it without a successor
-being stored. The cure is built in rather than operational — the configured secret is tried as a
+being stored. Hence **one session shared by every instance**: the document holds the access
+token and its expiry beside the refresh token, so an instance reuses a valid one instead of
+spending the chain, and the refresh itself runs under a claim (`refreshingUntil`, taken in a
+transaction, lapsing after 15 s so a dead instance never locks it). Another instance finding the
+claim taken waits for its result rather than spending the same token. **A daily keep-alive**
+(Cloud Scheduler, `infra/electrolux.tf`, `POST /admin/electrolux/refresh`) spends the chain even
+when nobody cooks, so it is never found expired after weeks of idleness; a dead chain answers 500
+there, which the scheduler records. The cure is built in rather than operational — the configured secret is tried as a
 fallback when the stored token is rejected, so re-provisioning it and redeploying heals the next
 call. Without that fallback the stored document keeps priority forever and the only fix is
 deleting a Firestore document by hand, which is not a fix anyone finds at the moment they need it.

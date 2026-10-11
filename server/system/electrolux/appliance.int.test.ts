@@ -25,7 +25,7 @@ mock.module('~/system/config', () => ({
 }))
 
 const { applianceState, findOven, startCooking } = await import('~/system/electrolux/appliance')
-const { forgetAccessToken } = await import('~/system/electrolux/token')
+const { forgetAccessToken, keepSessionAlive } = await import('~/system/electrolux/token')
 
 const realFetch = globalThis.fetch
 let fake: ReturnType<typeof resetFakeFirestore>
@@ -79,6 +79,95 @@ describe('the rotating refresh token', () => {
 
     expect(bodies[0]).toContain('refresh-stored')
     expect(bodies[0]).not.toContain('seed-refresh')
+  })
+})
+
+describe('one session shared by every instance', () => {
+  const inAnHour = () => new Date(Date.now() + 60 * 60 * 1000)
+
+  // Counts the refresh calls, answers everything else with an empty account.
+  const countRefreshes = () => {
+    const refreshes: string[] = []
+    globalThis.fetch = mock(async (url: string | URL, init?: RequestInit) => {
+      if (url.toString().includes('/token/refresh')) {
+        refreshes.push(String(init?.body))
+        return Response.json({ ...refreshed, expiresIn: 43_200 })
+      }
+      return Response.json([])
+    }) as unknown as typeof fetch
+    return refreshes
+  }
+
+  test('reuses the access token another instance stored, without spending the chain', async () => {
+    fake.seed('system', 'electrolux', {
+      refreshToken: 'refresh-stored',
+      accessToken: 'access-shared',
+      expiresAt: inAnHour(),
+    })
+    const refreshes = countRefreshes()
+
+    await findOven()
+
+    expect(refreshes).toEqual([])
+  })
+
+  test('stores the access token beside the refresh token, expiring when Electrolux says', async () => {
+    countRefreshes()
+
+    await findOven()
+
+    const stored = fake.snapshot('system').get('electrolux')
+    expect(stored?.accessToken).toBe('access-2')
+    expect(stored?.refreshToken).toBe('refresh-2')
+    // expiresIn is 12 hours here, not the one-hour default.
+    expect(Number(stored?.expiresAt)).toBeGreaterThan(Date.now() + 11 * 3600_000)
+    expect(stored?.refreshingUntil).toBeUndefined()
+  })
+
+  // Two refreshes of one token at once is how the chain died: the second spends a
+  // token the first already rotated away.
+  test('two calls landing together spend the chain once', async () => {
+    fake.seed('system', 'electrolux', { refreshToken: 'refresh-stored' })
+    const refreshes = countRefreshes()
+
+    await Promise.all([findOven(), findOven()])
+
+    expect(refreshes).toHaveLength(1)
+  })
+
+  test('a claim left by an instance that died does not lock the chain', async () => {
+    fake.seed('system', 'electrolux', {
+      refreshToken: 'refresh-stored',
+      refreshingUntil: new Date(Date.now() - 1000),
+    })
+    const refreshes = countRefreshes()
+
+    await findOven()
+
+    expect(refreshes).toHaveLength(1)
+  })
+
+  test('the keep-alive spends the chain even when the access token is still good', async () => {
+    fake.seed('system', 'electrolux', {
+      refreshToken: 'refresh-stored',
+      accessToken: 'access-shared',
+      expiresAt: inAnHour(),
+    })
+    const refreshes = countRefreshes()
+
+    expect(await keepSessionAlive()).toBe('refreshed')
+    expect(refreshes).toHaveLength(1)
+    expect(fake.snapshot('system').get('electrolux')?.refreshToken).toBe('refresh-2')
+  })
+
+  test('a dead chain releases its claim and keeps the last token as a trace', async () => {
+    fake.seed('system', 'electrolux', { refreshToken: 'refresh-burnt' })
+    globalThis.fetch = mock(async () =>
+      Response.json({ detail: 'Invalid grant' }, { status: 401 }),
+    ) as unknown as typeof fetch
+
+    expect(await keepSessionAlive()).toBe('access-expired')
+    expect(fake.snapshot('system').get('electrolux')).toEqual({ refreshToken: 'refresh-burnt' })
   })
 })
 
