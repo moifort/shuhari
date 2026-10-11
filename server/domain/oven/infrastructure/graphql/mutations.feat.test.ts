@@ -25,13 +25,18 @@ mock.module('~/system/config', () => ({
 // The appliance is a script the test writes — no HTTP, and no test ever lights a
 // real heating element.
 const appliance = {
-  found: true,
+  found: true as boolean | 'access-expired',
   state: { reachable: true, remoteControlEnabled: true, busy: false } as Record<string, unknown>,
   outcome: 'started' as string,
 }
 
 mock.module('~/system/electrolux', () => ({
-  findOven: async () => (appliance.found ? { id: 'oven-1' } : 'no-oven'),
+  findOven: async () =>
+    appliance.found === 'access-expired'
+      ? 'access-expired'
+      : appliance.found
+        ? { id: 'oven-1' }
+        : 'no-oven',
   applianceState: async () => appliance.state,
   startCooking: async () => appliance.outcome,
 }))
@@ -163,6 +168,22 @@ describe('Mutation.startOven', () => {
     const result = await execute(startOven)
 
     expect(result.errors?.[0]?.extensions?.code).toBe('OVEN_OFFLINE')
+  })
+
+  test('answers OVEN_ACCESS_EXPIRED when Electrolux refuses every token', async () => {
+    appliance.found = 'access-expired'
+
+    const result = await execute(startOven)
+
+    expect(result.errors?.[0]?.extensions?.code).toBe('OVEN_ACCESS_EXPIRED')
+  })
+
+  test('answers COMMAND_REFUSED when the platform refuses the command', async () => {
+    appliance.outcome = 'command-refused'
+
+    const result = await execute(startOven)
+
+    expect(result.errors?.[0]?.extensions?.code).toBe('COMMAND_REFUSED')
   })
 
   test('answers NO_OVEN_PROFILE for a version that never bakes', async () => {

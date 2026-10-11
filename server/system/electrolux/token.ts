@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node'
 import { config } from '~/system/config'
 import { rememberRefreshToken, storedRefreshToken } from '~/system/electrolux/repository'
 
@@ -32,7 +33,12 @@ const spend = async (apiKey: string, refreshToken: string): Promise<Pair | 'reje
   return (await response.json()) as Pair
 }
 
-export const accessToken = async (): Promise<string | 'not-configured'> => {
+// Whether this instance has already reported a dead chain. Every recipe sheet asks
+// the oven every thirty seconds, and a chain stays dead until someone re-provisions
+// it — once is the signal, the rest is noise.
+let reportedDeadChain = false
+
+export const accessToken = async (): Promise<string | 'not-configured' | 'access-expired'> => {
   const settings = config().electrolux
   if (!settings) return 'not-configured'
   if (cached && cached.expiresAt > Date.now()) return cached.value
@@ -56,9 +62,18 @@ export const accessToken = async (): Promise<string | 'not-configured'> => {
     const pair = await spend(settings.apiKey, candidate)
     if (pair === 'rejected') continue
     await rememberRefreshToken(pair.refreshToken)
+    reportedDeadChain = false
     cached = { value: pair.accessToken, expiresAt: Date.now() + CACHE_MS }
     return pair.accessToken
   }
 
-  throw new Error('Electrolux rejected every refresh token: the chain needs a new pair')
+  // Every token refused is an outcome, not a fault: the oven is fine, the access to
+  // it is over until a new pair is generated on the developer portal. Swallowed into
+  // "the oven does not answer", this sent a cook to check the oven's Wi-Fi for weeks
+  // while nothing reported it — hence a sentinel of its own, and a report.
+  if (!reportedDeadChain) {
+    reportedDeadChain = true
+    Sentry.captureMessage('Electrolux rejected every refresh token: the chain needs a new pair')
+  }
+  return 'access-expired'
 }

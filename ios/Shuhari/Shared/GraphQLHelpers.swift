@@ -243,6 +243,15 @@ enum APIError: LocalizedError {
             if codes.contains("OVEN_OFFLINE") {
                 return "Le four ne répond pas. Vérifie qu’il est allumé et connecté au Wi-Fi."
             }
+            // Nothing on the oven fixes these two, so neither sends the cook to it:
+            // the first is Shuhari's own access to the Electrolux account, the second
+            // a refusal the platform gave for its own reasons.
+            if codes.contains("OVEN_ACCESS_EXPIRED") {
+                return "La connexion entre Shuhari et ton compte Electrolux a expiré. Le four n’y est pour rien : il faut générer de nouveaux jetons sur le portail développeur Electrolux."
+            }
+            if codes.contains("COMMAND_REFUSED") {
+                return "Electrolux a refusé de lancer cette cuisson. Lance-la depuis l’écran du four."
+            }
             if codes.contains("OVEN_BUSY") {
                 return "Le four est déjà en cuisson. Arrête-la avant d’en lancer une autre."
             }

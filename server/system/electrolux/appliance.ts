@@ -29,16 +29,17 @@ const call = async (
   path: string,
   init?: RequestInit,
   retried = false,
-): Promise<Response | 'unavailable'> => {
+): Promise<Response | 'unavailable' | 'access-expired'> => {
   const settings = config().electrolux
   if (!settings) return 'unavailable'
 
-  // Getting a token reads Firestore and calls Electrolux; either can fail. Both
-  // failures mean the same thing to a cook — the oven cannot be reached — and
-  // NEITHER may reach the recipe sheet as an error: an oven that is down must
-  // never be an app that is down.
+  // Getting a token reads Firestore and calls Electrolux; either can fail, and
+  // NEITHER may reach the recipe sheet as an error: an oven that is down must never
+  // be an app that is down. A chain Electrolux refuses outright is not one of those
+  // failures — it is told apart, because the cure is a new token pair, not the oven.
   const token = await accessToken().catch(() => 'not-configured' as const)
   if (token === 'not-configured') return 'unavailable'
+  if (token === 'access-expired') return 'access-expired'
 
   const response = await fetch(`${BASE}${path}`, {
     ...init,
@@ -56,8 +57,9 @@ const call = async (
   return response
 }
 
-export const findOven = async (): Promise<OvenAppliance | 'no-oven'> => {
+export const findOven = async (): Promise<OvenAppliance | 'no-oven' | 'access-expired'> => {
   const response = await call('/appliances')
+  if (response === 'access-expired') return 'access-expired'
   if (response === 'unavailable' || !response.ok) return 'no-oven'
 
   const appliances = (await response.json()) as { applianceId: string; applianceType: string }[]
@@ -87,7 +89,9 @@ const minutesFrom = (seconds: unknown): number | undefined =>
 
 export const applianceState = async (applianceId: string): Promise<ApplianceState> => {
   const response = await call(`/appliances/${applianceId}/state`)
-  if (response === 'unavailable' || !response.ok) return UNREACHABLE
+  if (response === 'unavailable' || response === 'access-expired' || !response.ok) {
+    return UNREACHABLE
+  }
 
   const body = (await response.json()) as { properties?: { reported?: Record<string, unknown> } }
   const reported = body.properties?.reported ?? {}
@@ -162,6 +166,7 @@ export const startCooking = async (
     body: JSON.stringify(commandFor(profile, program)),
   })
   if (response === 'unavailable') return 'oven-offline'
+  if (response === 'access-expired') return 'access-expired'
   if (response.ok) return 'started'
 
   // The appliance says WHY it refuses, in the body, and this integration used to
@@ -177,5 +182,9 @@ export const startCooking = async (
   // The documented validation failure: disconnected, or remote control off. The
   // oven can be switched off between the two calls above, so this is reachable.
   if (response.status === 406) return 'remote-control-disabled'
+  // Any other 4xx is the platform refusing THIS command, not an oven out of reach:
+  // reading it as "offline" sends the cook to check a Wi-Fi that is fine. Only a
+  // 5xx — Electrolux itself failing — is the oven being unreachable.
+  if (response.status < 500) return 'command-refused'
   return 'oven-offline'
 }

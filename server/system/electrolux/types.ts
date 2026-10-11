@@ -38,3 +38,9 @@ export type ApplianceRefusal =
   | 'oven-busy'
   // The heating function the version asks for is not on this model's menu.
   | 'program-unsupported'
+  // Electrolux refused every refresh token: the oven is fine, the access to it is
+  // over until a new token pair is generated on the developer portal.
+  | 'access-expired'
+  // The platform refused this command for a reason other than remote control —
+  // its body goes to the reporter, the cook is told it was refused.
+  | 'command-refused'

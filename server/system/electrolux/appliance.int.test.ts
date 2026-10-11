@@ -120,7 +120,9 @@ describe('recovering a dead token chain', () => {
     expect(fake.snapshot('system').get('electrolux')?.refreshToken).toBe('refresh-2')
   })
 
-  test('an oven whose every token is spent is unreachable, not a crash', async () => {
+  // Both tokens refused is what production looked like for weeks while the cook was
+  // told to check the oven's Wi-Fi: the access is over, the oven is not.
+  test('an oven whose every token is spent has an expired access, not a crash', async () => {
     fake.seed('system', 'electrolux', { refreshToken: 'refresh-burnt' })
     globalThis.fetch = mock(async (url: string | URL) =>
       url.toString().includes('/token/refresh')
@@ -128,7 +130,7 @@ describe('recovering a dead token chain', () => {
         : Response.json([]),
     ) as unknown as typeof fetch
 
-    expect(await findOven()).toBe('no-oven')
+    expect(await findOven()).toBe('access-expired')
   })
 })
 
@@ -346,8 +348,8 @@ describe('startCooking', () => {
     })
   })
 
-  // The appliance can refuse a command it accepted the state check for, and the two
-  // ways it does are told apart by the status alone — the body is logged, never
+  // The appliance can refuse a command it accepted the state check for, and the ways
+  // it does are told apart by the status alone — the body is logged, never
   // parsed, because nothing in it is a contract.
   const refusedWith = (status: number, body: string) =>
     respondWith({
@@ -362,7 +364,13 @@ describe('startCooking', () => {
     expect(await startCooking('oven-1', quiche)).toBe('remote-control-disabled')
   })
 
-  test('any other refusal reads as an oven that cannot be reached', async () => {
+  test('any other client error is a refused command, not an unreachable oven', async () => {
+    refusedWith(400, '{"message":"Bad request"}')
+
+    expect(await startCooking('oven-1', quiche)).toBe('command-refused')
+  })
+
+  test('a server error on the platform reads as an oven that cannot be reached', async () => {
     refusedWith(500, 'boom')
 
     expect(await startCooking('oven-1', quiche)).toBe('oven-offline')

@@ -25,14 +25,19 @@ mock.module('~/system/config', () => ({
 // The appliance is a script the test writes: the domain must never care how the
 // Electrolux API spells anything.
 const appliance = {
-  found: true,
+  found: true as boolean | 'access-expired',
   state: { reachable: true, remoteControlEnabled: true, busy: false } as Record<string, unknown>,
   outcome: 'started' as string,
   commanded: [] as unknown[],
 }
 
 mock.module('~/system/electrolux', () => ({
-  findOven: async () => (appliance.found ? { id: 'oven-1' } : 'no-oven'),
+  findOven: async () =>
+    appliance.found === 'access-expired'
+      ? 'access-expired'
+      : appliance.found
+        ? { id: 'oven-1' }
+        : 'no-oven',
   applianceState: async () => appliance.state,
   startCooking: async (_id: string, profile: unknown) => {
     appliance.commanded.push(profile)
@@ -142,6 +147,19 @@ describe('OvenUseCase.start', () => {
     appliance.found = false
 
     expect(await OvenUseCase.start(OWNER, QUICHE, V1)).toBe('oven-offline')
+  })
+
+  test('an expired access is told apart from an offline oven', async () => {
+    appliance.found = 'access-expired'
+
+    expect(await OvenUseCase.start(OWNER, QUICHE, V1)).toBe('oven-access-expired')
+    expect(appliance.commanded).toEqual([])
+  })
+
+  test('relays a command the platform refused', async () => {
+    appliance.outcome = 'command-refused'
+
+    expect(await OvenUseCase.start(OWNER, QUICHE, V1)).toBe('command-refused')
   })
 
   test('answers the fresh state once the cooking has started', async () => {

@@ -26,7 +26,7 @@ export const OvenUseCase = {
     if (!ownsTheOven(userId)) return 'oven-unavailable'
 
     const oven = await findOven()
-    if (oven === 'no-oven') return OFFLINE
+    if (oven === 'no-oven' || oven === 'access-expired') return OFFLINE
 
     const state = await applianceState(oven.id)
     return {
@@ -71,8 +71,10 @@ export const OvenUseCase = {
 
     const oven = await findOven()
     if (oven === 'no-oven') return 'oven-offline'
+    if (oven === 'access-expired') return 'oven-access-expired'
 
     const outcome = await startCooking(oven.id, profile)
+    if (outcome === 'access-expired') return 'oven-access-expired'
     if (outcome !== 'started') return outcome
     const state = await OvenUseCase.state(userId)
     return state === 'oven-unavailable' ? 'oven-offline' : state

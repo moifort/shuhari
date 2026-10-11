@@ -234,7 +234,13 @@ chain**: a failed write, or two instances spending the same token, burns it with
 being stored. The cure is built in rather than operational — the configured secret is tried as a
 fallback when the stored token is rejected, so re-provisioning it and redeploying heals the next
 call. Without that fallback the stored document keeps priority forever and the only fix is
-deleting a Firestore document by hand, which is not a fix anyone finds at the moment they need it. **Why a stored token rather than a secret:** Electrolux
+deleting a Firestore document by hand, which is not a fix anyone finds at the moment they need it.
+**A chain with every token refused is its own outcome, never "offline".** `accessToken` answers
+`access-expired` (reported to Sentry once per instance) and the start answers
+`OVEN_ACCESS_EXPIRED`: from 2026-09-16 to 2026-10-11 the chain was dead, the error was swallowed
+into `OVEN_OFFLINE`, and the cook was told to check an oven whose Wi-Fi was fine. Likewise a
+command refused with a 4xx other than 406 is `COMMAND_REFUSED`; only a 5xx from the platform
+reads as an unreachable oven. **Why a stored token rather than a secret:** Electrolux
 rotates the refresh token on every use, so the value in Secret Manager is only a seed. Pinned
 there, the integration would authenticate once and die silently hours later — the failure mode
 that makes an appliance integration look haunted. Writing the rotated token back is what keeps

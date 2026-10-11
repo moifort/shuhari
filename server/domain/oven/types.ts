@@ -36,7 +36,14 @@ export type StartRefusal =
   | 'oven-unavailable'
   | 'no-oven-profile'
   | 'oven-offline'
+  // The oven is fine; this server's access to it has expired. Electrolux refused
+  // every refresh token, and only a new pair from its developer portal cures it —
+  // which is nothing the cook can do from the oven, so it is never "offline".
+  | 'oven-access-expired'
   | 'remote-control-disabled'
+  // The platform refused the command for a reason of its own, neither remote
+  // control nor an unreachable oven.
+  | 'command-refused'
   | 'oven-busy'
   // The heating function the version asks for is not on this oven's menu — the
   // notebook's vocabulary is wider than any one model, on purpose.
