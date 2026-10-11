@@ -776,6 +776,13 @@ rather than sleeping the whole interval: a sleep already under way would not hea
 that just shortened it, which is the cook watching an unchanged button for half a minute. A read
 that fails leaves the last state on screen — the network blinked, the oven did not vanish.
 
+**An accepted start shows the cooking before the oven admits it.** Between the accepted command
+and the first RUNNING read, the sheet used to offer "Lancer la cuisson" again — on an oven already
+heating. `OvenViewModel.run` therefore answers the reported cooking, or, while the start is still
+settling (`awaitingConfirmation`, the same 30 s window as the quick polls), a cooking with no
+remaining time yet. It is optimistic, not blind: if the oven has reported nothing by the end of the
+window, the flag drops and the button comes back.
+
 ## Error reporting — Sentry
 
 `ShuhariApp.init()` calls `SentrySDK.start` (right after `FirebaseApp.configure()`) with a

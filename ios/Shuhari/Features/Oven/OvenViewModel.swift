@@ -33,6 +33,26 @@ final class OvenViewModel {
     /// instead of offering a second one.
     var isRunning: Bool { state?.running != nil }
 
+    /// True from the moment the oven accepted a start until it reports the cooking.
+    /// The appliance answers through the cloud and admits it is RUNNING only seconds
+    /// later, so without this the button it just lit came back as "Lancer la
+    /// cuisson" for that whole gap — an invitation to press it twice.
+    private(set) var awaitingConfirmation = false
+
+    /// The cooking to show: the one the oven reports, or — while a start it accepted
+    /// is still settling — that one, ahead of the oven saying so. Gives up once the
+    /// settling window is over, so a start the oven silently dropped brings the
+    /// button back instead of claiming a cooking that never began.
+    var run: OvenRun? {
+        state?.running ?? (awaitingConfirmation ? OvenRun(remaining: nil) : nil)
+    }
+
+    /// Whether a start is recent enough to still be settling.
+    private var isSettling: Bool {
+        guard let startedAt else { return false }
+        return Date.now.timeIntervalSince(startedAt) < 30
+    }
+
     func load() async {
         lastRead = .now
         state = try? await OvenAPI.state()
@@ -55,6 +75,7 @@ final class OvenViewModel {
             // for half a minute.
             try? await Task.sleep(for: .seconds(1))
             guard !Task.isCancelled else { return }
+            if awaitingConfirmation, !isSettling { awaitingConfirmation = false }
             guard Date.now.timeIntervalSince(lastRead) >= interval else { continue }
             await refresh()
         }
@@ -65,9 +86,7 @@ final class OvenViewModel {
     /// sheet can stay open all afternoon, while a running cooking only ever counts
     /// whole minutes down.
     private var interval: TimeInterval {
-        guard !isRunning, let startedAt, Date.now.timeIntervalSince(startedAt) < 30 else {
-            return 30
-        }
+        guard !isRunning, isSettling else { return 30 }
         return 3
     }
 
@@ -79,6 +98,7 @@ final class OvenViewModel {
         lastRead = .now
         guard let fresh = try? await OvenAPI.state() else { return }
         state = fresh
+        if fresh.running != nil { awaitingConfirmation = false }
     }
 
     /// Start the version's cooking. Reports the oven's refusal as a sentence rather
@@ -87,10 +107,11 @@ final class OvenViewModel {
         await error.run {
             self.state = try await OvenAPI.start(recipeId: recipeId, version: version)
         } onSuccess: {
-            // The oven has taken the command but usually still reads as idle. That
-            // gap is exactly what the quick polls are for; a refusal has no gap to
-            // close, and keeps the slow pace.
+            // The oven has taken the command but usually still reads as idle. The
+            // sheet shows the cooking at once, and the quick polls close the gap; a
+            // refusal has no gap to close, and keeps the slow pace.
             self.startedAt = .now
+            self.awaitingConfirmation = self.state?.running == nil
         }
     }
 }

@@ -339,7 +339,7 @@ struct RecipeDetailView: View {
     /// What the oven is already doing, written out. The remaining minutes ride
     /// along when the oven counts them; a probe cook has none to report.
     private var runningLabel: String? {
-        guard let running = oven.state?.running else { return nil }
+        guard let running = oven.run else { return nil }
         guard let remaining = running.remaining else { return "Cuisson en cours" }
         return "Cuisson en cours · \(remaining) min"
     }
