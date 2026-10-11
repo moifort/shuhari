@@ -10,10 +10,12 @@ set -euo pipefail
 DEVICE_ID="00008130-000A2068029A001C" # TiPhone junior (iPhone 15 Pro)
 export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 
+# -allowProvisioningUpdates: a new target (the widget extension) has no
+# development profile yet, and automatic signing only creates one when asked.
 echo "==> Building for device ${DEVICE_ID}"
 xcodebuild -project ios/Shuhari.xcodeproj -scheme Shuhari \
   -destination "platform=iOS,id=${DEVICE_ID}" \
-  -derivedDataPath build/device build
+  -derivedDataPath build/device -allowProvisioningUpdates build
 
 APP="build/device/Build/Products/Debug-iphoneos/Shuhari.app"
 
