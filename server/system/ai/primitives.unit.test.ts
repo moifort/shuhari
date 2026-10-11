@@ -241,7 +241,7 @@ describe('parseCookingImportResponse — clamps oversized AI strings to domain l
       type: 'thermomix',
       title: 'T'.repeat(500),
       ingredients: [{ name: 'N'.repeat(200), quantity: 'Q'.repeat(200) }],
-      steps: [{ text: 'E'.repeat(500), thermomix: { time: 't'.repeat(50) } }],
+      steps: [{ text: 'E'.repeat(RECIPE_MAX.stepText + 50), thermomix: { time: 't'.repeat(50) } }],
     })
 
     expect(result.title.length).toBe(RECIPE_MAX.title)

@@ -62,7 +62,7 @@ export const miseEnPlaceSchemaProperty = {
   type: 'array',
   description:
     'The mise en place: EVERYTHING to ready before the first step, written in French, one short ' +
-    'line per preparation, imperative mood, ≤300 characters each. What is taken out (butter ' +
+    'line per preparation, imperative mood, ≤1000 characters each. What is taken out (butter ' +
     'softening, meat at room temperature), weighed or measured, washed, peeled, cut (with the ' +
     'cut: "Émincer 2 oignons"), soaked, preheated (oven, pan, water), lined or greased. Derived ' +
     'from the ingredients and the steps — read every step and pull out what it assumes ready. ' +
@@ -79,7 +79,7 @@ export const stepsSchemaProperty = {
     properties: {
       text: {
         type: 'string',
-        description: 'Short step text, in French, imperative mood, ≤300 characters',
+        description: 'Step text, in French, imperative mood, ≤1000 characters',
       },
       // Always return the step object; its settings are null on a step that is not
       // performed on the Thermomix (never skip or drop the step itself).

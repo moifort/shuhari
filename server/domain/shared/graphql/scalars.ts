@@ -151,7 +151,7 @@ builder.scalarType('IngredientQuantity', {
 
 builder.scalarType('StepText', {
   description:
-    'One instruction in the method, e.g. `"Fold in the egg whites"` (1 to 300 characters)',
+    'One instruction in the method, e.g. `"Fold in the egg whites"` (1 to 1000 characters)',
   serialize: (value) => value as string,
   parseValue: validatedParse('StepText', StepText),
 })

@@ -6,7 +6,7 @@ export const RECIPE_MAX = {
   changeSummary: 200,
   ingredientName: 120,
   ingredientQuantity: 60,
-  stepText: 300,
+  stepText: 1000, // a cookbook step runs long — knead, turn out, shape and prove in one breath
   tip: 300,
   warning: 300,
   tagLabel: 30, // a word or two — it has to fit a capsule next to the version badge

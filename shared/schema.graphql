@@ -2002,7 +2002,7 @@ enum SortOrder {
 }
 
 """
-One instruction in the method, e.g. `"Fold in the egg whites"` (1 to 300 characters)
+One instruction in the method, e.g. `"Fold in the egg whites"` (1 to 1000 characters)
 """
 scalar StepText
 
