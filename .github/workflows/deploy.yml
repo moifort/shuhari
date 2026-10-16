@@ -5,6 +5,12 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# One deployment at a time, and never stopped halfway: a newer push waits for
+# the one running, and only the newest one waiting runs next.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
 permissions:
   contents: read
   id-token: write   # required for Workload Identity Federation
