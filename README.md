@@ -94,7 +94,7 @@ if you intend to deploy. Running the backend locally needs neither.
 
 ### Gemini API key
 
-**What it does:** powers recipe import and the AI iteration proposals (Gemini 2.5 Flash). Without
+**What it does:** powers recipe import and the AI iteration proposals (Gemini 3.5 Flash-Lite). Without
 it, the server runs but importing and proposing fail.
 
 **How to get it:** create one in [Google AI Studio](https://aistudio.google.com/apikey) →
