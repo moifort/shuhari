@@ -78,6 +78,10 @@ Everything versioned and technical is **English**: commits, code, comments, docs
 - `server/system/migration/` — forward-only sequential migrations, no rollback, triggered by `POST /admin/migrate` (CI deploy / provisioning). When to migrate, how to write and register one: [docs/migrations.md](docs/migrations.md).
 - **Dated note (2026-07-20)**: production Firestore now holds real data — **every schema-shape change needs its migration**, the pre-release shortcut is over.
 
+## Backups and recovery
+
+The `(default)` database has delete protection and seven-day point-in-time recovery; there is no backup outside it. When data is lost — deleted documents, a failed migration, a deleted database or project — follow [docs/data-recovery.md](docs/data-recovery.md) before acting, and never restore the whole database over live writes.
+
 ## iOS Patterns (SwiftUI)
 
 > Full iOS guide: [docs/ios-guide.md](docs/ios-guide.md) — project wiring; the portable SwiftUI
