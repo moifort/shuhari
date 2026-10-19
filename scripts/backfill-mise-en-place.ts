@@ -37,8 +37,9 @@ import { RECIPE_MAX } from '../server/domain/recipe/limits'
 import { miseEnPlaceSchemaProperty } from '../server/system/ai/schema'
 
 const PROJECT_ID = 'shuhari-polyforms'
+// The same model the server calls (see server/system/ai/gemini.ts for why).
 const GEMINI_API_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent'
 // The same cap the AI parse layer puts on every list it reads.
 const MAX_LINES = 100
 // Between two calls — Flash's free tier is rate-limited per minute, and a backfill
@@ -134,9 +135,10 @@ const responseSchema = {
 // of whitespace folded to one space, since the model has been seen breaking a line
 // in the middle of a word.
 const askMiseEnPlace = async (apiKey: string, text: string): Promise<string[]> => {
-  const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+  const response = await fetch(GEMINI_API_URL, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    // The key travels in a header, never in the URL a failed call's error would quote.
+    headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
     body: JSON.stringify({
       contents: [{ parts: [{ text }] }],
       generationConfig: { responseMimeType: 'application/json', responseSchema },
