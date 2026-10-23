@@ -31,6 +31,7 @@ already on the listing, so a release that does not change the interface needs no
 6. Tag and push. The tag is **annotated and carries the release notes**, so the version's
    contents can be read from the tag itself without opening the changelog, and `ios-v` names the
    platform it releases — the workflow only listens to `ios-v*`:
+
    ```bash
    git tag -a ios-v1.0 --cleanup=verbatim -m "$(bun scripts/release-notes.ts markdown 1.0 en)"
    git push origin ios-v1.0
@@ -92,7 +93,6 @@ captions in `scripts/screenshots/panels.json`, design in the CSS of `scripts/scr
 Then **look at them** before uploading.
 
 Three traps the script works around, worth knowing before touching it:
-
 - The simulator build is made in **Debug**. `DebugGallery` sits behind `#if DEBUG`; a Release
   build ignores the `-gallery` argument and every capture returns the same screen.
 - Each capture **terminates the app before relaunching it**. `simctl launch` on a running app
@@ -116,7 +116,7 @@ Xcode triggers **ITMS-90111** (Unsupported SDK or Xcode version) on upload.
 
 Only useful when the pipeline is unavailable. If the dev Mac runs a **beta macOS**, archives get
 a prerelease `BuildMachineOSBuild` stamp that App Store validation rejects, also with ITMS-90111.
-After archiving, patch it to the latest **public** macOS build number *before* `-exportArchive`
+After archiving, patch it to the latest **public** macOS build number _before_ `-exportArchive`
 (export re-signs, so the patch survives):
 
 ```bash
@@ -143,7 +143,6 @@ for review" behind the refused version. Shuhari links Apple's standard EULA rath
 one: nothing here departs from it.
 
 The link belongs in **two** places, and both are in the repository:
-
 - the description, at the end of `fastlane/metadata/fr-FR/description.txt`, alongside the privacy
   policy — this is the metadata Apple's automated check reads;
 - the paywall, under the subscribe button (`SubscriptionLinks`, shown by `PremiumSheet`) — a

@@ -34,9 +34,8 @@ Button {
 ```
 
 Rules that come with it:
-
 - **One source of truth for "in flight."** If the action already runs through a helper that tracks
-  its own state (an error presenter, a view model flag), bind the spinner to *that* — never a
+  its own state (an error presenter, a view model flag), bind the spinner to _that_ — never a
   parallel `@State` boolean that can drift out of sync.
 - **Refresh inside the in-flight window.** When success is followed by a reload, `await` the reload
   in the same closure rather than in a detached `Task`: otherwise the spinner stops before the view
@@ -44,7 +43,7 @@ Rules that come with it:
 - **`.interactiveDismissDisabled(isRunning)` on any sheet that writes.** A swipe mid-write orphans
   the task and leaves the user unsure whether anything was saved.
 - **A row in a list carries its own spinner**, in its trailing edge — a form with several actions
-  needs to say *which* one is running, so track the running action as an enum, not a boolean.
+  needs to say _which_ one is running, so track the running action as an enum, not a boolean.
 
 ### 2. Long or AI work — the full-bleed loader
 
@@ -67,7 +66,7 @@ and reload the list, which puts the row back.
 - An `alert` button that `await`s in silence: the alert dismisses and the screen freezes with no
   indication anything is happening. An alert cannot host a spinner — either move the work to a
   screen that can, or make it optimistic (shape 3).
-- A `ProgressView` parked in a section unrelated to the control that was tapped — put it *on* the
+- A `ProgressView` parked in a section unrelated to the control that was tapped — put it _on_ the
   control.
 - A spinner with no `.disabled`: it says "working" while still accepting a second tap.
 
@@ -83,7 +82,6 @@ settings list. It does not hold for data that is worthless when stale — a bala
 one-time code — where a stale row read as current is worse than a wait.
 
 Three things make it work, and the third is the one that gets forgotten:
-
 1. **Read the cache before the network, synchronously, in the store's `init`.** An `await` here
    costs a frame of empty screen, which is the whole thing you set out to avoid.
 2. **Cache only the view the screen opens on.** A sorted, filtered or paginated-past-the-first-page
@@ -117,7 +115,6 @@ A marker column — a status dot, a drag handle, a checkmark — belongs to **al
 or to none of them. Give it only to the rows that can carry a marker and the labels of the same
 section stop lining up: the `Toggle` sits on the standard inset, the marked field sits seven points
 further in, and the eye reads the shift as a defect. Two ways out, and only these two:
-
 - **The gutter is conditional, per screen.** When nothing on this screen can ever be marked, drop
   the column entirely — every label keeps SwiftUI's own inset, aligned with the section header.
   When something can, give the gutter to every row, marker or not.
@@ -182,7 +179,6 @@ rest as typed, and never silently do nothing.
 Screens of the same flow show the same object: a detail, the sheet listing its parts, the child
 pushed from that sheet. Giving each its own view model means each fetches that object again, and
 that is two bugs at once:
-
 - **latency the user reads as a freeze** — a push that already has everything it needs on screen
   still opens on a spinner, so picking a row feels like nothing happened;
 - **screens that contradict each other** — two copies read at two moments, so a badge says nothing
@@ -214,7 +210,7 @@ re-rendered by every load any of the others triggers. Ten picks are then a hundr
 evaluations and twenty requests, and the screen the user is looking at is the one that pays for
 it. What they report is not "my stack is deep", it is **"the app freezes"**.
 
-Push a *destination*; hold a *selection* in `@State`:
+Push a _destination_; hold a _selection_ in `@State`:
 
 ```swift
 @State private var selectedVersion: Int?          // what the one screen shows

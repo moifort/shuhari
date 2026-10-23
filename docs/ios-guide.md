@@ -47,8 +47,8 @@ ios/
         └── RecipeType+GraphQL.swift    # enum bridging generated ⇄ design enums
 ```
 
-> **Layer naming is role-based, not uniform.** The *coordinator* is a `*View.swift` (owns
-> navigation + API); *pure presentation* is a `*Page.swift`; the *ViewModel* is a `*Store` (Home
+> **Layer naming is role-based, not uniform.** The _coordinator_ is a `*View.swift` (owns
+> navigation + API); _pure presentation_ is a `*Page.swift`; the _ViewModel_ is a `*Store` (Home
 > and most features) or a `*ViewModel` (Recipe). Atoms live centrally in `Shared/Components/` —
 > features have no per-feature `atoms/`. Some features (Proposal, Import) only have `pages/`.
 
@@ -62,7 +62,7 @@ Both tabs are the same machinery pointed at different types: one `LibraryStore(t
 `HomePage`, one `LibrarySection`, and the type-agnostic `recipeFlow`. What differs is what each is
 filed by — a dish course vs. a brew method — which is why `HomePage`'s filter facet is
 **primitive-first** (`Facet`: a title, `(id, label, systemImage)` options and a `Binding<String?>`)
-rather than typed on `DishCategory`: the page filters on *something* without knowing what. The
+rather than typed on `DishCategory`: the page filters on _something_ without knowing what. The
 domain-to-primitive bridges are `HomePage.Facet.course(selection:)` / `.method(selection:)`.
 
 **A library opens filed, not dated.** `LibraryStore(types:sort:)` opens on `.dishCategory`
@@ -99,7 +99,7 @@ analysed (`ImportInput.draft`) and reopens the cover on it; `ExecuteFlowView` si
 its `CapturePage`, whose `@State` never left the `NavigationStack` root. Asking again is a second
 AI call and a second unit off the monthly allowance — closing is free, re-asking is not. A flow
 that already wrote a cook before proposing (tips) must not write it twice on the second
-validation. The one thing that *does* leave: a run that has already written a **version** down (a
+validation. The one thing that _does_ leave: a run that has already written a **version** down (a
 change accepted, then its chained improvement closed) ends there rather than coming back to a form
 whose text would create that version a second time.
 
@@ -159,11 +159,10 @@ several seconds of loader over a library that had barely changed. `LibraryCache`
 file per tab, and `LibraryStore.init` reads it **synchronously** before anything is asked of the
 network — the rows are on screen in the first frame. See
 [a list that reopens never opens empty](swiftui-best-practices.md#a-list-that-reopens-never-opens-empty).
-
 - **What is written**: page 0 of the tab's opening order, and only that — `saveCache()` bails out
   as soon as a facet or another sort is on. Written off the main actor, after each successful
   `load()` and after an optimistic delete, which no reload follows.
-- **What is read**: nothing, unless the file decodes *and* carries the current `version` *and*
+- **What is read**: nothing, unless the file decodes _and_ carries the current `version` _and_
   holds at least one row — an empty library must show its first-run nudge, not a list that happens
   to be empty. Bump `LibraryCache.version` whenever `LibraryRecipe` changes shape.
 - **The refresh that follows is silent**: its own `isRefreshing` flag, never `isLoading`, and
@@ -258,7 +257,6 @@ history sheet and the to-cook sheet. They share **one**
 `RecipeStore` (`Features/Recipe/RecipeStore.swift`), owned by the tab that hosts the flow
 (`HomeView`, `CoffeeView`) beside its `LibraryStore` and handed down through
 `.recipeFlow(store:path:…)` — see [one state per flow](swiftui-best-practices.md#one-state-per-flow-never-one-per-screen).
-
 - `store.recipe(id)` is what the screen renders; `store.load(id)` is called by its `.task`
   (unguarded) and after every mutation, so one read updates the screen and its sheets at once.
 - **Which version is shown is `@State` on the screen, not a route.** The history and to-cook
@@ -320,12 +318,12 @@ struct HomePage: View {                         // pure presentation
 
 ## Atomic Design
 
-| Layer | Location | Receives | Examples |
-|-------|----------|----------|----------|
-| **Atoms** | `Shared/Components/` | Primitives | `Chip`, `RatingBadge`, `RatingStars`, `StepsList` |
-| **Molecules** | `Features/{F}/components/molecules/` | Primitives | `LibraryRow`, `VersionTimelineItem` |
-| **Organisms** | `Features/{F}/components/organisms/` | Primitives or a domain struct (mapping boundary) | `LibrarySection`, `IngredientsSection` |
-| **Pages** | `Features/{F}/components/pages/` | Data + closures | `HomePage`, `RecipeDetailPage` |
+| Layer         | Location                             | Receives                                         | Examples                                          |
+| ------------- | ------------------------------------ | ------------------------------------------------ | ------------------------------------------------- |
+| **Atoms**     | `Shared/Components/`                 | Primitives                                       | `Chip`, `RatingBadge`, `RatingStars`, `StepsList` |
+| **Molecules** | `Features/{F}/components/molecules/` | Primitives                                       | `LibraryRow`, `VersionTimelineItem`               |
+| **Organisms** | `Features/{F}/components/organisms/` | Primitives or a domain struct (mapping boundary) | `LibrarySection`, `IngredientsSection`            |
+| **Pages**     | `Features/{F}/components/pages/`     | Data + closures                                  | `HomePage`, `RecipeDetailPage`                    |
 
 A row that opens something is a `.plain` `Button` whose label ends in `.contentShape(.rect)`,
 set in the row view itself (`VersionRow`, `LinkedRecipesSection`, `UsedBySection`): the whole
@@ -394,11 +392,11 @@ The rule and its rationale live in
 [swiftui-best-practices.md](swiftui-best-practices.md#a-cta-that-fires-a-network-call-never-waits-in-silence).
 Here is what implements it in this app:
 
-| Shape | This app |
-|-------|----------|
-| Inline spinner in the button | `ActionIcon` (`Shared/Components/ActionIcon.swift`), fed by `ErrorPresenter.isRunning` (`Shared/ErrorPresenter.swift`) whenever the action already runs through `error.run { }` |
-| Full-bleed loader for long/AI work | `AIThinkingCard` (`Shared/Components/AIThinkingIndicator.swift`) — every Gemini wait (import analysis, iteration proposal) |
-| Optimistic + background for one-way actions | `LibraryStore.delete(recipeId:)` — the recipe sheet closes at once, the mutation follows, a failure goes to Sentry via `reportError` and the reload puts the row back |
+| Shape                                       | This app                                                                                                                                                                        |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Inline spinner in the button                | `ActionIcon` (`Shared/Components/ActionIcon.swift`), fed by `ErrorPresenter.isRunning` (`Shared/ErrorPresenter.swift`) whenever the action already runs through `error.run { }` |
+| Full-bleed loader for long/AI work          | `AIThinkingCard` (`Shared/Components/AIThinkingIndicator.swift`) — every Gemini wait (import analysis, iteration proposal)                                                      |
+| Optimistic + background for one-way actions | `LibraryStore.delete(recipeId:)` — the recipe sheet closes at once, the mutation follows, a failure goes to Sentry via `reportError` and the reload puts the row back           |
 
 ```swift
 Button {
@@ -479,7 +477,6 @@ longer what the version stores. The corollary is that `IngredientsGrid` wears th
 inside the stepper's label — resizing an iteration never costs the marks saying what it changes.
 
 Three consequences worth holding on to:
-
 - **`RecipeDraft` is the whole sheet, in one value** (`Features/Recipe/RecipeDraft.swift`): the
   aggregate's fields plus the version's, each list held as rows with an identity of their own
   (`IngredientRow`, `StepRow`, `TextRow`) because a name cannot identify a row while it is being
@@ -493,7 +490,7 @@ Three consequences worth holding on to:
   trips for a full edit, and a failure halfway left half a sheet saved. Nothing creates a version —
   correcting what the recipe always said is not iterating on it.
 - **Every list edits the same way**: type on a line, swipe it away, add one at the end
-  («  Ajouter un ingrédient », « Ajouter une étape », « Ajouter un avertissement », « Ajouter un
+  (« Ajouter un ingrédient », « Ajouter une étape », « Ajouter un avertissement », « Ajouter un
   conseil »). Reordering and multi-deletion need the edit mode, behind a « Réorganiser » button —
   never SwiftUI's `EditButton`, whose label is "Modifier", the name of the sheet itself.
 
@@ -516,7 +513,6 @@ on two sections above the shopping list: `LinkedRecipesSection` ("Recettes liée
 the whole feature is invisible on a recipe that stands alone.
 
 Four things worth knowing before touching those files:
-
 - **The weight travels in the route.** `RecipeRoute.recipe(id:scale:)` defaults to `1`; a row of
   "Recettes liées" pushes the linked recipe at the weight it was linked at, and `RecipeDetailPage`
   opens on it (`openedAt`). That is also what "Réinitialiser" goes back to — landing on the stored
@@ -581,7 +577,6 @@ else. The recipe type itself is never a badge — what a recipe wears is its
 A recipe's [tags](business-rules.md#tags--what-a-recipe-is-filed-under) are drawn in two places,
 and both take `[TagBadge]` (label + optional `Image`, mapped by the page through `Tag.badge`) —
 never the domain `Tag`:
-
 - `LibraryRow(tags:)` closes the subtitle with **icon-only** compact `Chip`s, one per tag that
   wears an icon; a tag without one is not drawn there.
 - `RecipeHeaderBadges(tags:)` shows every tag, icon and words, ahead of the version capsule, in a
@@ -602,7 +597,6 @@ doors (type the amount, or walk it with the −/+), the same badge and « Réini
 same single factor, which `RecipeDetailPage` hands to whichever section is on screen.
 
 Three things are specific to the cup:
-
 - **Four quantities move, and they are named, not detected**: the dose, the water, the yield in the
   cup and the milk (`CoffeeParametersSection.Quantity`). Everything else stays exactly as written —
   and it has to be spelled out, because "93°C" and "28 s" lead with a number and would follow along
@@ -616,8 +610,8 @@ Three things are specific to the cup:
 
 ### Correcting the note
 
-The note belongs to the *version* on screen, so its row in `RecipeEditSheet` is labelled « Note de
-la version *n* » — it must be clear which verdict is being moved — and it sits in a block of its
+The note belongs to the _version_ on screen, so its row in `RecipeEditSheet` is labelled « Note de
+la version _n_ » — it must be clear which verdict is being moved — and it sits in a block of its
 own, apart from the title and the course, which belong to the recipe.
 
 The stars are the same `StarRating` the capture page uses, in its `compact` size: a form row's
@@ -639,7 +633,7 @@ not iterating.
 Every field is labelled with `LabeledContent`, value on the trailing edge, mirroring the read-only
 sheet: a placeholder disappears exactly when a form of fifteen fields needs it. Two facts get a
 `Toggle` rather than an empty field, because their absence is information a blank cannot express —
-« Date de torréfaction connue » (a `DatePicker` always shows *some* date) and « Boisson lactée » (a
+« Date de torréfaction connue » (a `DatePicker` always shows _some_ date) and « Boisson lactée » (a
 drink either has milk or has not).
 
 **A roast date already known is shown, never asked.** The date toggle only exists to declare one
@@ -692,13 +686,13 @@ where one starts existing.
 
 **"Copier les réglages du four" is how a profile gets filled in fast.** The API exposes no dish
 catalogue — heating functions and dials only, never the "Quiche" the appliance's screen offers —
-so the prefill comes from the appliance's *current dials* instead: you set the cooking up on the
+so the prefill comes from the appliance's _current dials_ instead: you set the cooking up on the
 oven itself, its own assisted programmes included, and one tap has the recipe remember it. The
 button's footer names what it will copy before it copies it, and the row disappears only when the
 oven reports **nothing at all** — one reading is enough to make the gesture worth offering.
 
 The copy is as complete as the oven's answer. A dial it reports is taken, a dial it does not is
-left to you: requiring a heating function *and* a temperature is what hid the button on a real
+left to you: requiring a heating function _and_ a temperature is what hid the button on a real
 oven baking bread at 230 °C for an hour, whose programme code the notebook had no word for — the
 mode alone was missing, and it took the two settings that were there down with it. When the mode
 is missing the footer says so, because an untouched "Mode" row otherwise reads as the oven's
@@ -720,7 +714,7 @@ down "Pizza 250 °C" is legitimate even on an oven that cannot run it. Starting 
 notebook lie about the recipe.
 
 **An assisted cooking is named by the dish it runs**, never by "Cuisson assistée": a mode row that
-cannot say *which* programme is a recipe nobody can follow. The appliance hands over a code and no
+cannot say _which_ programme is a recipe nobody can follow. The appliance hands over a code and no
 label, and its API exposes no catalogue, so `assistedNames` in `OvenProgram.swift` holds the pairs
 (`ASSIST_QUICHEANDTARTETHIN` → "Quiche et tarte fine") and `label(assisted:)` reads them. The table
 is **partial by design**, exactly like the server's `PROGRAM_CODES`: a code with no name yet falls
@@ -743,7 +737,7 @@ picker it replaces. The list inside keeps the system's own `Label` rows, icons i
 `OvenViewModel` loads `Query.oven` alongside the recipe. **A nil state means this account owns no
 oven, and the CTA is then absent entirely** — not disabled, not greyed: an account without an oven
 is a smaller app, not a broken one. An oven that is merely offline or refusing remote operation
-still shows the button, because pressing it is how the cook learns *why*.
+still shows the button, because pressing it is how the cook learns _why_.
 
 The CTA obeys the "a CTA that hits the network shows it" rule (`ActionIcon` spinner), and it is
 never one tap from a heating element: a `confirmationDialog` repeats the exact settings being
@@ -759,9 +753,9 @@ on. Every heating function keeps its CTA, unchanged.
 
 The refusals are turned into sentences in `APIError.errorDescription`, next to `QUOTA_EXHAUSTED`,
 not in the view model. `REMOTE_CONTROL_DISABLED` is the one a cook meets most often and the only
-one they can act on, so it names the path: *Réglages → Connexions*. `ASSISTED_NOT_STARTABLE` is
+one they can act on, so it names the path: _Réglages → Connexions_. `ASSISTED_NOT_STARTABLE` is
 the opposite case — nothing the cook switches on will ever make it work, the appliance simply
-refuses its own programmes as commands — so the sentence says where the cooking *does* start (the
+refuses its own programmes as commands — so the sentence says where the cooking _does_ start (the
 oven's screen) instead of what to change. `OVEN_ACCESS_EXPIRED` and `COMMAND_REFUSED` never send the cook to the oven either: the first is
 Shuhari's own access to the Electrolux account (a new token pair cures it), the second a refusal
 the platform gave for its own reasons, so the sentence offers the oven's screen instead.
@@ -795,7 +789,7 @@ phone can stay locked in a pocket through the whole cooking without the app runn
 cooking without a timer counts up from its start instead.
 
 The pieces sit where each process can reach them. `ShuhariWidgets/` is a widget extension that
-only *draws*; `OvenActivity/` is a synchronized folder compiled into both targets — the
+only _draws_; `OvenActivity/` is a synchronized folder compiled into both targets — the
 `OvenActivityAttributes` the two processes agree through, the primitive-first `OvenActivityView`
 (which the `oven-activity` gallery screen also draws, and starts for real), and `OvenProgram`,
 because the state carries the program's **technical symbol** and the widget translates it — the
@@ -831,7 +825,6 @@ call sites in ViewModels are unchanged.
 ## Auth — Firebase + Sign in with Apple
 
 Wired in `Features/Auth/` plus `FirebaseApp.configure()` in `ShuhariApp.init()` (no `AppDelegate`):
-
 - `AuthRoot.swift` — top gate: `LoginView` when signed out, else `ContentView`; injects
   `AuthSession` into the environment.
 - `AuthSession.swift` — `@MainActor @Observable` wrapper over Firebase's
@@ -880,7 +873,6 @@ struct RecipeVersion: Identifiable, Sendable {
 ## Apollo Codegen
 
 Config: `ios/apollo-codegen-config.json`.
-
 - `schemaNamespace: "ShuhariGraphQL"`
 - schema source: `../shared/schema.graphql` (shared with the backend)
 - operation search paths: `Shuhari/Features/<Feature>/GraphQL/*.graphql` (hand-written per feature)

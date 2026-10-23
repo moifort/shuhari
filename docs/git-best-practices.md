@@ -15,7 +15,7 @@ requests exist, what the push protocol runs) is in [git-workflow.md](git-workflo
 
 ## Verify before committing, not after
 
-The build must be green *before* the commit: type-check and build whatever the change touched, run
+The build must be green _before_ the commit: type-check and build whatever the change touched, run
 the tests when the change has a testable surface. A commit that doesn't build turns `git bisect`
 into guesswork, and "I'll fix it in the next one" is how a red history starts.
 
@@ -32,7 +32,7 @@ Optional body: what changed and why, wrapped ~72 cols.
 
 - **type**: `feat`, `fix`, `refactor`, `docs`, `chore`, `test`, `revert`, …
 - **scope**: the touched area — a platform, a layer, a domain name.
-- The summary says what the commit *does*, not what you did ("add the favourites lens", not "added").
+- The summary says what the commit _does_, not what you did ("add the favourites lens", not "added").
 - The body is for **why**, and for anything a reader six months out couldn't infer from the diff.
 
 ## History is written in one language
@@ -50,7 +50,6 @@ rollback strategy.
 
 Local commits are a workspace; the remote is a record. Before pushing, rewrite the local sequence
 into clean, bisectable units:
-
 - squash or regroup related commits,
 - rewrite unclear messages,
 - **elide undone work** — a feature and its later revert collapse and leave no trace, rather than

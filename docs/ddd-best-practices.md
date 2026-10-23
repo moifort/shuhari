@@ -4,8 +4,8 @@ Portable rules — nothing here names this project. Any TypeScript backend can a
 this repo wires them (its stack, its tree, its domains) is in
 [architecture.md](architecture.md) and [domain-guide.md](domain-guide.md).
 
-The rules draw on two books, cited throughout: **Eric Evans**, *Domain-Driven Design* (2003), and
-**Scott Wlaschin**, *Domain Modeling Made Functional* (2018). The examples use a fictional `bean`
+The rules draw on two books, cited throughout: **Eric Evans**, _Domain-Driven Design_ (2003), and
+**Scott Wlaschin**, _Domain Modeling Made Functional_ (2018). The examples use a fictional `bean`
 domain.
 
 ## The building blocks and where they live
@@ -25,15 +25,15 @@ domain/bean/
     └── graphql/                 # this context's slice of the API schema
 ```
 
-| File | Evans / Wlaschin concept | Responsibility |
-|------|--------------------------|----------------|
-| `types.ts` | Value Objects, Entities; types as documentation | The shapes. No validation code, no IO. |
-| `primitives.ts` | Making illegal states unrepresentable | One constructor per branded type: parse, then brand. If it parses, it is valid everywhere downstream. |
-| `query.ts` | The public read interface | Thin pass-through to the repository. |
-| `command.ts` | The public write interface; Railway-Oriented Programming | Returns the entity, or a sentinel enumerating every legitimate business outcome. |
-| `business-rules.ts` | Pure domain functions | Synchronous, no IO — trivially testable. |
-| `use-case.ts` | Application Service | Coordinates several contexts; owns no business logic and no storage access. |
-| `infrastructure/repository.ts` | Repository | Hides persistence behind a collection-like interface. Private to the context. |
+| File                           | Evans / Wlaschin concept                                 | Responsibility                                                                                        |
+| ------------------------------ | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `types.ts`                     | Value Objects, Entities; types as documentation          | The shapes. No validation code, no IO.                                                                |
+| `primitives.ts`                | Making illegal states unrepresentable                    | One constructor per branded type: parse, then brand. If it parses, it is valid everywhere downstream. |
+| `query.ts`                     | The public read interface                                | Thin pass-through to the repository.                                                                  |
+| `command.ts`                   | The public write interface; Railway-Oriented Programming | Returns the entity, or a sentinel enumerating every legitimate business outcome.                      |
+| `business-rules.ts`            | Pure domain functions                                    | Synchronous, no IO — trivially testable.                                                              |
+| `use-case.ts`                  | Application Service                                      | Coordinates several contexts; owns no business logic and no storage access.                           |
+| `infrastructure/repository.ts` | Repository                                               | Hides persistence behind a collection-like interface. Private to the context.                         |
 
 Not every context needs every file. A context that persists nothing has no repository; a read-only
 one has no `command.ts`.
@@ -41,10 +41,9 @@ one has no `command.ts`.
 ## Ubiquitous language — one concept, one word
 
 One business concept = **one word**, and it is the word the feature speaks. When the functional
-conversation says *"an improvement"*, the code says `improvement` at **every** layer — domain,
+conversation says _"an improvement"_, the code says `improvement` at **every** layer — domain,
 API schema, client, tests — so a grep for the functional word finds the whole feature. UI copy in
-another language is the *translation* of that vocabulary, never a second vocabulary.
-
+another language is the _translation_ of that vocabulary, never a second vocabulary.
 - **Never introduce a synonym at one layer** (`wish`, `suggestion`, `idea` for an improvement):
   six months later nobody knows whether two words are two concepts.
 - **Renaming the concept renames it everywhere**, in the same task. Half-renamed vocabulary is
@@ -55,11 +54,11 @@ another language is the *translation* of that vocabulary, never a second vocabul
 
 The name IS the rule or the action. Exported names in `query.ts` / `command.ts` /
 `business-rules.ts` never start with `get`/`compute`/`handle`/`process`/`manage`/`perform`/`fetch`
-+ a capital.
+- a capital.
 
-- Reads: `all`, `byId`, `versionsOf` — never `getAll`, `fetchVersions`.
-- Writes: the action — `add`, `remove`, `recordAttempt` — never `handleAdd`.
-- Rules: the concept — `bestRating`, `nextVersionNumber` — never `computeBestRating`.
+* Reads: `all`, `byId`, `versionsOf` — never `getAll`, `fetchVersions`.
+* Writes: the action — `add`, `remove`, `recordAttempt` — never `handleAdd`.
+* Rules: the concept — `bestRating`, `nextVersionNumber` — never `computeBestRating`.
 
 `findAll` / `findBy` survive inside the repository: that is the repository idiom.
 
@@ -86,8 +85,7 @@ export namespace BeanQuery {
 
 These are the four that keep the architecture honest — worth enforcing with a test that walks the
 source tree, so a violation fails the build:
-
-1. **Repositories are private.** A context may import only its *own* `infrastructure/repository`.
+1. **Repositories are private.** A context may import only its _own_ `infrastructure/repository`.
    Every other context is reached through the public `Query` / `Command` namespaces.
 2. **No storage outside repositories.** `use-case.ts` and `business-rules.ts` never touch the
    database; `business-rules.ts` is not even `async`.
@@ -114,20 +112,18 @@ never import `proposal`.
 ## Read side — derive, don't duplicate
 
 Prefer deriving composite reads over maintaining a parallel read model:
-
 - **Read-only contexts** assemble data through other contexts' public `Query` namespaces.
 - **Nested API fields** resolve through per-request, micro-batched loaders — one batched read per
   field per request, and nothing at all when the field is not selected. See
   [graphql-best-practices.md](graphql-best-practices.md).
 - **Repeated reads inside one request** collapse through a request-scoped memoization helper.
 
-A field that is *derived* (a best score, the version to open) is computed by a business rule at read
+A field that is _derived_ (a best score, the version to open) is computed by a business rule at read
 time, not stored and kept in sync. A stored duplicate is a bug waiting for the day the two disagree.
 
 ## Storage patterns
 
 Whatever the document store, three patterns carry most of the weight:
-
 - **A typed converter on every collection reference**, so reads come back as domain shapes and
   stored timestamps become real `Date`s.
 - **Aggregate root + append-only satellite**: a small pointer document per aggregate, plus a heavy
@@ -144,8 +140,7 @@ Every query is scoped by the owner's id — multi-tenancy is not a filter the ca
 
 ## Migrations are forward-only and owned by a runner
 
-Changing the *shape* of stored data is a migration; adding to it usually isn't.
-
+Changing the _shape_ of stored data is a migration; adding to it usually isn't.
 - **Migrate** when a field is renamed, restructured, or removed, or when an enum value changes
   meaning.
 - **Don't migrate** when adding an optional field, a new collection, or changing query logic.
@@ -160,7 +155,6 @@ against production.
 
 Integration tests run against an in-memory fake of the store that records reads, writes,
 batches and transactions. Assert three things:
-
 - **Behaviour** — what was persisted.
 - **Atomicity** — no direct writes escaped the transaction (`directWrites` empty, one committed).
   The fake runs transactions one at a time, so two commands fired together test the race.

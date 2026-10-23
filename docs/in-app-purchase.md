@@ -47,10 +47,10 @@ nobody to attach it to until the app syncs the purchase itself.
 
 Two auto-renewable subscriptions in one subscription group, so a cook can switch between them:
 
-| Product id | Duration | Price | Introductory offer |
-|---|---|---|---|
-| `com.polyforms.shuhari.app.premium.monthly` | 1 month | 2,99 € | — |
-| `com.polyforms.shuhari.app.premium.yearly` | 1 year | 24,99 € | 7 days free |
+| Product id                                  | Duration | Price   | Introductory offer |
+| ------------------------------------------- | -------- | ------- | ------------------ |
+| `com.polyforms.shuhari.app.premium.monthly` | 1 month  | 2,99 €  | —                  |
+| `com.polyforms.shuhari.app.premium.yearly`  | 1 year   | 24,99 € | 7 days free        |
 
 The ids are declared in `ios/Shuhari/Features/Subscription/SubscriptionProducts.swift` and in
 `ios/Shuhari/Shuhari.storekit`; they must match App Store Connect exactly.
@@ -73,7 +73,6 @@ inspector (Debug → StoreKit → Manage Transactions) fakes renewals, refunds a
 ## App Store Connect setup — to do once, by a human
 
 Credential-gated; none of it is scriptable.
-
 1. **App Store Connect → your app → Subscriptions** → create a subscription group, e.g.
    `Shuhari Premium`.
 2. Add subscription **`com.polyforms.shuhari.app.premium.yearly`**, duration 1 year, price 24,99 €
@@ -101,18 +100,17 @@ Credential-gated; none of it is scriptable.
 
 The app record and both products exist. What they are, for reference:
 
-| | Value |
-|---|---|
-| App Apple id | `6792835124` |
-| Subscription group | `Shuhari Premium` (`22251064`) |
-| Yearly | `com.polyforms.shuhari.app.premium.yearly` — `6792835914`, 24,99 €, 7-day free trial |
-| Monthly | `com.polyforms.shuhari.app.premium.monthly` — `6792838776`, 2,99 € |
+|                    | Value                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| App Apple id       | `6792835124`                                                                         |
+| Subscription group | `Shuhari Premium` (`22251064`)                                                       |
+| Yearly             | `com.polyforms.shuhari.app.premium.yearly` — `6792835914`, 24,99 €, 7-day free trial |
+| Monthly            | `com.polyforms.shuhari.app.premium.monthly` — `6792838776`, 2,99 €                   |
 
 Both carry their French localization, their review notes and the review screenshot
 (`screenshots/paywall.png`, regenerated any time with `-gallery premium`).
 
 **Still open**, and blocking a real purchase:
-
 1. **The Paid Apps agreement is not active** (no bank account, US tax form missing). Until it is,
    both products stay in `Missing Metadata` and never load in the app — the paywall shows "Les
    offres ne sont pas disponibles pour le moment." The local StoreKit file is unaffected. Account
@@ -126,11 +124,11 @@ Both carry their French localization, their review notes and the review screensh
 
 ## Secrets
 
-| Variable | Purpose |
-|---|---|
-| `NITRO_APPLE_APP_ID` | The app's numeric App Store id (`6792835124`), required to verify a Production signature. Public — a plain Cloud Function environment variable, not a Secret Manager entry (`infra/function.tf`) |
-| `NITRO_APPLE_ENVIRONMENT` | Pins verification to one environment. Blank tries Production then Sandbox — what a shipped app needs, since TestFlight and review sign in Sandbox. `Xcode` for the local StoreKit file |
-| `NITRO_PREMIUM_USER_IDS` | Comped accounts, granted Premium without paying. An access list, not a credential — also a plain environment variable |
+| Variable                  | Purpose                                                                                                                                                                                          |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `NITRO_APPLE_APP_ID`      | The app's numeric App Store id (`6792835124`), required to verify a Production signature. Public — a plain Cloud Function environment variable, not a Secret Manager entry (`infra/function.tf`) |
+| `NITRO_APPLE_ENVIRONMENT` | Pins verification to one environment. Blank tries Production then Sandbox — what a shipped app needs, since TestFlight and review sign in Sandbox. `Xcode` for the local StoreKit file           |
+| `NITRO_PREMIUM_USER_IDS`  | Comped accounts, granted Premium without paying. An access list, not a credential — also a plain environment variable                                                                            |
 
 They are set through Terraform (`infra/variables.tf`) and reach the function as plain
 environment variables; only genuine credentials go to Secret Manager — see
@@ -140,7 +138,6 @@ environment variables; only genuine credentials go to Secret Manager — see
 `infra/terraform.tfvars` from GitHub secrets and variables, then runs `terraform apply` on every
 push to `main`. A value that only exists in the local `infra/terraform.tfvars` never reaches
 production. So:
-
 - `apple_app_id` is **defaulted in `variables.tf`** (public, stable — like `ios_bundle_id`), and
   the workflow passes nothing.
 - `premium_user_ids` comes from the repository variable **`PREMIUM_USER_IDS`** (Settings →

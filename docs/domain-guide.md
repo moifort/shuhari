@@ -16,7 +16,7 @@ The rule — one business concept, one word, at every layer — is in
 Here it means: the word the functional conversation uses travels through the domain
 (`ProposalUseCase.fromImprovement`), GraphQL (`requestImprovement(improvement:)`), iOS
 (`ExecuteFlowView.requestNextVersion`) and the tests identically, and the app's on-screen French is its
-*translation*, not a second vocabulary. Two concepts that share a word get split instead
+_translation_, not a second vocabulary. Two concepts that share a word get split instead
 (`attempt` — the cook — vs `proposal` — the AI's answer).
 
 ## 1. Create the Domain Directory
@@ -76,8 +76,12 @@ One factory per brand: `zod` parse → `ts-brand` `make`. Enum brands parse and 
 ```ts
 import { make } from 'ts-brand'
 import { z } from 'zod'
-import { type BeanId as BeanIdType, type BeanName as BeanNameType, ROAST_VALUES,
-  type Roast as RoastType } from '~/domain/bean/types'
+import {
+  type BeanId as BeanIdType,
+  type BeanName as BeanNameType,
+  ROAST_VALUES,
+  type Roast as RoastType,
+} from '~/domain/bean/types'
 
 export const BeanId = (value: unknown) => {
   const v = z.string().uuid().parse(value)
@@ -170,7 +174,6 @@ export const findManyByIds = async (userId: UserId, ids: RecipeId[]): Promise<Re
 ```
 
 Firestore helpers live in `server/utils/firestore.ts`:
-
 - `genericDataConverter<T>()` — typed reads; `Timestamp` → `Date`.
 - `transactionally(tx => …)` — read-modify-write that cannot lose an update: the reads see
   current state, every write lands or none does, and Firestore replays the body when a concurrent
@@ -229,10 +232,7 @@ export namespace BeanCommand {
     return repository.save(bean)
   }
 
-  export const remove = async (
-    userId: UserId,
-    id: BeanId,
-  ): Promise<undefined | 'not-found'> => {
+  export const remove = async (userId: UserId, id: BeanId): Promise<undefined | 'not-found'> => {
     const bean = await repository.findBy(userId, id)
     if (!bean) return 'not-found' as const
     await repository.remove(id)
@@ -259,7 +259,6 @@ return transactionally(async (tx) => {
 ## 7. Add the GraphQL Slice (`infrastructure/graphql/`)
 
 See [graphql-patterns.md](./graphql-patterns.md) for the full patterns. In short:
-
 - **enums.ts** — `builder.enumType('Roast', { values: { LIGHT: { value: 'light' }, … } })`
 - **types.ts** — `builder.objectRef<Bean>('Bean').implement({ fields: … })`, exposing branded
   scalars. If you add a **satellite** field to `Recipe`/`Version`, graft it:
@@ -296,11 +295,11 @@ Co-located, `bun:test`. Three suffixes, each a tier with its own CI job and its 
 `bun run` script — the suffix says what the test drives, and the architecture test
 enforces it:
 
-| Suffix | Drives | Runs with |
-| --- | --- | --- |
-| `.unit.test.ts` | pure logic: primitives, business rules, no IO | `bun run test:unit` (+ `tsc` and Biome in CI) |
-| `.int.test.ts` | a command/query against the fake Firestore | `bun run test:int` |
-| `.feat.test.ts` | a business scenario executed against the assembled GraphQL schema | `bun run test:feat` |
+| Suffix          | Drives                                                            | Runs with                                     |
+| --------------- | ----------------------------------------------------------------- | --------------------------------------------- |
+| `.unit.test.ts` | pure logic: primitives, business rules, no IO                     | `bun run test:unit` (+ `tsc` and Biome in CI) |
+| `.int.test.ts`  | a command/query against the fake Firestore                        | `bun run test:int`                            |
+| `.feat.test.ts` | a business scenario executed against the assembled GraphQL schema | `bun run test:feat`                           |
 
 There is **no BDD DSL**. `bun test` runs the three tiers together; `bunfig.toml` keeps its
 file scan out of `build/` and `.output/`, where a dev machine piles up tens of gigabytes of
@@ -318,10 +317,15 @@ mock.module('~/system/firebase', fakeFirebase)
 const { BeanCommand } = await import('~/domain/bean/command')
 
 let fake = resetFakeFirestore()
-beforeEach(() => { fake = resetFakeFirestore() })
+beforeEach(() => {
+  fake = resetFakeFirestore()
+})
 
 test('add persists a bean', async () => {
-  const bean = await BeanCommand.add('user-1' as UserId, { name: 'Geisha' as BeanName, roast: 'light' })
+  const bean = await BeanCommand.add('user-1' as UserId, {
+    name: 'Geisha' as BeanName,
+    roast: 'light',
+  })
   expect(fake.snapshot('beans').get(bean.id as string)?.roast).toBe('light')
 })
 ```
@@ -376,8 +380,7 @@ Pure, **synchronous** functions extracted from complex commands. Names ARE the c
 From `recipe`:
 
 ```ts
-export const nextVersionNumber = (versionCount: VersionNumber) =>
-  toVersionNumber(versionCount + 1)
+export const nextVersionNumber = (versionCount: VersionNumber) => toVersionNumber(versionCount + 1)
 
 // The recipe's best attempt across its cooked versions, or nothing when none was
 // ever tried. Highest rating wins; a tie breaks toward the most recent version.
@@ -463,7 +466,11 @@ export type VersionContent = DishContent | ThermomixContent | CoffeeContent
 export type DishContent = { kind: 'dish'; ingredients: Ingredient[]; steps: StepText[] }
 // content/thermomix.ts
 export type ThermomixStep = { text: StepText; settings: ThermomixSettings } // {} = a plain step
-export type ThermomixContent = { kind: 'thermomix'; ingredients: Ingredient[]; steps: ThermomixStep[] }
+export type ThermomixContent = {
+  kind: 'thermomix'
+  ingredients: Ingredient[]
+  steps: ThermomixStep[]
+}
 // content/coffee.ts
 export type CoffeeStep = { text: StepText; settings: CoffeeSettings } // {} = a step that sets nothing
 export type CoffeeContent = { kind: 'coffee'; ingredients: Ingredient[]; steps: CoffeeStep[] }
@@ -475,8 +482,8 @@ mismatch. The lineage rules `bestRating` / `versionToOpen` / `nextVersionNumber`
 operate on the envelope only — they never read `content`.
 
 **What belongs on the envelope rather than in `content`** — `tips: Tip[]` is the worked example. Two
-tests, both of which it passes: it is *type-agnostic* (a dish and a Thermomix recipe carry the same
-list, so duplicating it in every arm of the union would buy nothing), and it is *rewritable in place*
+tests, both of which it passes: it is _type-agnostic_ (a dish and a Thermomix recipe carry the same
+list, so duplicating it in every arm of the union would buy nothing), and it is _rewritable in place_
 — `RecipeCommand.correct` with `tips` replaces the whole list on the version shown, creating no version and
 touching nothing else, whereas everything inside `content` is frozen for the life of a version. It is
 also **total** (`[]` = none, never optional — see [code-style](./code-style.md#arrays-are-never-optional));
@@ -487,7 +494,6 @@ goes in `content` instead.
 
 The steps, as followed for `coffee` — the value is an English technical symbol like every other
 (`coffee`, never `cafe`; see [code-style.md](./code-style.md#language)):
-
 1. **`types.ts`** — add the literal to the type tuple:
    `RECIPE_TYPE_VALUES = ['dish', 'thermomix', 'coffee']`. Add any brands the new content needs,
    fully spelled out, no abbreviations (`CoffeeGrind`, `CoffeeWater`, `CoffeeTemperature`,

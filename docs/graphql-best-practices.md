@@ -8,7 +8,6 @@ nothing here names this project. How this repo wires them is in
 
 Each bounded context owns its slice — `infrastructure/graphql/{enums,types,inputs,queries,mutations}.ts` —
 and a small shared layer holds the plumbing only:
-
 - **builder** — the single `SchemaBuilder`, the context type, the scalar map.
 - **scalars** — registration of every branded scalar.
 - **schema** — assembly by side-effect imports, in dependency order.
@@ -29,7 +28,7 @@ Layer: raw input is validated **here**, never again downstream.
 builder.scalarType('BeanId', {
   description: 'Bean unique identifier (UUID v4)',
   serialize: (value) => value as string,
-  parseValue: validatedParse('BeanId', BeanId),   // throws GraphQLError BAD_USER_INPUT
+  parseValue: validatedParse('BeanId', BeanId), // throws GraphQLError BAD_USER_INPUT
 })
 ```
 
@@ -50,7 +49,6 @@ a per-request, DataLoader-style batcher: memoize per key, collect every `load()`
 once, perform **one** keyed read.
 
 Two consequences worth stating as rules:
-
 - A page of N parents selecting a derived field costs **one** read, not N.
 - An **unselected** derived field costs **nothing** — that is the point of resolving it lazily
   rather than assembling it eagerly in the query.
@@ -79,13 +77,13 @@ return match(result)
   .exhaustive()
 ```
 
-Guards *inside* a use-case (unwrapping a query result mid-flow) stay ordinary `if`s — the exhaustive
+Guards _inside_ a use-case (unwrapping a query result mid-flow) stay ordinary `if`s — the exhaustive
 match is for mapping a **final** outcome.
 
 ## A domain union is a schema union; its input mirror is `@oneOf`
 
 A field whose shape depends on a discriminant becomes a `unionType` whose `resolveType` reads the
-backing model's tag — the domain's discriminant *is* the schema's.
+backing model's tag — the domain's discriminant _is_ the schema's.
 
 On the input side the mirror is a `@oneOf` input (`isOneOf: true`, every arm optional): exactly one
 arm may be set, and a small brancher turns the arms back into the domain's discriminated type.
@@ -102,11 +100,10 @@ with the client and the page people read in the API sandbox — an undocumented 
 incomplete field.
 
 Write descriptions in **business language**, as if the reader had never seen the code:
-
 - **Say what it means in the domain, not what it is technically** — "The version to open first when
   you enter the recipe", not "The versionToOpen resolver".
 - **Give a concrete example** with real domain values (`e.g. "250 g"`, `1 (bad) to 5 (excellent)`).
-- **Explain nullability in plain words**: what does `null` *mean* here?
+- **Explain nullability in plain words**: what does `null` _mean_ here?
 - **Cross-reference sibling fields by name**, so the reader can navigate the graph.
 - **Flag destructive mutations** explicitly ("WARNING: this REPLACES everything…").
 - Keep the domain vocabulary identical across the schema — it is the ubiquitous language on the

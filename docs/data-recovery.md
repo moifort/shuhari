@@ -8,12 +8,12 @@ anything: a hurried restore over live writes does more damage than the incident.
 Both settings live on `google_firestore_database.default` in `infra/firebase.tf`, applied by
 the Deploy workflow (since 2026-10-19).
 
-| Protection | Covers | Retention |
-|---|---|---|
-| Delete protection (`DELETE_PROTECTION_ENABLED`) | Deleting the `(default)` database from the console, `gcloud` or a script | — |
-| Point-in-time recovery (`POINT_IN_TIME_RECOVERY_ENABLED`) | Documents deleted or overwritten by a bug, a migration, a bad command | 7 days, to the minute |
-| Terraform `deletion_policy = ABANDON` (provider default) | `terraform destroy` leaves the database alone | — |
-| GCP project soft delete (platform default) | Deleting the whole project | 30 days |
+| Protection                                                | Covers                                                                   | Retention             |
+| --------------------------------------------------------- | ------------------------------------------------------------------------ | --------------------- |
+| Delete protection (`DELETE_PROTECTION_ENABLED`)           | Deleting the `(default)` database from the console, `gcloud` or a script | —                     |
+| Point-in-time recovery (`POINT_IN_TIME_RECOVERY_ENABLED`) | Documents deleted or overwritten by a bug, a migration, a bad command    | 7 days, to the minute |
+| Terraform `deletion_policy = ABANDON` (provider default)  | `terraform destroy` leaves the database alone                            | —                     |
+| GCP project soft delete (platform default)                | Deleting the whole project                                               | 30 days               |
 
 **Not in place, on purpose:** scheduled Firestore backups, an export to a bucket in another
 project, a lien on the project. So there is **no copy of the data outside the database
@@ -31,7 +31,7 @@ gcloud firestore databases describe --database='(default)' --project=shuhari-pol
 
 1. **Stop the bleeding first.** If a bug or a migration is still writing, revert and deploy
    the fix (or pause the scheduler job) before restoring, or the restore is overwritten.
-2. **Pin the instant.** Find the last whole minute *before* the damage, from Cloud Logging,
+2. **Pin the instant.** Find the last whole minute _before_ the damage, from Cloud Logging,
    the `migration-meta` collection or the deploy time. PITR snapshot times must be a whole
    minute (`…:05:00Z`) and later than `earliestVersionTime`. The clock runs: past seven days
    the version is gone, so do this the day the damage is seen.

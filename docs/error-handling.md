@@ -79,7 +79,7 @@ without adding totality.
 
 ## Throw for impossible states
 
-If data *must* exist — it was just referenced, or produced by the previous step — and it doesn't,
+If data _must_ exist — it was just referenced, or produced by the previous step — and it doesn't,
 that is an incoherent state: **throw**. It becomes a 500 and the reporter captures it. Since the
 domain's `query`/`command` files may not throw, that check belongs in a use-case or a resolver.
 

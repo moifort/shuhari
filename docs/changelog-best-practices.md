@@ -8,11 +8,11 @@ are written — lives in the project's release guide.
 A version holds up to three sections, always in this order, and a section with nothing in it is
 left out — a version can be a single "Fixed" line:
 
-| English    | French      | Holds                                                           |
-|------------|-------------|-----------------------------------------------------------------|
-| `New`      | `Nouveau`   | a capability that did not exist                                 |
-| `Improved` | `Amélioré`  | an existing behaviour that changed, was removed, or was updated |
-| `Fixed`    | `Corrigé`   | a problem that no longer happens                                |
+| English    | French     | Holds                                                           |
+| ---------- | ---------- | --------------------------------------------------------------- |
+| `New`      | `Nouveau`  | a capability that did not exist                                 |
+| `Improved` | `Amélioré` | an existing behaviour that changed, was removed, or was updated |
+| `Fixed`    | `Corrigé`  | a problem that no longer happens                                |
 
 ## One bullet, one sentence, opened by a verb
 
@@ -20,11 +20,11 @@ Every bullet is a single sentence — long if it needs to be — and opens on a 
 says what kind of change it is, so the line still reads right once a store has flattened the
 headings away:
 
-| Section    | English                                        | French                                                   |
-|------------|------------------------------------------------|----------------------------------------------------------|
-| `New`      | Added …                                        | Ajout de …                                               |
+| Section    | English                                        | French                                                                      |
+| ---------- | ---------------------------------------------- | --------------------------------------------------------------------------- |
+| `New`      | Added …                                        | Ajout de …                                                                  |
 | `Improved` | Changed … / Improved … / Removed … / Updated … | Modification de … / Amélioration de … / Suppression de … / Mise à jour de … |
-| `Fixed`    | Fixed …                                        | Correction de …                                          |
+| `Fixed`    | Fixed …                                        | Correction de …                                                             |
 
 No sub-bullets, no bold. A code or configuration name the reader types goes in backticks.
 

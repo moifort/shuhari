@@ -7,14 +7,13 @@ brands this repo actually owns are listed in [domain-guide.md](domain-guide.md#t
 
 Nominal types ([ts-brand](https://github.com/kourge/ts-brand)) prevent semantically different
 values from being mixed (a `BeanId` is not a `UserId`, even though both are strings), and a
-validation library ([Zod](https://zod.dev/)) makes the brand a *proof*: a value that carries the
+validation library ([Zod](https://zod.dev/)) makes the brand a _proof_: a value that carries the
 brand has already been validated.
 
 Two DDD concepts at once: Evans's **Value Objects** (defined by their value, not an identity) and
 Wlaschin's **making illegal states unrepresentable** — once branded, no downstream code re-checks.
 
 The split is strict, and worth enforcing with an architecture test:
-
 - **`types.ts`** declares the brands — imports the branding library only, no validation library.
 - **`primitives.ts`** declares the constructors — imports **both**.
 
