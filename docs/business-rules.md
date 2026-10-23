@@ -1,7 +1,7 @@
 # Business Rules — The Product Model
 
 The full narrative of Shuhari's domain model: what a recipe, a version, an attempt, a proposal
-*are*, and the invariants every layer must respect. CLAUDE.md's *Key Business Rules* section is
+_are_, and the invariants every layer must respect. CLAUDE.md's _Key Business Rules_ section is
 the digest; this doc is the spec. The mechanics of building a domain live in
 [domain-guide.md](./domain-guide.md); the style rules referenced here in
 [code-style.md](./code-style.md).
@@ -100,16 +100,16 @@ the digest; this doc is the spec. The mechanics of building a domain live in
 - **The oven's own dials are copyable into a version** (`Oven.settings`, read whether the oven is
   cooking or merely selected). That is what replaces the catalogue the API does not offer: the
   cook sets a cooking up on the appliance — using its assisted programmes if they like — and the
-  notebook captures the result. It is the same *shu → ha* move as before, sourced from the
+  notebook captures the result. It is the same _shu → ha_ move as before, sourced from the
   appliance rather than from a list: the oven proposes, the version records, the next iteration
   deviates.
 - **The copy takes what the oven says, not all or nothing.** A dial the appliance reports is
   copied, one it does not is left to the cook — and the mode is the one that goes missing in
   practice, because an oven names its heating functions with codes the notebook does not all know
   (`PROGRAM_CODES` is partial by design, and partial again against what one appliance declares).
-  Requiring a mode *and* a temperature is what hid the copy from a real oven baking bread at
+  Requiring a mode _and_ a temperature is what hid the copy from a real oven baking bread at
   230 °C for an hour: its code was unmapped, so the mode was absent, and the two settings that
-  *were* there went with it. When the mode is missing the copy says so before it runs, since an
+  _were_ there went with it. When the mode is missing the copy says so before it runs, since an
   untouched mode row otherwise reads as the oven's answer. The timer and the probe stay the
   exception: their absence **is** an answer — an oven reporting no timer is an oven cooking
   without one — and the copy is never offered on an oven that says nothing at all.
@@ -123,12 +123,11 @@ the digest; this doc is the spec. The mechanics of building a domain live in
 The AI import is **two independent flows**, and which one runs is decided by the tab the cook
 launched it from — never guessed from the source.
 
-| | cooking | coffee |
-|---|---|---|
-| mutation | `analyzeCookingImport` | `analyzeCoffeeImport` |
-| result | `CookingImportAnalysis`: type (`dish` / `thermomix`), category, ingredients, steps, tips | `CoffeeImportAnalysis`: method, parameters, tips |
-| prompt / response schema | `server/system/ai/import/cooking.ts` | `server/system/ai/import/coffee.ts` |
-
+|                          | cooking                                                                                  | coffee                                           |
+| ------------------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| mutation                 | `analyzeCookingImport`                                                                   | `analyzeCoffeeImport`                            |
+| result                   | `CookingImportAnalysis`: type (`dish` / `thermomix`), category, ingredients, steps, tips | `CoffeeImportAnalysis`: method, parameters, tips |
+| prompt / response schema | `server/system/ai/import/cooking.ts`                                                     | `server/system/ai/import/coffee.ts`              |
 - The cooking prompt **never answers `coffee`**, and the coffee prompt never returns an ingredient
   list or a step: each speaks only its own world, which is what the single prompt could not do.
 - **The coffee prompt reads, it does not guess.** Every parameter the source does not state comes
@@ -158,11 +157,11 @@ launched it from — never guessed from the source.
   from survives as the origin label alone (`{ kind: 'import', detail: "Grandma's lasagna v3" }`),
   the very field an import fills with the site it read. The recipe copied is not written at all,
   its date included: copying a version is not working on it.
-- **A version *is* an attempt: what describes it is correctable, what links it is not.** Its
+- **A version _is_ an attempt: what describes it is correctable, what links it is not.** Its
   `content` (the `VersionContent` union — `ingredients` + `steps`, the oven profile, a coffee's
   parameters) and its `tips` are **overwritable in place**, like its outcome; its **lineage**
   (`number`, `origin`, `change`, `why`, `basedOn`) is immutable — that is what makes the chain a
-  notebook. An attempt is not an entity. A version with no outcome yet is a *planned* attempt: no
+  notebook. An attempt is not an entity. A version with no outcome yet is a _planned_ attempt: no
   `executedAt`, no `rating` (the fields are **absent**, never `null`).
 - **A correction keeps the rating, deliberately.** Correcting a quantity misread off a photo is
   fixing what the recipe ALWAYS said, not iterating on it: no version is created and the verdict
@@ -180,11 +179,11 @@ launched it from — never guessed from the source.
   one-field `correct`.
 - **An attempt lands on the version cooked**, always — a rating is a verdict on the plate that was
   made. Which version that is depends on what was asked: the one on screen when an iteration is
-  asked for (it has not been made yet), the one *created* when it transcribes a change already
+  asked for (it has not been made yet), the one _created_ when it transcribes a change already
   eaten (see [Change](#change--the-version-already-eaten)):
   - **rating (and photo) without remarks** — nothing new is created,
     `RecipeCommand.recordAttempt` writes `rating` (1..5), `executedAt`, `photoPath` onto the
-    version cooked and rewrites them in place on a re-cook (dropping the previous photo *and*
+    version cooked and rewrites them in place on a re-cook (dropping the previous photo _and_
     remarks). `remarks` is optional here: a bare rating ends the flow.
   - **with remarks** — the cook asks for the next version, and their `rating`/`remarks`/`photoPath`
     are recorded on the version they cooked (`basedOn`) when the proposal is accepted, through
@@ -211,7 +210,6 @@ launched it from — never guessed from the source.
 A bread is two recipes: the poolish and the dough. **A recipe holds the recipes it is made of** —
 `Recipe.components: { recipe: RecipeId, scale: ComponentScale }[]`, set by
 `RecipeCommand.linkComponent` / `unlinkComponent` and by nothing else.
-
 - **The link is held by the RECIPE, not by a version and not by an ingredient line.** The cook
   posts it from the recipe sheet, it holds for every version of it, and no iteration has to carry
   it forward. That is what it means for it to be aggregate-level identity, next to `category` and
@@ -228,8 +226,8 @@ A bread is two recipes: the poolish and the dough. **A recipe holds the recipes 
   thing after that recipe changes a quantity, and quantities themselves stay display strings the AI
   wrote ("1,2 kg", "1 gousse"), never numbers — the app resizes them for display and never rewrites
   the version.
-- **This is not a fork.** "No forks" forbids *lineage* links between versions (`derivedFrom`, and
-  the deliberate absence of one on `copyVersion`). A component is a *composition* link between two
+- **This is not a fork.** "No forks" forbids _lineage_ links between versions (`derivedFrom`, and
+  the deliberate absence of one on `copyVersion`). A component is a _composition_ link between two
   aggregates — another axis entirely. Both rules hold at once.
 - **Linking is not cooking.** `linkComponent` creates no version, and deliberately does not restamp
   `updatedAt` (= `lastWorkedOn`): saying what a recipe is made of leaves the kitchen untouched, the
@@ -286,7 +284,6 @@ A bread is two recipes: the poolish and the dough. **A recipe holds the recipes 
 ## Derivation — no promotion
 
 Everything is derived (`recipe/business-rules.ts`), nothing is promoted:
-
 - `bestRating` = the recipe's best-rated cooked version (highest rating; tie → most recent
   version), `undefined` when nothing was ever cooked; it drives the displayed rating.
 - `versionToOpen` = the version the recipe sheet opens on: the best-rated version, else the
@@ -343,7 +340,7 @@ Everything is derived (`recipe/business-rules.ts`), nothing is promoted:
 ## Change — the version already eaten
 
 - **Change**: the third way to a version, and the only one that does not ask for anything. The
-  cook modified the recipe *at the stove* — "j'ai mis 10 g de sucre au lieu de 20" — cooked it and
+  cook modified the recipe _at the stove_ — "j'ai mis 10 g de sucre au lieu de 20" — cooked it and
   ate it, so `ProposalUseCase.fromChange(userId, recipeId, versionNumber, change)` has the AI
   **transcribe** it: `Ai.applyCookingChange` / `Ai.applyCoffeeChange` (`system/ai/change/*`, one
   prompt per world like every other flow) apply exactly what the sentence describes and **invent
@@ -353,7 +350,7 @@ Everything is derived (`recipe/business-rules.ts`), nothing is promoted:
 - **Accepting it creates a version that has already been made** — `AcceptedProposal.cooked` →
   `NewVersionInput.cooked` → `RecipeCommand.addVersion`. That flag flips three things at once:
   the version is born **executed** instead of `toTest`, its `origin.kind` is `'manual'` (the
-  cook's own hand, the model only wrote it down), and the attempt — the verdict on *that* plate —
+  cook's own hand, the model only wrote it down), and the attempt — the verdict on _that_ plate —
   lands **on it**, leaving `basedOn` exactly as it was. Rated, it becomes the recipe's best
   version like any other; unrated, it is a version cooked without a verdict (`executedAt` with no
   `rating`), which `bestRating` ignores.
@@ -367,9 +364,8 @@ Everything is derived (`recipe/business-rules.ts`), nothing is promoted:
 
 **Tips** (`RecipeVersion.tips: Tip[]`): the version's cooking advice ("Servir avec du riz",
 "Se congèle bien") — neither an ingredient nor a step. Type-agnostic, so it sits on the
-versioning *envelope* (`version.ts`), never in `content`; total (`[]` = none, and the app renders
+versioning _envelope_ (`version.ts`), never in `content`; total (`[]` = none, and the app renders
 no section). Three ways in:
-
 1. the AI extracts them at **import** (they land on v1);
 2. a **proposal** always returns the complete tips list of the version it creates (the AI folds
    advice it reads in the remarks into it);
@@ -384,10 +380,9 @@ for the life of a version.
 
 **Warnings** (`RecipeVersion.warnings: Warning[]`): the cook's cautions on this attempt ("Le fouet
 doit être mis dès le début") — the banner atop the recipe sheet, so a critical gesture is read
-before cooking starts. Like `tips` it sits on the versioning *envelope*, is type-agnostic, and is
+before cooking starts. Like `tips` it sits on the versioning _envelope_, is type-agnostic, and is
 total (`[]` = none, and the app renders no banner). It is written by the cook alone: no import, no
 proposal and no prompt ever produces one.
-
 - **Versioned, like everything that describes the plate.** A caution is about the gesture this
   attempt needs, and the app reads it off the version on screen — the sheet's banner follows what
   is being read, never the recipe as a whole.
@@ -408,7 +403,6 @@ proposal and no prompt ever produces one.
 it sits on. Set by `updateFavorite(recipeId, versionNumber, favorite)` and by nothing else, and
 carried onto the next iteration like the cautions — accepting a proposal continues the line of work
 that was hearted.
-
 - **`Recipe.favorite` is the derived mirror**, `favorited(versions)` — true as soon as **any**
   version is hearted (`favorited` sits with the other derivations — see
   [Derivation — no promotion](#derivation--no-promotion)). Deliberately not
@@ -451,9 +445,8 @@ analysis — photos with no text hash exactly as before.
 
 The prompts, one module per flow under `server/system/ai/` (`import/*`, `proposal/*`, `change/*`,
 `tips.ts`):
-
-- An ingredient **name** carries its intrinsic *variety/type/grade* in parentheses
-  (`Pommes de terre (Marbella)`, `Farine (T45)`) — only *transient* preparation (peeled, sliced)
+- An ingredient **name** carries its intrinsic _variety/type/grade_ in parentheses
+  (`Pommes de terre (Marbella)`, `Farine (T45)`) — only _transient_ preparation (peeled, sliced)
   goes in the steps.
 - An ingredient **quantity** in an imprecise kitchen unit (spoon, pinch, glass, cup…) carries
   its estimated gram equivalent in parentheses, specific to that ingredient
@@ -467,22 +460,22 @@ The prompts, one module per flow under `server/system/ai/` (`import/*`, `proposa
   (`Citrons jaunes 2-3 pièces → Pomelo 1 pièce`) — several changes joined by `, `
   (`Bouillon 50 → 40 cl, cuisson 3 h 30 → 4 h`). Rendered verbatim as the proposal card's title,
   so the prompt must name the arrow character explicitly: told only "a comma-separated list of
-  deltas", the model has answered with the comma as the separator *inside* a change.
+  deltas", the model has answered with the comma as the separator _inside_ a change.
 - **How far one iteration may go depends on the world**, and the two rules live in two prompts
   (`server/system/ai/proposal/cooking.ts`, `proposal/coffee.ts`):
-  - *Cooking* (`dish`, `thermomix`) — several coherent elements may move at once. **The oven is
+  - _Cooking_ (`dish`, `thermomix`) — several coherent elements may move at once. **The oven is
     not one of them**: the AI never reads it, never proposes it, and is never even told about it.
     A heating function is set by hand — on the appliance or in the app — because a model that has
     never seen the dish brown cannot judge one, and because getting it wrong cooks something else
     without saying so. The profile is carried forward to the proposed version **by the code**
     (`carriedOven`), so accepting a change of seasoning never silently unsets the oven.
-  - *Coffee* — **the machine profile is the oven of this world**: the preset the cook saved on
+  - _Coffee_ — **the machine profile is the oven of this world**: the preset the cook saved on
     their machine ("Sera Modern Arc") never leaves for the model, never comes back from it, and is
     written onto the proposed version **by the code** (`carriedProfile`). A preset is not a dial —
     its pre-infusion, its pressure curve and its temperature live in the machine — so a model that
     proposed one would be naming a button the cook may not have. The import does not read one
     either: the app offers the last profile used, the way it offers the last machine.
-  - *Coffee* — **exactly one variable per version**, from a closed list: the grind, the dose, the
+  - _Coffee_ — **exactly one variable per version**, from a closed list: the grind, the dose, the
     water amount (the ratio), the water temperature, the brew time, the yield or the milk. Never
     two. That is the whole point of the notebook here: with a single variable moved, the next
     tasting says what that variable did; move two and the attempt teaches nothing. When the
@@ -493,7 +486,7 @@ The prompts, one module per flow under `server/system/ai/` (`import/*`, `proposa
     extraction, it does not recommend a purchase. The brewing method is never changed either — a
     V60 recipe stays a V60 (`CoffeeProposalContext.method` states it), and `currentParameters` is
     where the iteration starts from.
-  - *Coffee, second rule*: **a parameter the current version leaves empty comes back empty.** A
+  - _Coffee, second rule_: **a parameter the current version leaves empty comes back empty.** A
     temperature nobody wrote down is a temperature nobody measured, and filling it in would
     rewrite the cook's experiment instead of continuing it. The app shows the empty field in the
     proposal — editable, like every other one — and the cook fills it in if they know it. The
@@ -503,7 +496,7 @@ The prompts, one module per flow under `server/system/ai/` (`import/*`, `proposa
   at the stove: the model applies **exactly** what the sentence describes and nothing else — every
   ingredient, step, setting and dial it does not mention comes back identical, in the same order
   and the same words. It never rounds a value, never "fixes" a recipe it finds odd, and never
-  moves a second variable (the single-variable rule of a coffee *proposal* does not apply: the
+  moves a second variable (the single-variable rule of a coffee _proposal_ does not apply: the
   cook may well have moved two dials, and what they drank is what gets written down). A sentence
   no ingredient and no step can carry leaves the lists untouched and is reported in
   `changeSummary`.
@@ -513,11 +506,10 @@ The prompts, one module per flow under `server/system/ai/` (`import/*`, `proposa
 The notebook is free and unlimited — recipes, versions, attempts, photos, export. The AI is the
 app's only variable cost, so it is the only thing metered (`quota` domain, dimensioned in
 [specs/2026-07-20-freemium-pricing-design.md](./specs/2026-07-20-freemium-pricing-design.md)):
-
 - Two meters, `imports` and `iterations`. An **import** is one source analysis (either import
-  mutation, whatever the source — six photos *and* a text are one analysis, so one import); an
+  mutation, whatever the source — six photos _and_ a text are one analysis, so one import); an
   **iteration**
-  is one AI call on an existing version — a proposal, an improvement, a change *or* a tips merge,
+  is one AI call on an existing version — a proposal, an improvement, a change _or_ a tips merge,
   all four sharing the same counter.
 - `free` gets 3 imports and 5 iterations per **calendar month** (`FREE_LIMITS`), `premium`
   is unlimited. The window IS the month: one document per cook and per month, no reset job, and
@@ -530,7 +522,7 @@ app's only variable cost, so it is the only thing metered (`quota` domain, dimen
   costs nothing (`QUOTA_EXHAUSTED`, the model is never asked). The call is given back
   (`QuotaCommand.refund`) when it produced nothing: a Gemini failure never costs a cook a quota, a
   recipe that no longer exists is not an iteration, and a source with no recipe in it
-  (`no-recipe-found`) is a miss, not an import. A cache hit *does* count — the quota is a product
+  (`no-recipe-found`) is a miss, not an import. A cache hit _does_ count — the quota is a product
   promise, not a meter on our bill.
 - **Premium is bought from Apple, and proved to us.** `EntitlementQuery.planOf` is the single
   answer to "what is this cook entitled to", and it reads the `entitlements` document — written
@@ -548,7 +540,6 @@ app's only variable cost, so it is the only thing metered (`quota` domain, dimen
 ## Style rules that bite here
 
 See [code-style.md](./code-style.md):
-
 - No `null` in the domain — absence is `field?: T` / `undefined`, converted only at the GraphQL,
   Firestore and AI boundaries.
 - Arrays and their items are never optional (`[T!]!` in GraphQL, `{}` for a plain step's

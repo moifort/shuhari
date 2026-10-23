@@ -9,26 +9,25 @@ one file are fed back into the repo. The iOS side needs no changes.
 
 These are already set across the project — do not change them.
 
-| Item | Value |
-| ---- | ----- |
-| Apple Team ID | `46C337T7YN` |
-| App ID (bundle id) | `com.polyforms.shuhari.app` |
-| Services ID | `com.polyforms.shuhari.signin` |
-| Firebase / GCP project | `shuhari-polyforms` |
-| Firebase auth domain | `shuhari-polyforms.firebaseapp.com` |
-| OAuth return URL | `https://shuhari-polyforms.firebaseapp.com/__/auth/handler` |
+| Item                   | Value                                                       |
+| ---------------------- | ----------------------------------------------------------- |
+| Apple Team ID          | `46C337T7YN`                                                |
+| App ID (bundle id)     | `com.polyforms.shuhari.app`                                 |
+| Services ID            | `com.polyforms.shuhari.signin`                              |
+| Firebase / GCP project | `shuhari-polyforms`                                         |
+| Firebase auth domain   | `shuhari-polyforms.firebaseapp.com`                         |
+| OAuth return URL       | `https://shuhari-polyforms.firebaseapp.com/__/auth/handler` |
 
 ## Apple Developer portal
 
 In [developer.apple.com/account](https://developer.apple.com/account) under Team `46C337T7YN`:
-
 1. **App ID** — Certificates, Identifiers & Profiles → Identifiers → App IDs.
-   - Ensure the App ID `com.polyforms.shuhari.app` exists (create it as type *App* otherwise).
-   - Enable the **Sign In with Apple** capability (*Enable as a primary App ID*), then save.
+   - Ensure the App ID `com.polyforms.shuhari.app` exists (create it as type _App_ otherwise).
+   - Enable the **Sign In with Apple** capability (_Enable as a primary App ID_), then save.
 
-2. **Services ID** — Identifiers → (filter *Services IDs*) → +.
+2. **Services ID** — Identifiers → (filter _Services IDs_) → +.
    - Identifier `com.polyforms.shuhari.signin`, description `Shuhari Sign In`.
-   - Check **Sign In with Apple**, then *Configure*:
+   - Check **Sign In with Apple**, then _Configure_:
      - **Primary App ID**: `com.polyforms.shuhari.app`
      - **Domains and Subdomains**: `shuhari-polyforms.firebaseapp.com`
      - **Return URLs**: `https://shuhari-polyforms.firebaseapp.com/__/auth/handler`
@@ -36,14 +35,13 @@ In [developer.apple.com/account](https://developer.apple.com/account) under Team
 
 3. **Sign in with Apple key** — Keys → +.
    - Name `Shuhari Sign In Key`.
-   - Check **Sign In with Apple**, *Configure* → Primary App ID `com.polyforms.shuhari.app`.
-   - *Continue* → *Register* → **download the `.p8` file** (⚠️ downloadable **only once**).
+   - Check **Sign In with Apple**, _Configure_ → Primary App ID `com.polyforms.shuhari.app`.
+   - _Continue_ → _Register_ → **download the `.p8` file** (⚠️ downloadable **only once**).
    - Note the 10-character **Key ID** shown on the key's page.
 
 ## Deliverables
 
 From the steps above you end up with:
-
 1. **Services ID** — `com.polyforms.shuhari.signin` (created and configured).
 2. **Key ID** — the 10-character identifier of the key.
 3. **`.p8` file** — the downloaded `AuthKey_XXXXXXXXXX.p8`.
@@ -52,7 +50,6 @@ From the steps above you end up with:
 ## Repo wiring
 
 Once the deliverables are in hand:
-
 1. Drop the `.p8` at `infra/apple.p8`.
 2. In `infra/terraform.tfvars`: set `apple_key_id = "<KEY_ID>"` (the other Apple fields are
    already correct).

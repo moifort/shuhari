@@ -62,10 +62,10 @@ A table with three columns: what to install, what it does, how to install it.
 ```md
 ## Prerequisites
 
-| Tool | What it does | Install |
-|------|-------------|---------|
-| [Bun](https://bun.sh/) | Runs the backend server | `curl -fsSL https://bun.sh/install \| bash` |
-| [Xcode](https://developer.apple.com/xcode/) | Builds the iOS app | Mac App Store |
+| Tool                                        | What it does            | Install                                     |
+| ------------------------------------------- | ----------------------- | ------------------------------------------- |
+| [Bun](https://bun.sh/)                      | Runs the backend server | `curl -fsSL https://bun.sh/install \| bash` |
+| [Xcode](https://developer.apple.com/xcode/) | Builds the iOS app      | Mac App Store                               |
 ```
 
 Only list things the reader installs themselves. Don't list transitive dependencies (TypeScript,
@@ -91,8 +91,8 @@ One subsection per key. Each answers three questions: **what it does** (one sent
 
 **Where to put it:**
 
-| File | Variable |
-|------|----------|
+| File   | Variable                             |
+| ------ | ------------------------------------ |
 | `.env` | `NITRO_GOOGLE_API_KEY=your-key-here` |
 ```
 
@@ -112,7 +112,7 @@ Rules:
 
 Two subsections: backend + iOS. Each should be copy-pasteable.
 
-```md
+````md
 ## Running the project
 
 ### Start the backend
@@ -129,7 +129,7 @@ The server starts at `http://localhost:3000`. GraphQL (and the Apollo Sandbox in
 1. Open the Xcode project: `open ios/Shuhari.xcodeproj`
 2. Set your Development Team in Signing & Capabilities
 3. Pick a simulator and hit Run
-```
+````
 
 Include a way to verify it works (a GraphQL query in the Sandbox, an expected screen, etc.).
 
@@ -146,14 +146,14 @@ what it covers.
 ```md
 ## Documentation
 
-| Guide | What it covers |
-|-------|---------------|
-| [Architecture](docs/architecture.md) | How the backend is organized |
-| [Domain guide](docs/domain-guide.md) | How to add a new domain |
-| [GraphQL patterns](docs/graphql-patterns.md) | How the GraphQL layer is built |
-| [iOS guide](docs/ios-guide.md) | How to add screens to the iOS app |
+| Guide                                                    | What it covers                                  |
+| -------------------------------------------------------- | ----------------------------------------------- |
+| [Architecture](docs/architecture.md)                     | How the backend is organized                    |
+| [Domain guide](docs/domain-guide.md)                     | How to add a new domain                         |
+| [GraphQL patterns](docs/graphql-patterns.md)             | How the GraphQL layer is built                  |
+| [iOS guide](docs/ios-guide.md)                           | How to add screens to the iOS app               |
 | [SwiftUI best practices](docs/swiftui-best-practices.md) | Portable SwiftUI rules, reusable in any project |
-| [Git workflow](docs/git-workflow.md) | How commits and pushes are handled |
+| [Git workflow](docs/git-workflow.md)                     | How commits and pushes are handled              |
 ```
 
 Describe what the reader will learn, not the technical content. "How to add screens to the iOS app"
@@ -167,5 +167,6 @@ Describe what the reader will learn, not the technical content. "How to add scre
 - [ ] No section assumes knowledge of the codebase internals
 - [ ] No unexplained acronyms or framework-specific terms
 - [ ] Code blocks are copy-pasteable (no placeholder that would fail if pasted, except obvious ones
-      like `your-key-here`)
+  like `your-key-here`)
+```
 ```

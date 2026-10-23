@@ -13,7 +13,7 @@ concurrency:
 
 permissions:
   contents: read
-  id-token: write   # required for Workload Identity Federation
+  id-token: write # required for Workload Identity Federation
 
 jobs:
   deploy:

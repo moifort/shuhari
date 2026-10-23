@@ -3,7 +3,7 @@
 This repo's git policy — how work is checkpointed locally and shipped to the remote. The portable
 rules it builds on (one task one commit, verify before committing, Conventional Commits, revert over
 surgery, reshape before pushing) are in [git-best-practices.md](./git-best-practices.md). CLAUDE.md's
-*Development Workflow* section is the quick reference; this doc is the full spec.
+_Development Workflow_ section is the quick reference; this doc is the full spec.
 
 ## What the generic rules mean here
 
@@ -36,7 +36,7 @@ branch when the user asks for one.
 
 This is a solo project: CI (Unit Tests + Deploy) runs on `main` pushes only, so a pull request
 is pure ceremony. **Never open one, never suggest one.** On "push", the work goes straight to
-`origin/main` — even from a feature branch (see *Push protocol* below).
+`origin/main` — even from a feature branch (see _Push protocol_ below).
 
 ## Never push until asked
 
@@ -71,7 +71,6 @@ is pure ceremony. **Never open one, never suggest one.** On "push", the work goe
 A normal `main` push carries **no** changelog change. Do **not** touch `CHANGELOG.md` /
 `CHANGELOG.fr.md` when pushing, and do not add `## Unreleased` entries per commit. The changelog
 is written only at the moment of an iOS App Store release:
-
 1. Write the notes in English under `## Unreleased` in `CHANGELOG.md` (sections `### New` /
    `### Improved` / `### Fixed`), then the French translation under `## Unreleased` in
    `CHANGELOG.fr.md` (`### Nouveau` / `### Amélioré` / `### Corrigé`). How a line is written:

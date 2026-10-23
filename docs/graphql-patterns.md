@@ -23,7 +23,6 @@ server/domain/{domain}/infrastructure/graphql/
 ```
 
 The shared plumbing lives in `server/domain/shared/graphql/`:
-
 - **builder.ts** — the single `SchemaBuilder`, the `GraphQLContext`, and the branded `Scalars` map.
 - **scalars.ts** — registers each branded scalar.
 - **enums.ts** — the enums of a value that lives in `shared/types.ts` (the `Plan`, read by `quota`
@@ -104,7 +103,7 @@ Adding a new scalar: declare it in the `Scalars` map (builder.ts) and register i
 **A bounded number is a scalar too, never a bare `Int`.** `Rating` (1..5) and the three oven dials
 (`OvenTemperature` 30..300, `OvenDuration` 1..720, `OvenCoreTemperature` 30..100) all carry their
 range in the type, checked once at the boundary: a client sending `900` gets `BAD_USER_INPUT` from
-the scalar, not a resolver assertion further in. The exception is a value the *appliance* reports
+the scalar, not a resolver assertion further in. The exception is a value the _appliance_ reports
 rather than the cook writing it — `OvenRun` exposes plain `Int`s, because a stray reading must not
 fail the query that only meant to display it.
 
@@ -147,7 +146,8 @@ RecipeType.implement({
     // lineage via the batched loader (shares the scan with bestRating — no extra reads).
     versionToOpen: t.field({
       type: VersionType,
-      resolve: async (r, _a, { loaders }) => versionToOpen((await loaders.versionsByRecipe.load(r.id)) ?? []),
+      resolve: async (r, _a, { loaders }) =>
+        versionToOpen((await loaders.versionsByRecipe.load(r.id)) ?? []),
     }),
     // Denormalized (`tally`): read off the recipe document, no lineage.
     bestRating: t.field({
@@ -159,7 +159,7 @@ RecipeType.implement({
 })
 ```
 
-A satellite field owned by *another* domain can be **grafted** onto `RecipeType` from that
+A satellite field owned by _another_ domain can be **grafted** onto `RecipeType` from that
 domain's slice with `builder.objectField(RecipeType, 'field', …)`, resolving through the same
 per-request loaders — the forward declaration is what makes that cross-domain graft possible.
 
@@ -274,7 +274,12 @@ builder.mutationField('recordAttempt', (t) =>
       remarks: t.arg({ type: 'Remarks', required: true }),
     },
     resolve: async (_root, { recipeId, versionNumber, rating, remarks }, { userId }) => {
-      const result = await RecipeCommand.recordAttempt(userId, { recipeId, versionNumber, rating, remarks })
+      const result = await RecipeCommand.recordAttempt(userId, {
+        recipeId,
+        versionNumber,
+        rating,
+        remarks,
+      })
       return match(result)
         .with('not-found', domainError)
         .with(P.not(P.string), (recorded) => recorded)
@@ -293,7 +298,7 @@ return match(result)
   .exhaustive()
 ```
 
-> **Note.** The narrowing guards *inside* use-cases (`if (recipe === 'not-found') return
+> **Note.** The narrowing guards _inside_ use-cases (`if (recipe === 'not-found') return
 > 'not-found'`, then continue with the narrowed value) stay as `if` — they unwrap a query result
 > mid-flow rather than mapping a final outcome. See [error-handling.md](./error-handling.md).
 
@@ -373,8 +378,8 @@ The rule and its checklist are
 In shuhari, "business language" means the cook's: name the Shu-Ha-Ri concepts (recipe, version =
 attempt, iteration, best rating) rather than the storage mechanics, and take examples from the
 culinary domain — `e.g. "Grandma’s lasagna"`, `e.g. "250 g"`, `e.g. "Baked at 180°C instead of
-200°C"`, `1 (bad) to 5 (excellent)`. Keep the vocabulary stable across the schema: an *attempt* is a
-cook, a *version* is one entry in the chain, an *iteration* is an accepted AI proposal.
+200°C"`, `1 (bad) to 5 (excellent)`. Keep the vocabulary stable across the schema: an _attempt_ is a
+cook, a _version_ is one entry in the chain, an _iteration_ is an accepted AI proposal.
 
 ```typescript
 rating: t.field({

@@ -1,18 +1,17 @@
 # Shuhari - Project Directives
 
-守破離 — *Shu* (follow the rule), *Ha* (break it), *Ri* (transcend it). A culinary
+守破離 — _Shu_ (follow the rule), _Ha_ (break it), _Ri_ (transcend it). A culinary
 experimentation notebook: import a recipe, cook a version, rate the attempt, let the AI
 propose the next iteration, and open the best-rated version by default.
 
 ## Language
 
-Everything versioned and technical is **English**: commits, code, comments, docs (incl. `CHANGELOG.md`), identifiers, file names, GraphQL descriptions, AI prompts, test names, iOS accessibility *identifiers*. Enum/union values are English technical symbols (`dish`, `starter`, `ai-proposal`) — the schema never speaks the user's language, the app translates. The **only** French in the repo: user-facing copy (`CHANGELOG.fr.md` + its generated asset `server/system/changelog-content.ts`, the iOS app's on-screen text and preview names), French data values quoted as examples in code/prompts, and the import fallback title. Never mix languages in a commit message or a comment. Control: `grep -rnP '[\x{00C0}-\x{00FF}]' server/` must only return those exceptions. Full rules: [docs/code-style.md](docs/code-style.md#language).
+Everything versioned and technical is **English**: commits, code, comments, docs (incl. `CHANGELOG.md`), identifiers, file names, GraphQL descriptions, AI prompts, test names, iOS accessibility _identifiers_. Enum/union values are English technical symbols (`dish`, `starter`, `ai-proposal`) — the schema never speaks the user's language, the app translates. The **only** French in the repo: user-facing copy (`CHANGELOG.fr.md` + its generated asset `server/system/changelog-content.ts`, the iOS app's on-screen text and preview names), French data values quoted as examples in code/prompts, and the import fallback title. Never mix languages in a commit message or a comment. Control: `grep -rnP '[\x{00C0}-\x{00FF}]' server/` must only return those exceptions. Full rules: [docs/code-style.md](docs/code-style.md#language).
 
 ## Collaboration
 
 > Full working agreement: [docs/collaboration.md](docs/collaboration.md) — read it at the start
 > of any session. Key rules:
-
 - **Docs are the spec**: align code to `docs/`, never the reverse; `docs/code-style.md` is law and is never edited to match the code (it changes only on an explicit user request). Corrections given in conversation are applied repo-wide **and** codified in the matching doc, in the same task.
 - **Rules generic, wiring specific**: a practice that would hold in any codebase goes in a `*-best-practices.md` with neutral examples; how this repo implements it goes in the matching project guide, which links to the rule.
 - **Work inline, never through subagents**: exploration, review, debugging and planning all happen in the main conversation — never `Task`/`Agent`, never a parallel-worker or subagent-driven skill, plan mode included.
@@ -33,6 +32,7 @@ Everything versioned and technical is **English**: commits, code, comments, docs
 - **Runtime**: always use `bun`/`bunx`, never `npm`/`npx`
 - **GraphQL codegen** (if the schema changed): `bun run generate:graphql` (regenerates `shared/schema.graphql`), then `bun run generate:ios`
 - **iOS build**:
+
   ```
   DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project ios/Shuhari.xcodeproj -scheme Shuhari -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.2' build
   ```
@@ -42,7 +42,6 @@ Everything versioned and technical is **English**: commits, code, comments, docs
 > **Git commit & push rules live in [docs/git-workflow.md](docs/git-workflow.md)** (portable rules:
 > [docs/git-best-practices.md](docs/git-best-practices.md)) — read it at the start of any coding
 > session. This section is the quick reference.
-
 1. Verify the build before committing: `bun tsc --noEmit` and/or the iOS `xcodebuild`, depending on what was touched (`bun run prepare` first if routes changed).
 2. Review the diff yourself, **inline**, before committing — never through a subagent.
 3. **Commit freely, one task = one commit**: commit each finished task without asking, never bundle tasks — a rollback is a clean `git revert`. English messages, Conventional Commits, `Co-Authored-By:` trailer.
@@ -60,7 +59,6 @@ Everything versioned and technical is **English**: commits, code, comments, docs
 > [graphql-patterns](docs/graphql-patterns.md), [business-rules](docs/business-rules.md),
 > [migrations](docs/migrations.md), [readme-guide](docs/readme-guide.md),
 > [collaboration](docs/collaboration.md). This section is the quick reference.
-
 - **Stack**: Bun + Nitro 2.13 (`preset firebase`, gen 2, nodejs22, `europe-west3`) + Apollo Server 5 + Pothos 4 + firebase-admin (native Firestore) + Zod + ts-brand. DDD/CQRS strict. Biome (spaces 2, single quotes, no semicolons, width 100), `ts-pattern` (`match().exhaustive()`), `lodash-es`.
 - **Domains**: `server/domain/{recipe,proposal,quota,entitlement,shared}` — `recipe`, `quota` and `entitlement` are the persisted domains; `proposal` is ephemeral (never stored) and the sole caller of `~/system/ai`, which it gates on the quota; system concerns in `server/system/`. Standard layout (`types.ts`, `primitives.ts`, `command.ts`, `query.ts`, `infrastructure/{repository,graphql/*}.ts`, optional `business-rules.ts` / `use-case.ts`): [docs/domain-guide.md](docs/domain-guide.md).
 - **Three recipe types** (`RECIPE_TYPE_VALUES`): `dish`, `thermomix`, `coffee`. `content` is a discriminated union (`kind` mirrors the type); a **coffee has no ingredients and no steps** — it is `CoffeeParameters` alone — and carries `Recipe.method` (`BREW_METHOD_VALUES`), aggregate-level like `category`, present iff `type === 'coffee'`, and the axis the app's Café tab reads on. The AI changes **one variable per coffee iteration**, and never fills a parameter left empty — see [docs/business-rules.md](docs/business-rules.md#recipe-types-and-version-content).
@@ -86,7 +84,6 @@ The `(default)` database has delete protection and seven-day point-in-time recov
 
 > Full iOS guide: [docs/ios-guide.md](docs/ios-guide.md) — project wiring; the portable SwiftUI
 > rules live in [docs/swiftui-best-practices.md](docs/swiftui-best-practices.md).
-
 - Target iOS 26.0, Swift 6 (strict concurrency). `ios/Shuhari.xcodeproj`, scheme `Shuhari`, bundle id `com.polyforms.shuhari.app`, team `46C337T7YN`. MVVM with `@Observable` (`@MainActor` ViewModels, `Sendable` models), Apollo iOS codegen, Firebase Auth + Sign in with Apple (mono-user, but real auth).
 - Style: **Liquid Glass** = native iOS 26 components (no custom re-skins). Feature structure `Features/{Feature}/{pages,organisms,molecules}/`, shared atoms in `Shared/Components/`.
 - **Two content tabs** (`ContentView`): **Cuisine** (`HomeView`, `RecipeType.cooking`) and **Café** (`CoffeeView`, `[.coffee]`), plus the shared trailing **Importer** entry — the detected type routes the new recipe to its tab. Both run the same `LibraryStore`/`HomePage`/`LibrarySection`, whose filter facet is primitive-first so it serves a dish course or a brew method: [docs/ios-guide.md](docs/ios-guide.md#the-root-tabs).

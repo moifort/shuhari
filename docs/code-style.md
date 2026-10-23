@@ -1,7 +1,7 @@
 # Code Style Guide
 
 Portable rules — nothing here names this project. Many implement DDD principles from Evans
-(*Domain-Driven Design*) and Wlaschin (*Domain Modeling Made Functional*). Examples use a fictional
+(_Domain-Driven Design_) and Wlaschin (_Domain Modeling Made Functional_). Examples use a fictional
 `bean` domain.
 
 Rules marked ⛔ are meant to be **enforced by an architecture test** that walks the source tree, so a
@@ -66,7 +66,6 @@ resolve: ({ roastedOn }) => roastedOn ?? null
 ```
 
 Three exceptions, and nothing else:
-
 - **A method call** — `snap.data()`, `file.endsWith('.ts')`. Destructuring a method detaches it from
   its receiver, so the parameter stays whole.
 - **The object itself is used** — `versions.map((version) => [version.number, version])` needs both.
@@ -105,10 +104,10 @@ read — a string date in the domain is a bug that surfaces months later, at a s
 // Bad
 type Bean = { tastingNotes?: Note[] }
 // Good
-type Bean = { tastingNotes: Note[] }   // [] is the neutral state
+type Bean = { tastingNotes: Note[] } // [] is the neutral state
 ```
 
-**Items are never optional either** — an array is *total*: neither the list nor any of its slots can
+**Items are never optional either** — an array is _total_: neither the list nor any of its slots can
 be absent. A parallel array aligned by index must not spell "nothing here" as a hole; give the
 element type a neutral value instead.
 
@@ -119,7 +118,7 @@ settings: (Settings | undefined)[]
 settings: Settings[]
 ```
 
-At the API boundary this means **`[T!]!` everywhere**, in output types *and* inputs/args — never
+At the API boundary this means **`[T!]!` everywhere**, in output types _and_ inputs/args — never
 `[T]`, `[T]!` or `[T!]`. A client sends `[]` for "none", never `null`, and a neutral element for "this
 slot carries nothing". The same rule applies on the client (Swift: `[Settings]`, never `[Settings?]`
 nor `[Settings]?`).
@@ -151,7 +150,7 @@ the storage layer drops absent fields on write and turns stored nulls back into 
 a model returning loose JSON is normalised at parse time.
 
 Two storage consequences worth knowing: a write must be a **full replace** for a dropped key to
-*erase* the stored field (an omitted key in a merge leaves the old value untouched), and an array
+_erase_ the stored field (an omitted key in a merge leaves the old value untouched), and an array
 element cannot be absent — a positional hole is stored as `null` and decoded back to `undefined`.
 
 ### No boolean derivable from another field
@@ -241,7 +240,7 @@ migration runner narrating its work) is tolerated; `console.log` / `error` / `wa
 
 **One language for everything versioned and technical: English.** Code, identifiers, folder and file
 names, comments, commit messages, documentation, API descriptions, model prompts, test names, and —
-on mobile — accessibility *identifiers*. A reader should never need to know the product's UI
+on mobile — accessibility _identifiers_. A reader should never need to know the product's UI
 language to read the model.
 
 ```ts
@@ -253,7 +252,7 @@ export const recordAttempt = async (userId: UserId, input: RecordAttemptInput) =
 
 ### Enum values, unions and discriminants are English technical symbols
 
-> **Evans:** Ubiquitous Language — but the language of the *domain model*, not of the *reader*. A
+> **Evans:** Ubiquitous Language — but the language of the _domain model_, not of the _reader_. A
 > schema value is an identity, not a label; the moment it doubles as a label it can never be
 > translated, renamed or reused.
 
@@ -273,7 +272,7 @@ export const TYPE_VALUES = ['dish', 'drink'] as const
 
 On the client, identifiers, file names, comments and accessibility **identifiers**
 (`"home-settings-button"`) stay English. The product's language is reserved for the copy the user
-actually reads: labels, titles, accessibility *labels*, and preview names (a preview gallery of the
+actually reads: labels, titles, accessibility _labels_, and preview names (a preview gallery of the
 translated UI is legitimately named in that UI's language).
 
 ```swift
@@ -298,6 +297,5 @@ This repo's list is in [CLAUDE.md](../CLAUDE.md#language).
 See [swiftui-best-practices.md](./swiftui-best-practices.md) for the portable UI rules and
 [ios-guide.md](./ios-guide.md) for this app's conventions. The two style rules that cross the
 boundary:
-
 - Arrays are never optional (same rule as above), on the wire and in the client model.
 - Write the UI language's accented copy as real UTF-8 characters, never as `"\u{00E9}"` escapes.

@@ -14,7 +14,7 @@ the single source for collaboration conventions, replacing any machine-local ass
   gets flagged, not silently patched.
 - **Rules are written project-agnostic; wiring is written per project.** A practice that would hold
   in any codebase belongs in a `*-best-practices.md` (or `code-style.md`) with neutral examples and
-  no product noun in sight; how *this* repo implements it — paths, library names, domain examples —
+  no product noun in sight; how _this_ repo implements it — paths, library names, domain examples —
   belongs in the matching project guide, which links to the rule. A rule that can only be read
   through this product's vocabulary can't be reused, reviewed, or challenged.
 - **Codify corrections.** When the user corrects an architecture/style point in conversation
@@ -44,7 +44,6 @@ the single source for collaboration conventions, replacing any machine-local ass
 ## Closing a task: surfaces, then diff size
 
 Every finished task closes with two lines in the reply, in this order:
-
 1. **The surfaces touched** — one sentence naming which of the three the task changed:
    **the database** (a Firestore document shape, a new collection, a migration), **the backend**
    (anything under `server/`), **the iOS app** (anything under `ios/`). Name the ones changed and
@@ -85,7 +84,7 @@ Work in the primary checkout. **Never create a git worktree** for a session — 
 (`git worktree add`) nor through the harness's `EnterWorktree` tool, and never invoke
 `superpowers:using-git-worktrees`. Only an explicit user request overrides this.
 
-The isolation a worktree would buy is already bought by *one task = one commit*: a session that
+The isolation a worktree would buy is already bought by _one task = one commit_: a session that
 closes its task leaves a clean tree for the next one. What the worktree adds is pure cost — an
 untracked `.env` to copy over, a `bun install` plus `bun run prepare` to redo, and above all a
 cold Xcode DerivedData (keyed by project path), so the first iOS build restarts from zero. The
@@ -123,7 +122,6 @@ collaboration learning, preference, or project note is codified in this file or 
 `/Users/thibaut/Code/vinarium` (sibling repo) shares shuhari's exact stack and conventions
 (Bun + Nitro + Pothos + Firestore repositories, SwiftUI + Apollo codegen, same DDD layout).
 When a feature exists in vinarium, **replicate its pattern rather than inventing one**:
-
 - Cursor pagination: `beverage/infrastructure/repository.ts` `findPage` (`where` + `orderBy` +
   `startAfter(docSnapshot)` + `limit(n+1)` → `hasMore`), hand-rolled page type
   `{ items, hasMore, totalCount }` (no Relay connection), sort/order GraphQL enums.
@@ -139,6 +137,5 @@ When a feature exists in vinarium, **replicate its pattern rather than inventing
 ## Project status (dated notes)
 
 Temporal facts — **delete each note once it no longer holds.**
-
 - **2026-07-20 — production Firestore holds real data.** Every schema-shape change needs its
   migration (see [migrations.md](migrations.md)); the pre-release shortcut is over.

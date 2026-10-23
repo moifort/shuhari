@@ -1,6 +1,6 @@
 # Shuhari
 
-守破離 — *Shu* (follow the rule), *Ha* (break it), *Ri* (transcend it).
+守破離 — _Shu_ (follow the rule), _Ha_ (break it), _Ri_ (transcend it).
 
 A culinary experimentation notebook: import a recipe, cook a version, rate the attempt, and let the
 AI propose the next iteration. Each recipe grows as a chain of versions, and the app always opens on
@@ -49,11 +49,11 @@ The app is single-user but uses real authentication: Firebase Auth with Sign in 
 
 ## Prerequisites
 
-| Tool | What it does | Install |
-|------|--------------|---------|
-| [Bun](https://bun.sh/) | Runs the backend server (never use `npm`/`npx` here) | `curl -fsSL https://bun.sh/install \| bash` |
-| [Xcode 26](https://developer.apple.com/xcode/) | Builds the iOS app (iOS 26 SDK) | Mac App Store |
-| [gcloud CLI](https://cloud.google.com/sdk/docs/install) | Talks to Google Cloud when provisioning | `brew install --cask google-cloud-sdk` |
+| Tool                                                                                 | What it does                                                                   | Install                                                                                  |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| [Bun](https://bun.sh/)                                                               | Runs the backend server (never use `npm`/`npx` here)                           | `curl -fsSL https://bun.sh/install \| bash`                                              |
+| [Xcode 26](https://developer.apple.com/xcode/)                                       | Builds the iOS app (iOS 26 SDK)                                                | Mac App Store                                                                            |
+| [gcloud CLI](https://cloud.google.com/sdk/docs/install)                              | Talks to Google Cloud when provisioning                                        | `brew install --cask google-cloud-sdk`                                                   |
 | [Apollo iOS CLI](https://www.apollographql.com/docs/ios/code-generation/codegen-cli) | Regenerates the app's typed GraphQL code (only needed when the schema changes) | Nothing to install — SwiftPM ships it with the Xcode project; run `bun run generate:ios` |
 
 You also need a Google Cloud billing account and an Apple Developer account (for Sign in with Apple)
@@ -102,8 +102,8 @@ it, the server runs but importing and proposing fail.
 
 **Where to put it:**
 
-| File | Variable |
-|------|----------|
+| File   | Variable                             |
+| ------ | ------------------------------------ |
 | `.env` | `NITRO_GOOGLE_API_KEY=your-key-here` |
 
 ### Admin token
@@ -115,8 +115,8 @@ Anyone with this token can run them, so pick a long random string.
 
 **Where to put it:**
 
-| File | Variable |
-|------|----------|
+| File   | Variable                            |
+| ------ | ----------------------------------- |
 | `.env` | `NITRO_ADMIN_TOKEN=your-token-here` |
 
 ### Sentry DSN (optional)
@@ -128,8 +128,8 @@ reporting entirely.
 
 **Where to put it:**
 
-| File | Variable |
-|------|----------|
+| File   | Variable                     |
+| ------ | ---------------------------- |
 | `.env` | `NITRO_SENTRY_DSN=https://…` |
 
 ### Firebase configuration (iOS)
@@ -164,7 +164,9 @@ query {
     items {
       title
       bestRating
-      versionToOpen { number }
+      versionToOpen {
+        number
+      }
     }
     hasMore
   }
@@ -224,22 +226,22 @@ Workload Identity Federation, deploys the function and runs the migration endpoi
 
 ## Documentation
 
-| Guide | What it covers |
-|-------|----------------|
-| [Architecture](docs/architecture.md) | How the backend is organized, and where each kind of code lives |
-| [Domain guide](docs/domain-guide.md) | How to add a new domain, step by step |
-| [GraphQL patterns](docs/graphql-patterns.md) | How the GraphQL layer is built and kept fast |
-| [DDD best practices](docs/ddd-best-practices.md) | The portable DDD/CQRS rules this backend follows |
-| [GraphQL best practices](docs/graphql-best-practices.md) | The portable code-first schema rules |
-| [Branded types](docs/branded-types.md) | How values are validated once and stay trustworthy |
-| [Code style](docs/code-style.md) | The conventions the code follows, and which ones the tests enforce |
-| [Error handling](docs/error-handling.md) | How failures are represented and surfaced to the app |
-| [Migrations](docs/migrations.md) | How to change the shape of stored data safely |
-| [iOS guide](docs/ios-guide.md) | How to add screens to the iOS app |
-| [SwiftUI best practices](docs/swiftui-best-practices.md) | Portable SwiftUI rules, reusable in any project |
-| [Git workflow](docs/git-workflow.md) | How commits and pushes are handled |
-| [Git best practices](docs/git-best-practices.md) | Portable commit and history rules |
-| [README guide](docs/readme-guide.md) | How to write and maintain this file |
-| [Sign in with Apple](docs/apple-sign-in.md) | How the Apple authentication is configured |
+| Guide                                                    | What it covers                                                     |
+| -------------------------------------------------------- | ------------------------------------------------------------------ |
+| [Architecture](docs/architecture.md)                     | How the backend is organized, and where each kind of code lives    |
+| [Domain guide](docs/domain-guide.md)                     | How to add a new domain, step by step                              |
+| [GraphQL patterns](docs/graphql-patterns.md)             | How the GraphQL layer is built and kept fast                       |
+| [DDD best practices](docs/ddd-best-practices.md)         | The portable DDD/CQRS rules this backend follows                   |
+| [GraphQL best practices](docs/graphql-best-practices.md) | The portable code-first schema rules                               |
+| [Branded types](docs/branded-types.md)                   | How values are validated once and stay trustworthy                 |
+| [Code style](docs/code-style.md)                         | The conventions the code follows, and which ones the tests enforce |
+| [Error handling](docs/error-handling.md)                 | How failures are represented and surfaced to the app               |
+| [Migrations](docs/migrations.md)                         | How to change the shape of stored data safely                      |
+| [iOS guide](docs/ios-guide.md)                           | How to add screens to the iOS app                                  |
+| [SwiftUI best practices](docs/swiftui-best-practices.md) | Portable SwiftUI rules, reusable in any project                    |
+| [Git workflow](docs/git-workflow.md)                     | How commits and pushes are handled                                 |
+| [Git best practices](docs/git-best-practices.md)         | Portable commit and history rules                                  |
+| [README guide](docs/readme-guide.md)                     | How to write and maintain this file                                |
+| [Sign in with Apple](docs/apple-sign-in.md)              | How the Apple authentication is configured                         |
 
 App bundle id: `com.polyforms.shuhari.app` · Apple team: `46C337T7YN`.
