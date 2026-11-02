@@ -21,6 +21,10 @@ Everything versioned and technical is **English**: commits, code, comments, docs
 - **No machine-local assistant memory**: collaboration learnings are written into `docs/`, nothing else.
 - **Ops autonomy**: execute everything CLI-doable yourself; hand off only credential-gated steps, with numbered instructions.
 
+## Board
+
+The [Shuhari Board](https://claude.ai/artifact/4NNoKPgqH9oZnHXAcD5sKn) and the app stay in sync. **Read [docs/board.md](docs/board.md) before any UI change and on any board comment**: the board comes first, a UI change is validated twice (board, then iOS), and each comment gets its own child session.
+
 ## Build & Verification Commands
 
 - **Backend typecheck**: `bun tsc --noEmit`
