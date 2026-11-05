@@ -71,6 +71,7 @@ is pure ceremony. **Never open one, never suggest one.** On "push", the work goe
 A normal `main` push carries **no** changelog change. Do **not** touch `CHANGELOG.md` /
 `CHANGELOG.fr.md` when pushing, and do not add `## Unreleased` entries per commit. The changelog
 is written only at the moment of an iOS App Store release:
+
 1. Write the notes in English under `## Unreleased` in `CHANGELOG.md` (sections `### New` /
    `### Improved` / `### Fixed`), then the French translation under `## Unreleased` in
    `CHANGELOG.fr.md` (`### Nouveau` / `### Amélioré` / `### Corrigé`). How a line is written:

@@ -80,6 +80,7 @@ proposal is validated and applied, never saved). The read-only `changelog` aggre
 Each domain is a self-contained bounded context. The per-file responsibilities are the generic ones
 ([ddd-best-practices.md](./ddd-best-practices.md#the-building-blocks-and-where-they-live)); what is
 specific here:
+
 - **types.ts** — branded types via `ts-brand`. No Zod here.
 - **primitives.ts** — Zod constructors; must import both `ts-brand` and `zod` (checked by the arch test).
 - **command.ts** / **query.ts** — exported as a `namespace` (`RecipeCommand`, `RecipeQuery`).
@@ -114,6 +115,7 @@ const recipes = () => db().collection('recipes').withConverter(genericDataConver
 
 **Aggregate root + append-only satellite.** A light pointer document plus a heavy,
 append-only collection keyed by a deterministic id:
+
 - `recipes` — the aggregate root (a small pointer: `versionCount`, `updatedAt`, …); the recipe's
   state (best rating, version to open) is _derived_ from its versions, not stored on it
 - `recipe-versions` — one immutable doc per version, keyed `${recipeId}_${number}`
@@ -161,6 +163,7 @@ leaves nothing.
 ### Read side — no `read-model/` layer
 
 There is **no** `read-model/` directory. Composite reads are served two ways:
+
 1. **Read-only domains** — `changelog` (system-hosted under `server/system/`) exposes a
    `query.ts` that assembles data through other domains' public `Query` namespaces.
 2. **GraphQL satellite loaders** — derived fields on `Recipe` (`versions`, `versionToOpen`)
@@ -177,6 +180,7 @@ Code-first GraphQL (Apollo Server 5 + Pothos 4), exposed at the single endpoint 
 There is **no** central `server/graphql/` directory: each domain owns its slice under
 `infrastructure/graphql/{enums,types,inputs,queries,mutations}.ts`. The shared plumbing lives
 in `server/domain/shared/graphql/`:
+
 - **builder.ts** — the single Pothos `SchemaBuilder`; declares the `GraphQLContext`
   (`{ event, userId, loaders }`), `DefaultFieldNullability: false`, and the branded `Scalars` map.
 - **scalars.ts** — registers each branded scalar; `parseValue` runs the domain's Zod
@@ -196,6 +200,7 @@ The SDL is exported to `shared/schema.graphql` (`bun run generate:graphql`) for 
 ### Route Layer (`server/routes/`)
 
 Only two HTTP handlers exist — the app is GraphQL-first:
+
 - `routes/graphql.ts` — `GET`/`POST /graphql`; builds a fresh per-request context
   `{ event, userId, loaders: recipeSatelliteLoaders(userId) }` and forwards to Apollo.
 - `routes/admin/migrate.post.ts` — `POST /admin/migrate` (see [migrations.md](./migrations.md)).
@@ -250,6 +255,7 @@ it alive.
 
 **Four things the real appliance taught us**, each of which the documentation's examples get
 wrong or leave out. They were read off an AEG KOBAS3XH; re-check them against any new oven.
+
 1. **There is no `/capabilities` endpoint.** Capabilities come back from
    `GET /appliances/{id}/info`, alongside the model and serial. The `/capabilities` path answers
    403 with an AWS-signature complaint, which looks like an auth bug and is not one.
@@ -293,16 +299,19 @@ tier does what its suffix claims: every `.int.test.ts` drives the fake Firestore
 ## Data Flow
 
 **Simple read/write (single domain):**
+
 ```
 GraphQL request → /graphql → Apollo → Pothos resolver → domain Query/Command → repository → Firestore
 ```
 
 **Nested field (satellite):**
+
 ```
 Pothos resolver → loaders.<field>.load(id) → (micro-batched) domain Query → single getAll
 ```
 
 **Orchestrated write (multi-domain):**
+
 ```
 Pothos mutation → use-case → several Commands/Queries → repositories
 ```

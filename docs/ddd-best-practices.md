@@ -44,6 +44,7 @@ One business concept = **one word**, and it is the word the feature speaks. When
 conversation says _"an improvement"_, the code says `improvement` at **every** layer — domain,
 API schema, client, tests — so a grep for the functional word finds the whole feature. UI copy in
 another language is the _translation_ of that vocabulary, never a second vocabulary.
+
 - **Never introduce a synonym at one layer** (`wish`, `suggestion`, `idea` for an improvement):
   six months later nobody knows whether two words are two concepts.
 - **Renaming the concept renames it everywhere**, in the same task. Half-renamed vocabulary is
@@ -54,6 +55,7 @@ another language is the _translation_ of that vocabulary, never a second vocabul
 
 The name IS the rule or the action. Exported names in `query.ts` / `command.ts` /
 `business-rules.ts` never start with `get`/`compute`/`handle`/`process`/`manage`/`perform`/`fetch`
+
 - a capital.
 
 * Reads: `all`, `byId`, `versionsOf` — never `getAll`, `fetchVersions`.
@@ -85,6 +87,7 @@ export namespace BeanQuery {
 
 These are the four that keep the architecture honest — worth enforcing with a test that walks the
 source tree, so a violation fails the build:
+
 1. **Repositories are private.** A context may import only its _own_ `infrastructure/repository`.
    Every other context is reached through the public `Query` / `Command` namespaces.
 2. **No storage outside repositories.** `use-case.ts` and `business-rules.ts` never touch the
@@ -112,6 +115,7 @@ never import `proposal`.
 ## Read side — derive, don't duplicate
 
 Prefer deriving composite reads over maintaining a parallel read model:
+
 - **Read-only contexts** assemble data through other contexts' public `Query` namespaces.
 - **Nested API fields** resolve through per-request, micro-batched loaders — one batched read per
   field per request, and nothing at all when the field is not selected. See
@@ -124,6 +128,7 @@ time, not stored and kept in sync. A stored duplicate is a bug waiting for the d
 ## Storage patterns
 
 Whatever the document store, three patterns carry most of the weight:
+
 - **A typed converter on every collection reference**, so reads come back as domain shapes and
   stored timestamps become real `Date`s.
 - **Aggregate root + append-only satellite**: a small pointer document per aggregate, plus a heavy
@@ -141,6 +146,7 @@ Every query is scoped by the owner's id — multi-tenancy is not a filter the ca
 ## Migrations are forward-only and owned by a runner
 
 Changing the _shape_ of stored data is a migration; adding to it usually isn't.
+
 - **Migrate** when a field is renamed, restructured, or removed, or when an enum value changes
   meaning.
 - **Don't migrate** when adding an optional field, a new collection, or changing query logic.
@@ -155,6 +161,7 @@ against production.
 
 Integration tests run against an in-memory fake of the store that records reads, writes,
 batches and transactions. Assert three things:
+
 - **Behaviour** — what was persisted.
 - **Atomicity** — no direct writes escaped the transaction (`directWrites` empty, one committed).
   The fake runs transactions one at a time, so two commands fired together test the race.

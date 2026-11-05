@@ -50,6 +50,7 @@ rollback strategy.
 
 Local commits are a workspace; the remote is a record. Before pushing, rewrite the local sequence
 into clean, bisectable units:
+
 - squash or regroup related commits,
 - rewrite unclear messages,
 - **elide undone work** — a feature and its later revert collapse and leave no trace, rather than

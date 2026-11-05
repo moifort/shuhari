@@ -14,6 +14,7 @@ Two DDD concepts at once: Evans's **Value Objects** (defined by their value, not
 Wlaschin's **making illegal states unrepresentable** — once branded, no downstream code re-checks.
 
 The split is strict, and worth enforcing with an architecture test:
+
 - **`types.ts`** declares the brands — imports the branding library only, no validation library.
 - **`primitives.ts`** declares the constructors — imports **both**.
 

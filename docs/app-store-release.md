@@ -93,6 +93,7 @@ captions in `scripts/screenshots/panels.json`, design in the CSS of `scripts/scr
 Then **look at them** before uploading.
 
 Three traps the script works around, worth knowing before touching it:
+
 - The simulator build is made in **Debug**. `DebugGallery` sits behind `#if DEBUG`; a Release
   build ignores the `-gallery` argument and every capture returns the same screen.
 - Each capture **terminates the app before relaunching it**. `simctl launch` on a running app
@@ -143,6 +144,7 @@ for review" behind the refused version. Shuhari links Apple's standard EULA rath
 one: nothing here departs from it.
 
 The link belongs in **two** places, and both are in the repository:
+
 - the description, at the end of `fastlane/metadata/fr-FR/description.txt`, alongside the privacy
   policy — this is the metadata Apple's automated check reads;
 - the paywall, under the subscribe button (`SubscriptionLinks`, shown by `PremiumSheet`) — a

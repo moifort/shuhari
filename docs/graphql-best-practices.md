@@ -8,6 +8,7 @@ nothing here names this project. How this repo wires them is in
 
 Each bounded context owns its slice — `infrastructure/graphql/{enums,types,inputs,queries,mutations}.ts` —
 and a small shared layer holds the plumbing only:
+
 - **builder** — the single `SchemaBuilder`, the context type, the scalar map.
 - **scalars** — registration of every branded scalar.
 - **schema** — assembly by side-effect imports, in dependency order.
@@ -49,6 +50,7 @@ a per-request, DataLoader-style batcher: memoize per key, collect every `load()`
 once, perform **one** keyed read.
 
 Two consequences worth stating as rules:
+
 - A page of N parents selecting a derived field costs **one** read, not N.
 - An **unselected** derived field costs **nothing** — that is the point of resolving it lazily
   rather than assembling it eagerly in the query.
@@ -100,6 +102,7 @@ with the client and the page people read in the API sandbox — an undocumented 
 incomplete field.
 
 Write descriptions in **business language**, as if the reader had never seen the code:
+
 - **Say what it means in the domain, not what it is technically** — "The version to open first when
   you enter the recipe", not "The versionToOpen resolver".
 - **Give a concrete example** with real domain values (`e.g. "250 g"`, `1 (bad) to 5 (excellent)`).
