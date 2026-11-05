@@ -23,6 +23,7 @@ server/domain/{domain}/infrastructure/graphql/
 ```
 
 The shared plumbing lives in `server/domain/shared/graphql/`:
+
 - **builder.ts** — the single `SchemaBuilder`, the `GraphQLContext`, and the branded `Scalars` map.
 - **scalars.ts** — registers each branded scalar.
 - **enums.ts** — the enums of a value that lives in `shared/types.ts` (the `Plan`, read by `quota`

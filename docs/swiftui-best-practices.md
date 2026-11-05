@@ -34,6 +34,7 @@ Button {
 ```
 
 Rules that come with it:
+
 - **One source of truth for "in flight."** If the action already runs through a helper that tracks
   its own state (an error presenter, a view model flag), bind the spinner to _that_ — never a
   parallel `@State` boolean that can drift out of sync.
@@ -82,6 +83,7 @@ settings list. It does not hold for data that is worthless when stale — a bala
 one-time code — where a stale row read as current is worse than a wait.
 
 Three things make it work, and the third is the one that gets forgotten:
+
 1. **Read the cache before the network, synchronously, in the store's `init`.** An `await` here
    costs a frame of empty screen, which is the whole thing you set out to avoid.
 2. **Cache only the view the screen opens on.** A sorted, filtered or paginated-past-the-first-page
@@ -115,6 +117,7 @@ A marker column — a status dot, a drag handle, a checkmark — belongs to **al
 or to none of them. Give it only to the rows that can carry a marker and the labels of the same
 section stop lining up: the `Toggle` sits on the standard inset, the marked field sits seven points
 further in, and the eye reads the shift as a defect. Two ways out, and only these two:
+
 - **The gutter is conditional, per screen.** When nothing on this screen can ever be marked, drop
   the column entirely — every label keeps SwiftUI's own inset, aligned with the section header.
   When something can, give the gutter to every row, marker or not.
@@ -179,6 +182,7 @@ rest as typed, and never silently do nothing.
 Screens of the same flow show the same object: a detail, the sheet listing its parts, the child
 pushed from that sheet. Giving each its own view model means each fetches that object again, and
 that is two bugs at once:
+
 - **latency the user reads as a freeze** — a push that already has everything it needs on screen
   still opens on a spinner, so picking a row feels like nothing happened;
 - **screens that contradict each other** — two copies read at two moments, so a badge says nothing

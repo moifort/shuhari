@@ -29,6 +29,7 @@ bun run bootstrap
 ```
 
 The `bootstrap.sh` driver:
+
 1. validates prerequisites,
 2. runs `bun install + bun run generate:graphql + bun run build`,
 3. runs `terraform init && terraform apply -auto-approve`,

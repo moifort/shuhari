@@ -21,6 +21,7 @@ These are already set across the project — do not change them.
 ## Apple Developer portal
 
 In [developer.apple.com/account](https://developer.apple.com/account) under Team `46C337T7YN`:
+
 1. **App ID** — Certificates, Identifiers & Profiles → Identifiers → App IDs.
    - Ensure the App ID `com.polyforms.shuhari.app` exists (create it as type _App_ otherwise).
    - Enable the **Sign In with Apple** capability (_Enable as a primary App ID_), then save.
@@ -42,6 +43,7 @@ In [developer.apple.com/account](https://developer.apple.com/account) under Team
 ## Deliverables
 
 From the steps above you end up with:
+
 1. **Services ID** — `com.polyforms.shuhari.signin` (created and configured).
 2. **Key ID** — the 10-character identifier of the key.
 3. **`.p8` file** — the downloaded `AuthKey_XXXXXXXXXX.p8`.
@@ -50,6 +52,7 @@ From the steps above you end up with:
 ## Repo wiring
 
 Once the deliverables are in hand:
+
 1. Drop the `.p8` at `infra/apple.p8`.
 2. In `infra/terraform.tfvars`: set `apple_key_id = "<KEY_ID>"` (the other Apple fields are
    already correct).

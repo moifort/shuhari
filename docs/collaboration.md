@@ -44,6 +44,7 @@ the single source for collaboration conventions, replacing any machine-local ass
 ## Closing a task: surfaces, then diff size
 
 Every finished task closes with two lines in the reply, in this order:
+
 1. **The surfaces touched** — one sentence naming which of the three the task changed:
    **the database** (a Firestore document shape, a new collection, a migration), **the backend**
    (anything under `server/`), **the iOS app** (anything under `ios/`). Name the ones changed and
@@ -122,6 +123,7 @@ collaboration learning, preference, or project note is codified in this file or 
 `/Users/thibaut/Code/vinarium` (sibling repo) shares shuhari's exact stack and conventions
 (Bun + Nitro + Pothos + Firestore repositories, SwiftUI + Apollo codegen, same DDD layout).
 When a feature exists in vinarium, **replicate its pattern rather than inventing one**:
+
 - Cursor pagination: `beverage/infrastructure/repository.ts` `findPage` (`where` + `orderBy` +
   `startAfter(docSnapshot)` + `limit(n+1)` → `hasMore`), hand-rolled page type
   `{ items, hasMore, totalCount }` (no Relay connection), sort/order GraphQL enums.
@@ -137,5 +139,6 @@ When a feature exists in vinarium, **replicate its pattern rather than inventing
 ## Project status (dated notes)
 
 Temporal facts — **delete each note once it no longer holds.**
+
 - **2026-07-20 — production Firestore holds real data.** Every schema-shape change needs its
   migration (see [migrations.md](migrations.md)); the pre-release shortcut is over.

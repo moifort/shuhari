@@ -174,6 +174,7 @@ export const findManyByIds = async (userId: UserId, ids: RecipeId[]): Promise<Re
 ```
 
 Firestore helpers live in `server/utils/firestore.ts`:
+
 - `genericDataConverter<T>()` — typed reads; `Timestamp` → `Date`.
 - `transactionally(tx => …)` — read-modify-write that cannot lose an update: the reads see
   current state, every write lands or none does, and Firestore replays the body when a concurrent
@@ -259,6 +260,7 @@ return transactionally(async (tx) => {
 ## 7. Add the GraphQL Slice (`infrastructure/graphql/`)
 
 See [graphql-patterns.md](./graphql-patterns.md) for the full patterns. In short:
+
 - **enums.ts** — `builder.enumType('Roast', { values: { LIGHT: { value: 'light' }, … } })`
 - **types.ts** — `builder.objectRef<Bean>('Bean').implement({ fields: … })`, exposing branded
   scalars. If you add a **satellite** field to `Recipe`/`Version`, graft it:
@@ -494,6 +496,7 @@ goes in `content` instead.
 
 The steps, as followed for `coffee` — the value is an English technical symbol like every other
 (`coffee`, never `cafe`; see [code-style.md](./code-style.md#language)):
+
 1. **`types.ts`** — add the literal to the type tuple:
    `RECIPE_TYPE_VALUES = ['dish', 'thermomix', 'coffee']`. Add any brands the new content needs,
    fully spelled out, no abbreviations (`CoffeeGrind`, `CoffeeWater`, `CoffeeTemperature`,

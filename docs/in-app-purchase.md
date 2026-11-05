@@ -73,6 +73,7 @@ inspector (Debug → StoreKit → Manage Transactions) fakes renewals, refunds a
 ## App Store Connect setup — to do once, by a human
 
 Credential-gated; none of it is scriptable.
+
 1. **App Store Connect → your app → Subscriptions** → create a subscription group, e.g.
    `Shuhari Premium`.
 2. Add subscription **`com.polyforms.shuhari.app.premium.yearly`**, duration 1 year, price 24,99 €
@@ -111,6 +112,7 @@ Both carry their French localization, their review notes and the review screensh
 (`screenshots/paywall.png`, regenerated any time with `-gallery premium`).
 
 **Still open**, and blocking a real purchase:
+
 1. **The Paid Apps agreement is not active** (no bank account, US tax form missing). Until it is,
    both products stay in `Missing Metadata` and never load in the app — the paywall shows "Les
    offres ne sont pas disponibles pour le moment." The local StoreKit file is unaffected. Account
@@ -138,6 +140,7 @@ environment variables; only genuine credentials go to Secret Manager — see
 `infra/terraform.tfvars` from GitHub secrets and variables, then runs `terraform apply` on every
 push to `main`. A value that only exists in the local `infra/terraform.tfvars` never reaches
 production. So:
+
 - `apple_app_id` is **defaulted in `variables.tf`** (public, stable — like `ios_bundle_id`), and
   the workflow passes nothing.
 - `premium_user_ids` comes from the repository variable **`PREMIUM_USER_IDS`** (Settings →

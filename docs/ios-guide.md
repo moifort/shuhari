@@ -159,6 +159,7 @@ several seconds of loader over a library that had barely changed. `LibraryCache`
 file per tab, and `LibraryStore.init` reads it **synchronously** before anything is asked of the
 network — the rows are on screen in the first frame. See
 [a list that reopens never opens empty](swiftui-best-practices.md#a-list-that-reopens-never-opens-empty).
+
 - **What is written**: page 0 of the tab's opening order, and only that — `saveCache()` bails out
   as soon as a facet or another sort is on. Written off the main actor, after each successful
   `load()` and after an optimistic delete, which no reload follows.
@@ -257,6 +258,7 @@ history sheet and the to-cook sheet. They share **one**
 `RecipeStore` (`Features/Recipe/RecipeStore.swift`), owned by the tab that hosts the flow
 (`HomeView`, `CoffeeView`) beside its `LibraryStore` and handed down through
 `.recipeFlow(store:path:…)` — see [one state per flow](swiftui-best-practices.md#one-state-per-flow-never-one-per-screen).
+
 - `store.recipe(id)` is what the screen renders; `store.load(id)` is called by its `.task`
   (unguarded) and after every mutation, so one read updates the screen and its sheets at once.
 - **Which version is shown is `@State` on the screen, not a route.** The history and to-cook
@@ -477,6 +479,7 @@ longer what the version stores. The corollary is that `IngredientsGrid` wears th
 inside the stepper's label — resizing an iteration never costs the marks saying what it changes.
 
 Three consequences worth holding on to:
+
 - **`RecipeDraft` is the whole sheet, in one value** (`Features/Recipe/RecipeDraft.swift`): the
   aggregate's fields plus the version's, each list held as rows with an identity of their own
   (`IngredientRow`, `StepRow`, `TextRow`) because a name cannot identify a row while it is being
@@ -513,6 +516,7 @@ on two sections above the shopping list: `LinkedRecipesSection` ("Recettes liée
 the whole feature is invisible on a recipe that stands alone.
 
 Four things worth knowing before touching those files:
+
 - **The weight travels in the route.** `RecipeRoute.recipe(id:scale:)` defaults to `1`; a row of
   "Recettes liées" pushes the linked recipe at the weight it was linked at, and `RecipeDetailPage`
   opens on it (`openedAt`). That is also what "Réinitialiser" goes back to — landing on the stored
@@ -577,6 +581,7 @@ else. The recipe type itself is never a badge — what a recipe wears is its
 A recipe's [tags](business-rules.md#tags--what-a-recipe-is-filed-under) are drawn in two places,
 and both take `[TagBadge]` (label + optional `Image`, mapped by the page through `Tag.badge`) —
 never the domain `Tag`:
+
 - `LibraryRow(tags:)` closes the subtitle with **icon-only** compact `Chip`s, one per tag that
   wears an icon; a tag without one is not drawn there.
 - `RecipeHeaderBadges(tags:)` shows every tag, icon and words, ahead of the version capsule, in a
@@ -597,6 +602,7 @@ doors (type the amount, or walk it with the −/+), the same badge and « Réini
 same single factor, which `RecipeDetailPage` hands to whichever section is on screen.
 
 Three things are specific to the cup:
+
 - **Four quantities move, and they are named, not detected**: the dose, the water, the yield in the
   cup and the milk (`CoffeeParametersSection.Quantity`). Everything else stays exactly as written —
   and it has to be spelled out, because "93°C" and "28 s" lead with a number and would follow along
@@ -825,6 +831,7 @@ call sites in ViewModels are unchanged.
 ## Auth — Firebase + Sign in with Apple
 
 Wired in `Features/Auth/` plus `FirebaseApp.configure()` in `ShuhariApp.init()` (no `AppDelegate`):
+
 - `AuthRoot.swift` — top gate: `LoginView` when signed out, else `ContentView`; injects
   `AuthSession` into the environment.
 - `AuthSession.swift` — `@MainActor @Observable` wrapper over Firebase's
@@ -873,6 +880,7 @@ struct RecipeVersion: Identifiable, Sendable {
 ## Apollo Codegen
 
 Config: `ios/apollo-codegen-config.json`.
+
 - `schemaNamespace: "ShuhariGraphQL"`
 - schema source: `../shared/schema.graphql` (shared with the backend)
 - operation search paths: `Shuhari/Features/<Feature>/GraphQL/*.graphql` (hand-written per feature)

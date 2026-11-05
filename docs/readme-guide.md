@@ -51,6 +51,7 @@ one capability.
 ```
 
 Rules:
+
 - Lead with the user benefit, not the technology.
 - Put "(optional)" next to things that aren't required.
 - Don't list internal implementation details (migrations, middleware, plugins).
@@ -101,6 +102,7 @@ Shuhari's keys: `NITRO_GOOGLE_API_KEY` (required — the AI), `NITRO_ADMIN_TOKEN
 the **Firebase ID token**, so the app needs no static API token to run.
 
 Rules:
+
 - Mark optional keys as optional.
 - If a key comes from an external service (Firebase, Google AI Studio, Sentry), link to it and give
   the exact navigation path to find the value.

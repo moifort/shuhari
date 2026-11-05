@@ -210,6 +210,7 @@ launched it from — never guessed from the source.
 A bread is two recipes: the poolish and the dough. **A recipe holds the recipes it is made of** —
 `Recipe.components: { recipe: RecipeId, scale: ComponentScale }[]`, set by
 `RecipeCommand.linkComponent` / `unlinkComponent` and by nothing else.
+
 - **The link is held by the RECIPE, not by a version and not by an ingredient line.** The cook
   posts it from the recipe sheet, it holds for every version of it, and no iteration has to carry
   it forward. That is what it means for it to be aggregate-level identity, next to `category` and
@@ -284,6 +285,7 @@ A bread is two recipes: the poolish and the dough. **A recipe holds the recipes 
 ## Derivation — no promotion
 
 Everything is derived (`recipe/business-rules.ts`), nothing is promoted:
+
 - `bestRating` = the recipe's best-rated cooked version (highest rating; tie → most recent
   version), `undefined` when nothing was ever cooked; it drives the displayed rating.
 - `versionToOpen` = the version the recipe sheet opens on: the best-rated version, else the
@@ -366,6 +368,7 @@ Everything is derived (`recipe/business-rules.ts`), nothing is promoted:
 "Se congèle bien") — neither an ingredient nor a step. Type-agnostic, so it sits on the
 versioning _envelope_ (`version.ts`), never in `content`; total (`[]` = none, and the app renders
 no section). Three ways in:
+
 1. the AI extracts them at **import** (they land on v1);
 2. a **proposal** always returns the complete tips list of the version it creates (the AI folds
    advice it reads in the remarks into it);
@@ -383,6 +386,7 @@ doit être mis dès le début") — the banner atop the recipe sheet, so a criti
 before cooking starts. Like `tips` it sits on the versioning _envelope_, is type-agnostic, and is
 total (`[]` = none, and the app renders no banner). It is written by the cook alone: no import, no
 proposal and no prompt ever produces one.
+
 - **Versioned, like everything that describes the plate.** A caution is about the gesture this
   attempt needs, and the app reads it off the version on screen — the sheet's banner follows what
   is being read, never the recipe as a whole.
@@ -403,6 +407,7 @@ proposal and no prompt ever produces one.
 it sits on. Set by `updateFavorite(recipeId, versionNumber, favorite)` and by nothing else, and
 carried onto the next iteration like the cautions — accepting a proposal continues the line of work
 that was hearted.
+
 - **`Recipe.favorite` is the derived mirror**, `favorited(versions)` — true as soon as **any**
   version is hearted (`favorited` sits with the other derivations — see
   [Derivation — no promotion](#derivation--no-promotion)). Deliberately not
@@ -445,6 +450,7 @@ analysis — photos with no text hash exactly as before.
 
 The prompts, one module per flow under `server/system/ai/` (`import/*`, `proposal/*`, `change/*`,
 `tips.ts`):
+
 - An ingredient **name** carries its intrinsic _variety/type/grade_ in parentheses
   (`Pommes de terre (Marbella)`, `Farine (T45)`) — only _transient_ preparation (peeled, sliced)
   goes in the steps.
@@ -506,6 +512,7 @@ The prompts, one module per flow under `server/system/ai/` (`import/*`, `proposa
 The notebook is free and unlimited — recipes, versions, attempts, photos, export. The AI is the
 app's only variable cost, so it is the only thing metered (`quota` domain, dimensioned in
 [specs/2026-07-20-freemium-pricing-design.md](./specs/2026-07-20-freemium-pricing-design.md)):
+
 - Two meters, `imports` and `iterations`. An **import** is one source analysis (either import
   mutation, whatever the source — six photos _and_ a text are one analysis, so one import); an
   **iteration**
@@ -540,6 +547,7 @@ app's only variable cost, so it is the only thing metered (`quota` domain, dimen
 ## Style rules that bite here
 
 See [code-style.md](./code-style.md):
+
 - No `null` in the domain — absence is `field?: T` / `undefined`, converted only at the GraphQL,
   Firestore and AI boundaries.
 - Arrays and their items are never optional (`[T!]!` in GraphQL, `{}` for a plain step's
