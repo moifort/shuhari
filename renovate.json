@@ -38,6 +38,9 @@
       "allowedVersions": "<2"
     }
   ],
+  "vulnerabilityAlerts": {
+    "labels": ["dependencies", "security"]
+  },
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["before 5am on monday"],
