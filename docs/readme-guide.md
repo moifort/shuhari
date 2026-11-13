@@ -169,6 +169,6 @@ Describe what the reader will learn, not the technical content. "How to add scre
 - [ ] No section assumes knowledge of the codebase internals
 - [ ] No unexplained acronyms or framework-specific terms
 - [ ] Code blocks are copy-pasteable (no placeholder that would fail if pasted, except obvious ones
-  like `your-key-here`)
+      like `your-key-here`)
 ```
 ```
